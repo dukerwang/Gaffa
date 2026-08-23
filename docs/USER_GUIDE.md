@@ -75,13 +75,13 @@ So the gameweek does **not** shut in one go. Until a player's club kicks off you
 Every club's roster is split by status:
 
 - **Active / Bench** — in play this week.
-- **IR (Injured Reserve)** — a parking spot for injured players that doesn't count against your active roster limit.
+- **IR (Injured Reserve)** — a parking spot for injured players that doesn't count against your active roster limit, capped at 2 players.
 - **Academy** — a prospect stash for U21 players (§12).
 - **Loaned out / Loaned in** — players temporarily at another club, or borrowed from one (§10).
 
 Roster size is a league setting, commonly **20**. IR and Academy players don't count toward it.
 
-**IR isn't a free extra slot.** There's no cap on IR, but the game polices it at the point it matters: **you cannot place an auction bid while a healthy player is sitting on IR.** You have to activate him first. Rather than auditing injuries continuously, Gaffa simply blocks the benefit you'd be stashing him for.
+**IR isn't a free extra slot.** IR is capped at **2 players** (a league setting), and on top of that the game polices it at the point it matters: **you cannot place an auction bid while a healthy player is sitting on IR.** You have to activate him first. Rather than auditing injuries continuously, Gaffa blocks the benefit you'd be stashing him for, in addition to bounding how many you can stash at once.
 
 ### Setting up your club
 
@@ -309,7 +309,7 @@ Every bid extends the clock by the active inactivity timeout. Because there is n
 
 You can **list one of your rostered players**, and the listing is shaped by which of three prices you set — no separate "auction or negotiation" switch to configure:
 
-- **Minimum bid** opens him to a genuine open auction, same as a free agent. Set at all, it must be at least **80% of the player's market value** — without that floor, two managers could move a €90m striker for €1m and call it a sale.
+- **Minimum bid** opens him to a genuine open auction, same as a free agent. Set at all, it must be at least **60% of the player's market value** — without that floor, two managers could move a €90m striker for €1m and call it a sale.
 - **Release clause** lets anyone buy him outright at that price, no bidding required.
 - **Asking price** is advertising for a negotiated Offer — it names a number without committing to accept it.
 
@@ -351,7 +351,7 @@ Direct manager-to-manager deals. No commissioner approval, no trade deadline.
 - A player with an active sale listing can't be traded until it resolves or is cancelled.
 - The Trades page shows a league-wide feed as well as your own pending offers and history.
 
-**Why no approval and no deadline?** Commissioner veto assumes someone can referee whether a trade is "fair," which in a dynasty league means adjudicating other people's long-term plans. Gaffa polices the mechanisms that make collusion *possible* instead — the 80% listing floor, the deferred-trade rule, the buy-back exclusion — and then lets managers deal freely.
+**Why no approval and no deadline?** Commissioner veto assumes someone can referee whether a trade is "fair," which in a dynasty league means adjudicating other people's long-term plans. Gaffa polices the mechanisms that make collusion *possible* instead — the 60% listing floor, the deferred-trade rule, the buy-back exclusion — and then lets managers deal freely.
 
 ---
 
@@ -480,6 +480,6 @@ The permanent record book: final standings and podium for every past season, eac
 | **Flex boost** | Extra weighting given to a player's strongest role-relevant component that match. |
 | **OOP penalty** | The 20% rating/points penalty when a player whose primary position is a midfield or attacking role is fielded in a defensive slot. |
 | **Academy** | A stash for U21 players that doesn't count against your active roster. |
-| **IR** | Injured Reserve. Doesn't count against your roster — but you can't bid while a healthy player occupies it. |
+| **IR** | Injured Reserve. Doesn't count against your roster, capped at 2 — and you can't bid while a healthy player occupies it. |
 | **Release / Retain** | The choice when a player leaves the Premier League: take his market value and forfeit the buy-back, or keep his rights and take nothing. |
 | **Retained rights** | A tradeable claim on a departed player that matures if he returns to the Premier League. |
