@@ -36,7 +36,7 @@ export function estimateExpectedMinutes(
   // Injured, suspended, or inactive
   if (code === 'i' || code === 's' || code === 'u' || code === 'n') return 0;
 
-  let baseMinutes = 72;
+  let baseMinutes = 74;
   if (minutesRole === 'nailed') baseMinutes = 84;
   else if (minutesRole === 'likely_starter') baseMinutes = 74;
   else if (minutesRole === 'rotation_risk') baseMinutes = 38;
@@ -102,21 +102,33 @@ export function calculatePlayerProjectedPoints(
   const pXg = fixtureEnv.expectedGoals * xgShare;
   const pXa = fixtureEnv.expectedGoals * xaShare;
 
-  // Base rating for standard appearance before goals/assists/clean sheets
-  let baseRating = 6.15 + 0.35 * calibre;
-  if (pos === 'CB' || FULLBACK_POSITIONS.has(pos)) {
-    // Defenders earn reliable volume from CBI, tackles, and recoveries in Gaffa
-    baseRating = 6.25 + 0.25 * calibre;
+  // Base rating for standard appearance before goals/assists/clean sheets.
+  // In Gaffa, defensive contributions (CBI, recoveries, tackles) keep starting
+  // outfielders around a 6.8 to 7.1 display rating (~10-12 points).
+  let baseRating = 6.65 + 0.25 * calibre;
+  if (pos === 'CB') {
+    baseRating = 6.75 + 0.15 * calibre;
+  } else if (pos === 'DM') {
+    baseRating = 6.75 + 0.15 * calibre;
+  } else if (pos === 'CM') {
+    baseRating = 6.60 + 0.20 * calibre;
+  } else if (FULLBACK_POSITIONS.has(pos)) {
+    baseRating = 6.65 + 0.20 * calibre;
   } else if (isGk) {
-    baseRating = 6.20 + 0.20 * calibre;
+    baseRating = 6.55 + 0.15 * calibre;
+  } else {
+    // Attackers and attacking midfielders: possession and final third territory
+    // scale with team game state (expected goals)
+    const gameState = Math.max(0.70, Math.min(1.50, fixtureEnv.expectedGoals / 1.35));
+    baseRating = (6.40 + 0.25 * calibre) * Math.pow(gameState, 0.18);
   }
 
-  // Add expected match impact
-  let expRating = baseRating + pXg * 0.95 + pXa * 0.50;
+  // Add expected match impact from attacking metrics
+  let expRating = baseRating + pXg * 0.90 + pXa * 0.50;
 
-  if (isDef) {
+  if (isDef || isGk) {
     // Clean sheet adds match impact and defensive flex score
-    expRating += fixtureEnv.cleanSheetProb * 0.85;
+    expRating += fixtureEnv.cleanSheetProb * 0.70;
     // Conceding heavily (xGA > 1.0) dings match impact
     const excessConceded = Math.max(0, fixtureEnv.expectedConceded - 1.0);
     expRating -= excessConceded * 0.35;
@@ -133,16 +145,16 @@ export function calculatePlayerProjectedPoints(
 
   // Flat bonuses (land after the curve, matching Gaffa's scoring engine)
   let flatBonuses = 0;
-  if (isDef) {
+  if (isDef || isGk) {
     // 4.0 flat clean sheet bonus multiplied by probability
     flatBonuses += fixtureEnv.cleanSheetProb * 4.0;
   }
 
   // Convexity upside bonus: captures multi-goal games that spike into 8.5+ ratings
-  if (pXg > 0.25) {
-    flatBonuses += Math.pow(pXg, 1.4) * 3.8;
+  if (pXg > 0.20) {
+    flatBonuses += Math.pow(pXg, 1.4) * 3.5;
   }
-  if (pXa > 0.25) {
+  if (pXa > 0.20) {
     flatBonuses += Math.pow(pXa, 1.4) * 1.8;
   }
 

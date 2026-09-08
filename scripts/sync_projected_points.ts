@@ -90,6 +90,7 @@ async function main() {
   const { data: topPlayers } = await admin
     .from('players')
     .select('web_name, pl_team, primary_position, market_value, projected_points')
+    .not('projected_points', 'is', null)
     .order('projected_points', { ascending: false })
     .limit(15);
 
