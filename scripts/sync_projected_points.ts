@@ -65,6 +65,11 @@ async function main() {
   const result = await calculateGameweekProjections(admin, season, gameweek);
   console.log(`Calculated projections for ${result.projections.size} active players across ${result.fixturesFound} fixtures.`);
 
+  // Every row carries the round it was computed for. A projection is only
+  // meaningful for one fixture round, and consumers treat an unstamped or
+  // stale-stamped row as "no projection" rather than showing last week's
+  // number as if it were this week's — see isProjectionCurrent().
+  const computedAt = new Date().toISOString();
   const updates: Array<{ id: string; projected_points: number }> = [];
   for (const [id, points] of result.projections.entries()) {
     updates.push({ id, projected_points: points });
@@ -78,7 +83,12 @@ async function main() {
       chunk.map((u) =>
         admin
           .from('players')
-          .update({ projected_points: u.projected_points })
+          .update({
+            projected_points: u.projected_points,
+            projected_season: season,
+            projected_gameweek: gameweek,
+            projected_at: computedAt,
+          })
           .eq('id', u.id),
       ),
     );
@@ -90,7 +100,8 @@ async function main() {
   const { data: topPlayers } = await admin
     .from('players')
     .select('web_name, pl_team, primary_position, market_value, projected_points')
-    .not('projected_points', 'is', null)
+    .eq('projected_season', season)
+    .eq('projected_gameweek', gameweek)
     .order('projected_points', { ascending: false })
     .limit(15);
 
