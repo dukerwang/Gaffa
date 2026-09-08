@@ -101,9 +101,9 @@ export default function JoinLeagueForm() {
             <span>{preview.isDynasty ? 'Dynasty' : 'Redraft'}</span>
             <span>€{preview.faabBudget}m budget</span>
           </div>
-          {isFull && <p className={styles.previewWarning}>This league is full.</p>}
+          {isFull && <p className={styles.previewWarning}>League is full.</p>}
           {!isFull && isClosed && (
-            <p className={styles.previewWarning}>This league is no longer accepting new members.</p>
+            <p className={styles.previewWarning}>League is no longer accepting new members.</p>
           )}
         </div>
       )}

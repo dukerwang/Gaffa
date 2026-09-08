@@ -177,7 +177,7 @@ export default function BidDialog({
         <>
           <span className={styles.summary}>
             {wouldTakeClause && clause != null ? (
-              <>Pays <b>{money(amount)}</b> and takes him now — the clause ends the auction.</>
+              <>Pay <b>{money(amount)}</b> to sign him immediately and close the auction.</>
             ) : (
               <>Leaves you <b>{money(Math.max(0, budget - (Number.isNaN(amount) ? 0 : amount)))}</b> for the rest of the window.</>
             )}
@@ -307,14 +307,14 @@ export default function BidDialog({
             ))}
           </select>
           <div className={styles.hint}>
-            Your squad is full. Nominate a player to release if you win, or leave this and he joins
-            the academy — the bid is refused if neither has room.
+            Your squad is full. Nominate a player to release upon winning, or send him to the
+            academy. You cannot bid if neither has open slots.
           </div>
         </label>
       )}
 
       {belowFloor && <p className={styles.error}>The minimum bid is {money(floor)}.</p>}
-      {tooExpensive && <p className={styles.error}>That is more than your {money(budget)} balance.</p>}
+      {tooExpensive && <p className={styles.error}>Exceeds your {money(budget)} balance.</p>}
       {message && <p className={styles.error}>{message}</p>}
     </Modal>
   );

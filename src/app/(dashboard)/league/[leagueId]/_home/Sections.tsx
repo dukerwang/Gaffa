@@ -43,8 +43,8 @@ export function Market({ model }: { model: HomeModel }) {
 
         {model.market.length === 0 ? (
           <div className={styles.mktEmpty}>
-            Nothing is on the board. Opening an auction pays a 10% Scout&rsquo;s Fee if someone
-            else wins it.
+            Nothing is on the board. Open an auction to earn a 10% Scout&rsquo;s Fee if another manager
+            wins it.
           </div>
         ) : (
           <>

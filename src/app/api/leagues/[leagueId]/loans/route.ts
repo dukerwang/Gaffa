@@ -427,7 +427,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
   if (openListingForPlayer?.status === 'active') {
     return NextResponse.json(
-      { error: 'Bidding is live on this player — he cannot be loaned until the auction finishes.' },
+      { error: 'Player is in an active auction — cannot propose loans until the auction resolves.' },
       { status: 409 },
     );
   }

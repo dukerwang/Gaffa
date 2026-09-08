@@ -201,7 +201,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
     if (listingForPlayer) {
       return NextResponse.json(
-        { error: 'Bidding has started on this player since the loan was proposed. The loan cannot be accepted while the auction is live.' },
+        { error: 'Bidding has started on this player since the loan was proposed. Cannot accept loan proposals during an active auction.' },
         { status: 409 },
       );
     }

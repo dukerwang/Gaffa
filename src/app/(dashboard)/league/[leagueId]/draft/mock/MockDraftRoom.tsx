@@ -1338,7 +1338,7 @@ export default function MockDraftRoom({ leagueId, league, players, shadowMaps, m
                 <div className={draftStyles.emptyStateWrap}>
                   <p className={draftStyles.emptyState}>Queue is empty.</p>
                   <p className={draftStyles.emptyStateHint}>
-                    Star players in the Players tab to add them. The top queued player auto-drafts
+                    Star players in the Players tab to add them. Your top queued player is drafted automatically
                     if your timer expires.
                   </p>
                 </div>

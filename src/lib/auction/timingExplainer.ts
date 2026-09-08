@@ -25,10 +25,10 @@ export function explainAuctionTiming(marketValue: number, state: AuctionTimingSt
       return 'Bidding opens for the whole league at the same time, so nobody gets a head start by being awake early.';
     case 'resting': {
       const hours = tierInitialFloorMs(marketValue) / (60 * 60 * 1000);
-      return `He's ${tierValuePhrase(marketValue)}, so this auction has a ${hours}-hour minimum before it can close.`;
+      return `He's ${tierValuePhrase(marketValue)}, with a ${hours}-hour minimum window before closing.`;
     }
     case 'live':
-      return "Every new bid resets the clock, so the auction can't end while people are still bidding. A deadline that would fall overnight moves to the next morning instead.";
+      return "Each bid extends the clock to keep active bidding open. Deadlines falling overnight roll over to the next morning instead.";
     case 'settling':
       return "This is settling: the clock hit zero, but the result hasn't posted yet.";
   }

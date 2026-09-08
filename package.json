@@ -11,6 +11,7 @@
     "download-team-logos": "node scripts/download-pl-team-logos.mjs",
     "generate-outlooks": "tsx scripts/generate-outlooks.ts",
     "sync-futbolpedia-engine": "node scripts/sync-futbolpedia-engine.mjs",
+    "check:copy": "tsx scripts/check_inanimate_agency.ts",
     "test": "vitest run"
   },
   "dependencies": {

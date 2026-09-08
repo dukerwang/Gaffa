@@ -1486,7 +1486,7 @@ export default function DraftRoom({
                 <div className={styles.emptyStateWrap}>
                   <p className={styles.emptyState}>Queue is empty.</p>
                   <p className={styles.emptyStateHint}>
-                    Star players in the Players tab to add them. The top queued player auto-drafts
+                    Star players in the Players tab to add them. Your top queued player is drafted automatically
                     when time expires.
                   </p>
                 </div>
@@ -1494,7 +1494,7 @@ export default function DraftRoom({
                 <>
                   {isMyTurn && (
                     <div className={styles.queueAutoPickHint}>
-                      Top player auto-drafts if time expires
+                      Auto-picks top queued player if time expires
                     </div>
                   )}
                   <ul className={styles.queueList}>

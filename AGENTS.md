@@ -34,7 +34,9 @@ All frontend UI copy, microcopy, error messages, docs, commit messages, and assi
 ### Rules of style:
 
 1. **Voice and person**:
-   - Use active voice ("Click Submit", "The server returns an acknowledgment").
+   - Use active voice addressed to the human ("Click Submit").
+   - **No inanimate agency**: Tools, keys, buttons, containers, tabs, dialogs, and rules do not perform actions. Never write "Enter opens it", "Escape closes the modal", "this button submits", "the tab displays", "an asking price invites offers", or "the clause ends the auction".
+   - **Affordances as infinitives or imperatives**: State keyboard shortcuts and interactions as infinitive purpose ("Enter to open · Esc to return · Ctrl+C twice to quit") or direct imperatives ("Press Enter to open"), never as keys acting as grammatical subjects.
    - Address the reader as "you", not "we" (cut "we recommend", "we can see that").
 
 2. **Tone**:
@@ -44,7 +46,8 @@ All frontend UI copy, microcopy, error messages, docs, commit messages, and assi
 
 3. **Word choice**:
    - **Cut filler words**: Delete "simply", "easily", "just", and "obviously".
-   - **Replace weak phrasing**: "allows you to" → "lets you". Use specific verbs instead of "access" (view, edit, open).
+   - **Ban enabler phrasing**: Ban both "allows you to" and "lets you". Never make the UI element the subject of an enablement verb ("This tab lets you view" → "View your squad" or "Squad overview"). Use specific verbs (view, edit, open).
+   - **No anthropomorphized status tags**: Avoid pseudo-passive status tags like "if it holds" — write concise, direct sports-journal copy ("projected €34m", not "€34m if it holds").
    - **No hedge-stacking**: Cut "it is worth noting that", "this might potentially", etc. Say the fact directly.
 
 4. **Punctuation and formatting**:

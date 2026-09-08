@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (league.status === 'active' || league.status === 'complete') {
-    return NextResponse.json({ error: 'This league is no longer accepting new members' }, { status: 400 });
+    return NextResponse.json({ error: 'League is no longer accepting new members' }, { status: 400 });
   }
 
   // Check if user is already a member
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     .eq('league_id', league.id);
 
   if ((count ?? 0) >= league.max_teams) {
-    return NextResponse.json({ error: 'This league is full' }, { status: 400 });
+    return NextResponse.json({ error: 'League is full' }, { status: 400 });
   }
 
   // Add member

@@ -661,7 +661,7 @@ function Lot({
                 </div>
               )}
               {clause != null && !mine && (
-                <p className={styles.exNote}>Paying the clause ends the auction outright.</p>
+                <p className={styles.exNote}>Triggering the buyout ends the auction immediately.</p>
               )}
             </div>
           </div>

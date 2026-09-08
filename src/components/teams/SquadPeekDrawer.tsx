@@ -61,7 +61,7 @@ export default function SquadPeekDrawer({
     onCloseRef.current = onClose;
   });
 
-  // Escape closes and the page behind is frozen — same contract as the
+  // Esc to close and the page behind is frozen — same contract as the
   // transfers Modal, so the two never feel like different apps.
   //
   // The body flag is how a dialog underneath knows to keep its hands off that

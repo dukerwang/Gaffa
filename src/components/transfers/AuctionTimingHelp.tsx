@@ -21,7 +21,7 @@ export default function AuctionTimingHelp() {
       </button>
       <span role="tooltip" id="auction-timing-help" className={styles.tip}>
         <span>Bigger fees get longer minimums.</span>
-        <span>Every bid resets the clock.</span>
+        <span>Each bid extends the clock.</span>
         <span>Nothing closes overnight.</span>
       </span>
     </span>

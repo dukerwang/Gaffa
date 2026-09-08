@@ -55,7 +55,7 @@ export async function PATCH(req: NextRequest, { params }: Props) {
   }
   if (listing.status !== 'pending') {
     return NextResponse.json(
-      { error: `This listing cannot be edited because it is ${listing.status}.` },
+      { error: `Cannot edit listing in status: ${listing.status}.` },
       { status: 400 },
     );
   }
@@ -256,14 +256,14 @@ export async function DELETE(req: NextRequest, { params }: Props) {
   // 5. Check listing status: can only cancel if 'pending' (pre-bid)
   if (listing.status === 'active') {
     return NextResponse.json(
-      { error: 'Bidding has already started. This listing cannot be cancelled.' },
+      { error: 'Bidding has already started. Cannot cancel active listing.' },
       { status: 403 }
     );
   }
 
   if (listing.status !== 'pending') {
     return NextResponse.json(
-      { error: `This listing cannot be cancelled because it is ${listing.status}.` },
+      { error: `Cannot cancel listing in status: ${listing.status}.` },
       { status: 400 }
     );
   }

@@ -710,8 +710,8 @@ export async function buildHomeModel(
           value: ordinal(myRank),
           stake:
             myRank === 1
-              ? `${money(computeSeasonPrize(1, teamCount))} if it holds · top of the table`
-              : `${money(computeSeasonPrize(myRank, teamCount))} if it holds · ${gapToLeader} behind ${leader?.club.name.split(' ')[0] ?? 'the leader'}`,
+              ? `${money(computeSeasonPrize(1, teamCount))} projected · top of the table`
+              : `${money(computeSeasonPrize(myRank, teamCount))} projected · ${gapToLeader} behind ${leader?.club.name.split(' ')[0] ?? 'the leader'}`,
         },
         {
           value: `${myStanding?.wins ?? 0}-${myStanding?.draws ?? 0}-${myStanding?.losses ?? 0}`,

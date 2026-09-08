@@ -301,8 +301,8 @@ export default function ListingEditor({
           </label>
         </div>
         <p className={styles.hint}>
-          Advisory only — anyone may still approach you any way they like. This sorts the board and
-          sets the headline other managers read.
+          Advisory only — rivals can still send any proposal. These tags sort your listing on the transfer board and
+          set its public headline.
         </p>
       </div>
 
@@ -387,10 +387,9 @@ export default function ListingEditor({
           </label>
         </div>
         <p className={styles.hint}>
-          Set only what applies — a minimum bid opens him to auction, a release clause allows an
-          instant buy, and an asking price invites offers. Leave a field blank to turn that route off.
-          The asking price is advertising: meeting it sends an offer you still have to accept. Only
-          the release clause executes on contact.
+          Set only what applies — enter a minimum bid to open an auction, an asking price to invite offers, or
+          a release clause for instant buyouts. Leave a field blank to turn that route off. Asking prices invite
+          proposals you must still accept; release clauses complete immediately upon payment.
         </p>
       </div>
 

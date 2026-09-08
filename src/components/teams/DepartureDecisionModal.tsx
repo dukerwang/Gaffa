@@ -158,7 +158,7 @@ export default function DepartureDecisionModal({ req, leagueId, slots, rosterCou
           <>
             <div className={styles.body}>
               <p className={styles.lead}>
-                Give up your rights to <b>{dep.name}</b>? This frees a retained slot immediately. Rights can’t be
+                Give up rights to <b>{dep.name}</b>? Frees a retained slot immediately. Rights can’t be
                 cashed out — you receive nothing, and if he later returns to the PL he’ll be a free agent the whole
                 league can bid on.
               </p>

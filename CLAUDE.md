@@ -127,10 +127,12 @@ So: don't treat a confident sentence in a repo doc as a decision. If you can't c
 
 ### User-facing copy & prose style (Google Developer Style)
 All frontend UI copy, microcopy, error messages, documentation, and agent responses must strictly follow the **Google Developer Documentation Style Guide** (`developers.google.com/style`) to eliminate "Claude-lish" AI assistant mannerisms:
-- **Voice & Person**: Active voice ("Click Submit", "The server returns an acknowledgment"). Address the user as "you", never "we".
+- **Voice & Person**: Active voice addressed to the human ("Click Submit"). Address the user as "you", never "we".
+- **No Inanimate Agency**: Tools, keys, buttons, tabs, dialogs, and rules do not perform actions. Never write "Enter opens it", "Escape closes", "this button submits", "the tab displays", "an asking price invites offers", or "the clause ends the auction".
+- **Affordances as Infinitives or Imperatives**: State keyboard shortcuts and interactions as infinitive purpose ("Enter to open · Esc to return · Ctrl+C twice to quit") or direct imperatives ("Press Enter to open"), never as keys acting as grammatical subjects.
 - **No Throat-Clearing**: Cut opening cheerleading ("Certainly!", "Great question!", "I'd be happy to help!"). Answer directly.
 - **No Polite Filler**: Never say "please" on routine instructions ("Click Save", not "Please click Save").
-- **Word Choice**: Delete "just", "simply", "easily", and "obviously". Replace "allows you to" with "lets you". Use specific verbs instead of "access".
+- **Word Choice**: Delete "just", "simply", "easily", and "obviously". Ban both "allows you to" and "lets you" — never make the UI element the subject of an enablement verb ("This tab lets you view" → "View your squad" or "Squad overview"). Avoid pseudo-passive status tags like "if it holds" ("projected €34m", not "€34m if it holds"). Use specific verbs (view, edit, open).
 - **No Hedge-Stacking**: Cut "it is worth noting that", "this might potentially", etc. State facts directly.
 - **Em-Dash Restraint**: Avoid using em dashes as a sentence-joining tic; split sentences instead.
 - **Prose Over Lists**: Do not list-ify everything into bullets. Use natural prose paragraphs; save lists for sequential steps or parallel items.

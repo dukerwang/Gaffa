@@ -157,7 +157,7 @@ export default function PreDraftLobby({
   }
 
   async function handleCancelSchedule() {
-    if (!confirm('Cancel the scheduled draft? This clears the countdown.')) {
+    if (!confirm('Cancel the scheduled draft? Resets the countdown and returns to draft setup.')) {
       return;
     }
 

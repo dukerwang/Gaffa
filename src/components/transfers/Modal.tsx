@@ -34,7 +34,7 @@ export default function Modal({ open, onClose, title, lead, children, footer, wi
   // mid-drag when the user releases outside after selecting text in an input.
   const scrimPointerDown = useRef(false);
 
-  // Escape closes; body scroll is frozen while open so the page behind does not
+  // Esc to close; body scroll is frozen while open so the page behind does not
   // drift under a dialog the user is typing a price into. onClose is read from
   // a ref so parent re-renders (inline lambdas, countdown ticks) do not re-run
   // this effect and steal focus from an input mid-edit.

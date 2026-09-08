@@ -165,3 +165,19 @@ pointers rather than restated:
   (`docs/USER_GUIDE.md`)
 - **Two themes are both first-class**, and WCAG AA is a hard requirement in both.
   (`PRODUCT.md`)
+
+---
+
+## 2026-09-08 — No inanimate agency in copy
+
+**Keys, tools, and UI objects do not perform actions.**
+> "making inanimate objects the subject of verb is one of the most pervasive and
+> telling LLM-isms I can't un-notice it... a person would have written 'enter to
+> open, esc to return, ctrl+c twice to quit'... i realize this is such a pervasive
+> thing in gaffa and it pisses me the fuck off, it's so annoying."
+
+- **Affordances**: Keyboard shortcuts and interaction hints must use infinitive purpose (`Enter to open · Esc to return · Ctrl+C twice to quit`) or direct imperatives (`Press Enter to open`), never keys or tools as active subjects (`Enter opens it`, `Escape closes`).
+- **No UI agents**: UI elements (tabs, buttons, cards, dialogs, rules) must never be the grammatical subject of verbs like `shows`, `opens`, `closes`, `lets`, `allows`, `invites`, or `executes`.
+- **Ban "allows you to" and "lets you"**: State user agency directly (`View your squad`, not `This tab lets you view your squad`).
+- **No anthropomorphized status tags**: Avoid pseudo-passive tags like "if it holds" in metrics and captions — use concise sports-journal copy (`projected €34m`, not `€34m if it holds`).
+

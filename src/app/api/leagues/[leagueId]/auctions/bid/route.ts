@@ -361,7 +361,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
   if (systemSeedClaim?.expires_at && new Date().getTime() >= new Date(systemSeedClaim.expires_at).getTime()) {
     return NextResponse.json(
-      { error: 'This auction has already expired and is awaiting processing.' },
+      { error: 'Auction expired and awaiting processing.' },
       { status: 400 },
     );
   }
@@ -383,7 +383,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       timeZone: auctionSettings.quietHours?.timeZone ?? 'UTC',
     });
     return NextResponse.json(
-      { error: `Bidding on this lot opens ${when}.` },
+      { error: `Bidding opens ${when}.` },
       { status: 400 },
     );
   }
