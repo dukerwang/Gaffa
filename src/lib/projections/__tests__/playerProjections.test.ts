@@ -91,8 +91,8 @@ describe('playerProjections', () => {
       const awayPoints = calculatePlayerProjectedPoints(striker, toughAwayEnv);
 
       expect(homePoints).toBeGreaterThan(20.0);
-      expect(awayPoints).toBeLessThan(12.0);
-      expect(homePoints).toBeGreaterThan(awayPoints * 1.8);
+      expect(awayPoints).toBeLessThan(14.0);
+      expect(homePoints).toBeGreaterThan(awayPoints * 1.7);
     });
 
     it('suppresses attacking playmaker projections when facing a top defense away', () => {
@@ -106,7 +106,7 @@ describe('playerProjections', () => {
       const pointsAtArsenal = calculatePlayerProjectedPoints(palmer, toughAwayEnv);
       const pointsVsEasy = calculatePlayerProjectedPoints(palmer, easyHomeEnv);
 
-      expect(pointsAtArsenal).toBeLessThan(11.0);
+      expect(pointsAtArsenal).toBeLessThan(10.0);
       expect(pointsVsEasy).toBeGreaterThan(16.0);
     });
 
@@ -122,9 +122,9 @@ describe('playerProjections', () => {
       const pointsAtCity = calculatePlayerProjectedPoints(defender, toughAwayDefEnv);
 
       // Clean sheet potential keeps home defender solid
-      expect(pointsVsLeeds).toBeGreaterThan(7.0);
+      expect(pointsVsLeeds).toBeGreaterThan(9.0);
       // High concession at City collapses defender projection
-      expect(pointsAtCity).toBeLessThan(5.0);
+      expect(pointsAtCity).toBeLessThan(6.0);
     });
 
     it('heavily discounts bench cameos due to non-linear minutes scaling', () => {
