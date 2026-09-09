@@ -1282,17 +1282,25 @@ export default function PitchUI({
                         .pitchContainer and touches no pitch geometry. */}
                     {(ledger.hasProjections || ledger.hasScores) && (
                         <div className={styles.ledger}>
+                            {/* Every cell reads label / figure / qualifier, so the strip
+                                is visually parallel — the projected cell used to drop its
+                                qualifier whenever all eleven were still to play, which is
+                                exactly the state you see it in most of the week.
+
+                                "Projected XI" also read as "the XI we project". These are
+                                YOUR eleven, recomputed as you swap, so the qualifier says
+                                so and the label carries the state instead. */}
                             {ledger.hasProjections && (
                                 <div className={styles.ledgerCell}>
-                                    <span className="g-label">Projected XI</span>
+                                    <span className="g-label">Projected</span>
                                     <span className={`${styles.ledgerVal} ${styles.ledgerValForecast}`}>
                                         {ledger.projected.toFixed(1)}
                                     </span>
-                                    {ledger.projectedOf < slots.length && (
-                                        <span className={styles.ledgerSub}>
-                                            {ledger.projectedOf} of {slots.length} Projected
-                                        </span>
-                                    )}
+                                    <span className={styles.ledgerSub}>
+                                        {ledger.projectedOf === slots.length
+                                            ? 'Your XI'
+                                            : `Your XI · ${ledger.projectedOf} of ${slots.length} to play`}
+                                    </span>
                                 </div>
                             )}
 
@@ -1301,7 +1309,9 @@ export default function PitchUI({
                                     <span className="g-label">Scored</span>
                                     <span className={styles.ledgerVal}>{ledger.scored.toFixed(1)}</span>
                                     <span className={styles.ledgerSub}>
-                                        {ledger.played} of {slots.length} Played
+                                        {ledger.played === slots.length
+                                            ? 'Your XI'
+                                            : `Your XI · ${ledger.played} of ${slots.length} played`}
                                     </span>
                                 </div>
                             )}

@@ -462,14 +462,14 @@ describe('the auction clock', () => {
     withSeedClaim({ expires_at: new Date(Date.now() - 60_000).toISOString() });
     const res = await bid({ playerId: PLAYER_ID, bidAmount: 30 });
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/already expired/);
+    expect(res.body.error).toMatch(/Auction expired/);
   });
 
   it('refuses a bid on a lot that has not opened yet', async () => {
     withSeedClaim({ opens_at: new Date(Date.now() + 3_600_000).toISOString() });
     const res = await bid({ playerId: PLAYER_ID, bidAmount: 30 });
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/^Bidding on this lot opens /);
+    expect(res.body.error).toMatch(/^Bidding opens /);
   });
 
   it('accepts a bid on a lot that has opened', async () => {

@@ -221,7 +221,7 @@ describe('who can be loaned', () => {
     });
     const res = await propose(terms());
     expect(res.status).toBe(409);
-    expect(res.body.error).toMatch(/Bidding is live/);
+    expect(res.body.error).toMatch(/Player is in an active auction/);
   });
 
   it('allows a loan of a listed player before bidding starts', async () => {
