@@ -1712,7 +1712,6 @@
 
 /* A forecast is stated more quietly than a fact. */
 .ledgerValForecast { color: var(--color-text-secondary); }
-.ledgerValSmall { font-size: var(--t-15); }
 
 .ledgerSub {
     font-size: var(--t-11);

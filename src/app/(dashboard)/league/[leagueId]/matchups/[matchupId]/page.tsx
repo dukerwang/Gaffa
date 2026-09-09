@@ -227,27 +227,32 @@ export default async function MatchupDetailPage({ params }: Props) {
         perfMap = buildLineupPerformance(detailMap, [effectiveLineupA, effectiveLineupB], refStats ?? {});
     }
 
+    const isCompleted = matchup.status === 'completed';
+    const isLive      = matchup.status === 'live';
+
     // Which of these players' own clubs have kicked off. A chip showing 0.0 is
     // meaningless without it — the reader can't tell "played, did nothing" from
     // "hasn't started yet". Reuses the lineup lockout's kickoff signal rather
-    // than deriving a second one; a failure returns an empty set, which the
-    // pitch treats as "unknown" and falls back to showing plain scores.
-    // Undefined, not [], when we can't tell: an empty array means "nobody has
-    // kicked off", and getLockedPlTeamIds also returns an empty set when FPL is
-    // unreachable. Conflating the two would stamp "yet to play" across a
-    // finished match, so only a non-empty result is treated as known.
+    // than deriving a second one.
+    //
+    // Undefined only when the matchup is completed, so all players are settled
+    // as played or DNP. For scheduled or live matchups, startedPlayerIds is the
+    // set of players whose matches have actually kicked off (empty array if none
+    // have kicked off yet, which correctly renders every player as 'pending' with
+    // their upcoming fixture and kickoff time).
     let startedPlayerIds: string[] | undefined;
-    try {
-        const lockedTeamIds = await getLockedPlTeamIds(admin, matchupData.gameweek);
-        if (lockedTeamIds.size > 0) {
+    if (isCompleted) {
+        startedPlayerIds = undefined;
+    } else {
+        try {
+            const lockedTeamIds = await getLockedPlTeamIds(admin, matchupData.gameweek);
             startedPlayerIds = Object.values(playerMap)
                 .filter((p) => p?.id && p.pl_team_id != null && lockedTeamIds.has(Number(p.pl_team_id)))
                 .map((p) => p!.id as string);
+        } catch {
+            startedPlayerIds = isLive ? undefined : [];
         }
-    } catch { /* stays undefined — pitch falls back to plain scores */ }
-
-    const isCompleted = matchup.status === 'completed';
-    const isLive      = matchup.status === 'live';
+    }
     const scoreA      = isCompleted ? matchup.score_a : computedScoreA;
     const scoreB      = isCompleted ? matchup.score_b : computedScoreB;
     const isDraw      = isCompleted && isDrawMargin(scoreA, scoreB);

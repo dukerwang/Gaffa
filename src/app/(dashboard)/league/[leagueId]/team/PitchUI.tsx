@@ -1282,59 +1282,56 @@ export default function PitchUI({
                         .pitchContainer and touches no pitch geometry. */}
                     {(ledger.hasProjections || ledger.hasScores) && (
                         <div className={styles.ledger}>
-                            {/* Every cell reads label / figure / qualifier, so the strip
-                                is visually parallel — the projected cell used to drop its
-                                qualifier whenever all eleven were still to play, which is
-                                exactly the state you see it in most of the week.
+                            {/* Every cell is NAMED FOR ITS GROUP, and the qualifier says
+                                what kind of number it is. Naming a cell "Projected" broke
+                                that: the bench beside it was projected too, so the label
+                                distinguished nothing. The groups are the eleven, the players
+                                among them still to come, and the bench. */}
+                            <div className={styles.ledgerCell}>
+                                <span className="g-label">Starting XI</span>
+                                <span className={[
+                                    styles.ledgerVal,
+                                    ledger.hasScores ? '' : styles.ledgerValForecast,
+                                ].filter(Boolean).join(' ')}>
+                                    {(ledger.hasScores ? ledger.scored : ledger.projected).toFixed(1)}
+                                </span>
+                                <span className={styles.ledgerSub}>
+                                    {!ledger.hasScores
+                                        ? 'Projected'
+                                        : ledger.played === slots.length
+                                            ? 'Final'
+                                            : `${ledger.played} of ${slots.length} played`}
+                                </span>
+                            </div>
 
-                                "Projected XI" also read as "the XI we project". These are
-                                YOUR eleven, recomputed as you swap, so the qualifier says
-                                so and the label carries the state instead. */}
-                            {ledger.hasProjections && (
+                            {/* Only while the eleven is split across played and unplayed.
+                                Its figure is the forecast for the players still to come, so
+                                the two XI cells account for the week without either of them
+                                mixing a real score into a forecast. */}
+                            {ledger.hasScores && ledger.projectedOf > 0 && (
                                 <div className={styles.ledgerCell}>
-                                    <span className="g-label">Projected</span>
+                                    <span className="g-label">Yet to Play</span>
                                     <span className={`${styles.ledgerVal} ${styles.ledgerValForecast}`}>
                                         {ledger.projected.toFixed(1)}
                                     </span>
                                     <span className={styles.ledgerSub}>
-                                        {ledger.projectedOf === slots.length
-                                            ? 'Your XI'
-                                            : `Your XI · ${ledger.projectedOf} of ${slots.length} to play`}
+                                        {ledger.projectedOf} {ledger.projectedOf === 1 ? 'player' : 'players'}
                                     </span>
                                 </div>
                             )}
 
-                            {ledger.hasScores && (
-                                <div className={styles.ledgerCell}>
-                                    <span className="g-label">Scored</span>
-                                    <span className={styles.ledgerVal}>{ledger.scored.toFixed(1)}</span>
-                                    <span className={styles.ledgerSub}>
-                                        {ledger.played === slots.length
-                                            ? 'Your XI'
-                                            : `Your XI · ${ledger.played} of ${slots.length} played`}
-                                    </span>
-                                </div>
-                            )}
-
-                            {/* The bench follows the same flip as everything else: a
-                                forecast until those players have played, their real
-                                return afterwards. It used to say "Projected" over a
-                                number that had stopped being one. */}
-                            {(ledger.benchPlayed > 0 || ledger.hasProjections) && (
-                                <div className={styles.ledgerCell}>
-                                    <span className="g-label">Bench</span>
-                                    <span className={[
-                                        styles.ledgerVal,
-                                        styles.ledgerValSmall,
-                                        ledger.benchPlayed > 0 ? '' : styles.ledgerValForecast,
-                                    ].filter(Boolean).join(' ')}>
-                                        {(ledger.benchPlayed > 0 ? ledger.benchScored : ledger.benchProjected).toFixed(1)}
-                                    </span>
-                                    <span className={styles.ledgerSub}>
-                                        {ledger.benchPlayed > 0 ? 'Scored' : 'Projected'}
-                                    </span>
-                                </div>
-                            )}
+                            <div className={styles.ledgerCell}>
+                                <span className="g-label">Bench</span>
+                                <span className={[
+                                    styles.ledgerVal,
+                                    ledger.benchPlayed > 0 ? '' : styles.ledgerValForecast,
+                                ].filter(Boolean).join(' ')}>
+                                    {(ledger.benchPlayed > 0 ? ledger.benchScored : ledger.benchProjected).toFixed(1)}
+                                </span>
+                                <span className={styles.ledgerSub}>
+                                    {ledger.benchPlayed > 0 ? 'Scored' : 'Projected'}
+                                </span>
+                            </div>
 
                             <div className={styles.ledgerLegend}>
                                 <span className={styles.ledgerKey}>

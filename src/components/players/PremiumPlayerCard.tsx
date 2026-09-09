@@ -921,9 +921,9 @@ export default function PremiumPlayerCard({
                                                             <tr key={`upcoming-${g.gameweek}-${g.opponent ?? "x"}-${index}`} className={styles.upcomingRow}>
                                                                 <td className={styles.gwTd}>{g.gameweek}</td>
                                                                 <td className={styles.oppTd}>
-                                                                    <span className={styles.oppName}>{g.opponent}</span>
+                                                                    {g.opponent}
                                                                     {g.date && (
-                                                                        <span className={styles.fixtureTimeTag} suppressHydrationWarning>
+                                                                        <span className={styles.fixtureTag} suppressHydrationWarning>
                                                                             {formatLocalKickoff(g.date)}
                                                                         </span>
                                                                     )}
@@ -934,11 +934,11 @@ export default function PremiumPlayerCard({
                                                                 <td className={styles.ptsTd}>
                                                                     {g.projected_points != null ? (
                                                                         <span
-                                                                            className={styles.projPill}
+                                                                            className={styles.ptsForecast}
                                                                             title={`Projected ${g.projected_points.toFixed(1)} points (temporary forecast)`}
                                                                         >
-                                                                            <span className={styles.projPillVal}>{g.projected_points.toFixed(1)}</span>
-                                                                            <span className={styles.projPillLabel}>PROJ</span>
+                                                                            {g.projected_points.toFixed(1)}
+                                                                            <span className={styles.projTag}>proj</span>
                                                                         </span>
                                                                     ) : '—'}
                                                                 </td>
