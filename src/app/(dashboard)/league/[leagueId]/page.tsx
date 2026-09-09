@@ -10,7 +10,7 @@ import PreDraftLobby from './PreDraftLobby';
 import { Masthead } from './_home/Masthead';
 import Attention from './_home/Attention';
 import Fixture, { SeasonClosed } from './_home/Fixture';
-import { Market, Fronts, Matchweek, StandingsTable, TopPerformers } from './_home/Sections';
+import { Market, Fronts, Matchweek, StandingsTable, TeamOfWeek } from './_home/Sections';
 import Rail from './_home/Rail';
 import { HeroTabProvider } from './_home/HeroTabContext';
 import styles from './_home/home.module.css';
@@ -48,21 +48,17 @@ export default async function LeaguePage({ params }: Props) {
   const { data: league } = await admin.from('leagues').select('*').eq('id', leagueId).single();
   if (!league) notFound();
 
-  const { data: membership } = await admin
-    .from('teams')
-    .select('id')
-    .eq('league_id', leagueId)
-    .eq('user_id', user.id)
-    .single();
-
-  if (!membership && league.commissioner_id !== user.id) redirect('/dashboard');
-
+  // Membership and "my team" were two identical queries against `teams` --
+  // same league, same user -- differing only in whether `abbreviation` was
+  // selected. One row answers both questions.
   const { data: myTeam } = await admin
     .from('teams')
     .select('id, abbreviation')
     .eq('league_id', leagueId)
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
+
+  if (!myTeam && league.commissioner_id !== user.id) redirect('/dashboard');
 
   if (myTeam && !myTeam.abbreviation) {
     redirect(`/league/${leagueId}/team-setup`);
@@ -167,7 +163,7 @@ export default async function LeaguePage({ params }: Props) {
             <Fronts model={model} />
             <Matchweek model={model} />
             <StandingsTable model={model} />
-            <TopPerformers model={model} />
+            <TeamOfWeek model={model} />
           </main>
 
           <Rail model={model} />

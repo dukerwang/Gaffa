@@ -8,8 +8,9 @@
  */
 
 import { FORMATION_SLOTS, ALL_FORMATIONS } from '@/types';
-import type { GranularPosition, Player } from '@/types';
+import type { Formation, GranularPosition, Player } from '@/types';
 import type { SquadEntry } from './ClubClient';
+import { selectBestLineup, selectForFormation } from '@/lib/lineups/selectBestLineup';
 
 // ── Position colour + labels ────────────────────────────────────────────────
 const POS_VAR: Record<string, string> = {
@@ -111,7 +112,15 @@ export const valueOf = (e: SquadEntry): number => Number(e.player.market_value ?
 
 // ── Squad-level derivations ──────────────────────────────────────────────────
 const LINEUP_STATUSES = new Set(['active', 'bench', 'loan_in']);
-const lineupPool = (entries: SquadEntry[]) => entries.filter((e) => LINEUP_STATUSES.has(e.status));
+// IR and Academy can't actually be slotted into a real matchday lineup — the
+// editable `/team` pitch enforces that, and the Depth Chart's own "Fieldable
+// formations" note says so. The read-only Pitch tab on Clubs is different: its
+// whole point is a squad-strength view, "if everyone were fit and eligible",
+// so it offers the choice (default on) to fold the sidelined pool back in
+// rather than excluding it outright.
+const SIDELINED_STATUSES = new Set(['ir', 'taxi']);
+const lineupPool = (entries: SquadEntry[], includeSidelined = false) =>
+  entries.filter((e) => LINEUP_STATUSES.has(e.status) || (includeSidelined && SIDELINED_STATUSES.has(e.status)));
 
 export function squadTotals(entries: SquadEntry[]) {
   const value = entries.reduce((a, e) => a + valueOf(e), 0);
@@ -143,6 +152,93 @@ export function overallScores(entries: SquadEntry[]): Record<string, number> {
   return out;
 }
 
+/**
+ * A matchday XI evaluates expected minutes, Futbolpedia outlook quality,
+ * real-world starter calibre (market value), and sample-weighted form.
+ * Early-season points are cautiously discounted so 2 gameweeks cannot
+ * distort the side.
+ */
+export function projectedScores(entries: SquadEntry[]): Record<string, number> {
+  const normalise = (values: number[]) => {
+    const usable = values.filter(Number.isFinite);
+    if (!usable.length) return (_: number) => 0.5;
+    const low = Math.min(...usable);
+    const high = Math.max(...usable);
+    return (value: number) => {
+      if (!Number.isFinite(value)) return 0.5;
+      return high === low ? 0.5 : (value - low) / (high - low);
+    };
+  };
+
+  const minutesRoleMap: Record<string, number> = {
+    nailed: 1.0,
+    likely_starter: 0.85,
+    rotation_risk: 0.45,
+    fringe: 0.15,
+  };
+  const qualityMap: Record<string, number> = {
+    elite: 1.0,
+    high: 0.85,
+    solid: 0.65,
+    squad: 0.40,
+  };
+  const availabilityMap: Record<string, number> = {
+    a: 1.0,
+    d: 0.95,
+    i: 0.85,
+    s: 0.80,
+    u: 0.20,
+    n: 0.20,
+  };
+
+  const valNorm = normalise(entries.map(valueOf));
+  const formNorm = normalise(entries.map((e) => avgForm(e.form)));
+
+  const scores: Record<string, number> = {};
+
+  entries.forEach((entry) => {
+    const facets = entry.projection;
+    const minRole = facets?.minutesRole ? (minutesRoleMap[facets.minutesRole] ?? 0.65) : 0.65;
+    const qual = facets?.quality ? (qualityMap[facets.quality] ?? 0.65) : 0.65;
+    const riskPenalty = Math.min((facets?.riskFlags?.length ?? 0) * 0.02, 0.06);
+    const outlook = Math.max(0.2, (minRole * 0.7 + qual * 0.3) - riskPenalty);
+
+    const appearances = facets?.recentAppearances ?? (entry.form.filter((p) => p > 0).length);
+    const confidence = Math.min(appearances / 8, 1.0);
+    const currentForm = formNorm(avgForm(entry.form));
+    const calibre = valNorm(valueOf(entry));
+
+    // When confidence is low (e.g. early season), anchor performance to player calibre
+    // rather than falling back to current-season points ranks which distort the XI.
+    const perf = confidence * currentForm + (1 - confidence) * calibre;
+
+    const fitness = availabilityMap[entry.player.fpl_status ?? 'a'] ?? 0.90;
+
+    // 65% market calibre anchor + 20% form/performance + 15% outlook quality
+    const composite = (0.65 * calibre + 0.20 * perf + 0.15 * outlook) * fitness;
+    scores[entry.id] = composite;
+  });
+
+  return scores;
+}
+
+export function projectedLineup(entries: SquadEntry[], preferredFormation?: Formation | null, includeSidelined = false) {
+  const eligible = lineupPool(entries, includeSidelined).filter((entry) => entry.player.primary_position);
+  const scores = projectedScores(eligible);
+  const candidates = eligible.map((entry) => ({
+    id: entry.player.id,
+    score: scores[entry.id] ?? 0,
+    positions: positionsOf(entry.player) as GranularPosition[],
+  }));
+
+  if (preferredFormation) {
+    const forced = selectForFormation(candidates, preferredFormation);
+    if (forced) return forced;
+  }
+
+  return selectBestLineup(candidates);
+}
+
 // ── Formation feasibility (Kuhn's bipartite matching) ────────────────────────
 function matchFormation(slots: GranularPosition[], players: Player[]): boolean {
   const slotOf: Record<number, number | undefined> = {};
@@ -169,8 +265,8 @@ function matchFormation(slots: GranularPosition[], players: Player[]): boolean {
   return Object.keys(slotOf).length >= slots.length;
 }
 
-export function formationReport(entries: SquadEntry[]) {
-  const players = lineupPool(entries).map((e) => e.player);
+export function formationReport(entries: SquadEntry[], includeSidelined = false) {
+  const players = lineupPool(entries, includeSidelined).map((e) => e.player);
   return ALL_FORMATIONS.map((name) => ({ name, ok: matchFormation(FORMATION_SLOTS[name], players) }));
 }
 

@@ -17,6 +17,7 @@
  */
 
 import type { createAdminClient } from '@/lib/supabase/admin';
+import { fetchAllPages } from '@/lib/supabase/pagination';
 import type { BenchSlot, GranularPosition } from '@/types';
 import { getFplStatus } from '@/lib/fpl/api';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
@@ -44,6 +45,7 @@ import {
 
 import { resolveClub } from '@/lib/clubs/registry';
 import { DRAW_THRESHOLD, isDrawMargin } from '@/lib/scoring/drawBand';
+import { selectBestLineup } from '@/lib/lineups/selectBestLineup';
 import { resolveEffectiveLineupFromMatchups } from '@/lib/lineups/carryForward';
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -193,7 +195,7 @@ export interface TableRow {
   isMe: boolean;
 }
 
-export interface TopPerformerRow {
+export interface TeamOfWeekPlayer {
   playerId: string;
   name: string;
   position: string;
@@ -201,6 +203,17 @@ export interface TopPerformerRow {
   points: string;
   /** The fantasy team that rosters him, or 'Free agent' if no one does. */
   owner: string;
+  photoUrl: string | null;
+  photoVersion: string | null;
+  portraitHeadTopPct: number | null;
+  portraitHeadWidthPct: number | null;
+}
+
+export interface TeamOfWeek {
+  formation: string;
+  total: string;
+  starters: Array<TeamOfWeekPlayer & { slot: string }>;
+  bench: Record<BenchSlot, TeamOfWeekPlayer | null>;
 }
 
 export interface WireItem {
@@ -286,8 +299,8 @@ export interface HomeModel {
   fronts: FrontTile[];
   matchweek: OtherFixture[];
   table: TableRow[];
-  topPerformers: TopPerformerRow[];
-  topPerformersGw: number | null;
+  teamOfWeek: TeamOfWeek | null;
+  teamOfWeekGw: number | null;
   wire: WireItem[];
   opponent: OpponentCard | null;
   clubFacts: ClubFact[];
@@ -766,55 +779,114 @@ export async function buildHomeModel(
     }
   }
 
-  // ── top performers, league-wide ────────────────────────────
-  // The five highest fantasy-point scores of the most recently completed
-  // gameweek, whoever owns them. Not actionable, but it's the one thing
-  // every manager in the league experienced this week.
-  const topPerformersGw = lastCompletedMine?.gameweek ?? null;
-  const topPerformers: TopPerformerRow[] = [];
-  if (topPerformersGw) {
-    const { data: rawPerf } = await admin
-      .from('player_stats')
-      .select(
-        'fantasy_points, player:players!player_id(id, web_name, name, full_name, sofifa_common_name, primary_position, pl_team)',
-      )
-      .eq('gameweek', topPerformersGw)
-      .eq('season', season)
-      .order('fantasy_points', { ascending: false })
-      .limit(5);
+  // ── Team of the Week, league-wide ───────────────────────────
+  // The latest settled gameweek's best legal XI, whoever owns the players.
+  // The pure selector uses the same exact-position rules as the lineup editor.
+  //
+  // The XI is chosen AFTER the query, so the whole gameweek has to be in hand:
+  // a formation can hinge on the only LWB or the only GK who played, and no
+  // rank cutoff can be proven to contain him. PostgREST truncates at 1,000 rows
+  // without saying so (609/626/653 rows in GW1–3 of 2026-27 and climbing), and
+  // a truncated pool would render a plausible, wrong Team of the Week with no
+  // error — so page the full set. Only the columns the selector needs are read
+  // here; the display columns are fetched back for the fifteen players who
+  // actually appear.
+  const teamOfWeekGw = lastCompletedMine?.gameweek ?? null;
+  let teamOfWeek: TeamOfWeek | null = null;
+  if (teamOfWeekGw) {
+    const perfRows = await fetchAllPages<any>((from, to) =>
+      admin
+        .from('player_stats')
+        .select('player_id, fantasy_points, player:players!player_id(id, primary_position, secondary_positions)')
+        .eq('gameweek', teamOfWeekGw)
+        .eq('season', season)
+        .order('fantasy_points', { ascending: false })
+        // Ties on fantasy_points are not ordered deterministically by Postgres,
+        // which can drop or repeat a row across a page boundary.
+        .order('player_id', { ascending: true })
+        .range(from, to),
+    );
 
-    const perfRows = (rawPerf ?? []) as any[];
-    const perfPlayerIds = perfRows.map((r) => r.player?.id).filter(Boolean);
-    // Must scope to this league's teams — the same player is rostered in every
-    // test/militia league too, and an unfiltered lookup picks whichever row
-    // PostgREST returns first (Bot FC 4, Tea FC, …).
-    const leagueTeamIds = teams.map((t) => t.id as string);
-    const { data: ownerRows } =
-      perfPlayerIds.length && leagueTeamIds.length
-        ? await admin
-            .from('roster_entries')
-            .select('player_id, team:teams(team_name)')
-            .in('player_id', perfPlayerIds)
-            .in('team_id', leagueTeamIds)
-        : { data: [] as any[] };
-    const ownerByPlayer = new Map<string, string>();
-    for (const o of ownerRows ?? []) {
-      if (!ownerByPlayer.has(o.player_id)) {
-        ownerByPlayer.set(o.player_id, (o.team as any)?.team_name ?? 'Free agent');
-      }
+    // A double gameweek gives a player two rows, and matchup scoring sums them
+    // (`getStoredPoints` in `matchups.ts`), so sum here too rather than letting one row
+    // overwrite the other.
+    const scoreById = new Map<string, number>();
+    const positionsById = new Map<string, GranularPosition[]>();
+    for (const row of perfRows) {
+      const player = row.player;
+      if (!player?.id || !player.primary_position) continue;
+      positionsById.set(player.id, [
+        player.primary_position,
+        ...(player.secondary_positions ?? []),
+      ] as GranularPosition[]);
+      scoreById.set(player.id, (scoreById.get(player.id) ?? 0) + Number(row.fantasy_points ?? 0));
     }
 
-    for (const r of perfRows) {
-      const p = r.player;
-      if (!p) continue;
-      topPerformers.push({
-        playerId: p.id,
-        name: getPlayerDisplayName(p, 'full'),
-        position: p.primary_position,
-        club: p.pl_team ?? '',
-        points: Number(r.fantasy_points ?? 0).toFixed(2),
-        owner: ownerByPlayer.get(p.id) ?? 'Free agent',
-      });
+    const best = selectBestLineup(
+      [...positionsById.entries()].map(([id, positions]) => ({
+        id,
+        score: scoreById.get(id) ?? 0,
+        positions,
+      })),
+    );
+    if (best) {
+      const pickedIds = [
+        ...best.starters.map((starter) => starter.playerId),
+        ...Object.values(best.bench).filter((id): id is string => !!id),
+      ];
+      const { data: pickedPlayers } = await admin
+        .from('players')
+        .select(
+          'id, web_name, name, full_name, sofifa_common_name, primary_position, pl_team, photo_url, photo_version, portrait_head_top_pct, portrait_head_width_pct',
+        )
+        .in('id', pickedIds);
+      const pickedById = new Map<string, any>();
+      for (const player of (pickedPlayers ?? []) as any[]) pickedById.set(player.id, player);
+
+      // Must scope to this league's teams — the same player is rostered in every
+      // test/militia league too, and an unfiltered lookup picks whichever row
+      // PostgREST returns first (Bot FC 4, Tea FC, …). Only the fifteen picked
+      // players need an owner, so this is bounded by the XI, not by the league.
+      const leagueTeamIds = teams.map((t) => t.id as string);
+      const { data: ownerRows } =
+        leagueTeamIds.length
+          ? await admin
+              .from('roster_entries')
+              .select('player_id, team:teams(team_name)')
+              .in('team_id', leagueTeamIds)
+              .in('player_id', pickedIds)
+          : { data: [] as any[] };
+      const ownerByPlayer = new Map<string, string>();
+      for (const o of ownerRows ?? []) {
+        const team = o.team as any;
+        if (team?.team_name && !ownerByPlayer.has(o.player_id)) {
+          ownerByPlayer.set(o.player_id, team.team_name);
+        }
+      }
+
+      const toDisplay = (playerId: string): TeamOfWeekPlayer => {
+        const player = pickedById.get(playerId);
+        return {
+          playerId,
+          name: player ? getPlayerDisplayName(player, 'full') : '',
+          position: player?.primary_position ?? positionsById.get(playerId)?.[0] ?? '',
+          club: player?.pl_team ?? '',
+          points: (scoreById.get(playerId) ?? 0).toFixed(2),
+          owner: ownerByPlayer.get(playerId) ?? 'Free agent',
+          photoUrl: player?.photo_url ?? null,
+          photoVersion: player?.photo_version ?? null,
+          portraitHeadTopPct: player?.portrait_head_top_pct ?? null,
+          portraitHeadWidthPct: player?.portrait_head_width_pct ?? null,
+        };
+      };
+      teamOfWeek = {
+        formation: best.formation,
+        total: best.totalScore.toFixed(2),
+        starters: best.starters.map((starter) => ({ ...toDisplay(starter.playerId), slot: starter.slot })),
+        bench: Object.fromEntries(
+          Object.entries(best.bench).map(([slot, playerId]) => [slot, playerId ? toDisplay(playerId) : null]),
+        ) as Record<BenchSlot, TeamOfWeekPlayer | null>,
+      };
     }
   }
 
@@ -2045,8 +2117,8 @@ export async function buildHomeModel(
     fronts,
     matchweek,
     table,
-    topPerformers,
-    topPerformersGw,
+    teamOfWeek,
+    teamOfWeekGw,
     wire,
     opponent,
     clubFacts,

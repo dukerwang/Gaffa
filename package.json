@@ -12,6 +12,7 @@
     "generate-outlooks": "tsx scripts/generate-outlooks.ts",
     "sync-futbolpedia-engine": "node scripts/sync-futbolpedia-engine.mjs",
     "check:copy": "tsx scripts/check_inanimate_agency.ts",
+    "check:ui": "node scripts/check-ui-rules.mjs",
     "test": "vitest run"
   },
   "dependencies": {

@@ -72,7 +72,9 @@ Full quotes and dates in **`docs/DECISIONS.md`**. Summary: [decided]
 * **Gaffa is not a themed costume.** Sophisticated, accessible product UI for real football fans. [decided]
 * **"One job per colour" is not binding.** Green carries topbar chrome, primary buttons, and positive status safely via the green ramp. [decided]
 * **Mobile is a first-class target, not a reflow.** Must look and feel native, tactile, and ergonomic. [decided]
-* **Title Case for buttons and short labels**, not sentence case. Running prose stays sentence case. (2026-09-09) [decided]
+* **No white panels floating on the cream ground.** A section is a serif title over a 2px ink rule with flat content beneath it; only a genuinely bounded object (hero, board, table) gets a 1px border box — border, not shadow. `.g-panel` is not the default for a new page. See `_home/home.module.css`. [decided]
+* **Headings, section titles, buttons, and short labels are Title Case.** Running prose stays sentence case. (2026-09-09) [decided]
+* **A heading names the thing beneath it**, it does not caption it. "Title-Winning XI", not "The XI That Won It". [decided]
 
 ---
 
@@ -105,7 +107,7 @@ These patterns are strictly forbidden across Gaffa: [decided] [inferred]
 
 | Anti-Pattern | Why It Is Banned | Correct Gaffa Pattern |
 |---|---|---|
-| **Title Eyebrows / Kickers** | AI-slop rhythm tell (`EYEBROW` → `Title` → `Card`). Duke specifically banned this. | Let the editorial `<h1>` or `<h2>` heading stand on its own in sentence case. |
+| **Title Eyebrows / Kickers** | AI-slop rhythm tell (`EYEBROW` → `Title` → `Card`). Duke specifically banned this. | Let the editorial `<h1>` or `<h2>` heading stand on its own, title case. |
 | **Colored Left Container Stripes** | Generic AI dashboard cliché (`border-left: 3px solid green`). Banned by Duke. | Express status via badge chips or a background tint (`--color-accent-dim`). A tint that carries state must also beat `:hover` — a bare `.rowUnread` loses to `.row:hover` and the state vanishes on hover — and must be paired with a non-color cue such as a bolder title. |
 | **Uncalibrated AI Neon Glows** | Oversaturated drop shadows (`box-shadow: 0 0 20px rgba(...)`). | Calibrated ambient resting shadows (`--shadow-card`) tinted to the background hue. |
 | **Heavy 1px Wireframe Borders** | Makes data tables feel caged in and cluttered. | `--color-border-subtle` at 1px plus explicit card fills (`--color-bg-card`). A subpixel `0.5px` hairline token was added and removed unused — treat it as a proposal, not a shipped rule. [inferred] |
