@@ -15,7 +15,8 @@ import Portrait from './players/Portrait';
 import CrestBadge from './crest/CrestBadge';
 import type { CrestConfig } from './crest/types';
 import { Icon } from './ui/Icon';
-import { formatLocalKickoff } from '@/lib/fixtures/formatKickoff';
+import { formatLocalKickoff, useLocalKickoff } from '@/lib/fixtures/formatKickoff';
+import LocalKickoff from './fixtures/LocalKickoff';
 import { type ClubGameweekFixture, getPlayerFixture } from '@/lib/fixtures/gameweekFixtures';
 import styles from './MatchupPitch.module.css';
 
@@ -214,7 +215,7 @@ function PlayerChip({ slot, player, detail, status, isSubIn, fixture, onClick }:
     const { prefetchPlayer } = usePlayerCard();
     const stateCls = status === 'pending' ? styles.chipPending
         : status === 'dnp' ? styles.chipDnp : '';
-    const kickoffStr = fixture?.kickoffTime ? formatLocalKickoff(fixture.kickoffTime) : '';
+    const kickoffStr = useLocalKickoff(fixture?.kickoffTime);
     const fixtureDisplay = fixture ? (kickoffStr ? `${fixture.opponent} · ${kickoffStr}` : fixture.opponent) : '';
 
     return (
@@ -298,7 +299,7 @@ function BenchChip({ slot, player, detail, status, isSubOut, fixture, onClick }:
     const stateCls = !player ? ''
         : status === 'pending' ? styles.chipPending
         : status === 'dnp' ? styles.chipDnp : '';
-    const kickoffStr = fixture?.kickoffTime ? formatLocalKickoff(fixture.kickoffTime) : '';
+    const kickoffStr = useLocalKickoff(fixture?.kickoffTime);
     const fixtureDisplay = fixture ? (kickoffStr ? `${fixture.opponent} · ${kickoffStr}` : fixture.opponent) : '';
 
     return (
@@ -677,10 +678,9 @@ export default function MatchupPitch({
                                                 ) : (() => {
                                                     const f = getPlayerFixture(p, fixtureMap);
                                                     if (!f) return null;
-                                                    const ko = f.kickoffTime ? formatLocalKickoff(f.kickoffTime) : '';
                                                     return (
-                                                        <p className={styles.breakdownStats} suppressHydrationWarning>
-                                                            {f.opponent}{ko ? ` · ${ko}` : ''}
+                                                        <p className={styles.breakdownStats}>
+                                                            {f.opponent}<LocalKickoff iso={f.kickoffTime} prefix=" · " />
                                                         </p>
                                                     );
                                                 })()}

@@ -24,7 +24,7 @@ import {
 } from '@/lib/players/cardCache';
 import PerformanceBlock from './PerformanceBlock';
 import { roleArticle } from '@/lib/scoring/perfBand';
-import { formatLocalKickoff } from '@/lib/fixtures/formatKickoff';
+import LocalKickoff from '@/components/fixtures/LocalKickoff';
 import styles from './PremiumPlayerCard.module.css';
 
 /**
@@ -923,9 +923,7 @@ export default function PremiumPlayerCard({
                                                                 <td className={styles.oppTd}>
                                                                     {g.opponent}
                                                                     {g.date && (
-                                                                        <span className={styles.fixtureTag} suppressHydrationWarning>
-                                                                            {formatLocalKickoff(g.date)}
-                                                                        </span>
+                                                                        <LocalKickoff iso={g.date} className={styles.fixtureTag} />
                                                                     )}
                                                                 </td>
                                                                 <td className={styles.ctrTd}>—</td>
