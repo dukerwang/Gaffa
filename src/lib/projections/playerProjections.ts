@@ -36,14 +36,13 @@ export function estimateExpectedMinutes(
   // Injured, suspended, or inactive
   if (code === 'i' || code === 's' || code === 'u' || code === 'n') return 0;
 
-  let baseMinutes = 74;
+  let baseMinutes = 76;
   if (minutesRole === 'nailed') baseMinutes = 84;
-  else if (minutesRole === 'likely_starter') baseMinutes = 74;
+  else if (minutesRole === 'likely_starter') baseMinutes = 76;
   else if (minutesRole === 'rotation_risk') baseMinutes = 38;
   else if (minutesRole === 'fringe') baseMinutes = 15;
-  else if (marketValue != null && marketValue >= 35) baseMinutes = 82;
-  else if (marketValue != null && marketValue >= 15) baseMinutes = 72;
-  else baseMinutes = 45;
+  else if (marketValue != null && marketValue >= 40) baseMinutes = 84;
+  else baseMinutes = 76;
 
   // Doubtful status (75% or 50% chance of playing)
   if (code === 'd') baseMinutes *= 0.5;
@@ -64,6 +63,7 @@ export function calculatePlayerProjectedPoints(
   const pos = player.primary_position;
   const isGk = pos === 'GK';
   const isDef = DEFENSIVE_POSITIONS.has(pos);
+  const isFb = FULLBACK_POSITIONS.has(pos);
 
   // Calibre normalizer (0.10 to 1.00) based on Transfermarkt valuation
   const mv = player.market_value ?? 15;
@@ -74,26 +74,26 @@ export function calculatePlayerProjectedPoints(
   let xaShare = 0.03;
 
   if (pos === 'ST') {
-    xgShare = 0.28 + 0.18 * calibre; // 0.30 to 0.46
-    xaShare = 0.06 + 0.05 * calibre;
+    xgShare = 0.28 + 0.14 * calibre;
+    xaShare = 0.06 + 0.04 * calibre;
   } else if (pos === 'LW' || pos === 'RW') {
-    xgShare = 0.18 + 0.14 * calibre;
-    xaShare = 0.15 + 0.13 * calibre;
+    xgShare = 0.18 + 0.12 * calibre;
+    xaShare = 0.15 + 0.10 * calibre;
   } else if (pos === 'AM') {
-    xgShare = 0.14 + 0.16 * calibre;
-    xaShare = 0.16 + 0.14 * calibre;
+    xgShare = 0.14 + 0.12 * calibre;
+    xaShare = 0.17 + 0.12 * calibre;
   } else if (pos === 'CM') {
-    xgShare = 0.06 + 0.06 * calibre;
-    xaShare = 0.10 + 0.08 * calibre;
+    xgShare = 0.06 + 0.04 * calibre;
+    xaShare = 0.10 + 0.06 * calibre;
   } else if (pos === 'DM') {
-    xgShare = 0.03 + 0.03 * calibre;
-    xaShare = 0.05 + 0.05 * calibre;
-  } else if (FULLBACK_POSITIONS.has(pos)) {
-    xgShare = 0.02 + 0.03 * calibre;
-    xaShare = 0.08 + 0.10 * calibre;
-  } else if (pos === 'CB') {
     xgShare = 0.02 + 0.02 * calibre;
-    xaShare = 0.01 + 0.02 * calibre;
+    xaShare = 0.04 + 0.04 * calibre;
+  } else if (isFb) {
+    xgShare = 0.03 + 0.02 * calibre;
+    xaShare = 0.09 + 0.06 * calibre;
+  } else if (pos === 'CB') {
+    xgShare = 0.02 + 0.01 * calibre;
+    xaShare = 0.01 + 0.01 * calibre;
   } else if (isGk) {
     xgShare = 0.0;
     xaShare = 0.0;
@@ -102,36 +102,35 @@ export function calculatePlayerProjectedPoints(
   const pXg = fixtureEnv.expectedGoals * xgShare;
   const pXa = fixtureEnv.expectedGoals * xaShare;
 
-  // Base rating for standard appearance before goals/assists/clean sheets.
+  // Base rating calibrated to empirical 10-12 pt starter baseline.
   // In Gaffa, defensive contributions (CBI, recoveries, tackles) keep starting
   // outfielders around a 6.8 to 7.1 display rating (~10-12 points).
-  let baseRating = 6.65 + 0.25 * calibre;
+  let baseRating = 6.80 + 0.15 * calibre;
   if (pos === 'CB') {
-    baseRating = 6.75 + 0.15 * calibre;
+    baseRating = 6.85 + 0.15 * calibre;
   } else if (pos === 'DM') {
-    baseRating = 6.75 + 0.15 * calibre;
+    baseRating = 6.85 + 0.15 * calibre;
+  } else if (isFb) {
+    baseRating = 6.80 + 0.20 * calibre;
   } else if (pos === 'CM') {
-    baseRating = 6.60 + 0.20 * calibre;
-  } else if (FULLBACK_POSITIONS.has(pos)) {
-    baseRating = 6.65 + 0.20 * calibre;
+    baseRating = 6.75 + 0.15 * calibre;
   } else if (isGk) {
-    baseRating = 6.55 + 0.15 * calibre;
+    baseRating = 6.85 + 0.15 * calibre;
   } else {
-    // Attackers and attacking midfielders: possession and final third territory
-    // scale with team game state (expected goals)
-    const gameState = Math.max(0.70, Math.min(1.50, fixtureEnv.expectedGoals / 1.35));
-    baseRating = (6.40 + 0.25 * calibre) * Math.pow(gameState, 0.18);
+    // Attackers: base rating starts slightly lower (6.60-6.80) because attacking actions
+    // account for their scoring upside
+    baseRating = 6.60 + 0.20 * calibre;
   }
 
   // Add expected match impact from attacking metrics
-  let expRating = baseRating + pXg * 0.90 + pXa * 0.50;
+  let expRating = baseRating + pXg * 0.75 + pXa * 0.45;
 
   if (isDef || isGk) {
-    // Clean sheet adds match impact and defensive flex score
-    expRating += fixtureEnv.cleanSheetProb * 0.70;
-    // Conceding heavily (xGA > 1.0) dings match impact
-    const excessConceded = Math.max(0, fixtureEnv.expectedConceded - 1.0);
-    expRating -= excessConceded * 0.35;
+    // Clean sheet adds match impact relative to league average clean sheet prob (~28%)
+    expRating += (fixtureEnv.cleanSheetProb - 0.28) * 0.50;
+    // Conceding heavily (xGA > 1.20) dings match impact
+    const excessConceded = Math.max(0, fixtureEnv.expectedConceded - 1.20);
+    expRating -= excessConceded * 0.22;
   }
 
   // Linear map display rating -> scoring scale rating (1 + 9 * composite)
@@ -143,28 +142,19 @@ export function calculatePlayerProjectedPoints(
     curvePoints = 8.6 * Math.pow((scoringRating - 4.0) / 2.0, 1.5);
   }
 
-  // Flat bonuses (land after the curve, matching Gaffa's scoring engine)
+  // Clean sheet flat bonus for defenders and keepers (scaled by clean sheet probability)
   let flatBonuses = 0;
   if (isDef || isGk) {
-    // 4.0 flat clean sheet bonus multiplied by probability
-    flatBonuses += fixtureEnv.cleanSheetProb * 4.0;
-  }
-
-  // Convexity upside bonus: captures multi-goal games that spike into 8.5+ ratings
-  if (pXg > 0.20) {
-    flatBonuses += Math.pow(pXg, 1.4) * 3.5;
-  }
-  if (pXa > 0.20) {
-    flatBonuses += Math.pow(pXa, 1.4) * 1.8;
+    flatBonuses += fixtureEnv.cleanSheetProb * 3.5;
   }
 
   if (isGk) {
     curvePoints *= GK_CURVE_SCALE;
   }
 
-  // Minutes dampener: non-linear scaling penalizes sub appearances under 45 mins
+  // Minutes dampener: linear minutes scaling for starters
   const minsRatio = expMinutes / 90;
-  const minsFactor = Math.pow(minsRatio, 1.25);
+  const minsFactor = Math.pow(minsRatio, 0.95);
 
   const total = (curvePoints + flatBonuses) * minsFactor;
   return Number(Math.max(0, total).toFixed(1));

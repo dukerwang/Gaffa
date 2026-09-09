@@ -32,7 +32,7 @@ if (fs.existsSync(envPath)) {
 
 import { createAdminClient } from '../src/lib/supabase/admin';
 import { getCurrentFplSeason } from '../src/lib/season/currentSeason';
-import { resolveCurrentGw } from '../src/lib/season/currentGameweek';
+import { resolveUpcomingGw } from '../src/lib/season/currentGameweek';
 import { calculateGameweekProjections } from '../src/lib/projections/calculateGameweekProjections';
 
 function parseArgs() {
@@ -58,7 +58,10 @@ async function main() {
   const { gameweek: argGw, season: argSeason } = parseArgs();
 
   const season = argSeason ?? (await getCurrentFplSeason());
-  const gameweek = argGw ?? (await resolveCurrentGw());
+  // The round being SET, not the last one played — see resolveUpcomingGw.
+  // Defaulting to FPL's current event stamped a finished gameweek for most of
+  // the week, and every surface then discarded the run as stale.
+  const gameweek = argGw ?? (await resolveUpcomingGw());
 
   console.log(`Calculating projected fantasy points for Season ${season}, Gameweek ${gameweek}...`);
 
