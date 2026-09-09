@@ -14,8 +14,8 @@ import { getPlayerDisplayName } from '@/lib/players/displayName';
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
 import { SPINE, POS_COLOR } from '@/lib/positions/spine';
-import { resolveClub } from '@/lib/clubs/registry';
 import { getFormationLockStatus, assignStartersForFormation } from '@/lib/lineups/smartLock';
+import { playStatus, scoreCell, type PlayStatus, type ScoreCell } from '@/lib/lineups/scoreCell';
 import { scoreAppearanceAtSlot, type RefStatsMap } from '@/lib/scoring/matchups';
 import type { RosterCapacity } from '@/lib/roster/capacity';
 import NavigationLink from '@/components/ui/NavigationLink';
@@ -62,18 +62,6 @@ const BENCH_SLOT_TITLE: Record<BenchSlot, string> = {
 const DEFAULT_TAXI_AGE_LIMIT = 21;
 
 /**
- * Pending (club hasn't kicked off yet) vs. DNP (kicked off, 0 minutes) vs.
- * played — mirrors MatchupPitch's playStatus so the same player reads the
- * same way on the lineup pitch as on the matchup detail pitch.
- */
-type PlayStatus = 'pending' | 'played' | 'dnp';
-
-function playStatus(minutes: number | undefined, hasStarted: boolean): PlayStatus {
-    if (!hasStarted) return 'pending';
-    return Number(minutes ?? 0) > 0 ? 'played' : 'dnp';
-}
-
-/**
  * Points band for the pitch badge fill — same thresholds and colours as
  * MatchupPitch's ptsBand (matchRating.ts has the exact table); see
  * pitch.module.css's .nodePtsBadge comment for why this exists twice.
@@ -117,20 +105,6 @@ function canPlayBenchSlot(player: Player, slot: BenchSlot): boolean {
     return getPlayerPositions(player).some((p) => BENCH_FLEX_MAP[slot].includes(p));
 }
 
-
-/**
- * The club, three letters, for a dense rail row.
- *
- * `players.pl_team` carries the feed's full spelling — "Nottingham Forest" is
- * eighteen characters sat next to a four-character number — so this resolves it
- * through the registry to the short name the rest of the app uses. Falls back
- * to the raw value for a club the registry has not seen yet, which is how a
- * newly promoted side reads before someone adds it.
- */
-function shortClub(club: string | null | undefined): string {
-    if (!club) return '';
-    return resolveClub(club)?.shortName ?? club;
-}
 
 function displayName(player: Player): string {
     return getPlayerDisplayName(player, 'initial_last');
@@ -214,6 +188,31 @@ type SidebarSelection =
     | { type: 'ir'; playerId: string }
     | null;
 
+
+/** The portrait badge. Chrome for a decided `ScoreCell`; see scoreCell(). */
+/** The portrait badge. Chrome for a decided `ScoreCell`; see scoreCell(). */
+function NodeBadge({ cell }: { cell: ScoreCell }) {
+    switch (cell.kind) {
+        case 'scored':
+            return <span className={`${styles.nodePtsBadge} ${ptsBand(cell.value)}`}>{cell.value.toFixed(2)}</span>;
+        case 'projected':
+            return (
+                <span
+                    className={`${styles.nodePtsBadge} ${styles.nodePtsProj}`}
+                    title={`Projected ${cell.value.toFixed(1)} — yet to play`}
+                >
+                    {cell.value.toFixed(1)}
+                </span>
+            );
+        case 'dnp':
+            return <span className={`${styles.nodePtsBadge} ${styles.nodePtsDnp}`} title="Did not play">DNP</span>;
+        case 'pending':
+            return <span className={`${styles.nodePtsBadge} ${styles.nodePtsPending}`} title="Yet to play">–</span>;
+        default:
+            return null;
+    }
+}
+
 // ─── Pitch Node (player chip on the pitch) ───────────────────────────────────
 
 interface PitchNodeProps {
@@ -296,27 +295,10 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isEmpty, isInva
                     The dashed keyline is what separates a forecast from a
                     banked score — outline is a projection, fill is points that
                     have actually been earned. */}
-                {/* One slot, read in order: a real score wins, then DNP, then this
-                    round's projection, then the bare "yet to play" dash.
-
-                    The projection deliberately also covers `status === undefined`,
-                    which is the case before a gameweek has any scoring context at
-                    all — the commonest moment to be setting a lineup, and the one
-                    where the node previously showed nothing whatsoever. */}
-                {status === 'dnp' ? (
-                    <span className={`${styles.nodePtsBadge} ${styles.nodePtsDnp}`} title="Did not play">DNP</span>
-                ) : (status === 'played' || (status === undefined && points !== undefined)) ? (
-                    <span className={`${styles.nodePtsBadge} ${ptsBand(points ?? 0)}`}>{(points ?? 0).toFixed(2)}</span>
-                ) : projected !== undefined ? (
-                    <span
-                        className={`${styles.nodePtsBadge} ${styles.nodePtsProj}`}
-                        title={`Projected ${projected.toFixed(1)} — yet to play`}
-                    >
-                        {projected.toFixed(1)}
-                    </span>
-                ) : status === 'pending' ? (
-                    <span className={`${styles.nodePtsBadge} ${styles.nodePtsPending}`} title="Yet to play">–</span>
-                ) : null}
+                {/* Chrome only — scoreCell() decides what this says, and the rail
+                    and bench read the same function so a player can never say two
+                    different things on one screen. */}
+                <NodeBadge cell={scoreCell(status, points, projected)} />
             </span>
 
             <div className={chipCls}>
@@ -348,42 +330,44 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isEmpty, isInva
 }
 
 
+
 /**
- * The one figure on a squad-rail row: what the player scored, or — until he
- * has — what he is projected to score. Same rule and same marks as the pitch
- * badge, so a player reads identically wherever he appears on this page.
- *
- * THE TWO ARE NOT SHOWN TOGETHER, and that is a deliberate call rather than a
- * space saving. Sleeper and Yahoo do pair them, but their projection decays
- * through the match, so "6 scored, 8 projected" truthfully means more is
- * expected. Gaffa's does not: calculateGameweekProjections produces one
- * full-match number, computed offline before kickoff and never revised. Beside
- * a live score it would read as points still to come, which is a claim the
- * number cannot support.
- *
- * If projections ever become live — decayed by minutes played — pairing them
- * becomes honest and this is the place to revisit.
+ * The squad-rail row's figure. Chrome only — `scoreCell` above decides what it
+ * says, so a reserve reads exactly as he would on the pitch.
  */
-function RowScore({ projected, actual }: { projected?: number; actual?: number }) {
-    if (actual !== undefined) {
-        return (
-            <span className={styles.rowScore}>
-                <span className={styles.rowScoreActual} title={`Scored ${actual.toFixed(2)}`}>
-                    {actual.toFixed(2)}
+function RowScore({ cell }: { cell: ScoreCell }) {
+    switch (cell.kind) {
+        case 'scored':
+            return (
+                <span className={styles.rowScore}>
+                    <span className={styles.rowScoreActual} title={`Scored ${cell.value.toFixed(2)}`}>
+                        {cell.value.toFixed(2)}
+                    </span>
                 </span>
-            </span>
-        );
-    }
-    if (projected !== undefined) {
-        return (
-            <span className={styles.rowScore}>
-                <span className={styles.rowScoreProj} title={`Projected ${projected.toFixed(1)}`}>
-                    {projected.toFixed(1)}
+            );
+        case 'projected':
+            return (
+                <span className={styles.rowScore}>
+                    <span className={styles.rowScoreProj} title={`Projected ${cell.value.toFixed(1)}`}>
+                        {cell.value.toFixed(1)}
+                    </span>
                 </span>
-            </span>
-        );
+            );
+        case 'dnp':
+            return (
+                <span className={styles.rowScore}>
+                    <span className={styles.rowScoreDnp} title="Did not play">DNP</span>
+                </span>
+            );
+        case 'pending':
+            return (
+                <span className={styles.rowScore}>
+                    <span className={styles.rowScoreProj} title="Yet to play">–</span>
+                </span>
+            );
+        default:
+            return null;
     }
-    return null;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -1097,6 +1081,20 @@ export default function PitchUI({
             : 'IR player selected'
         : null;
 
+    /**
+     * One player's figure, for any surface on this page. `status` comes from the
+     * player's OWN club kickoff, which is what stops a total or a row reporting
+     * the last completed gameweek while the pitch shows the round being set.
+     */
+    const cellFor = useCallback((player: Player | undefined) => {
+        if (!player) return scoreCell(undefined, undefined, undefined);
+        const hasStarted = isPlMatchLocked(player, irLockedTeamIds);
+        const status = minutesMap ? playStatus(minutesMap[player.id], hasStarted) : undefined;
+        return scoreCell(status, scoreMap?.[player.id], projMap?.[player.id]);
+    }, [minutesMap, irLockedTeamIds, scoreMap, projMap]);
+
+    const railCell = cellFor;
+
     /* The ledger's two figures. Projected and scored never share a chip — that
        would double the type on eleven nodes and ask for subtraction at a
        glance — so the comparison lives here, where the two numbers can share
@@ -1108,21 +1106,26 @@ export default function PitchUI({
         let scored = 0;
         let played = 0;
 
+        /* Totals read the same cells the nodes do. Summing `scoreMap` directly
+           is what made this claim "11 of 11 Played" during a week in which
+           nothing had kicked off — those were the previous round's points. */
         for (let i = 0; i < slots.length; i++) {
             const pid = assignments[i];
             if (!pid) continue;
-            const proj = projMap?.[pid];
-            if (proj !== undefined) { projected += proj; projectedOf++; }
-            const pts = scoreMap?.[pid];
-            if (pts !== undefined) { scored += pts; played++; }
+            const cell = cellFor(playerMap.get(pid)?.player);
+            if (cell.kind === 'projected') { projected += cell.value; projectedOf++; }
+            else if (cell.kind === 'scored') { scored += cell.value; played++; }
         }
 
         let benchProjected = 0;
+        let benchScored = 0;
+        let benchPlayed = 0;
         for (const slot of BENCH_SLOT_NAMES) {
             const pid = benchAssignments[slot];
             if (!pid) continue;
-            const proj = projMap?.[pid];
-            if (proj !== undefined) benchProjected += proj;
+            const cell = cellFor(playerMap.get(pid)?.player);
+            if (cell.kind === 'projected') benchProjected += cell.value;
+            else if (cell.kind === 'scored') { benchScored += cell.value; benchPlayed++; }
         }
 
         return {
@@ -1131,10 +1134,14 @@ export default function PitchUI({
             scored,
             played,
             benchProjected,
+            benchScored,
+            benchPlayed,
             hasProjections: projectedOf > 0,
             hasScores: played > 0,
         };
-    }, [assignments, benchAssignments, slots, projMap, scoreMap]);
+    }, [assignments, benchAssignments, slots, playerMap, cellFor]);
+
+
 
     // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -1299,13 +1306,23 @@ export default function PitchUI({
                                 </div>
                             )}
 
-                            {ledger.hasProjections && (
+                            {/* The bench follows the same flip as everything else: a
+                                forecast until those players have played, their real
+                                return afterwards. It used to say "Projected" over a
+                                number that had stopped being one. */}
+                            {(ledger.benchPlayed > 0 || ledger.hasProjections) && (
                                 <div className={styles.ledgerCell}>
                                     <span className="g-label">Bench</span>
-                                    <span className={`${styles.ledgerVal} ${styles.ledgerValForecast} ${styles.ledgerValSmall}`}>
-                                        {ledger.benchProjected.toFixed(1)}
+                                    <span className={[
+                                        styles.ledgerVal,
+                                        styles.ledgerValSmall,
+                                        ledger.benchPlayed > 0 ? '' : styles.ledgerValForecast,
+                                    ].filter(Boolean).join(' ')}>
+                                        {(ledger.benchPlayed > 0 ? ledger.benchScored : ledger.benchProjected).toFixed(1)}
                                     </span>
-                                    <span className={styles.ledgerSub}>Projected</span>
+                                    <span className={styles.ledgerSub}>
+                                        {ledger.benchPlayed > 0 ? 'Scored' : 'Projected'}
+                                    </span>
                                 </div>
                             )}
 
@@ -1478,20 +1495,7 @@ export default function PitchUI({
                                                     <Icon name="lock" size={11} strokeWidth={2.2} />
                                                 </span>
                                             )}
-                                            {benchStatus === 'dnp' ? (
-                                                <span className={`${styles.nodePtsBadge} ${styles.nodePtsDnp}`} title="Did not play">DNP</span>
-                                            ) : (benchStatus === 'played' || (benchStatus === undefined && pts !== undefined)) ? (
-                                                <span className={`${styles.nodePtsBadge} ${ptsBand(pts ?? 0)}`}>{(pts ?? 0).toFixed(2)}</span>
-                                            ) : (pid && projMap?.[pid] !== undefined) ? (
-                                                <span
-                                                    className={`${styles.nodePtsBadge} ${styles.nodePtsProj}`}
-                                                    title={`Projected ${projMap[pid].toFixed(1)} — yet to play`}
-                                                >
-                                                    {projMap[pid].toFixed(1)}
-                                                </span>
-                                            ) : benchStatus === 'pending' ? (
-                                                <span className={`${styles.nodePtsBadge} ${styles.nodePtsPending}`} title="Yet to play">–</span>
-                                            ) : null}
+                                            <NodeBadge cell={scoreCell(benchStatus, pts, pid ? projMap?.[pid] : undefined)} />
                                         </span>
 
                                         <span className={styles.benchCardBody}>
@@ -1695,9 +1699,7 @@ export default function PitchUI({
                                         {/* Club sits with the name, not with the number. Behind the
                                             spacer it read as part of the numeric column; the row now has
                                             two zones — who he is on the left, what he scores on the right. */}
-                                        <span className={styles.rowClub} title={entry.player.pl_team ?? undefined}>
-                                            {shortClub(entry.player.pl_team)}
-                                        </span>
+                                        <span className={styles.rowClub}>{entry.player.pl_team}</span>
                                         {entry.status === 'loan_in' && <span className={styles.loanTag}>Loan</span>}
                                         <span className={styles.rowSpacer} />
                                         {isU21 && sidebarSelection?.type === 'taxi' && (
@@ -1709,10 +1711,7 @@ export default function PitchUI({
                                         {entry.player.fpl_status && entry.player.fpl_status !== 'a' && !sidebarSelection && (
                                             <span className={styles.statusDot} data-status={entry.player.fpl_status} />
                                         )}
-                                        <RowScore
-                                            projected={projMap?.[entry.player.id]}
-                                            actual={scoreMap?.[entry.player.id]}
-                                        />
+                                        <RowScore cell={railCell(entry.player)} />
                                         {isLocked && <span className={styles.lockIcon}><Icon name="lock" size={14} /></span>}
                                     </button>
                                 );
@@ -1745,14 +1744,9 @@ export default function PitchUI({
                                         >
                                             {displayName(entry.player)}
                                         </span>
-                                        <span className={styles.rowClub} title={entry.player.pl_team ?? undefined}>
-                                            {shortClub(entry.player.pl_team)}
-                                        </span>
+                                        <span className={styles.rowClub}>{entry.player.pl_team}</span>
                                         <span className={styles.rowSpacer} />
-                                        <RowScore
-                                            projected={projMap?.[entry.player.id]}
-                                            actual={scoreMap?.[entry.player.id]}
-                                        />
+                                        <RowScore cell={railCell(entry.player)} />
                                         <div className={styles.rowActions}>
                                             <button
                                                 type="button"
@@ -1806,14 +1800,9 @@ export default function PitchUI({
                                         >
                                             {displayName(entry.player)}
                                         </span>
-                                        <span className={styles.rowClub} title={entry.player.pl_team ?? undefined}>
-                                            {shortClub(entry.player.pl_team)}
-                                        </span>
+                                        <span className={styles.rowClub}>{entry.player.pl_team}</span>
                                         <span className={styles.rowSpacer} />
-                                        <RowScore
-                                            projected={projMap?.[entry.player.id]}
-                                            actual={scoreMap?.[entry.player.id]}
-                                        />
+                                        <RowScore cell={railCell(entry.player)} />
                                         <div className={styles.rowActions}>
                                             <button
                                                 type="button"

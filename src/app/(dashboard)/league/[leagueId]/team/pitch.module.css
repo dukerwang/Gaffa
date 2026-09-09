@@ -913,22 +913,22 @@
   .rowName:hover { text-decoration: underline; }
 }
 
-/* Three letters beside the name, not a full club name beside the score. It
-   reads as part of who the player is, which is why it sits left of the spacer
-   now — and at three characters it no longer crowds the figure. */
+/* The club as it always read — plain condensed caps, no chip. What changed is
+   only where it sits: beside the name, left of the spacer, so it belongs to
+   the player rather than to the number it used to float against. */
 .rowClub {
     font-family: var(--font-condensed);
-    font-weight: 600;
+    font-weight: 500;
     font-size: var(--t-10);
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--row-ink, var(--color-text-muted));
-    flex-shrink: 0;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
-    margin-left: var(--s1);
-    padding: 1px var(--s1);
-    border-radius: var(--r-micro);
-    background: var(--color-bg-inset);
+    margin-left: var(--s2);
 }
 
 /* Settled figure, compared down the column. */
@@ -1900,4 +1900,15 @@
    everywhere else on this page. */
 @media (max-width: 420px) {
     .rowScore { gap: var(--s1); }
+}
+
+/* DNP reads the same in the rail as it does on a pitch badge: sans, not the
+   serif the figures use, because it is a word rather than a number. */
+.rowScoreDnp {
+    font-family: var(--font-sans);
+    font-size: var(--t-10);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--color-text-muted);
+    white-space: nowrap;
 }
