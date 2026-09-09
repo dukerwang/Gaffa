@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { resolveLineupEditMatchup } from '@/lib/lineups/editTarget';
 import { resolveCurrentGw } from '@/lib/season/currentGameweek';
+import { countBuybackSlots, DEFAULT_ROSTER_SIZE } from '@/lib/roster/capacity';
 
 interface Props {
     params: Promise<{ teamId: string }>;
@@ -60,7 +61,8 @@ export async function POST(req: NextRequest, { params }: Props) {
 
     const taxiSize: number = league.taxi_size ?? 3;
     const taxiAgeLimit: number = league.taxi_age_limit ?? 21;
-    const maxActive: number = league.roster_size ?? 20;
+    const maxActive: number =
+        (league.roster_size ?? DEFAULT_ROSTER_SIZE) + (await countBuybackSlots(admin, teamId));
 
     // ── SWAP ACTION ─────────────────────────────────────────────────────────────
     if (action === 'swap') {
@@ -290,17 +292,9 @@ export async function POST(req: NextRequest, { params }: Props) {
 
         if (rosterErr) return NextResponse.json({ error: rosterErr.message }, { status: 500 });
 
-        // Count active buybacks for this team
-        const { count: buybackCount } = await admin
-            .from('player_loans')
-            .select('id', { count: 'exact', head: true })
-            .eq('lender_team_id', teamId)
-            .eq('status', 'active')
-            .eq('slot_buyback_used', true);
-
-        const effectiveMaxActive = maxActive + (buybackCount ?? 0);
-
-        if ((activeRoster?.length ?? 0) >= effectiveMaxActive) {
+        // `maxActive` already carries the buyback allowance; this path used to
+        // add it a second time while the swap path above had none at all.
+        if ((activeRoster?.length ?? 0) >= maxActive) {
             return NextResponse.json(
                 { error: 'Active roster is full. Drop a player before promoting from the academy.' },
                 { status: 400 }

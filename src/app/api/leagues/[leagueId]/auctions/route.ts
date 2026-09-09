@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { AuctionListing, Player } from '@/types';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
+import { countBuybackSlots, deriveRosterCapacity } from '@/lib/roster/capacity';
 
 interface Props {
   params: Promise<{ leagueId: string }>;
@@ -30,7 +31,7 @@ export async function GET(_req: NextRequest, { params }: Props) {
   // League settings
   const { data: league } = await admin
     .from('leagues')
-    .select('roster_size, taxi_size, taxi_age_limit, previous_season')
+    .select('roster_size, ir_size, taxi_size, taxi_age_limit, previous_season')
     .eq('id', leagueId)
     .single();
 
@@ -171,10 +172,21 @@ export async function GET(_req: NextRequest, { params }: Props) {
     .eq('team_id', myTeam.id);
 
   const myRoster = (myRosterEntries ?? []).map((e) => ({ ...e.player as any, status: e.status }));
-  // Roster capacity excludes IR + academy(taxi)
-  const activeRosterCount = myRoster.filter(r => r.status !== 'ir' && r.status !== 'taxi').length;
-  const myTaxiCount = myRoster.filter(r => r.status === 'taxi').length;
-  const rosterFull = activeRosterCount >= (league?.roster_size ?? 20);
+
+  // Capacity comes from the shared derivation so this list and the bid route
+  // agree. They did not: this counted loaned-in players toward the cap and
+  // ignored the buyback allowance that bid/route.ts grants, so a manager with
+  // a player out on loan was shown "roster full" on a lot they could bid on.
+  const capacity = deriveRosterCapacity({
+    statuses: (myRosterEntries ?? []).map((e) => e.status),
+    rosterSize: league?.roster_size,
+    irSize: league?.ir_size,
+    taxiSize: league?.taxi_size,
+    buybackSlots: await countBuybackSlots(admin, myTeam.id),
+  });
+  const activeRosterCount = capacity.active;
+  const myTaxiCount = capacity.academy;
+  const rosterFull = capacity.isFull;
 
   // Free agents: active players not rostered and not in active auctions
   const excludedIds = [...new Set([...rosteredPlayerIds, ...auctionedPlayerIds])];
@@ -201,6 +213,7 @@ export async function GET(_req: NextRequest, { params }: Props) {
     },
     myRoster,
     rosterFull,
+    capacity,
     academy: {
       current: myTaxiCount,
       max: league?.taxi_size ?? 3,

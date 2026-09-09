@@ -21,6 +21,7 @@ import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { describeDeal } from '@/lib/transfers/describeDeal';
 import { listingStance } from '@/lib/transfers/listingStance';
 import { fold } from '@/lib/text/fold';
+import { UNCOUNTED_ROSTER_STATUSES } from '@/lib/roster/capacity';
 
 /**
  * One builder for both deal types.
@@ -205,6 +206,10 @@ export default function ProposeBuilder({
 
   const target: TransfersTeam | undefined = others.find((t) => t.id === targetId);
   const myRoster = model.myRoster;
+  const myActiveCount = useMemo(
+    () => myRoster.filter((p) => !UNCOUNTED_ROSTER_STATUSES.includes(p.status as any)).length,
+    [myRoster],
+  );
 
   // Memoised because of the `?? []`: an unrostered team id would otherwise mint
   // a fresh array every render, and `byId` below depends on this identity.
@@ -1152,7 +1157,7 @@ export default function ProposeBuilder({
             <div className={styles.sideLabel}>
               <span>You put up</span>
               <span>
-                Squad {myRoster.length} / {model.league.roster_size ?? 20}
+                Squad {myActiveCount} / {model.league.roster_size ?? 20}
               </span>
             </div>
 

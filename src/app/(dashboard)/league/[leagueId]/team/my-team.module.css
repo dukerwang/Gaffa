@@ -15,105 +15,13 @@
 
 .page { min-height: 100%; }
 
-/* ── Masthead ─────────────────────────────────────────────── */
-
-.header {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s1);
-  margin-bottom: var(--s5);
-  padding-bottom: var(--s4);
-  border-bottom: 1px solid var(--color-border-subtle);
-}
-
-/* League · gameweek · opponent · roster count. */
-.headerMeta {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s2);
-  flex-wrap: wrap;
-}
-
-.metaDot {
-  color: var(--color-border-strong);
-  font-size: var(--t-12);
-  user-select: none;
-  line-height: 1;
-}
-
-.metaChip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.3em;
-}
-
-/* A settled figure you read across the page, so serif and tabular. */
-.metaValue {
-  font-family: var(--font-serif);
-  font-size: var(--t-13);
-  font-weight: 700;
-  color: var(--color-text-secondary);
-  font-variant-numeric: tabular-nums lining-nums;
-}
-
-.metaLabel {
-  font-size: var(--t-12);
-  color: var(--color-text-muted);
-}
-
-.loanBadge {
-  font-family: var(--font-condensed);
-  font-size: var(--t-10);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--color-text-secondary);
-  margin-left: 2px;
-}
-
-/* Live is the broadcast tally red, not the brand green and not the generic
-   danger red — --color-live exists so a match in progress reads as a match in
-   progress. This was --color-accent-red, which is the raw #ef4444 the palette
-   retuned out of the app. */
-.liveBadge {
-  font-family: var(--font-condensed);
-  font-size: var(--t-12);
-  font-weight: 700;
-  color: var(--color-live);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
-}
-
-.liveBadge::before {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: var(--r-round);
-  background: var(--color-live);
-  animation: livePulse 1.4s ease-in-out infinite;
-}
-
-@keyframes livePulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .liveBadge::before { animation: none; }
-}
-
-.teamName {
-  font-family: var(--font-serif);
-  font-size: var(--t-32);
-  font-weight: 700;
-  color: var(--color-text-primary);
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-}
+/* ── Masthead ───────────────────────────────────────────────
+   Deleted 2026-09-08. The page's floating <h1> + chip row + hairline moved
+   into the board's own head (.boardHead in pitch.module.css), so the page
+   opens on the board rather than on a title above it. Ten classes and the
+   livePulse keyframes went with it rather than being left behind — see this
+   file's header for why a redesigned page's stylesheet is where dead CSS
+   accumulates. */
 
 /* ── Over-capacity notice ─────────────────────────────────────
    A tinted ground carries PRIMARY ink only (decision 4) — this was an inline

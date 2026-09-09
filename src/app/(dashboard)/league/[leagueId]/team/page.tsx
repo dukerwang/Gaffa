@@ -12,6 +12,8 @@ import { resolveLineupEditMatchup } from '@/lib/lineups/editTarget';
 import { getEffectiveLineupForTeam } from '@/lib/lineups/carryForward';
 import { getLockedPlTeamIds } from '@/lib/fixtures/lockout';
 import { loadReferenceStats, type RefStatsMap } from '@/lib/scoring/matchups';
+import { countBuybackSlots, deriveRosterCapacity } from '@/lib/roster/capacity';
+import { buildProjectionMap } from '@/lib/projections/currentProjection';
 import type { RawStats } from '@/types';
 import styles from './my-team.module.css';
 
@@ -37,8 +39,8 @@ export default async function MyTeamPage({ params }: Props) {
     const { data: team } = await admin
     .from('teams')
     .select(`
-      id, team_name, league_id,
-      league:leagues(id, name, season, current_season, previous_season, status, scoring_rules, bench_size, taxi_size, taxi_age_limit, roster_size)
+      id, team_name, league_id, crest_config,
+      league:leagues(id, name, season, current_season, previous_season, status, scoring_rules, bench_size, ir_size, taxi_size, taxi_age_limit, roster_size)
     `)
     .eq('league_id', leagueId)
     .eq('user_id', user.id)
@@ -113,9 +115,19 @@ export default async function MyTeamPage({ params }: Props) {
   // Lineup pool: active + bench status only (excludes IR and taxi — neither can be slotted into the lineup)
   const nonIrEntries = rosterEntries.filter((e) => e.status === 'active' || e.status === 'bench');
 
-  const maxRosterSize = (team.league as any)?.roster_size ?? 20;
-  const loanInCount = rosterEntries.filter((e) => e.status === 'loan_in').length;
-  const activeRosterCount = rosterEntries.filter((e) => e.status !== 'ir' && e.status !== 'taxi' && e.status !== 'loan_in').length;
+  // One derivation for every count on this page and inside the rail. The cap
+  // is not simply `roster_size`: a loan-out that paid its buyback fee holds a
+  // slot open, which is why this needs the loans table too.
+  const capacity = deriveRosterCapacity({
+    statuses: rosterEntries.map((e) => e.status),
+    rosterSize: (team.league as any)?.roster_size,
+    irSize: (team.league as any)?.ir_size,
+    taxiSize: (team.league as any)?.taxi_size,
+    buybackSlots: await countBuybackSlots(admin, team.id),
+  });
+  const maxRosterSize = capacity.limit;
+  const loanInCount = capacity.loanedIn;
+  const activeRosterCount = capacity.active;
 
   const { data: pendingActivations } = await admin
     .from('player_loans')
@@ -306,50 +318,20 @@ export default async function MyTeamPage({ params }: Props) {
   const league = team.league as any;
   const taxiAgeLimit: number = league?.taxi_age_limit ?? 21;
 
+  // Projections are for the round this lineup is being SET for, which is the
+  // edit target rather than the scoring week when those differ. Rows stamped
+  // for any other round are dropped by buildProjectionMap rather than shown —
+  // the sync is hand-run, so a week nobody ran it for must read as no
+  // projection, not as last week's number.
+  const projectionGameweek = matchup?.gameweek ?? currentFplGw ?? null;
+  const projMap = buildProjectionMap(
+    rosterEntries.map((e) => e.player as any),
+    currentFpl,
+    projectionGameweek,
+  );
+
   return (
     <div className={`${styles.page} g-page`}>
-      <header className={styles.header}>
-        <div className={styles.headerMeta}>
-          <span className="g-label">{league.name}</span>
-          {displayMatchup ? (
-            <>
-              <span className={styles.metaDot}>·</span>
-              <span className={styles.metaChip}>
-                <span className={styles.metaValue}>GW{displayMatchup.gameweek}</span>
-              </span>
-              {opponentTeamName && (
-                <>
-                  <span className={styles.metaDot}>vs</span>
-                  <span className={styles.metaValue}>{opponentTeamName}</span>
-                </>
-              )}
-              {isMatchupLive && (
-                <>
-                  <span className={styles.metaDot}>·</span>
-                  <span className={styles.liveBadge}>Live</span>
-                </>
-              )}
-              {editingAhead && matchup && (
-                <>
-                  <span className={styles.metaDot}>·</span>
-                  <span className={styles.metaChip}>
-                    <span className={styles.metaLabel}>Setting</span>
-                    <span className={styles.metaValue}>GW{matchup.gameweek}</span>
-                  </span>
-                </>
-              )}
-            </>
-          ) : null}
-          <span className={styles.metaDot}>·</span>
-          <span className={styles.metaChip}>
-            <span className={styles.metaValue}>{activeRosterCount}/{maxRosterSize}</span>
-            <span className={styles.metaLabel}>Active Roster</span>
-            {loanInCount > 0 && <span className={styles.loanBadge}>+{loanInCount}L</span>}
-          </span>
-        </div>
-        <h1 className={styles.teamName}>{team.team_name}</h1>
-      </header>
-
       {pendingActivations && pendingActivations.length > 0 && (
         <div className={styles.capacityNote}>
           <span className={styles.capacityIcon}><Icon name="alert" size={16} /></span>
@@ -377,11 +359,24 @@ export default async function MyTeamPage({ params }: Props) {
         rawStatsMap={rawStatsMap}
         refStats={refStats}
         gameweek={currentFplGw || undefined}
+        projMap={projMap}
+        projectionGameweek={projectionGameweek}
         lockedTeamIds={lockedTeamIds}
         scoringLockedTeamIds={scoringLockedTeamIds}
         lineupWeekLabel={editingAhead && matchup ? `GW${matchup.gameweek} lineup` : undefined}
         activeRosterCount={activeRosterCount}
         maxRosterSize={maxRosterSize}
+        capacity={capacity}
+        leagueId={leagueId}
+        masthead={{
+          leagueName: league.name,
+          crestConfig: (team as any).crest_config ?? null,
+          gameweek: displayMatchup?.gameweek ?? null,
+          opponentTeamName: opponentTeamName ?? null,
+          isLive: isMatchupLive,
+          settingGameweek: editingAhead && matchup ? matchup.gameweek : null,
+          loanInCount,
+        }}
       />
     </div>
   );

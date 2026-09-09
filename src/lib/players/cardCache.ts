@@ -29,6 +29,8 @@ export interface CardGamelogEntry {
   result?: string;
   date?: string;
   isDNP?: boolean;
+  isUpcoming?: boolean;
+  projected_points?: number | null;
   by_position?: Record<string, { fantasy_points: number; match_rating: number | null }>;
   /** The match's performance block, banded server-side. Bands only — see the
    *  header of src/lib/scoring/perfBand.ts for why no score travels here.
@@ -155,13 +157,12 @@ export function fetchFront(
 // ── Back ─────────────────────────────────────────────────────────────────────
 
 export function getCachedBack(playerId: string, leagueId?: string | null): CardBack | null {
-  // v4: payload now carries `season`, and ratings changed under ICT imputation
-  // — bumping the version drops caches holding pre-imputation numbers.
-  return backCache.get(`${cacheKey(playerId, leagueId)}|v4`) ?? null;
+  // v5: payload carries upcoming fixture with projected points and kickoff time.
+  return backCache.get(`${cacheKey(playerId, leagueId)}|v5`) ?? null;
 }
 
 export function fetchBack(playerId: string, leagueId?: string | null): Promise<CardBack | null> {
-  const key = `${cacheKey(playerId, leagueId)}|v4`;
+  const key = `${cacheKey(playerId, leagueId)}|v5`;
   const cached = backCache.get(key);
   if (cached) return Promise.resolve(cached);
 

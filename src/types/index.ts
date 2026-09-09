@@ -204,6 +204,13 @@ export interface Player {
   market_value_updated_at: string | null;
   adp: number | null;
   projected_points: number | null;
+  /* The round projected_points was computed for. A projection is only true for
+     one fixture round, so check these before rendering the number: an unstamped
+     or stale-stamped row means "no projection", never last week's figure. See
+     src/lib/projections and migration 153. */
+  projected_season?: string | null;
+  projected_gameweek?: number | null;
+  projected_at?: string | null;
   photo_url: string | null;
   photo_version?: string | null; // cache-busts the photo URL when PL replaces the underlying image; see photo.ts
   portrait_head_top_pct?: number | null; // Portrait.tsx per-player crop correction; see portraitCrop.ts

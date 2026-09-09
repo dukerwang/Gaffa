@@ -7,6 +7,7 @@ import {
 import { getLeagueAuctionSettings } from '@/lib/auction/leagueAuctionSettings';
 import { getLockedPlTeamIds } from '@/lib/auction/lockedClubs';
 import { notifyAuctionResolution, type AuctionResolutionResult } from '@/lib/auctions/notifyAuctionResolution';
+import { countBuybackSlots, DEFAULT_ROSTER_SIZE } from '@/lib/roster/capacity';
 
 interface Props {
   params: Promise<{ leagueId: string }>;
@@ -283,15 +284,8 @@ export async function POST(req: NextRequest, { params }: Props) {
     .eq('team_id', myTeam.id)
     .not('status', 'in', '("ir","taxi","loan_in")');
 
-  // Count active buybacks for this team
-  const { count: buybackCount } = await admin
-    .from('player_loans')
-    .select('id', { count: 'exact', head: true })
-    .eq('lender_team_id', myTeam.id)
-    .eq('status', 'active')
-    .eq('slot_buyback_used', true);
-
-  const effectiveRosterLimit = (league.roster_size ?? 20) + (buybackCount ?? 0);
+  const effectiveRosterLimit =
+    (league.roster_size ?? DEFAULT_ROSTER_SIZE) + (await countBuybackSlots(admin, myTeam.id));
   const rosterFull = (activeRosterCount ?? 0) >= effectiveRosterLimit;
 
   if (rosterFull && !dropPlayerId) {

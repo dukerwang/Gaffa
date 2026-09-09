@@ -676,18 +676,14 @@
    a bench player is a smaller portrait (Portrait size="sm") and a lighter
    keyline, the same modest step the flat chip used to take at 88px vs 100px. */
 .benchChipWrap {
-    min-width: 88px;
-    max-width: 104px;
+    min-width: 96px;
+    max-width: 116px;
     width: 100%;
 }
 
 .benchChipBox {
     border-color: var(--color-border-subtle);
-    min-height: 48px;
-}
-
-.benchChipBox {
-    border-color: var(--color-border-subtle);
+    min-height: 62px;
 }
 
 .benchChipWrap .chipPts { border-color: var(--color-border); }

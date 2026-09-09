@@ -6,6 +6,7 @@ import {
     FORMATION_SLOTS,
     POSITION_FLEX_MAP,
     BENCH_FLEX_MAP,
+    BENCH_DEPTH_BONUS_LABEL,
 } from '@/types';
 import type { Formation, GranularPosition, Player, BenchSlot, RosterEntry } from '@/types';
 import { playerHoverProps, usePlayerCard } from '@/components/players/PlayerCardProvider';
@@ -13,8 +14,12 @@ import { getPlayerDisplayName } from '@/lib/players/displayName';
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
 import { SPINE, POS_COLOR } from '@/lib/positions/spine';
+import { resolveClub } from '@/lib/clubs/registry';
 import { getFormationLockStatus, assignStartersForFormation } from '@/lib/lineups/smartLock';
 import { scoreAppearanceAtSlot, type RefStatsMap } from '@/lib/scoring/matchups';
+import type { RosterCapacity } from '@/lib/roster/capacity';
+import NavigationLink from '@/components/ui/NavigationLink';
+import CrestBadge from '@/components/crest/CrestBadge';
 import type { RawStats } from '@/types';
 import styles from './pitch.module.css';
 import { Icon } from '@/components/ui/Icon';
@@ -23,6 +28,25 @@ import { Icon } from '@/components/ui/Icon';
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const FORMATIONS: Formation[] = ['4-3-3', '4-2-1-3', '4-2-2-2', '3-4-3', '3-4-1-2', '3-5-2', '5-3-2', '3-4-2-1', '4-3-1-2', '4-3-2-1', '4-2-4', '5-2-3'];
+
+/**
+ * The twelve, grouped by back line. Presented flat they were an
+ * undifferentiated wall of numbers; a manager picks a defensive shape first
+ * and then the variant within it, so the control is built that way.
+ *
+ * Derived from the formation string rather than hand-listed, so adding a
+ * thirteenth to `Formation` files it automatically.
+ */
+const BACK_LINE_ORDER = ['3', '4', '5'] as const;
+
+function formationsByBackLine(): Array<{ line: string; formations: Formation[] }> {
+    return BACK_LINE_ORDER
+        .map((line) => ({
+            line,
+            formations: FORMATIONS.filter((f) => f.charAt(0) === line),
+        }))
+        .filter((g) => g.formations.length > 0);
+}
 
 type PitchZone = 'ATT' | 'AMZ' | 'CMZ' | 'DMZ' | 'WBZ' | 'DEF' | 'GK';
 // Zone order: attackers at top, GK at bottom (same vertical flow as MatchupPitch)
@@ -93,6 +117,21 @@ function canPlayBenchSlot(player: Player, slot: BenchSlot): boolean {
     return getPlayerPositions(player).some((p) => BENCH_FLEX_MAP[slot].includes(p));
 }
 
+
+/**
+ * The club, three letters, for a dense rail row.
+ *
+ * `players.pl_team` carries the feed's full spelling — "Nottingham Forest" is
+ * eighteen characters sat next to a four-character number — so this resolves it
+ * through the registry to the short name the rest of the app uses. Falls back
+ * to the raw value for a club the registry has not seen yet, which is how a
+ * newly promoted side reads before someone adds it.
+ */
+function shortClub(club: string | null | undefined): string {
+    if (!club) return '';
+    return resolveClub(club)?.shortName ?? club;
+}
+
 function displayName(player: Player): string {
     return getPlayerDisplayName(player, 'initial_last');
 }
@@ -145,9 +184,23 @@ interface Props {
     scoringLockedTeamIds?: Set<number>;
     /** When the pitch is next week while this week is still live. */
     lineupWeekLabel?: string;
-    /** Active roster count / cap, shown on the pitch header strip */
+    /** Active Roster count / cap, shown on the pitch header strip */
     activeRosterCount?: number;
     maxRosterSize?: number;
+    capacity?: RosterCapacity;
+    leagueId?: string;
+    /** playerId -> projected points, already filtered to this round. */
+    projMap?: Record<string, number>;
+    projectionGameweek?: number | null;
+    masthead?: {
+        leagueName?: string | null;
+        crestConfig?: unknown | null;
+        gameweek?: number | null;
+        opponentTeamName?: string | null;
+        isLive?: boolean;
+        settingGameweek?: number | null;
+        loanInCount?: number;
+    };
 }
 
 type LineupSelection =
@@ -176,9 +229,11 @@ interface PitchNodeProps {
     onViewDetails?: () => void;
     points?: number;
     status?: PlayStatus;
+    /** This round's projection, or undefined when there isn't a current one. */
+    projected?: number;
 }
 
-function PitchNode({ slotPos, player, isSelected, isValidTarget, isEmpty, isInvalid, isLocked, onClick, onViewDetails, points, status }: PitchNodeProps) {
+function PitchNode({ slotPos, player, isSelected, isValidTarget, isEmpty, isInvalid, isLocked, onClick, onViewDetails, points, status, projected }: PitchNodeProps) {
     const { prefetchPlayer } = usePlayerCard();
     const wrapCls = [
         styles.pitchNodeWrap,
@@ -235,15 +290,33 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isEmpty, isInva
                         <Icon name="lock" size={11} strokeWidth={2.2} />
                     </span>
                 )}
-                {status === 'pending' && (
-                    <span className={`${styles.nodePtsBadge} ${styles.nodePtsPending}`} title="Yet to play">–</span>
-                )}
-                {status === 'dnp' && (
+                {/* The badge slot already existed and held an em-dash before
+                    kickoff; the projection goes in it, so nothing new appears
+                    on the node and nothing moves when the real number lands.
+                    The dashed keyline is what separates a forecast from a
+                    banked score — outline is a projection, fill is points that
+                    have actually been earned. */}
+                {/* One slot, read in order: a real score wins, then DNP, then this
+                    round's projection, then the bare "yet to play" dash.
+
+                    The projection deliberately also covers `status === undefined`,
+                    which is the case before a gameweek has any scoring context at
+                    all — the commonest moment to be setting a lineup, and the one
+                    where the node previously showed nothing whatsoever. */}
+                {status === 'dnp' ? (
                     <span className={`${styles.nodePtsBadge} ${styles.nodePtsDnp}`} title="Did not play">DNP</span>
-                )}
-                {(status === 'played' || (status === undefined && points !== undefined)) && (
+                ) : (status === 'played' || (status === undefined && points !== undefined)) ? (
                     <span className={`${styles.nodePtsBadge} ${ptsBand(points ?? 0)}`}>{(points ?? 0).toFixed(2)}</span>
-                )}
+                ) : projected !== undefined ? (
+                    <span
+                        className={`${styles.nodePtsBadge} ${styles.nodePtsProj}`}
+                        title={`Projected ${projected.toFixed(1)} — yet to play`}
+                    >
+                        {projected.toFixed(1)}
+                    </span>
+                ) : status === 'pending' ? (
+                    <span className={`${styles.nodePtsBadge} ${styles.nodePtsPending}`} title="Yet to play">–</span>
+                ) : null}
             </span>
 
             <div className={chipCls}>
@@ -274,6 +347,45 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isEmpty, isInva
     );
 }
 
+
+/**
+ * The one figure on a squad-rail row: what the player scored, or — until he
+ * has — what he is projected to score. Same rule and same marks as the pitch
+ * badge, so a player reads identically wherever he appears on this page.
+ *
+ * THE TWO ARE NOT SHOWN TOGETHER, and that is a deliberate call rather than a
+ * space saving. Sleeper and Yahoo do pair them, but their projection decays
+ * through the match, so "6 scored, 8 projected" truthfully means more is
+ * expected. Gaffa's does not: calculateGameweekProjections produces one
+ * full-match number, computed offline before kickoff and never revised. Beside
+ * a live score it would read as points still to come, which is a claim the
+ * number cannot support.
+ *
+ * If projections ever become live — decayed by minutes played — pairing them
+ * becomes honest and this is the place to revisit.
+ */
+function RowScore({ projected, actual }: { projected?: number; actual?: number }) {
+    if (actual !== undefined) {
+        return (
+            <span className={styles.rowScore}>
+                <span className={styles.rowScoreActual} title={`Scored ${actual.toFixed(2)}`}>
+                    {actual.toFixed(2)}
+                </span>
+            </span>
+        );
+    }
+    if (projected !== undefined) {
+        return (
+            <span className={styles.rowScore}>
+                <span className={styles.rowScoreProj} title={`Projected ${projected.toFixed(1)}`}>
+                    {projected.toFixed(1)}
+                </span>
+            </span>
+        );
+    }
+    return null;
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function PitchUI({
@@ -296,6 +408,11 @@ export default function PitchUI({
     lineupWeekLabel,
     activeRosterCount,
     maxRosterSize,
+    capacity,
+    leagueId,
+    masthead,
+    projMap,
+    projectionGameweek,
 }: Props) {
     const router = useRouter();
     const irLockedTeamIds = scoringLockedTeamIds ?? lockedTeamIds;
@@ -980,39 +1097,138 @@ export default function PitchUI({
             : 'IR player selected'
         : null;
 
+    /* The ledger's two figures. Projected and scored never share a chip — that
+       would double the type on eleven nodes and ask for subtraction at a
+       glance — so the comparison lives here, where the two numbers can share
+       one axis. Both are derived from `assignments`, so a swap moves them
+       before the lineup is even saved. */
+    const ledger = useMemo(() => {
+        let projected = 0;
+        let projectedOf = 0;
+        let scored = 0;
+        let played = 0;
+
+        for (let i = 0; i < slots.length; i++) {
+            const pid = assignments[i];
+            if (!pid) continue;
+            const proj = projMap?.[pid];
+            if (proj !== undefined) { projected += proj; projectedOf++; }
+            const pts = scoreMap?.[pid];
+            if (pts !== undefined) { scored += pts; played++; }
+        }
+
+        let benchProjected = 0;
+        for (const slot of BENCH_SLOT_NAMES) {
+            const pid = benchAssignments[slot];
+            if (!pid) continue;
+            const proj = projMap?.[pid];
+            if (proj !== undefined) benchProjected += proj;
+        }
+
+        return {
+            projected,
+            projectedOf,
+            scored,
+            played,
+            benchProjected,
+            hasProjections: projectedOf > 0,
+            hasScores: played > 0,
+        };
+    }, [assignments, benchAssignments, slots, projMap, scoreMap]);
+
     // ─── Render ───────────────────────────────────────────────────────────────
 
     return (
         <div className={styles.pitchUI}>
+            {/* ── The board ──
+                One panel: the grass and the squad rail are two columns of one
+                field, divided by a hairline, not two things that float. You
+                move players between them and the rail's counts are arithmetic
+                on what is on the grass. See design-2.0/README.md § "A board is
+                one panel". */}
+            <div className="g-panel">
+                {/* ── Masthead ──
+                    The board's own head, not a page title above it. This was a
+                    row of meta chips over a bare <h1> and a hairline, which is
+                    the shape of a generic document header rather than of a club
+                    page: the crest is the team's real identity art and the
+                    fixture line is the reason the page is open. */}
+                {masthead && (
+                    <div className={styles.boardHead}>
+                        <div className={styles.boardIdentity}>
+                            <CrestBadge
+                                config={masthead.crestConfig as never}
+                                size={44}
+                                teamName={teamName ?? ''}
+                                teamId={teamId}
+                                interactive={false}
+                            />
+                            <div className={styles.boardTitles}>
+                                <h1 className={styles.boardTeamName}>{teamName}</h1>
+                                <span className={styles.boardLeague}>{masthead.leagueName}</span>
+                            </div>
+                        </div>
+
+                        <div className={styles.boardFixture}>
+                            {masthead.gameweek != null && (
+                                <span className={styles.fixtureGw}>GW{masthead.gameweek}</span>
+                            )}
+                            {masthead.opponentTeamName && (
+                                <>
+                                    <span className={styles.fixtureVs}>vs</span>
+                                    <span className={styles.fixtureOpponent}>{masthead.opponentTeamName}</span>
+                                </>
+                            )}
+                            {masthead.isLive && <span className={styles.fixtureLive}>Live</span>}
+                            {masthead.settingGameweek != null && (
+                                <span className={styles.fixtureSetting}>
+                                    Setting GW{masthead.settingGameweek}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
+
             {/* ── Formation bar ── */}
             <div className={styles.formationBar}>
-                <span className="g-label">{lineupWeekLabel ?? 'Formation'}</span>
-                <div className={styles.formationPills}>
-                    {FORMATIONS.map((f) => {
-                        const status = formationLockStatus[f];
-                        const isDisabled = status?.disabled ?? false;
-                        return (
-                            <button
-                                key={f}
-                                type="button"
-                                className={[
-                                    styles.formationPill,
-                                    formation === f ? styles.formationPillActive : '',
-                                    isDisabled ? styles.formationPillDisabled : '',
-                                ].filter(Boolean).join(' ')}
-                                onClick={() => handleFormationChange(f)}
-                                disabled={isDisabled}
-                                title={isDisabled ? status?.reason : undefined}
-                            >
-                                {f}
-                            </button>
-                        );
-                    })}
+                <span className={`g-label ${styles.formationBarLabel}`}>{lineupWeekLabel ?? 'Formation'}</span>
+                <div className={styles.formationGroups}>
+                    {formationsByBackLine().map((group) => (
+                        <div key={group.line} className={styles.formationGroup}>
+                            <span className={styles.formationGroupLabel} aria-hidden>
+                                Back {group.line}
+                            </span>
+                            <div className={styles.formationPills}>
+                                {group.formations.map((f) => {
+                                    const status = formationLockStatus[f];
+                                    const isDisabled = status?.disabled ?? false;
+                                    return (
+                                        <button
+                                            key={f}
+                                            type="button"
+                                            className={[
+                                                styles.formationPill,
+                                                formation === f ? styles.formationPillActive : '',
+                                                isDisabled ? styles.formationPillDisabled : '',
+                                            ].filter(Boolean).join(' ')}
+                                            onClick={() => handleFormationChange(f)}
+                                            disabled={isDisabled}
+                                            aria-label={`${f}, ${group.line} at the back`}
+                                            aria-pressed={formation === f}
+                                            title={isDisabled ? status?.reason : undefined}
+                                        >
+                                            {f}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
                 </div>
                 <div className={styles.formationBarTrailer}>
                     {lockedPlayerIds.size > 0 && (
                         <span className={styles.formationLockedNote} title="Players whose match has kicked off are locked to their slots">
-                            <Icon name="lock" size={14} style={{ marginRight: '4px' }} /> Smart-Lock active
+                            <Icon name="lock" size={14} style={{ marginRight: '4px' }} /> Smart-Lock Active
                         </span>
                     )}
                     {selectionLabel && (
@@ -1033,20 +1249,13 @@ export default function PitchUI({
                         </span>
                     )}
                     {saveError && <span className={styles.errorText}>{saveError}</span>}
-                    {saveSuccess && !saveError && <span className={styles.successText}>Lineup saved.</span>}
+                    {saveSuccess && !saveError && <span className={styles.successText}>Lineup Saved.</span>}
                     <button className={styles.saveBtn} onClick={handleSave} disabled={!canSave}>
                         {saving ? 'Saving…' : 'Save Lineup'}
                     </button>
                 </div>
             </div>
 
-            {/* ── The board ──
-                One panel: the grass and the squad rail are two columns of one
-                field, divided by a hairline, not two things that float. You
-                move players between them and the rail's counts are arithmetic
-                on what is on the grass. See design-2.0/README.md § "A board is
-                one panel". */}
-            <div className="g-panel">
                 {/* The spectrum's first use in the app. It is rationed to a panel
                     representing a whole squad or the whole pool — every earlier
                     port correctly left it off, and a board carrying the eleven on
@@ -1060,6 +1269,62 @@ export default function PitchUI({
                 {/* ── LEFT: Full pitch — horizontal halfway line + center circle match
                     vertical lineup (attack top, GK bottom); not the matchup L/R halves. ── */}
                 <div className={styles.pitchCol}>
+
+                    {/* ── Ledger ──
+                        Above the grass, below the formation bar. Sits outside
+                        .pitchContainer and touches no pitch geometry. */}
+                    {(ledger.hasProjections || ledger.hasScores) && (
+                        <div className={styles.ledger}>
+                            {ledger.hasProjections && (
+                                <div className={styles.ledgerCell}>
+                                    <span className="g-label">Projected XI</span>
+                                    <span className={`${styles.ledgerVal} ${styles.ledgerValForecast}`}>
+                                        {ledger.projected.toFixed(1)}
+                                    </span>
+                                    {ledger.projectedOf < slots.length && (
+                                        <span className={styles.ledgerSub}>
+                                            {ledger.projectedOf} of {slots.length} Projected
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+
+                            {ledger.hasScores && (
+                                <div className={styles.ledgerCell}>
+                                    <span className="g-label">Scored</span>
+                                    <span className={styles.ledgerVal}>{ledger.scored.toFixed(1)}</span>
+                                    <span className={styles.ledgerSub}>
+                                        {ledger.played} of {slots.length} Played
+                                    </span>
+                                </div>
+                            )}
+
+                            {ledger.hasProjections && (
+                                <div className={styles.ledgerCell}>
+                                    <span className="g-label">Bench</span>
+                                    <span className={`${styles.ledgerVal} ${styles.ledgerValForecast} ${styles.ledgerValSmall}`}>
+                                        {ledger.benchProjected.toFixed(1)}
+                                    </span>
+                                    <span className={styles.ledgerSub}>Projected</span>
+                                </div>
+                            )}
+
+                            <div className={styles.ledgerLegend}>
+                                <span className={styles.ledgerKey}>
+                                    <span className={`${styles.ledgerSwatch} ${styles.ledgerSwatchProj}`} aria-hidden />
+                                    Projected
+                                </span>
+                                <span className={styles.ledgerKey}>
+                                    <span className={`${styles.ledgerSwatch} ${styles.ledgerSwatchScored}`} aria-hidden />
+                                    Scored
+                                </span>
+                                {projectionGameweek != null && (
+                                    <span className={styles.ledgerRound}>GW{projectionGameweek}</span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <div className={styles.pitchContainer}>
                         {/* Outer green run-off; inner pitchField = touchlines inside the grass */}
                         <div className={styles.pitchField}>
@@ -1144,6 +1409,7 @@ export default function PitchUI({
                                                         onViewDetails={entry ? () => setViewingPlayer(entry.player, pos) : undefined}
                                                         points={starterPoints}
                                                         status={status}
+                                                        projected={playerId ? projMap?.[playerId] : undefined}
                                                     />
                                                 );
                                             })}
@@ -1153,6 +1419,104 @@ export default function PitchUI({
                             })}
                         </div>
                         </div>{/* end pitchField */}
+                    </div>
+
+                    {/* ── BENCH ──
+                        Under the grass rather than in the rail. The bench is
+                        part of the lineup — it is what auto-subs draw from and
+                        it carries the depth bonus — so it outranks the reserve
+                        pool, which is only the players not currently picked.
+                        This sits BELOW .pitchContainer: nothing inside the
+                        pitch, and no node position, is touched by it. */}
+                    <div className={styles.benchBlock}>
+                        <div className={styles.benchHead}>
+                            <h3 className={styles.benchTitle}>Bench</h3>
+                            <span className="g-label">
+                                Auto-subs in this order · {BENCH_DEPTH_BONUS_LABEL} depth bonus
+                            </span>
+                        </div>
+                        <div className={styles.benchCards}>
+                            {BENCH_SLOT_NAMES.map((slot) => {
+                                const pid = benchAssignments[slot];
+                                const entry = pid ? playerMap.get(pid) : undefined;
+                                const isSelected = lineupSelection?.type === 'bench-slot' && lineupSelection.slot === slot;
+                                const isValidTarget = validLineupTargets.has(`bench-${slot}`);
+                                const isLocked = !!pid && !!entry && entry.player.pl_team_id !== null && lockedTeamIds?.has(entry.player.pl_team_id);
+                                const pts = scoreMap && pid ? scoreMap[pid] : undefined;
+                                const benchHasStarted = !!entry && isPlMatchLocked(entry.player, irLockedTeamIds);
+                                const benchStatus = pid && minutesMap ? playStatus(minutesMap[pid], benchHasStarted) : undefined;
+                                return (
+                                    <button
+                                        key={slot}
+                                        type="button"
+                                        className={[
+                                            styles.benchCard,
+                                            isSelected ? styles.benchCardSelected : '',
+                                            isValidTarget ? styles.benchCardTarget : '',
+                                            !pid ? styles.benchCardEmpty : '',
+                                            isLocked ? styles.benchCardLocked : '',
+                                        ].filter(Boolean).join(' ')}
+                                        style={entry ? { ['--pf' as string]: entry.player.primary_position ? POS_COLOR[entry.player.primary_position] : 'var(--color-border-subtle)' } : undefined}
+                                        onClick={isLocked && entry ? () => setViewingPlayer(entry.player) : () => handleBenchSlotClick(slot)}
+                                        title={isLocked ? 'Match started (Locked) — click to view' : BENCH_SLOT_TITLE[slot]}
+                                        {...(entry ? playerHoverProps(prefetchPlayer, entry.player) : {})}
+                                    >
+                                        <span className={styles.benchSlotTag} title={BENCH_SLOT_TITLE[slot]}>{slot}</span>
+
+                                        <span className={styles.benchPortrait}>
+                                            <Portrait
+                                                photoUrl={entry?.player.photo_url}
+                                                name={entry ? pitchFullName(entry.player) : slot}
+                                                club={entry?.player.pl_team}
+                                                size="md"
+                                                headTopPct={entry?.player.portrait_head_top_pct}
+                                                headWidthPct={entry?.player.portrait_head_width_pct}
+                                                photoVersion={entry?.player.photo_version}
+                                            />
+                                            {isLocked && entry && (
+                                                <span className={styles.nodeLockBadge} title="Locked">
+                                                    <Icon name="lock" size={11} strokeWidth={2.2} />
+                                                </span>
+                                            )}
+                                            {benchStatus === 'dnp' ? (
+                                                <span className={`${styles.nodePtsBadge} ${styles.nodePtsDnp}`} title="Did not play">DNP</span>
+                                            ) : (benchStatus === 'played' || (benchStatus === undefined && pts !== undefined)) ? (
+                                                <span className={`${styles.nodePtsBadge} ${ptsBand(pts ?? 0)}`}>{(pts ?? 0).toFixed(2)}</span>
+                                            ) : (pid && projMap?.[pid] !== undefined) ? (
+                                                <span
+                                                    className={`${styles.nodePtsBadge} ${styles.nodePtsProj}`}
+                                                    title={`Projected ${projMap[pid].toFixed(1)} — yet to play`}
+                                                >
+                                                    {projMap[pid].toFixed(1)}
+                                                </span>
+                                            ) : benchStatus === 'pending' ? (
+                                                <span className={`${styles.nodePtsBadge} ${styles.nodePtsPending}`} title="Yet to play">–</span>
+                                            ) : null}
+                                        </span>
+
+                                        <span className={styles.benchCardBody}>
+                                            {entry ? (
+                                                <>
+                                                    <span className={styles.benchCardMeta}>
+                                                        <PositionBadge position={entry.player.primary_position} size="sm" />
+                                                        {entry.status === 'loan_in' && <span className={styles.loanTag}>Loan</span>}
+                                                    </span>
+                                                    <span
+                                                        className={styles.benchCardName}
+                                                        onClick={(e) => { e.stopPropagation(); setViewingPlayer(entry.player); }}
+                                                        title={pitchFullName(entry.player)}
+                                                    >
+                                                        {displayName(entry.player)}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className={styles.benchCardEmptyLabel}>Empty</span>
+                                            )}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
 
@@ -1166,75 +1530,106 @@ export default function PitchUI({
                     serves all four now. */}
                 <div className={styles.sidebarCol}>
 
+                    {/* ── SQUAD CAPACITY ──
+                        The rail's four tiers each count their own occupants,
+                        but nothing said how much room was left overall, what
+                        the cap actually was, or how close a trade was to the
+                        floor of 15. All three drive real refusals elsewhere in
+                        the app, so they belong above the tiers they govern. */}
+                    {capacity && (
+                        <section className={`${styles.tier} ${styles.capacityTier}`}>
+                            <div className={styles.tierHead}>
+                                <h3 className={styles.tierTitle}>Squad</h3>
+                                <span className="g-label">
+                                    {capacity.open > 0
+                                        ? `${capacity.open} ${capacity.open === 1 ? 'slot' : 'slots'} open`
+                                        : capacity.isOver
+                                            ? `${capacity.active - capacity.limit} over`
+                                            : 'Full'}
+                                </span>
+                            </div>
+
+                            <div className={styles.capacityBody}>
+                                <div className={styles.capacityFigure}>
+                                    <span className={styles.capacityCount}>{capacity.active}</span>
+                                    <span className={styles.capacityOf}>/ {capacity.limit}</span>
+                                    <span className={styles.capacityCaption}>
+                                        Active Roster
+                                        {capacity.buybackSlots > 0 && (
+                                            <span className={styles.capacityHint}>
+                                                {' '}· {capacity.baseLimit} + {capacity.buybackSlots} held by loan
+                                            </span>
+                                        )}
+                                    </span>
+                                </div>
+
+                                {/* One pip per slot: a roster is a small,
+                                    countable thing, so show the count rather
+                                    than a proportion nobody can read back. */}
+                                <div className={styles.slotMeter} role="presentation">
+                                    {Array.from({ length: Math.max(capacity.limit, capacity.active) }).map((_, i) => (
+                                        <span
+                                            key={i}
+                                            className={[
+                                                styles.slotPip,
+                                                i < capacity.active ? styles.slotPipFilled : '',
+                                                i >= capacity.limit ? styles.slotPipOver : '',
+                                                i >= capacity.baseLimit && i < capacity.limit ? styles.slotPipLoan : '',
+                                            ].filter(Boolean).join(' ')}
+                                        />
+                                    ))}
+                                </div>
+
+                                <div className={styles.capacityBreakdown}>
+                                    <span className={styles.capacityStat}>
+                                        <span className={styles.capacityStatVal}>{capacity.academy}/{capacity.academyLimit}</span>
+                                        <span className={styles.capacityStatKey}>Academy</span>
+                                    </span>
+                                    <span className={styles.capacityStat}>
+                                        <span className={styles.capacityStatVal}>{capacity.ir}/{capacity.irLimit}</span>
+                                        <span className={styles.capacityStatKey}>Injured Reserve</span>
+                                    </span>
+                                    {capacity.loanedIn > 0 && (
+                                        <span className={styles.capacityStat}>
+                                            <span className={styles.capacityStatVal}>{capacity.loanedIn}</span>
+                                            <span className={styles.capacityStatKey}>On Loan In</span>
+                                        </span>
+                                    )}
+                                </div>
+
+                                {(capacity.isOver || capacity.isFull || capacity.atFloor) && (
+                                    <p className={[
+                                        styles.capacityState,
+                                        capacity.isOver ? styles.capacityStateBad : '',
+                                    ].filter(Boolean).join(' ')}>
+                                        {capacity.isOver
+                                            ? 'Over the cap. Drop or move a player out before the next signing.'
+                                            : capacity.atFloor
+                                                ? `At the floor of ${capacity.floor}. You cannot give up another player in a trade.`
+                                                : 'No room to sign. A new arrival needs a drop in the same move.'}
+                                    </p>
+                                )}
+
+                                {leagueId && (
+                                    <div className={styles.capacityActions}>
+                                        <NavigationLink href={`/league/${leagueId}/team/roster`} className={styles.capacityAction}>
+                                            Manage Squad
+                                        </NavigationLink>
+                                        <NavigationLink href={`/league/${leagueId}/transfers/free-agents`} className={styles.capacityActionGhost}>
+                                            Free Agents
+                                        </NavigationLink>
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+                    )}
+
                     {sidebarError && (
                         <div className={styles.sidebarError}>
                             {sidebarError}
                             <button type="button" onClick={() => setSidebarError(null)} className={styles.sidebarErrorDismiss} aria-label="Dismiss">✕</button>
                         </div>
                     )}
-
-                    {/* ── BENCH ── */}
-                    <section className={styles.tier}>
-                        <div className={styles.tierHead}>
-                            <h3 className={styles.tierTitle}>Bench</h3>
-                            <span className="g-label">Substitutes</span>
-                        </div>
-                        {BENCH_SLOT_NAMES.map((slot) => {
-                            const pid = benchAssignments[slot];
-                            const entry = pid ? playerMap.get(pid) : undefined;
-                            const isSelected = lineupSelection?.type === 'bench-slot' && lineupSelection.slot === slot;
-                            const isValidTarget = validLineupTargets.has(`bench-${slot}`);
-                            const isLocked = !!pid && !!entry && entry.player.pl_team_id !== null && lockedTeamIds?.has(entry.player.pl_team_id);
-                            const pts = scoreMap && pid ? scoreMap[pid] : undefined;
-                            const benchHasStarted = !!entry && isPlMatchLocked(entry.player, irLockedTeamIds);
-                            const benchStatus = pid && minutesMap ? playStatus(minutesMap[pid], benchHasStarted) : undefined;
-                            return (
-                                <button
-                                    key={slot}
-                                    type="button"
-                                    className={[
-                                        'g-row', 'g-namerow', styles.row, styles.rowBtn,
-                                        isSelected ? styles.rowSelected : '',
-                                        isValidTarget ? styles.rowTarget : '',
-                                        !pid ? styles.rowEmpty : '',
-                                    ].filter(Boolean).join(' ')}
-                                    style={entry ? { ['--pf' as string]: entry.player.primary_position ? POS_COLOR[entry.player.primary_position] : 'var(--color-border-subtle)' } : undefined}
-                                    onClick={isLocked && entry ? () => setViewingPlayer(entry.player) : () => handleBenchSlotClick(slot)}
-                                    title={isLocked ? 'Match started (Locked)' : undefined}
-                                >
-                                    <span className={styles.slotBadge} title={BENCH_SLOT_TITLE[slot]}>{slot}</span>
-
-                                    {entry ? (
-                                        <>
-                                            <PositionBadge position={entry.player.primary_position} size="sm" />
-                                            <span
-                                                className={styles.rowName}
-                                                onClick={(e) => { e.stopPropagation(); setViewingPlayer(entry.player); }}
-                                                {...playerHoverProps(prefetchPlayer, entry.player)}
-                                            >
-                                                {displayName(entry.player)}
-                                            </span>
-                                            <span className={styles.rowSpacer} />
-                                            {entry.status === 'loan_in' && <span className={styles.loanTag}>Loan</span>}
-                                            <span className={styles.rowClub}>{entry.player.pl_team}</span>
-                                            {benchStatus === 'pending' && (
-                                                <span className={`${styles.rowPts} ${styles.rowPtsPending}`} title="Yet to play">–</span>
-                                            )}
-                                            {benchStatus === 'dnp' && (
-                                                <span className={`${styles.rowPts} ${styles.rowPtsDnp}`} title="Did not play">DNP</span>
-                                            )}
-                                            {(benchStatus === 'played' || (benchStatus === undefined && pts !== undefined)) && (
-                                                <span className={styles.rowPts}>{(pts ?? 0).toFixed(2)}</span>
-                                            )}
-                                            {isLocked && <span className={styles.lockIcon}><Icon name="lock" size={14} /></span>}
-                                        </>
-                                    ) : (
-                                        <span className={styles.rowEmptyMark}>—</span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </section>
 
                     {/* ── RESERVES ── */}
                     <section
@@ -1297,9 +1692,14 @@ export default function PitchUI({
                                         >
                                             {displayName(entry.player)}
                                         </span>
-                                        <span className={styles.rowSpacer} />
+                                        {/* Club sits with the name, not with the number. Behind the
+                                            spacer it read as part of the numeric column; the row now has
+                                            two zones — who he is on the left, what he scores on the right. */}
+                                        <span className={styles.rowClub} title={entry.player.pl_team ?? undefined}>
+                                            {shortClub(entry.player.pl_team)}
+                                        </span>
                                         {entry.status === 'loan_in' && <span className={styles.loanTag}>Loan</span>}
-                                        <span className={styles.rowClub}>{entry.player.pl_team}</span>
+                                        <span className={styles.rowSpacer} />
                                         {isU21 && sidebarSelection?.type === 'taxi' && (
                                             <span className={styles.eligibleTag}>U21</span>
                                         )}
@@ -1309,6 +1709,10 @@ export default function PitchUI({
                                         {entry.player.fpl_status && entry.player.fpl_status !== 'a' && !sidebarSelection && (
                                             <span className={styles.statusDot} data-status={entry.player.fpl_status} />
                                         )}
+                                        <RowScore
+                                            projected={projMap?.[entry.player.id]}
+                                            actual={scoreMap?.[entry.player.id]}
+                                        />
                                         {isLocked && <span className={styles.lockIcon}><Icon name="lock" size={14} /></span>}
                                     </button>
                                 );
@@ -1320,7 +1724,7 @@ export default function PitchUI({
                     <section className={styles.tier}>
                         <div className={styles.tierHead}>
                             <h3 className={styles.tierTitle}>Academy</h3>
-                            <span className="g-label">{taxiEntries.length} / 3 slots</span>
+                            <span className="g-label">{taxiEntries.length} / {capacity?.academyLimit ?? 3} slots</span>
                         </div>
                         {taxiEntries.length === 0 ? (
                             <p className={styles.tierEmpty}>No players in academy.</p>
@@ -1341,8 +1745,14 @@ export default function PitchUI({
                                         >
                                             {displayName(entry.player)}
                                         </span>
+                                        <span className={styles.rowClub} title={entry.player.pl_team ?? undefined}>
+                                            {shortClub(entry.player.pl_team)}
+                                        </span>
                                         <span className={styles.rowSpacer} />
-                                        <span className={styles.rowClub}>{entry.player.pl_team}</span>
+                                        <RowScore
+                                            projected={projMap?.[entry.player.id]}
+                                            actual={scoreMap?.[entry.player.id]}
+                                        />
                                         <div className={styles.rowActions}>
                                             <button
                                                 type="button"
@@ -1377,7 +1787,7 @@ export default function PitchUI({
                         <section className={styles.tier}>
                             <div className={styles.tierHead}>
                                 <h3 className={styles.tierTitle}>Injured Reserve</h3>
-                                <span className="g-label">{irEntries.length} players</span>
+                                <span className="g-label">{irEntries.length} / {capacity?.irLimit ?? 2} slots</span>
                             </div>
                             {irEntries.map((entry) => {
                                 const isSelected = sidebarSelection?.type === 'ir' && sidebarSelection.playerId === entry.player.id;
@@ -1396,8 +1806,14 @@ export default function PitchUI({
                                         >
                                             {displayName(entry.player)}
                                         </span>
+                                        <span className={styles.rowClub} title={entry.player.pl_team ?? undefined}>
+                                            {shortClub(entry.player.pl_team)}
+                                        </span>
                                         <span className={styles.rowSpacer} />
-                                        <span className={styles.rowClub}>{entry.player.pl_team}</span>
+                                        <RowScore
+                                            projected={projMap?.[entry.player.id]}
+                                            actual={scoreMap?.[entry.player.id]}
+                                        />
                                         <div className={styles.rowActions}>
                                             <button
                                                 type="button"

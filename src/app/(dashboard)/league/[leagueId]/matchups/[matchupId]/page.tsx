@@ -22,6 +22,7 @@ import {
 } from '@/lib/scoring/matchups';
 import { isGameweekFinalised } from '@/lib/scoring/gameweekState';
 import { getFinishedPlTeamIds, getLockedPlTeamIds } from '@/lib/fixtures/lockout';
+import { getGameweekFixtureMap } from '@/lib/fixtures/gameweekFixtures';
 import { clubHref } from '@/lib/teams/clubHref';
 import CrestBadge from '@/components/crest/CrestBadge';
 import MatchReportCard from './MatchReportCard';
@@ -163,11 +164,13 @@ export default async function MatchupDetailPage({ params }: Props) {
     // Whether we hold FPL's reviewed stats for this gameweek yet. Until the
     // post-lockdown pass runs, the scoreline is an estimate and must not be
     // labelled "Final" — see src/lib/scoring/gameweekState.ts.
-    const finalised = await isGameweekFinalised(
-        admin,
-        await getCurrentFplSeason(undefined, true),
-        matchupData.gameweek,
-    );
+    const currentSeason = await getCurrentFplSeason(undefined, true);
+    const [finalised, fixtureMap] = await Promise.all([
+        isGameweekFinalised(admin, currentSeason, matchupData.gameweek),
+        matchupData.gameweek
+            ? getGameweekFixtureMap(admin, currentSeason, matchupData.gameweek)
+            : Promise.resolve({}),
+    ]);
 
     // Live/provisional total, computed the same way the matchup processor
     // computes the resolved one — auto-subs for blanked starters and the bench
@@ -317,6 +320,7 @@ export default async function MatchupDetailPage({ params }: Props) {
                 detailMap={detailMap}
                 perfMap={perfMap}
                 gameweek={matchupData.gameweek}
+                fixtureMap={fixtureMap}
                 teamAName={teamAName}
                 teamBName={teamBName}
                 teamAId={matchup.team_a?.id}

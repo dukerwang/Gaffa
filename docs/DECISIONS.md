@@ -181,3 +181,28 @@ pointers rather than restated:
 - **Ban "allows you to" and "lets you"**: State user agency directly (`View your squad`, not `This tab lets you view your squad`).
 - **No anthropomorphized status tags**: Avoid pseudo-passive tags like "if it holds" in metrics and captions — use concise sports-journal copy (`projected €34m`, not `€34m if it holds`).
 
+
+---
+
+## 2026-09-09 — Title Case for UI labels and buttons
+
+**Buttons and labels are capitalized, not sentence case.**
+> "the button also looks pretty bad, capitalize \"lineup\" for fuck sake.
+> capitalize everything actually what the fuck"
+
+Said of the lineup page's `Save lineup` button. This **reverses** the sentence-case
+rule that `CLAUDE.md` and `DESIGN.md` §5 had carried since the 2.0 port, which
+was inherited from the Google developer style guide rather than decided here.
+
+- **Buttons**: `Save Lineup`, `Manage Squad`, `Free Agents` — not `Save lineup`.
+- **Labels and stat keys**: `Active Roster`, `Injured Reserve`, `On Loan In`,
+  `Smart-Lock Active`.
+- **Unchanged**: labels already uppercased in CSS (`.g-label`, column heads,
+  `.capacityStatKey`) are unaffected — this is about the strings in the markup.
+- **Not extended to running prose**: full sentences in help text, error messages
+  and state notices stay sentence case (`Over the cap. Drop or move a player out
+  before the next signing.`). Duke has not ruled on those; if he wants them
+  capitalized too, record it here rather than inferring it.
+
+The rest of the Google style guidance in `CLAUDE.md` — active voice, no
+throat-clearing, no inanimate agency, prose over lists — is untouched by this.

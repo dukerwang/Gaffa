@@ -24,6 +24,7 @@ import {
 } from '@/lib/players/cardCache';
 import PerformanceBlock from './PerformanceBlock';
 import { roleArticle } from '@/lib/scoring/perfBand';
+import { formatLocalKickoff } from '@/lib/fixtures/formatKickoff';
 import styles from './PremiumPlayerCard.module.css';
 
 /**
@@ -429,6 +430,7 @@ export default function PremiumPlayerCard({
     const backPending = back === null;
 
     const playedGames = gamelog.filter(g => {
+        if (g.isUpcoming) return false;
         const isDNP = g.isDNP ?? (g.stats?.minutes_played === 0);
         return !isDNP;
     });
@@ -914,6 +916,36 @@ export default function PremiumPlayerCard({
                                             </thead>
                                             <tbody>
                                                 {gamelog.map((g, index) => {
+                                                    if (g.isUpcoming) {
+                                                        return (
+                                                            <tr key={`upcoming-${g.gameweek}-${g.opponent ?? "x"}-${index}`} className={styles.upcomingRow}>
+                                                                <td className={styles.gwTd}>{g.gameweek}</td>
+                                                                <td className={styles.oppTd}>
+                                                                    <span className={styles.oppName}>{g.opponent}</span>
+                                                                    {g.date && (
+                                                                        <span className={styles.fixtureTimeTag} suppressHydrationWarning>
+                                                                            {formatLocalKickoff(g.date)}
+                                                                        </span>
+                                                                    )}
+                                                                </td>
+                                                                <td className={styles.ctrTd}>—</td>
+                                                                <td className={styles.ctrTd}>—</td>
+                                                                <td className={styles.ctrTd}>—</td>
+                                                                <td className={styles.ptsTd}>
+                                                                    {g.projected_points != null ? (
+                                                                        <span
+                                                                            className={styles.projPill}
+                                                                            title={`Projected ${g.projected_points.toFixed(1)} points (temporary forecast)`}
+                                                                        >
+                                                                            <span className={styles.projPillVal}>{g.projected_points.toFixed(1)}</span>
+                                                                            <span className={styles.projPillLabel}>PROJ</span>
+                                                                        </span>
+                                                                    ) : '—'}
+                                                                </td>
+                                                                <td className={styles.ctrTd}>—</td>
+                                                            </tr>
+                                                        );
+                                                    }
                                                     if (g.isDNP) {
                                                         return (
                                                             <tr key={`${g.gameweek}-${g.opponent ?? "x"}-${index}`} className={styles.dnpRow}>

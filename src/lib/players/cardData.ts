@@ -27,6 +27,7 @@ import {
 } from '@/lib/season/currentSeason';
 import { getClubFixtureLog, type ClubFixtureLog } from '@/lib/fixtures/lockout';
 import { loadReferenceStats } from '@/lib/scoring/matchups';
+import { resolveClub } from '@/lib/clubs/registry';
 import {
   buildPerformanceGroups,
   buildSeasonPerformanceGroups,
@@ -69,6 +70,8 @@ export interface GamelogEntry {
   result?: string;
   date?: string;
   isDNP?: boolean;
+  isUpcoming?: boolean;
+  projected_points?: number | null;
   /**
    * The match's performance block, already BANDED, and deliberately without
    * the underlying scores: see the header of src/lib/scoring/perfBand.ts.
@@ -165,7 +168,7 @@ function attachPositionScores(
   const prim = primary.toUpperCase() as GranularPosition;
 
   return gamelog.map((g) => {
-    if (g.isDNP || Number(g.stats?.minutes_played ?? 0) <= 0) return g;
+    if (g.isUpcoming || g.isDNP || Number(g.stats?.minutes_played ?? 0) <= 0) return g;
 
     const by_position: Record<string, PositionGameScore> = {};
     const perf_by_position: Record<string, PerfGroup[]> = {};
@@ -492,7 +495,7 @@ export async function fetchPlayerBack(
   const [{ data: playerRow }, { data: dbStats }, { data: historyData }, refSeason] = await Promise.all([
     admin
       .from('players')
-      .select('fpl_id, pl_team_id, pl_team, name, primary_position, secondary_positions')
+      .select('fpl_id, pl_team_id, pl_team, name, primary_position, secondary_positions, projected_points, projected_season, projected_gameweek')
       .eq('id', playerId)
       .maybeSingle(),
     admin
@@ -537,7 +540,7 @@ export async function fetchPlayerBack(
     const perMatch: RatingBreakdownItem[][] = [];
     const totals = { appearances: 0, goals: 0, assists: 0, cleanSheets: 0, saves: 0 };
     for (const g of log) {
-      if (g.isDNP || !g.stats || Number(g.stats.minutes_played ?? 0) <= 0) continue;
+      if (g.isUpcoming || g.isDNP || !g.stats || Number(g.stats.minutes_played ?? 0) <= 0) continue;
       const raw = g.stats as RawStats;
       const { breakdown } = calculateMatchRating(raw, prim, refStats);
       if (!breakdown.length) continue;
@@ -714,9 +717,10 @@ export async function fetchPlayerBack(
 
     let gamelog: GamelogEntry[] = [];
     let historyFetched = false;
+    let histData: any = null;
 
     if (histRes && histRes.ok) {
-      const histData = await histRes.json();
+      histData = await histRes.json();
       historyFetched = true;
       gamelog = (histData.history ?? []).map((h: any) => {
         const dbEntry =
@@ -789,6 +793,93 @@ export async function fetchPlayerBack(
           match_rating: s.match_rating != null ? Number(s.match_rating) : null,
           stats: s.stats,
         };
+      });
+    }
+
+    // Upcoming fixture for the player's club (at least one week ahead).
+    let upcomingFixture: {
+      gameweek: number;
+      opponent: string;
+      kickoff_time?: string;
+    } | null = null;
+
+    if (histRes && histRes.ok) {
+      const nextFpl = (histData.fixtures ?? []).find((f: any) => !f.finished);
+      if (nextFpl && nextFpl.event != null) {
+        const isHome = nextFpl.is_home;
+        const oppId = isHome ? nextFpl.team_a : nextFpl.team_h;
+        const oppShort = teamMap.get(oppId)?.short ?? 'UNK';
+        upcomingFixture = {
+          gameweek: Number(nextFpl.event),
+          opponent: `${oppShort} (${isHome ? 'H' : 'A'})`,
+          kickoff_time: nextFpl.kickoff_time ?? undefined,
+        };
+      }
+    }
+
+    if (!upcomingFixture && dbPlayer.pl_team_id) {
+      const upcomingFix = Array.from(fixtureMap.values())
+        .filter((f: any) => !f.finished && (f.team_h === dbPlayer.pl_team_id || f.team_a === dbPlayer.pl_team_id))
+        .sort((a: any, b: any) => (a.event ?? 0) - (b.event ?? 0) || new Date(a.kickoff_time).getTime() - new Date(b.kickoff_time).getTime())[0];
+      if (upcomingFix && upcomingFix.event != null) {
+        const isHome = upcomingFix.team_h === dbPlayer.pl_team_id;
+        const oppId = isHome ? upcomingFix.team_a : upcomingFix.team_h;
+        const oppShort = teamMap.get(oppId)?.short ?? 'UNK';
+        upcomingFixture = {
+          gameweek: Number(upcomingFix.event),
+          opponent: `${oppShort} (${isHome ? 'H' : 'A'})`,
+          kickoff_time: upcomingFix.kickoff_time ?? undefined,
+        };
+      }
+    }
+
+    if (!upcomingFixture && (playerRow as any)?.pl_team) {
+      const club = resolveClub((playerRow as any).pl_team);
+      if (club) {
+        const { data: dbUpcoming } = await admin
+          .from('pl_fixtures')
+          .select('gameweek, home_club, away_club, kickoff_time')
+          .eq('season', season.targetSeason)
+          .eq('finished', false)
+          .or(`home_club.eq.${club.slug},away_club.eq.${club.slug}`)
+          .order('kickoff_time', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (dbUpcoming) {
+          const isHome = dbUpcoming.home_club === club.slug;
+          const oppSlug = isHome ? dbUpcoming.away_club : dbUpcoming.home_club;
+          const oppShort = resolveClub(oppSlug)?.shortName ?? 'UNK';
+          upcomingFixture = {
+            gameweek: Number(dbUpcoming.gameweek),
+            opponent: `${oppShort} (${isHome ? 'H' : 'A'})`,
+            kickoff_time: dbUpcoming.kickoff_time ?? undefined,
+          };
+        }
+      }
+    }
+
+    if (upcomingFixture) {
+      let projectedPoints: number | null = null;
+      const rawProj = (playerRow as any)?.projected_points;
+      if (rawProj != null) {
+        const projGw = (playerRow as any)?.projected_gameweek;
+        if (projGw == null || Number(projGw) === upcomingFixture.gameweek) {
+          projectedPoints = Number(rawProj);
+        }
+      }
+
+      gamelog.push({
+        gameweek: upcomingFixture.gameweek,
+        opponent: upcomingFixture.opponent,
+        result: '',
+        date: upcomingFixture.kickoff_time,
+        isDNP: false,
+        isUpcoming: true,
+        projected_points: projectedPoints,
+        fantasy_points: 0,
+        match_rating: null,
+        stats: null,
       });
     }
 

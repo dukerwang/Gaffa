@@ -1160,6 +1160,7 @@
 
 .backTabContent {
   flex: 1;
+  width: 100%;
   overflow: hidden;
   position: relative;
   min-height: 0;
@@ -1171,6 +1172,7 @@
 
 .glWrap {
   flex: 1;
+  width: 100%;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;
@@ -1228,6 +1230,7 @@
   border-bottom: 1px solid var(--color-border-subtle);
   color: var(--color-text-primary);
   text-align: right;
+  vertical-align: middle;
 }
 
 .gwTd, .oppTd { text-align: left !important; }
@@ -1258,6 +1261,7 @@
   font-family: var(--font-serif);
   font-weight: 700;
   font-size: var(--t-12);
+  white-space: nowrap;
 }
 
 .dnpRow td { opacity: 0.55; }
@@ -1266,6 +1270,59 @@
   text-align: center !important;
   color: var(--color-text-muted) !important;
   font-style: italic;
+}
+
+.upcomingRow {
+  background: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-accent) 6%);
+}
+
+.upcomingRow td {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border-subtle) 75%, var(--color-accent) 25%);
+}
+
+.oppName {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.fixtureTimeTag {
+  display: block;
+  font-family: var(--font-condensed);
+  font-size: var(--t-10);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.projPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 1px 5px;
+  border: 1px dashed var(--color-text-muted);
+  border-radius: var(--r-control);
+  background: transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.projPillVal {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--t-12);
+  color: var(--color-text-primary);
+}
+
+.projPillLabel {
+  font-family: var(--font-condensed);
+  font-size: var(--t-9);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-accent);
 }
 
 .emptyState {

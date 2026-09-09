@@ -49,11 +49,60 @@
    A toolbar above the board, not part of it — the same relationship the
    auction room's facet strip has to its board. */
 
+/* A grid, not a wrap. The three groups need ~915px and the trailer another
+   ~250, so on anything narrower than a very wide desktop a flex-wrap dropped
+   the label, the groups and the trailer onto three ragged lines. The grid
+   gives two deterministic shapes instead: one row when it fits, otherwise
+   label and trailer on top with the groups beneath them. */
 .formationBar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s3) var(--s4);
+    /* It lives inside the panel now, so it owes the panel's own inset. Without
+       this the label sat hard against the panel edge and the save button hard
+       against the other one. Matches .boardHead above it. */
+    padding: var(--s4);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.formationBarLabel { grid-row: 1; grid-column: 1; }
+
+/* Twelve pills in one flat row read as a wall of numbers with no way in. They
+   are three groups — a back three, four or five — and that is the first
+   choice a manager actually makes, so the control says it. The hairline
+   between groups does the separating; the labels name what is being
+   separated. */
+.formationGroups {
     display: flex;
     align-items: center;
-    gap: var(--s3);
+    gap: var(--s4);
     flex-wrap: wrap;
+    row-gap: var(--s3);
+    min-width: 0;
+}
+
+.formationGroup {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    min-width: 0;
+}
+
+.formationGroup + .formationGroup {
+    padding-left: var(--s4);
+    border-left: 1px solid var(--color-border-subtle);
+}
+
+.formationGroupLabel {
+    font-family: var(--font-condensed);
+    font-size: var(--t-10);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .formationPills {
@@ -62,11 +111,13 @@
     flex-wrap: wrap;
 }
 
+/* `margin-left: auto` was the flex-era push to the right edge; the grid
+   places it now, and leaving the margin in fights the track. */
 .formationBarTrailer {
     display: flex;
     align-items: center;
     gap: var(--s3);
-    margin-left: auto;
+    justify-self: end;
     flex-wrap: wrap;
 }
 
@@ -81,11 +132,15 @@
 }
 
 .formationPill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
     font-family: var(--font-condensed);
     font-size: var(--t-12);
     font-weight: 700;
     letter-spacing: 0.05em;
-    padding: var(--s1) var(--s2);
+    padding: var(--s1) var(--s3);
     background: var(--color-bg-card);
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--r-control);
@@ -502,14 +557,19 @@
     flex-shrink: 0;
 }
 
+/* Selection and its targets go WHITE on the grass, not accent green. The
+   accent is a mid green on a green field, so the ring it drew was the one
+   piece of state on this surface you had to hunt for; the pitch line is the
+   colour this ground already reserves for "a mark that matters". The dashed
+   half keeps target distinct from selected without leaning on hue. */
 .nodeWrapSelected {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-pitch-line);
     outline-offset: 3px;
     border-radius: var(--r-control);
 }
 
 .nodeWrapValidTarget {
-    outline: 2px dashed var(--color-accent);
+    outline: 2px dashed color-mix(in srgb, var(--color-pitch-line) 90%, transparent);
     outline-offset: 3px;
     border-radius: var(--r-control);
 }
@@ -709,8 +769,15 @@
     color: var(--color-accent-ink);
 }
 
+/* The board's primary action. Sized against the formation pills beside it —
+   taller, so it outranks them, but not the oversized slab it was when it sat
+   alone on its own wrapped row. */
 .saveBtn {
-    padding: var(--s2) var(--s5);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: var(--s1) var(--s4);
     background: var(--color-accent);
     color: var(--color-on-accent);
     border: 1px solid var(--color-accent);
@@ -718,11 +785,11 @@
     font-family: var(--font-condensed);
     font-size: var(--t-13);
     font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    letter-spacing: 0.02em;
     cursor: pointer;
     white-space: nowrap;
-    transition: background var(--dur-fast) var(--ease-standard);
+    transition: background var(--dur-fast) var(--ease-standard),
+                border-color var(--dur-fast) var(--ease-standard);
 }
 
 .saveBtn:disabled {
@@ -767,6 +834,10 @@
 }
 
 /* ── Rows, shared by every tier ────────────────────────────
+   .slotBadge and .rowEmptyMark were deleted with the bench tier that used
+   them — the bench is .benchCard under the grass now. Nothing else referenced
+   either; see this file's sibling my-team.module.css for what happens when a
+   redesigned surface leaves its old classes behind.
    Bench, reserves, academy and IR were four near-identical rulesets that had
    already drifted apart in padding, hover and selected treatment. One row. */
 
@@ -820,22 +891,6 @@
 
 .rowSpacer { flex: 1; min-width: 0; }
 
-.slotBadge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 34px;
-    font-family: var(--font-condensed);
-    font-size: var(--t-10);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-    border: 1px solid var(--color-border-subtle);
-    border-radius: var(--r-micro);
-    padding: 2px var(--s1);
-    flex-shrink: 0;
-}
 
 .rowName {
     font-size: var(--t-13);
@@ -858,15 +913,22 @@
   .rowName:hover { text-decoration: underline; }
 }
 
+/* Three letters beside the name, not a full club name beside the score. It
+   reads as part of who the player is, which is why it sits left of the spacer
+   now — and at three characters it no longer crowds the figure. */
 .rowClub {
     font-family: var(--font-condensed);
-    font-weight: 500;
+    font-weight: 600;
     font-size: var(--t-10);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--row-ink, var(--color-text-muted));
     flex-shrink: 0;
     white-space: nowrap;
+    margin-left: var(--s1);
+    padding: 1px var(--s1);
+    border-radius: var(--r-micro);
+    background: var(--color-bg-inset);
 }
 
 /* Settled figure, compared down the column. */
@@ -892,12 +954,6 @@
     color: var(--color-text-muted);
 }
 
-.rowEmptyMark {
-    font-size: var(--t-12);
-    color: var(--row-ink, var(--color-text-muted));
-    font-style: italic;
-    flex: 1;
-}
 
 .lockIcon {
     flex-shrink: 0;
@@ -1100,4 +1156,748 @@
        with this breakpoint's smaller row floor (80px) and padding, or the
        box would stay sized for the taller desktop rows. */
     .pitchField { height: calc(6 * 80px + var(--s8) + var(--s3) + var(--s3) + var(--s3)); }
+}
+
+/* ── Squad capacity ────────────────────────────────────────
+   The rail's first tier. Four tiers each counted their own occupants, but
+   the numbers that actually gate a move — the cap, the buyback allowance and
+   the floor of 15 — lived only inside route handlers. See
+   src/lib/roster/capacity.ts for the single derivation these read. */
+
+.capacityTier { background: var(--color-bg-card-alt); }
+
+.capacityBody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+    padding: 0 var(--s4) var(--s4);
+}
+
+.capacityFigure {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s1);
+    flex-wrap: wrap;
+}
+
+/* Serif, tabular — a settled figure, same treatment as every other count
+   compared across this page. */
+.capacityCount {
+    font-family: var(--font-serif);
+    font-size: var(--t-32);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums lining-nums;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--color-text-primary);
+}
+
+.capacityOf {
+    font-family: var(--font-serif);
+    font-size: var(--t-17);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums lining-nums;
+    color: var(--color-text-muted);
+}
+
+.capacityCaption {
+    font-size: var(--t-12);
+    color: var(--color-text-secondary);
+    margin-left: var(--s1);
+}
+
+.capacityHint { color: var(--color-text-muted); }
+
+/* One pip per slot rather than a proportional bar. A squad is 22 things, and
+   a manager counts them; a percentage of a bar answers a question nobody
+   asked. Pips past the league's own size are the loan-held slots, and pips
+   past the limit are an over-cap roster. */
+.slotMeter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+
+.slotPip {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--r-micro);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.slotPipFilled {
+    background: var(--color-accent);
+    box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+/* A slot the league did not grant — it is held open by a loan-out that paid
+   the buyback fee, and it disappears when that loan ends. */
+.slotPipLoan {
+    box-shadow: inset 0 0 0 1px var(--color-accent);
+    background: var(--color-accent-dim);
+}
+.slotPipFilled.slotPipLoan {
+    background: var(--color-green-300);
+    box-shadow: inset 0 0 0 1px var(--color-green-300);
+}
+
+.slotPipOver {
+    background: var(--color-danger);
+    box-shadow: inset 0 0 0 1px var(--color-danger);
+}
+
+.capacityBreakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s4);
+}
+
+.capacityStat {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.capacityStatVal {
+    font-family: var(--font-serif);
+    font-size: var(--t-15);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums lining-nums;
+    color: var(--color-text-primary);
+    line-height: 1.1;
+}
+
+.capacityStatKey {
+    font-family: var(--font-condensed);
+    font-size: var(--t-10);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+/* A tint plus a bolder line, never a left-edge stripe — DESIGN.md §5. */
+.capacityState {
+    margin: 0;
+    padding: var(--s2) var(--s3);
+    border-radius: var(--r-control);
+    background: var(--color-tint-warning);
+    font-size: var(--t-12);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-primary);
+    line-height: 1.45;
+}
+
+.capacityStateBad { background: var(--color-tint-danger); }
+
+.capacityActions {
+    display: flex;
+    gap: var(--s2);
+    flex-wrap: wrap;
+}
+
+.capacityAction,
+.capacityActionGhost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: var(--s1) var(--s3);
+    border-radius: var(--r-control);
+    font-family: var(--font-condensed);
+    font-size: var(--t-12);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background var(--dur-fast) var(--ease-standard),
+                border-color var(--dur-fast) var(--ease-standard);
+}
+
+.capacityAction {
+    background: var(--color-accent);
+    border: 1px solid var(--color-accent);
+    color: var(--color-on-accent);
+}
+
+.capacityActionGhost {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+}
+
+/* `color` is restated on hover deliberately. These render as <a>, and
+   globals' `a:hover` (0,1,1) outranks the bare `.capacityAction` (0,1,0) that
+   sets the white label — so on hover the text fell back to accent green on an
+   accent-green fill and vanished. The ghost variant never had the bug: its own
+   hover rule (0,2,0) already restates colour. */
+@media (hover: hover) and (pointer: fine) {
+    .capacityAction:hover {
+        background: var(--color-accent-hover);
+        border-color: var(--color-accent-hover);
+        color: var(--color-on-accent);
+    }
+    .capacityActionGhost:hover {
+        border-color: var(--color-border-strong);
+        color: var(--color-text-primary);
+    }
+}
+
+/* Same reasoning for the keyboard path — a focus ring on an invisible label
+   is no better than a hover one. */
+.capacityAction:focus-visible { color: var(--color-on-accent); }
+
+/* Below 1080px the board stacks and the rail becomes a touch surface, so its
+   actions go to the 44px target rather than the desktop rail's 34px. */
+@media (max-width: 1080px) {
+    .capacityAction,
+    .capacityActionGhost { min-height: 44px; padding: var(--s2) var(--s4); }
+}
+
+/* ── The bench ─────────────────────────────────────────────
+   Four cards under the grass, at the same portrait size as a pitch node, so
+   the bench reads as part of the lineup rather than as a list beside it. It
+   was a tier in the rail, ranked level with the reserve pool; the bench is
+   what auto-subs draw from and what carries the depth bonus, so it outranks
+   a pool of players nobody has picked.
+
+   This block lives below .pitchContainer. It shares the node's portrait, its
+   points badge and its lock badge, and it touches no pitch geometry. */
+
+.benchBlock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    padding: var(--s4);
+    background: var(--color-bg-card);
+    border-top: 1px solid var(--color-border);
+}
+
+.benchHead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s3);
+    flex-wrap: wrap;
+}
+
+.benchTitle {
+    font-family: var(--font-serif);
+    font-size: var(--t-17);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.benchCards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--s2);
+}
+
+/* A bench card is a pitch node that happens to be off the field: portrait on
+   top, position and name under it, same 66x78 lot portrait and the same points
+   badge. Laid out horizontally first, the name had ~70px to live in and every
+   one of them ellipsed — a bench meant to read as part of the lineup cannot
+   truncate the four names it exists to show.
+
+   The slot tag goes top-LEFT because the points badge already owns the
+   portrait's top-right corner, and the two collided. */
+.benchCard {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s2);
+    min-height: 44px;
+    padding: var(--s4) var(--s2) var(--s2);
+    background: var(--color-bg-card-alt);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--r-control);
+    cursor: pointer;
+    text-align: center;
+    min-width: 0;
+    transition: border-color var(--dur-fast) var(--ease-standard),
+                background var(--dur-fast) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .benchCard:hover { border-color: var(--color-accent); }
+}
+
+.benchCardSelected {
+    border-color: var(--color-accent);
+    background: var(--color-tint-accent);
+}
+
+.benchCardTarget {
+    border: 1px dashed var(--color-accent);
+    background: var(--color-tint-accent);
+}
+
+.benchCardEmpty { background: transparent; border-style: dashed; }
+.benchCardLocked { opacity: 0.72; }
+
+.benchSlotTag {
+    position: absolute;
+    top: var(--s2);
+    left: var(--s2);
+    font-family: var(--font-condensed);
+    font-size: var(--t-10);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    line-height: 1;
+}
+
+/* Same 66x78 lot portrait the pitch node uses, so a player is the same size
+   whether he is on the field or behind it. The badge anchors to it exactly as
+   .nodePtsBadge does — those rules are shared, not copied. */
+.benchPortrait {
+    display: block;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.benchCardBody {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s1);
+    width: 100%;
+    min-width: 0;
+}
+
+.benchCardMeta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s1);
+}
+
+.benchCardName {
+    font-family: var(--font-serif);
+    font-size: var(--t-13);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    color: var(--color-text-primary);
+    width: 100%;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+}
+
+.benchCardEmptyLabel {
+    font-size: var(--t-12);
+    font-style: italic;
+    color: var(--color-text-muted);
+}
+
+/* Four across holds down to the point where the board stacks; below that the
+   column is the full page width again and four still fit. */
+@media (max-width: 600px) {
+    .benchCards { gap: var(--s1); }
+    .benchCard { padding: var(--s4) var(--s1) var(--s2); }
+    .benchCardName { font-size: var(--t-12); }
+}
+
+/* ── The board's masthead ──────────────────────────────────
+   The page used to open on a floating <h1> over a hairline, with the league,
+   gameweek and opponent as a row of chips above it — the shape of a generic
+   document header. The board carries its own head instead: club identity on
+   the left, the fixture that makes the page worth opening on the right. */
+
+.boardHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s4);
+    padding: var(--s4) var(--s4) var(--s3);
+    border-bottom: 1px solid var(--color-border);
+    flex-wrap: wrap;
+}
+
+.boardIdentity {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    min-width: 0;
+}
+
+.boardTitles {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.boardTeamName {
+    font-family: var(--font-serif);
+    font-size: var(--t-25);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+    color: var(--color-text-primary);
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.boardLeague {
+    font-family: var(--font-condensed);
+    font-size: var(--t-11);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+/* The fixture reads as a fixture — opponent in the same serif as the team
+   name, the gameweek as the condensed column label it is everywhere else. */
+.boardFixture {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s2);
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.fixtureGw {
+    font-family: var(--font-condensed);
+    font-size: var(--t-11);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums lining-nums;
+}
+
+.fixtureVs {
+    font-size: var(--t-12);
+    color: var(--color-text-muted);
+}
+
+.fixtureOpponent {
+    font-family: var(--font-serif);
+    font-size: var(--t-17);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--color-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Broadcast tally red, the same --color-live the old masthead used. */
+.fixtureLive {
+    font-family: var(--font-condensed);
+    font-size: var(--t-12);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-live);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s1);
+}
+
+.fixtureLive::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: var(--r-round);
+    background: var(--color-live);
+    animation: boardLivePulse 1.4s ease-in-out infinite;
+}
+
+@keyframes boardLivePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fixtureLive::before { animation: none; }
+}
+
+.fixtureSetting {
+    font-family: var(--font-condensed);
+    font-size: var(--t-11);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-inset);
+    border-radius: var(--r-control);
+    padding: 2px var(--s2);
+}
+
+@media (max-width: 600px) {
+    .boardHead { padding: var(--s3); gap: var(--s2); }
+    .boardTeamName { font-size: var(--t-20); }
+    .fixtureOpponent { font-size: var(--t-15); }
+}
+
+/* ── The projection badge ──────────────────────────────────
+   The node's badge slot already existed and, before kickoff, held an em-dash.
+   The projection goes in that same slot at the same anchor, so nothing new
+   appears on a node and nothing shifts when the real score replaces it.
+
+   ONE RULE CARRIES THE DISTINCTION: an outlined badge is a forecast, a filled
+   one is points actually scored. That is why this keeps the dashed keyline the
+   pending state already used and takes no fill from the band ramp — the ramp
+   means "this is what he returned", and a projection has returned nothing yet.
+   Colour is never the cue, so it survives both themes and colour blindness. */
+.nodePtsProj {
+    font-family: var(--font-serif);
+    color: var(--proj-ink, var(--color-pitch-line));
+    background: var(--proj-ground, rgba(20, 40, 28, 0.55));
+    border-style: dashed;
+    border-color: var(--proj-line, var(--color-pitch-line));
+}
+
+/* The badge's ground follows what it sits on. On the grass that is a darkened
+   pitch tone carrying white; on a bench card it is the card itself carrying
+   ink, because a dark chip on a cream card reads as a blob rather than as the
+   same mark. The dashed keyline — the thing that actually means "forecast" —
+   is identical in both, so the rule survives the change of ground. */
+.benchCard {
+    --proj-ground: var(--color-bg-card);
+    --proj-ink: var(--color-text-primary);
+    --proj-line: var(--color-text-muted);
+}
+
+/* ── The ledger ────────────────────────────────────────────
+   Projected against scored, on one axis. Deliberately NOT on the node badges:
+   two figures across eleven nodes doubles the type on the densest surface in
+   the app and asks the reader to subtract at a glance. The squad-level
+   question — am I ahead of my forecast — is the one worth answering here.
+
+   Above .pitchContainer; no pitch geometry is touched. */
+
+.ledger {
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+    background: var(--color-bg-card);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.ledgerCell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--s3) var(--s4);
+    min-width: 0;
+}
+
+.ledgerCell + .ledgerCell { border-left: 1px solid var(--color-border-subtle); }
+
+/* A settled figure, compared across the page — serif and tabular, same as
+   every other total in the app. */
+.ledgerVal {
+    font-family: var(--font-serif);
+    font-size: var(--t-20);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums lining-nums;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+}
+
+/* A forecast is stated more quietly than a fact. */
+.ledgerValForecast { color: var(--color-text-secondary); }
+.ledgerValSmall { font-size: var(--t-15); }
+
+.ledgerSub {
+    font-size: var(--t-11);
+    color: var(--color-text-muted);
+}
+
+/* The legend earns its place because the badge treatment is a convention the
+   reader has to learn once. It states the rule in the same two marks the
+   badges use, rather than in a sentence. */
+.ledgerLegend {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    flex-wrap: wrap;
+    margin-left: auto;
+    padding: var(--s3) var(--s4);
+    border-left: 1px solid var(--color-border-subtle);
+}
+
+.ledgerKey {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s1);
+    font-size: var(--t-11);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.ledgerSwatch {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--r-control);
+    flex-shrink: 0;
+}
+
+.ledgerSwatchProj {
+    border: 1px dashed var(--color-text-muted);
+    background: transparent;
+}
+
+.ledgerSwatchScored {
+    border: 1px solid transparent;
+    background: var(--color-green-300);
+}
+
+.ledgerRound {
+    font-family: var(--font-condensed);
+    font-size: var(--t-10);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums lining-nums;
+}
+
+@media (max-width: 600px) {
+    .ledgerCell { padding: var(--s2) var(--s3); }
+    .ledgerVal { font-size: var(--t-17); }
+    /* The legend drops to its own full-width row rather than squeezing the
+       figures, which are the reason the strip exists. */
+    .ledgerLegend {
+        margin-left: 0;
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--color-border-subtle);
+        padding: var(--s2) var(--s3);
+    }
+}
+
+/* The name is its own target: clicking it opens the player's card, clicking
+   anywhere else on the card arms the swap. The bench ROW this card replaced
+   worked exactly that way, and losing it would have been a regression. */
+.benchCardName { cursor: pointer; }
+
+@media (hover: hover) and (pointer: fine) {
+    .benchCardName:hover { text-decoration: underline; }
+    /* The position hue grounds the card on hover, the same signal `.g-row`
+       gave the bench row it replaced. */
+    .benchCard:hover { background: color-mix(in srgb, var(--pf, transparent) 8%, var(--color-bg-card-alt)); }
+}
+
+/* Formation bar, narrow. The groups stack rather than the pills wrapping
+   mid-group, so a back four never breaks across two lines. */
+@media (max-width: 900px) {
+    .formationGroups { gap: var(--s2); width: 100%; }
+    .formationGroup { width: 100%; }
+    .formationGroup + .formationGroup {
+        padding-left: 0;
+        padding-top: var(--s2);
+        border-left: none;
+        border-top: 1px solid var(--color-border-subtle);
+    }
+    .formationGroupLabel { min-width: 48px; }
+    .formationPills { flex: 1; }
+}
+
+@media (max-width: 600px) {
+    /* 44px targets once this is a thumb surface. Wrapping twelve of those
+       across three groups made the bar 287px tall before the pitch even
+       started, so each group's pills scroll in their own track instead —
+       the page never grows and the row never breaks. */
+    .formationPill { min-height: 44px; padding: var(--s1) var(--s3); scroll-snap-align: start; }
+    .formationPills {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+    .formationPills::-webkit-scrollbar { display: none; }
+}
+
+/* Below the width where label + groups + trailer share a line, the bar folds
+   to two rows rather than three ragged ones: the label and the actions on top,
+   the twelve beneath. */
+/* Two rows: the label and the actions share the top, the twelve sit beneath.
+   Every child is placed explicitly — left to auto-placement the trailer could
+   not fit beside a full-width groups row and fell to a third line, which is
+   the ragged look this was meant to remove. */
+@media (max-width: 1320px) {
+    .formationBar { grid-template-columns: auto minmax(0, 1fr); }
+    .formationBarLabel { grid-row: 1; grid-column: 1; }
+    .formationBarTrailer { grid-row: 1; grid-column: 2; justify-self: end; }
+    .formationGroups { grid-row: 2; grid-column: 1 / -1; }
+}
+
+/* ── The rail's figure pair ────────────────────────────────
+   Projection beside actual on reserve, academy and IR rows. Both earn their
+   place: the projection is what you weigh when deciding who to bring in, the
+   actual is how many points sat off the pitch. Left to right they read as
+   expected, then got.
+
+   One line rather than a stacked cell — the rail is 392px and these rows are
+   already dense, so the row keeps its height and the name's ellipsis absorbs
+   the width instead. */
+.rowScore {
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    margin-left: var(--s2);
+    /* A settled column: tabular figures against a fixed floor, so the decimal
+       points line up down the rail whether a row reads 4.2 or 18.40. */
+    min-width: 44px;
+    font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* The dashed ring is the forecast mark used by the pitch badge and the ledger
+   legend. Same mark, same meaning, three surfaces. */
+/* Same size as the actual, because the two now occupy the same slot rather
+   than sitting side by side — a size change between states would make the
+   column jump as a gameweek plays out. The ring and the ink carry the
+   difference instead. */
+.rowScoreProj {
+    font-family: var(--font-serif);
+    font-size: var(--t-12);
+    font-weight: 700;
+    color: var(--row-ink, var(--color-text-muted));
+    white-space: nowrap;
+}
+
+.rowScoreProj::before {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    margin-right: 4px;
+    border: 1px dashed currentColor;
+    border-radius: var(--r-round);
+    vertical-align: middle;
+    opacity: 0.75;
+}
+
+.rowScoreActual {
+    font-family: var(--font-serif);
+    font-size: var(--t-12);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+}
+
+/* With two figures competing for the row, the club abbreviation is the first
+   thing that may go — it is the one piece already carried by the crest
+   everywhere else on this page. */
+@media (max-width: 420px) {
+    .rowScore { gap: var(--s1); }
 }

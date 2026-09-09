@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { countBuybackSlots, DEFAULT_ROSTER_SIZE } from '@/lib/roster/capacity';
 
 interface Props {
     params: Promise<{ teamId: string }>;
@@ -230,15 +231,8 @@ export async function POST(req: NextRequest, { params }: Props) {
             .eq('id', team.league_id)
             .single();
 
-        // Count active buybacks for this team
-        const { count: buybackCount } = await admin
-            .from('player_loans')
-            .select('id', { count: 'exact', head: true })
-            .eq('lender_team_id', teamId)
-            .eq('status', 'active')
-            .eq('slot_buyback_used', true);
-
-        const maxActive = (league?.roster_size ?? 20) + (buybackCount ?? 0);
+        const maxActive =
+            (league?.roster_size ?? DEFAULT_ROSTER_SIZE) + (await countBuybackSlots(admin, teamId));
 
         if (roster && roster.length >= maxActive) {
             return NextResponse.json({ error: 'Active roster is full. You must drop a player before activating from IR.' }, { status: 400 });

@@ -136,7 +136,7 @@ All frontend UI copy, microcopy, error messages, documentation, and agent respon
 - **No Hedge-Stacking**: Cut "it is worth noting that", "this might potentially", etc. State facts directly.
 - **Em-Dash Restraint**: Avoid using em dashes as a sentence-joining tic; split sentences instead.
 - **Prose Over Lists**: Do not list-ify everything into bullets. Use natural prose paragraphs; save lists for sequential steps or parallel items.
-- **Sentence Case**: Use sentence case for headings, section titles, and buttons ("Submit proposal", not "Submit Proposal").
+- **Title Case for labels and buttons**: Capitalize button labels, stat keys and short UI labels ("Save Lineup", "Manage Squad", "Active Roster", "Injured Reserve") — decided 2026-09-09, see `docs/DECISIONS.md`. This reverses the sentence-case rule this file carried previously. Running prose stays sentence case: full sentences in help text, error messages and state notices read as sentences ("Over the cap. Drop or move a player out before the next signing."). Labels already uppercased in CSS are unaffected.
 - **Vocabulary**: "FAAB" is internal vocabulary only (`faab_budget`), but all UI text, error messages, and emails say **"Club Balance"** (or "budget"), formatted as `€{n}m`. Never render it as a spent/remaining usage meter. Leagues cycle indefinitely; they are never "completed".
 
 ### Agent skills policy

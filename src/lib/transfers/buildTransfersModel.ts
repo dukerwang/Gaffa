@@ -524,7 +524,7 @@ export async function buildTransfersModel(
     // immediately regardless of bid count.
     .filter((a) => a.kind !== 'listing' || a.bid_count > 0);
 
-  const activeRosterCount = myRoster.filter((r) => r.status !== 'ir' && r.status !== 'taxi').length;
+  const activeRosterCount = myRoster.filter((r) => r.status !== 'ir' && r.status !== 'taxi' && r.status !== 'loan_in').length;
 
   // Free-agency count, derived rather than queried.
   //

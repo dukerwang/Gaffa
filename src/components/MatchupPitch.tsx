@@ -15,6 +15,8 @@ import Portrait from './players/Portrait';
 import CrestBadge from './crest/CrestBadge';
 import type { CrestConfig } from './crest/types';
 import { Icon } from './ui/Icon';
+import { formatLocalKickoff } from '@/lib/fixtures/formatKickoff';
+import { type ClubGameweekFixture, getPlayerFixture } from '@/lib/fixtures/gameweekFixtures';
 import styles from './MatchupPitch.module.css';
 
 /* ── Zone config ──────────────────────────────────────────────────── */
@@ -199,18 +201,22 @@ function SubMark({ dir }: { dir: 'in' | 'out' }) {
     );
 }
 
-function PlayerChip({ slot, player, detail, status, isSubIn, onClick }: {
+function PlayerChip({ slot, player, detail, status, isSubIn, fixture, onClick }: {
     slot: string;
     player?: Partial<Player>;
     detail?: Detail;
     status: PlayStatus;
     isSubIn?: boolean;
+    fixture?: ClubGameweekFixture;
     onClick?: () => void;
 }) {
     const name = player ? getPlayerDisplayName(player) : '—';
     const { prefetchPlayer } = usePlayerCard();
     const stateCls = status === 'pending' ? styles.chipPending
         : status === 'dnp' ? styles.chipDnp : '';
+    const kickoffStr = fixture?.kickoffTime ? formatLocalKickoff(fixture.kickoffTime) : '';
+    const fixtureDisplay = fixture ? (kickoffStr ? `${fixture.opponent} · ${kickoffStr}` : fixture.opponent) : '';
+
     return (
         <button
             type="button"
@@ -218,7 +224,8 @@ function PlayerChip({ slot, player, detail, status, isSubIn, onClick }: {
             {...(player?.id ? playerHoverProps(prefetchPlayer, { id: player.id, photo_url: player.photo_url }) : {})}
             onClick={onClick}
             aria-label={`${name}, ${slot}, ${
-                status === 'pending' ? 'yet to play'
+                status === 'pending'
+                    ? (fixture ? `${fixture.opponent}, yet to play` : 'yet to play')
                     : status === 'dnp' ? 'did not play'
                     : `${(detail?.points ?? 0).toFixed(2)} points`
             }`}
@@ -248,7 +255,13 @@ function PlayerChip({ slot, player, detail, status, isSubIn, onClick }: {
                         height as a scored one — `align-items: center` on the
                         zone used to float the shorter card up into the row
                         above. */}
-                    <p className={styles.chipStats}>{fmtStats(detail, slot) || '\u00a0'}</p>
+                    <p className={styles.chipStats}>
+                        {status === 'pending' && fixture ? (
+                            <span suppressHydrationWarning title={fixtureDisplay}>{fixtureDisplay}</span>
+                        ) : (
+                            fmtStats(detail, slot) || '\u00a0'
+                        )}
+                    </p>
                 </div>
             </div>
         </button>
@@ -270,12 +283,13 @@ const BENCH_SLOT_TITLE: Record<BenchSlot, string> = {
  * everywhere else" defect: a bench category is not a position, and flex had no
  * hue at all so it borrowed text-muted.
  */
-function BenchChip({ slot, player, detail, status, isSubOut, onClick }: {
+function BenchChip({ slot, player, detail, status, isSubOut, fixture, onClick }: {
     slot: BenchSlot;
     player?: Partial<Player>;
     detail?: Detail;
     status: PlayStatus;
     isSubOut?: boolean;
+    fixture?: ClubGameweekFixture;
     onClick?: () => void;
 }) {
     const pos = player?.primary_position;
@@ -284,6 +298,9 @@ function BenchChip({ slot, player, detail, status, isSubOut, onClick }: {
     const stateCls = !player ? ''
         : status === 'pending' ? styles.chipPending
         : status === 'dnp' ? styles.chipDnp : '';
+    const kickoffStr = fixture?.kickoffTime ? formatLocalKickoff(fixture.kickoffTime) : '';
+    const fixtureDisplay = fixture ? (kickoffStr ? `${fixture.opponent} · ${kickoffStr}` : fixture.opponent) : '';
+
     return (
         <button
             type="button"
@@ -314,6 +331,11 @@ function BenchChip({ slot, player, detail, status, isSubOut, onClick }: {
                         </span>
                     )}
                     <p className={styles.chipName}>{name}</p>
+                    <p className={styles.chipStats}>
+                        {status === 'pending' && fixture ? (
+                            <span suppressHydrationWarning title={fixtureDisplay}>{fixtureDisplay}</span>
+                        ) : '\u00a0'}
+                    </p>
                 </div>
             </div>
         </button>
@@ -398,6 +420,10 @@ interface Props {
     /** The gameweek this board is showing. Carried into the player card so a
      *  chip opens on the match you clicked, not on the card front. */
     gameweek?: number | null;
+    /**
+     * Map of club slug / alias to fixture opponent and kickoff time for this gameweek.
+     */
+    fixtureMap?: Record<string, ClubGameweekFixture>;
     teamAName: string;
     teamBName: string;
     teamAId?: string;
@@ -425,7 +451,7 @@ interface Props {
 }
 
 export default function MatchupPitch({
-    lineupA, lineupB, playerMap, detailMap, perfMap, gameweek, teamAName, teamBName, teamAId, teamBId, crestA, crestB,
+    lineupA, lineupB, playerMap, detailMap, perfMap, gameweek, fixtureMap, teamAName, teamBName, teamAId, teamBId, crestA, crestB,
     startedPlayerIds, scoreA = 0, scoreB = 0, detailA, detailB,
 }: Props) {
     // One breakdown row open at a time. The two columns share this, so opening
@@ -533,6 +559,7 @@ export default function MatchupPitch({
                                                 detail={detailAtSlot(detailMap[s.player_id], s.slot)}
                                                 status={statusOf(s.player_id)}
                                                 isSubIn={s.isSubIn}
+                                                fixture={getPlayerFixture(playerMap[s.player_id], fixtureMap)}
                                                 onClick={() => setViewingPlayer(playerMap[s.player_id] ?? null, s.slot)}
                                             />
                                         ))}
@@ -587,6 +614,7 @@ export default function MatchupPitch({
                                             detail={pid ? detailMap[pid] : undefined}
                                             status={pid ? statusOf(pid) : 'pending'}
                                             isSubOut={row?.isSubOut}
+                                            fixture={getPlayerFixture(player, fixtureMap)}
                                             onClick={player ? () => setViewingPlayer(player, player.primary_position ?? undefined) : undefined}
                                         />
                                         <span className={styles.benchSlotLabel} title={BENCH_SLOT_TITLE[slot]}>{slot}</span>
@@ -642,11 +670,20 @@ export default function MatchupPitch({
                                                         </span>
                                                     )}
                                                 </p>
-                                                {detail?.stats && (
+                                                {detail?.stats ? (
                                                     <p className={styles.breakdownStats}>
                                                         {fmtStats(detail, s.slot)}
                                                     </p>
-                                                )}
+                                                ) : (() => {
+                                                    const f = getPlayerFixture(p, fixtureMap);
+                                                    if (!f) return null;
+                                                    const ko = f.kickoffTime ? formatLocalKickoff(f.kickoffTime) : '';
+                                                    return (
+                                                        <p className={styles.breakdownStats} suppressHydrationWarning>
+                                                            {f.opponent}{ko ? ` · ${ko}` : ''}
+                                                        </p>
+                                                    );
+                                                })()}
                                             </div>
                                         </div>
                                         <span className={styles.breakdownTail}>

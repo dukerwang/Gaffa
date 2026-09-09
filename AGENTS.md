@@ -53,7 +53,7 @@ All frontend UI copy, microcopy, error messages, docs, commit messages, and assi
 4. **Punctuation and formatting**:
    - **Em-dash restraint**: Do not use em dashes as a continuous sentence-joining crutch. Split thoughts into clean sentences.
    - **Prose over bulleted lists**: Do not list-ify everything. Write natural prose paragraphs by default. Reserve lists only for sequential steps or genuinely parallel options.
-   - **Sentence case**: Use sentence case for headings, section titles, and button labels ("Submit proposal", not "Submit Proposal" or "SUBMIT PROPOSAL").
+   - **Title Case for buttons and short labels**: "Save Lineup", "Manage Squad", "Active Roster" — decided 2026-09-09 (`docs/DECISIONS.md`), reversing the sentence-case rule this file carried before. Running prose (help text, errors, state notices) stays sentence case. Never set caps with `text-transform` on an action button.
    - **Selective bolding**: Use bold only for actual UI elements or key terms, not for manufacturing artificial emphasis on ordinary nouns.
    - **Serial comma**: Always use the Oxford comma.
 

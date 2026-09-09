@@ -5,6 +5,7 @@ import { sendEmailToUsers } from '@/lib/email/sendEmailToUsers';
 import { getTradeAcceptedEmail } from '@/lib/email/templates';
 import { buildHereWeGo, formatAssetList, pushTitleForEyebrow } from '@/lib/notifications/hereWeGo';
 import { getValueTier } from '@/lib/notifications/valueTiers';
+import { MIN_ACTIVE_ROSTER } from '@/lib/roster/capacity';
 
 interface Props {
   params: Promise<{ leagueId: string; tradeId: string }>;
@@ -181,7 +182,8 @@ export async function POST(req: NextRequest, { params }: Props) {
               const { data: tradePlayers } = await admin
                 .from('roster_entries')
                 .select('player_id, status, player:players(pl_team_id, web_name)')
-                .in('player_id', allTradePlayerIds);
+                .in('player_id', allTradePlayerIds)
+                .in('team_id', [trade.team_a_id, trade.team_b_id]);
 
               for (const entry of tradePlayers ?? []) {
                 if (entry.status === 'active' || entry.status === 'bench') {
@@ -269,7 +271,7 @@ export async function POST(req: NextRequest, { params }: Props) {
   const { data: rpcRes, error: rpcError } = await admin.rpc('execute_trade_transaction_rpc', {
     p_trade_id: tradeId,
     p_roster_size: rosterSize,
-    p_min_roster_size: 15,
+    p_min_roster_size: MIN_ACTIVE_ROSTER,
   });
 
   if (rpcError) {

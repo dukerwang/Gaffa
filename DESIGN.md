@@ -72,6 +72,7 @@ Full quotes and dates in **`docs/DECISIONS.md`**. Summary: [decided]
 * **Gaffa is not a themed costume.** Sophisticated, accessible product UI for real football fans. [decided]
 * **"One job per colour" is not binding.** Green carries topbar chrome, primary buttons, and positive status safely via the green ramp. [decided]
 * **Mobile is a first-class target, not a reflow.** Must look and feel native, tactile, and ergonomic. [decided]
+* **Title Case for buttons and short labels**, not sentence case. Running prose stays sentence case. (2026-09-09) [decided]
 
 ---
 
@@ -108,7 +109,7 @@ These patterns are strictly forbidden across Gaffa: [decided] [inferred]
 | **Colored Left Container Stripes** | Generic AI dashboard cliché (`border-left: 3px solid green`). Banned by Duke. | Express status via badge chips or a background tint (`--color-accent-dim`). A tint that carries state must also beat `:hover` — a bare `.rowUnread` loses to `.row:hover` and the state vanishes on hover — and must be paired with a non-color cue such as a bolder title. |
 | **Uncalibrated AI Neon Glows** | Oversaturated drop shadows (`box-shadow: 0 0 20px rgba(...)`). | Calibrated ambient resting shadows (`--shadow-card`) tinted to the background hue. |
 | **Heavy 1px Wireframe Borders** | Makes data tables feel caged in and cluttered. | `--color-border-subtle` at 1px plus explicit card fills (`--color-bg-card`). A subpixel `0.5px` hairline token was added and removed unused — treat it as a proposal, not a shipped rule. [inferred] |
-| **Screaming Uppercase Action Buttons** | Monotonous shouting labels (`SUBMIT PROPOSAL`). | Clean sentence case (`Submit proposal`, `Join league`) in condensed or sans typography. |
+| **Screaming Uppercase Action Buttons** | Monotonous shouting labels (`SUBMIT PROPOSAL`) set by `text-transform`. | Title Case in the markup (`Save Lineup`, `Join League`) in condensed or sans typography. Sentence case was the rule here until 2026-09-09; Duke reversed it — see `docs/DECISIONS.md`. Labels uppercased in CSS (`.g-label`, column heads) are a separate device and stay. [decided] |
 | **Generic 3-Card Bento Formulas** | AI layout default that ignores real domain content. | Asymmetric editorial grids, dense data rows, and tactical pitch layouts. |
 | **Blank Loading Pop-Ins** | Abrupt content flashing on route navigation. | Contextual skeleton shimmer blocks matching layout shape. `.g-skeleton` exists in `globals.css` but no surface uses it yet. [inferred] |
 
