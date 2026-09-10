@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion, type PanInfo } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
     FORMATION_SLOTS,
@@ -252,29 +253,27 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isEmpty, isInva
             type="button"
             className={wrapCls}
             {...(player ? playerHoverProps(prefetchPlayer, player) : {})}
+            /* Tapping the node ARMS THE SWAP. It used to open the player card,
+               with only the portrait — 44x44 on a phone — arming anything, so
+               the primary action on a lineup page was the hidden one and the
+               mobile swap panel almost never opened. The name opens the card
+               instead, which is how the bench card and every squad-rail row
+               already behave. */
             onClick={() => {
-                if (player && onViewDetails) {
-                    onViewDetails();
-                } else if (!isLocked) {
+                if (!isLocked) {
                     onClick();
+                } else if (player && onViewDetails) {
+                    onViewDetails();
                 }
             }}
             style={isLocked ? { opacity: 0.7 } : undefined}
-            title={isLocked ? 'Match started (Locked) — click to view' : isInvalid ? 'Player is not eligible for this position' : undefined}
+            title={isLocked ? 'Match started (Locked) — click to view' : isInvalid ? 'Player is not eligible for this position' : 'Tap to swap · tap the name for his card'}
         >
             {/* The lot-size portrait, with the club on its crest chip. The node
                 used to carry a three-letter club abbreviation as a line of text
                 beside the badge — the exact line the crest replaced everywhere
                 else, and the reason the chip needed two rows of type. */}
-            <span
-                className={styles.nodePortrait}
-                onClick={(e) => {
-                    if (player && !isLocked) {
-                        e.stopPropagation();
-                        onClick();
-                    }
-                }}
-            >
+            <span className={styles.nodePortrait}>
                 <Portrait
                     photoUrl={player?.photo_url}
                     name={player ? pitchFullName(player) : slotPos}
@@ -305,7 +304,16 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isEmpty, isInva
                 <div className={styles.nodeChipBody}>
                     {player ? (
                         <>
-                            <span className={`${styles.nodePlayerNameCenter} ${isInvalid ? styles.nodeNameInvalid : ''}`}>
+                            <span
+                                className={`${styles.nodePlayerNameCenter} ${isInvalid ? styles.nodeNameInvalid : ''}`}
+                                onClick={(e) => {
+                                    if (onViewDetails) {
+                                        e.stopPropagation();
+                                        onViewDetails();
+                                    }
+                                }}
+                                title={`${pitchFullName(player)} — tap the name for his card`}
+                            >
                                 {displayName(player)}
                             </span>
                             <div className={styles.nodeMetaChipRow}>
@@ -424,6 +432,61 @@ export default function PitchUI({
     const [sidebarSelection, setSidebarSelection] = useState<SidebarSelection>(null);
     const [sidebarLoading, setSidebarLoading] = useState(false);
     const [sidebarError, setSidebarError] = useState<string | null>(null);
+
+    /* The squad sheet on phones: collapsed to its handle until opened, until a
+       swap is armed, or until dragged. Desktop ignores all of it — the rail is
+       a column there.
+
+       Ported from the draft room's mobile drawer (DraftRoom.tsx, and
+       docs/superpowers/specs/2026-08-19-mobile-draft-drawer-design.md), down to
+       the flick threshold. Position is `transform: translateY()` against a
+       FIXED height, never an animated height: animating height reflows every
+       frame and was the source of that drawer's original jank. */
+    const [squadOpen, setSquadOpen] = useState(false);
+    const [isPhone, setIsPhone] = useState(false);
+    const [squadLiveOffset, setSquadLiveOffset] = useState<number | null>(null);
+    const squadMaxOffsetRef = useRef(0);
+    const squadPanStartRef = useRef(0);
+
+    useEffect(() => {
+        const mq = window.matchMedia('(max-width: 600px)');
+        setIsPhone(mq.matches);
+        const handler = (e: MediaQueryListEvent) => setIsPhone(e.matches);
+        mq.addEventListener('change', handler);
+        return () => mq.removeEventListener('change', handler);
+    }, []);
+
+    useEffect(() => {
+        const updateMax = () => {
+            /* SQUAD_PEEK (68) must match the collapsed handle's height in
+               pitch.module.css, and 0.76 must match the sheet's own height
+               there. Two numbers in two files; changing one without the other
+               leaves the handle off-screen or floating. */
+            squadMaxOffsetRef.current = Math.round(window.innerHeight * 0.76) - 68;
+        };
+        updateMax();
+        window.addEventListener('resize', updateMax);
+        return () => window.removeEventListener('resize', updateMax);
+    }, []);
+
+    const handleSquadPanStart = useCallback(() => {
+        squadPanStartRef.current = squadOpen ? 0 : squadMaxOffsetRef.current;
+    }, [squadOpen]);
+
+    const handleSquadPan = useCallback((_e: unknown, info: PanInfo) => {
+        const max = squadMaxOffsetRef.current;
+        setSquadLiveOffset(Math.min(max, Math.max(0, squadPanStartRef.current + info.offset.y)));
+    }, []);
+
+    const handleSquadPanEnd = useCallback((_e: unknown, info: PanInfo) => {
+        const max = squadMaxOffsetRef.current;
+        const current = squadPanStartRef.current + info.offset.y;
+        const FLICK_VELOCITY = 300;
+        if (info.velocity.y < -FLICK_VELOCITY) setSquadOpen(true);
+        else if (info.velocity.y > FLICK_VELOCITY) setSquadOpen(false);
+        else setSquadOpen(current < max / 2);
+        setSquadLiveOffset(null);
+    }, []);
 
     // ── Modal ──
     const { openPlayer, prefetchPlayer, primePlayers } = usePlayerCard();
@@ -1143,6 +1206,30 @@ export default function PitchUI({
 
 
 
+    /**
+     * Picking a RESERVE drops the sheet.
+     *
+     * There is only one reason to select a reserve: to put him into the XI or
+     * onto the bench, and both of those targets are behind the sheet. Selecting
+     * a starter is different — he can be swapped with another starter or with a
+     * bench player, all of which are already on screen — so that leaves the
+     * sheet exactly as the manager left it.
+     *
+     * Phones only; the desktop rail is a column and covers nothing.
+     */
+    useEffect(() => {
+        if (lineupSelection?.type !== 'pool') return;
+        if (typeof window === 'undefined' || !window.matchMedia) return;
+        if (!window.matchMedia('(max-width: 600px)').matches) return;
+        setSquadOpen(false);
+    }, [lineupSelection]);
+
+    /** Reserves that can fill the armed slot — the rail's own target set. */
+    const swapEligible = useMemo(
+        () => poolEntries.filter((e) => validLineupTargets.has(`pool-${e.player.id}`)),
+        [poolEntries, validLineupTargets],
+    );
+
     // ─── Render ───────────────────────────────────────────────────────────────
 
     return (
@@ -1163,9 +1250,14 @@ export default function PitchUI({
                 {masthead && (
                     <div className={styles.boardHead}>
                         <div className={styles.boardIdentity}>
+                            {/* 52, not 44: the crest stands against three lines of
+                                type — club, league, fixture — and at 44 it read as
+                                an icon beside a block rather than the club's own
+                                mark. A shield is taller than it is wide, so it also
+                                fills less of its box than a square badge would. */}
                             <CrestBadge
                                 config={masthead.crestConfig as never}
-                                size={44}
+                                size={52}
                                 teamName={teamName ?? ''}
                                 teamId={teamId}
                                 interactive={false}
@@ -1174,6 +1266,19 @@ export default function PitchUI({
                                 <h1 className={styles.boardTeamName}>{teamName}</h1>
                                 <span className={styles.boardLeague}>{masthead.leagueName}</span>
                             </div>
+                        </div>
+
+                        {/* Saving the lineup is a page action, not a formation
+                            control. It sat in the formation bar's trailer, which
+                            made the row read as "pick a shape, and also commit
+                            everything". It belongs to the board, so it lives in
+                            the board's head. */}
+                        <div className={styles.boardActions}>
+                            {saveError && <span className={styles.errorText}>{saveError}</span>}
+                            {saveSuccess && !saveError && <span className={styles.successText}>Lineup Saved.</span>}
+                            <button className={styles.saveBtn} onClick={handleSave} disabled={!canSave}>
+                                {saving ? 'Saving…' : 'Save Lineup'}
+                            </button>
                         </div>
 
                         <div className={styles.boardFixture}>
@@ -1255,11 +1360,6 @@ export default function PitchUI({
                             </button>
                         </span>
                     )}
-                    {saveError && <span className={styles.errorText}>{saveError}</span>}
-                    {saveSuccess && !saveError && <span className={styles.successText}>Lineup Saved.</span>}
-                    <button className={styles.saveBtn} onClick={handleSave} disabled={!canSave}>
-                        {saving ? 'Saving…' : 'Save Lineup'}
-                    </button>
                 </div>
             </div>
 
@@ -1481,7 +1581,7 @@ export default function PitchUI({
                                             isLocked ? styles.benchCardLocked : '',
                                         ].filter(Boolean).join(' ')}
                                         style={entry ? { ['--pf' as string]: entry.player.primary_position ? POS_COLOR[entry.player.primary_position] : 'var(--color-border-subtle)' } : undefined}
-                                        onClick={isLocked && entry ? () => setViewingPlayer(entry.player) : () => handleBenchSlotClick(slot)}
+                                                                    onClick={isLocked && entry ? () => setViewingPlayer(entry.player) : () => handleBenchSlotClick(slot)}
                                         title={isLocked ? 'Match started (Locked) — click to view' : BENCH_SLOT_TITLE[slot]}
                                         {...(entry ? playerHoverProps(prefetchPlayer, entry.player) : {})}
                                     >
@@ -1539,7 +1639,53 @@ export default function PitchUI({
                     and, being separate rulesets, their padding, hover and
                     selected states had already drifted apart. One row class
                     serves all four now. */}
-                <div className={styles.sidebarCol}>
+                <div
+                    className={styles.sidebarCol}
+                    data-squad-open={squadOpen ? 'true' : 'false'}
+                    style={isPhone ? {
+                        transform: `translateY(${
+                            squadLiveOffset ?? (squadOpen ? 0 : squadMaxOffsetRef.current)
+                        }px)`,
+                        transition: squadLiveOffset != null ? 'none' : 'transform var(--dur-base) var(--ease-standard)',
+                    } : undefined}
+                >
+
+                    {/* ── Sheet handle (phones) ──
+                        On a phone the rail is a sheet standing on the bottom of
+                        the screen rather than a column beside the pitch, so the
+                        reserves, the academy and the IR are always one tap away
+                        instead of a full screen below the bench. The handle
+                        carries the squad count, so the capacity figure stays
+                        legible without opening anything. */}
+                    <motion.button
+                        type="button"
+                        className={styles.squadHandle}
+                        onPanStart={isPhone ? handleSquadPanStart : undefined}
+                        onPan={isPhone ? handleSquadPan : undefined}
+                        onPanEnd={isPhone ? handleSquadPanEnd : undefined}
+                        onClick={() => setSquadOpen((v) => !v)}
+                        aria-expanded={squadOpen}
+                    >
+                        <span className={styles.squadGrabber} aria-hidden />
+                        <span className={styles.squadHandleRow}>
+                            <span className={styles.squadHandleTitle}>Squad</span>
+                            {capacity && (
+                                <span className={styles.squadHandleCount}>
+                                    {capacity.active}
+                                    <span className={styles.squadHandleOf}>/{capacity.limit}</span>
+                                </span>
+                            )}
+                            <span className={styles.rowSpacer} />
+                            <span className="g-label">
+                                {lineupSelection
+                                    ? `${swapEligible.length} eligible`
+                                    : `${poolEntries.length} reserves`}
+                            </span>
+                            <span className={styles.squadChevron} aria-hidden>
+                                <Icon name={squadOpen ? 'arrow-down' : 'arrow-up'} size={15} />
+                            </span>
+                        </span>
+                    </motion.button>
 
                     {/* ── SQUAD CAPACITY ──
                         The rail's four tiers each count their own occupants,
@@ -1634,6 +1780,8 @@ export default function PitchUI({
                             </div>
                         </section>
                     )}
+
+                    <div className={styles.squadScroll}>
 
                     {sidebarError && (
                         <div className={styles.sidebarError}>
@@ -1740,7 +1888,7 @@ export default function PitchUI({
                                 return (
                                     <div
                                         key={entry.id}
-                                        className={`g-row g-namerow ${styles.row} ${isSelected ? styles.rowSelected : ''}`}
+                                        className={`g-row g-namerow ${styles.row} ${styles.rowWithActions} ${isSelected ? styles.rowSelected : ''}`}
                                         style={{ ['--pf' as string]: entry.player.primary_position ? POS_COLOR[entry.player.primary_position] : 'var(--color-border-subtle)' }}
                                     >
                                         <PositionBadge position={entry.player.primary_position} size="sm" />
@@ -1796,7 +1944,7 @@ export default function PitchUI({
                                 return (
                                     <div
                                         key={entry.id}
-                                        className={`g-row g-namerow ${styles.row} ${isSelected ? styles.rowSelected : ''}`}
+                                        className={`g-row g-namerow ${styles.row} ${styles.rowWithActions} ${isSelected ? styles.rowSelected : ''}`}
                                         style={{ ['--pf' as string]: entry.player.primary_position ? POS_COLOR[entry.player.primary_position] : 'var(--color-border-subtle)' }}
                                     >
                                         <PositionBadge position={entry.player.primary_position} size="sm" />
@@ -1839,9 +1987,11 @@ export default function PitchUI({
                         </section>
                     )}
 
+                    </div>{/* end squadScroll */}
                 </div>
                 </div>{/* end board */}
             </div>{/* end panel */}
+
 
             {/* The player card modal is owned by PlayerCardProvider in the dashboard layout. */}
         </div>
