@@ -64,35 +64,42 @@ export function calculatePlayerProjectedPoints(
   const isGk = pos === 'GK';
   const isDef = DEFENSIVE_POSITIONS.has(pos);
   const isFb = FULLBACK_POSITIONS.has(pos);
+  const isDm = pos === 'DM';
+  const isCm = pos === 'CM';
 
   // Calibre normalizer (0.10 to 1.00) based on Transfermarkt valuation
   const mv = player.market_value ?? 15;
   const calibre = Math.min(1.0, Math.max(0.1, mv / 100));
 
+  // Dominance ratio: territorial control and possession proxy (0.25 to 0.85)
+  const totalExpectedGoals = fixtureEnv.expectedGoals + fixtureEnv.expectedConceded;
+  const dominance = totalExpectedGoals > 0 ? fixtureEnv.expectedGoals / totalExpectedGoals : 0.50;
+
   // Goal and assist shares by position and calibre
-  let xgShare = 0.03;
-  let xaShare = 0.03;
+  let xgShare = 0.02;
+  let xaShare = 0.02;
 
   if (pos === 'ST') {
-    xgShare = 0.28 + 0.14 * calibre;
+    xgShare = 0.28 + 0.16 * calibre;
     xaShare = 0.06 + 0.04 * calibre;
   } else if (pos === 'LW' || pos === 'RW') {
-    xgShare = 0.18 + 0.12 * calibre;
-    xaShare = 0.15 + 0.10 * calibre;
+    xgShare = 0.18 + 0.14 * calibre;
+    xaShare = 0.15 + 0.12 * calibre;
   } else if (pos === 'AM') {
-    xgShare = 0.14 + 0.12 * calibre;
-    xaShare = 0.17 + 0.12 * calibre;
+    xgShare = 0.14 + 0.14 * calibre;
+    xaShare = 0.18 + 0.14 * calibre;
   } else if (pos === 'CM') {
-    xgShare = 0.06 + 0.04 * calibre;
-    xaShare = 0.10 + 0.06 * calibre;
+    xgShare = 0.06 + 0.05 * calibre;
+    xaShare = 0.12 + 0.08 * calibre;
   } else if (pos === 'DM') {
     xgShare = 0.02 + 0.02 * calibre;
-    xaShare = 0.04 + 0.04 * calibre;
+    xaShare = 0.05 + 0.05 * calibre;
   } else if (isFb) {
-    xgShare = 0.03 + 0.02 * calibre;
-    xaShare = 0.09 + 0.06 * calibre;
+    xgShare = 0.03 + 0.03 * calibre;
+    xaShare = 0.10 + 0.08 * calibre;
   } else if (pos === 'CB') {
-    xgShare = 0.02 + 0.01 * calibre;
+    // Aerial set-piece threat in the box
+    xgShare = 0.03 + 0.02 * calibre;
     xaShare = 0.01 + 0.01 * calibre;
   } else if (isGk) {
     xgShare = 0.0;
@@ -102,39 +109,48 @@ export function calculatePlayerProjectedPoints(
   const pXg = fixtureEnv.expectedGoals * xgShare;
   const pXa = fixtureEnv.expectedGoals * xaShare;
 
-  // Base rating calibrated to empirical 10-12 pt starter baseline.
-  // In Gaffa, defensive contributions (CBI, recoveries, tackles) keep starting
-  // outfielders around a 6.8 to 7.1 display rating (~10-12 points).
-  let baseRating = 6.80 + 0.15 * calibre;
+  let baseRating = 6.65 + 0.20 * calibre;
+
   if (pos === 'CB') {
-    baseRating = 6.85 + 0.15 * calibre;
-  } else if (pos === 'DM') {
-    baseRating = 6.85 + 0.15 * calibre;
-  } else if (isFb) {
-    baseRating = 6.80 + 0.20 * calibre;
-  } else if (pos === 'CM') {
-    baseRating = 6.75 + 0.15 * calibre;
-  } else if (isGk) {
-    baseRating = 6.85 + 0.15 * calibre;
-  } else {
-    // Attackers: base rating starts slightly lower (6.60-6.80) because attacking actions
-    // account for their scoring upside
-    baseRating = 6.60 + 0.20 * calibre;
-  }
-
-  // Add expected match impact from attacking metrics
-  let expRating = baseRating + pXg * 0.75 + pXa * 0.45;
-
-  if (isDef || isGk) {
-    // Clean sheet adds match impact relative to league average clean sheet prob (~28%)
-    expRating += (fixtureEnv.cleanSheetProb - 0.28) * 0.50;
-    // Conceding heavily (xGA > 1.20) dings match impact
+    // Centre-backs: clean sheet leverage + box aerial / clearance presence
+    baseRating = 6.65 + 0.20 * calibre;
+    baseRating += fixtureEnv.cleanSheetProb * 0.90;
     const excessConceded = Math.max(0, fixtureEnv.expectedConceded - 1.20);
-    expRating -= excessConceded * 0.22;
+    baseRating -= excessConceded * 0.30;
+  } else if (isFb) {
+    // Fullbacks: two-way involvement (crosses, carries, and clean sheets)
+    baseRating = 6.60 + 0.25 * calibre;
+    baseRating += fixtureEnv.cleanSheetProb * 0.85;
+    baseRating += pXg * 0.80 + pXa * 0.60;
+    const excessConceded = Math.max(0, fixtureEnv.expectedConceded - 1.20);
+    baseRating -= excessConceded * 0.25;
+  } else if (isDm) {
+    // Holding midfielders: driven by possession dominance, passing volume, and duel control
+    baseRating = 6.55 + 0.25 * calibre;
+    const dominanceFactor = (dominance - 0.50) * 1.20;
+    baseRating += dominanceFactor;
+    baseRating += fixtureEnv.cleanSheetProb * 0.40;
+    baseRating += pXg * 0.50 + pXa * 0.40;
+  } else if (isCm) {
+    // Central midfielders: box-to-box dominance, tempo control, and chance involvement
+    baseRating = 6.55 + 0.25 * calibre;
+    const dominanceFactor = (dominance - 0.50) * 1.00;
+    baseRating += dominanceFactor;
+    baseRating += pXg * 0.70 + pXa * 0.55;
+  } else if (isGk) {
+    // Goalkeepers: clean sheet + save volume
+    baseRating = 6.55 + 0.20 * calibre;
+    baseRating += fixtureEnv.cleanSheetProb * 0.80;
+    const excessConceded = Math.max(0, fixtureEnv.expectedConceded - 1.20);
+    baseRating -= excessConceded * 0.35;
+  } else {
+    // Attackers: driven by chance creation and defensive vulnerability
+    baseRating = 6.50 + 0.25 * calibre;
+    baseRating += pXg * 0.85 + pXa * 0.50;
   }
 
   // Linear map display rating -> scoring scale rating (1 + 9 * composite)
-  const composite = (expRating - 3.5) / 6.0;
+  const composite = (baseRating - 3.5) / 6.0;
   const scoringRating = 1.0 + 9.0 * Math.max(0, Math.min(1.0, composite));
 
   let curvePoints = 0;
@@ -142,10 +158,13 @@ export function calculatePlayerProjectedPoints(
     curvePoints = 8.6 * Math.pow((scoringRating - 4.0) / 2.0, 1.5);
   }
 
-  // Clean sheet flat bonus for defenders and keepers (scaled by clean sheet probability)
+  // Flat bonuses (land after the curve, matching Gaffa's scoring engine)
   let flatBonuses = 0;
   if (isDef || isGk) {
-    flatBonuses += fixtureEnv.cleanSheetProb * 3.5;
+    // Gaffa rewards clean sheets with 12-16 defensive points
+    flatBonuses += fixtureEnv.cleanSheetProb * 4.5;
+  } else if (isDm) {
+    flatBonuses += fixtureEnv.cleanSheetProb * 2.0;
   }
 
   if (isGk) {
