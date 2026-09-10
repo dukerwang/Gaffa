@@ -258,7 +258,10 @@ function PlayerChip({ slot, player, detail, status, isSubIn, fixture, onClick }:
                         above. */}
                     <p className={styles.chipStats}>
                         {status === 'pending' && fixture ? (
-                            <span suppressHydrationWarning title={fixtureDisplay}>{fixtureDisplay}</span>
+                            <span className={styles.chipFixture} suppressHydrationWarning title={fixtureDisplay}>
+                                <span className={styles.chipFixtureOpp}>{fixture.opponent}</span>
+                                {kickoffStr && <span className={styles.chipFixtureTime}>{kickoffStr}</span>}
+                            </span>
                         ) : (
                             fmtStats(detail, slot) || '\u00a0'
                         )}
@@ -334,7 +337,10 @@ function BenchChip({ slot, player, detail, status, isSubOut, fixture, onClick }:
                     <p className={styles.chipName}>{name}</p>
                     <p className={styles.chipStats}>
                         {status === 'pending' && fixture ? (
-                            <span suppressHydrationWarning title={fixtureDisplay}>{fixtureDisplay}</span>
+                            <span className={styles.chipFixture} suppressHydrationWarning title={fixtureDisplay}>
+                                <span className={styles.chipFixtureOpp}>{fixture.opponent}</span>
+                                {kickoffStr && <span className={styles.chipFixtureTime}>{kickoffStr}</span>}
+                            </span>
                         ) : '\u00a0'}
                     </p>
                 </div>
