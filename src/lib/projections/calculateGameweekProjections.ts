@@ -21,6 +21,9 @@ export interface PlayerRowForProjection {
   primary_position: GranularPosition | null;
   market_value: number | null;
   fpl_status: string | null;
+  fpl_starts: number | null;
+  fpl_minutes: number | null;
+  fpl_chance_next_round: number | null;
 }
 
 export interface GameweekProjectionsResult {
@@ -28,6 +31,44 @@ export interface GameweekProjectionsResult {
   season: string;
   projections: Map<string, number>;
   fixturesFound: number;
+}
+
+/**
+ * Resolves expected minutes role based on completed rounds, real match appearances,
+ * and scouting outlook.
+ */
+export function resolvePlayerMinutesRole(
+  player: {
+    primary_position: GranularPosition | null;
+    market_value: number | null;
+    fpl_starts?: number | null;
+    fpl_minutes?: number | null;
+  },
+  completedRounds: number,
+  outlookRole?: string,
+): string {
+  const starts = player.fpl_starts ?? 0;
+  const minutes = player.fpl_minutes ?? 0;
+
+  // Once at least 2 matchdays have taken place in the active season, real match
+  // appearances ground the player's role over pre-season assumptions.
+  if (completedRounds >= 2) {
+    const startRatio = starts / completedRounds;
+    if (startRatio >= 0.75) return 'nailed';
+    if (startRatio >= 0.50) return 'likely_starter';
+    if (starts >= 1) return 'rotation_risk';
+
+    // 0 starts: distinguish between substitute cameos and unplayed reserves
+    if (player.primary_position === 'GK') return 'fringe';
+    if (minutes > 0) return 'rotation_risk';
+    return 'fringe';
+  }
+
+  // Early season (GW1/GW2) or before starts data exists: use outlook or valuation fallback
+  if (outlookRole) return outlookRole;
+  if (player.market_value != null && player.market_value >= 40) return 'likely_starter';
+  if (player.market_value != null && player.market_value >= 15) return 'rotation_risk';
+  return 'fringe';
 }
 
 /**
@@ -55,19 +96,36 @@ export async function calculateGameweekProjections(
 
   const teamEnvs = buildGameweekTeamEnvironments(fixturePairs);
 
-  // 2. Fetch active players
-  const playerRows = await fetchAllPages<PlayerRowForProjection>((from, to) => {
-    let query = supabase
-      .from('players')
-      .select('id, pl_team, primary_position, market_value, fpl_status')
-      .eq('is_active', true);
+  // 2. Fetch active players and scouting outlooks concurrently
+  const [playerRows, outlooksResult] = await Promise.all([
+    fetchAllPages<PlayerRowForProjection>((from, to) => {
+      let query = supabase
+        .from('players')
+        .select(
+          'id, pl_team, primary_position, market_value, fpl_status, fpl_starts, fpl_minutes, fpl_chance_next_round',
+        )
+        .eq('is_active', true);
 
-    if (playerIds?.length) {
-      query = query.in('id', playerIds);
+      if (playerIds?.length) {
+        query = query.in('id', playerIds);
+      }
+
+      return query.range(from, to);
+    }),
+    supabase.from('player_outlooks').select('player_id, sidecar'),
+  ]);
+
+  const outlookMap = new Map<string, string>();
+  for (const row of outlooksResult.data ?? []) {
+    const sidecar = row.sidecar as Record<string, unknown> | null;
+    const role = sidecar?.minutes_role;
+    if (typeof role === 'string') {
+      outlookMap.set(row.player_id, role);
     }
+  }
 
-    return query.range(from, to);
-  });
+  // Determine completed matchdays from maximum player starts across the league
+  const completedRounds = Math.max(...playerRows.map((p) => p.fpl_starts ?? 0), 0);
 
   // 3. Compute projections
   const projections = new Map<string, number>();
@@ -87,12 +145,19 @@ export async function calculateGameweekProjections(
       continue;
     }
 
+    const outlookRole = outlookMap.get(player.id);
+    const minutesRole = resolvePlayerMinutesRole(player, completedRounds, outlookRole);
+
     const points = calculatePlayerProjectedPoints(
       {
         id: player.id,
         primary_position: player.primary_position,
         market_value: player.market_value,
         fpl_status: player.fpl_status,
+        fpl_chance_next_round: player.fpl_chance_next_round,
+        fpl_starts: player.fpl_starts,
+        fpl_minutes: player.fpl_minutes,
+        minutesRole,
       },
       env,
     );

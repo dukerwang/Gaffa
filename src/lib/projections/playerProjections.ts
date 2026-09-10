@@ -17,6 +17,9 @@ export interface PlayerProjectionInput {
   primary_position: GranularPosition;
   market_value: number | null;
   fpl_status?: string | null;
+  fpl_chance_next_round?: number | null;
+  fpl_starts?: number | null;
+  fpl_minutes?: number | null;
   minutesRole?: string;
   priorP90?: number | null;
 }
@@ -25,27 +28,42 @@ const DEFENSIVE_POSITIONS = new Set<GranularPosition>(['GK', 'CB', 'LB', 'RB', '
 const FULLBACK_POSITIONS = new Set<GranularPosition>(['LB', 'RB', 'LWB', 'RWB']);
 
 /**
- * Estimates expected minutes based on FPL availability status and Futbolpedia role.
+ * Estimates expected minutes based on FPL availability status, Futbolpedia role,
+ * position, and chance of playing next round.
  */
 export function estimateExpectedMinutes(
   status: string | null | undefined,
   minutesRole: string | undefined,
   marketValue: number | null,
+  position?: GranularPosition,
+  chanceNextRound?: number | null,
 ): number {
   const code = (status ?? 'a').toLowerCase();
   // Injured, suspended, or inactive
   if (code === 'i' || code === 's' || code === 'u' || code === 'n') return 0;
+  if (chanceNextRound === 0) return 0;
 
   let baseMinutes = 76;
-  if (minutesRole === 'nailed') baseMinutes = 84;
-  else if (minutesRole === 'likely_starter') baseMinutes = 76;
-  else if (minutesRole === 'rotation_risk') baseMinutes = 38;
-  else if (minutesRole === 'fringe') baseMinutes = 15;
-  else if (marketValue != null && marketValue >= 40) baseMinutes = 84;
-  else baseMinutes = 76;
+  if (minutesRole === 'nailed') {
+    baseMinutes = 84;
+  } else if (minutesRole === 'likely_starter') {
+    baseMinutes = 76;
+  } else if (minutesRole === 'rotation_risk') {
+    baseMinutes = position === 'GK' ? 0 : 35;
+  } else if (minutesRole === 'fringe') {
+    baseMinutes = position === 'GK' ? 0 : 12;
+  } else if (marketValue != null && marketValue >= 40) {
+    baseMinutes = 84;
+  } else {
+    baseMinutes = 76;
+  }
 
-  // Doubtful status (75% or 50% chance of playing)
-  if (code === 'd') baseMinutes *= 0.5;
+  // FPL chance of playing next round percentage (e.g. 75%, 50%, 25%)
+  if (chanceNextRound != null && chanceNextRound > 0 && chanceNextRound < 100) {
+    baseMinutes *= chanceNextRound / 100;
+  } else if (code === 'd') {
+    baseMinutes *= 0.5;
+  }
 
   return baseMinutes;
 }
@@ -57,7 +75,13 @@ export function calculatePlayerProjectedPoints(
   player: PlayerProjectionInput,
   fixtureEnv: TeamMatchEnvironment,
 ): number {
-  const expMinutes = estimateExpectedMinutes(player.fpl_status, player.minutesRole, player.market_value);
+  const expMinutes = estimateExpectedMinutes(
+    player.fpl_status,
+    player.minutesRole,
+    player.market_value,
+    player.primary_position,
+    player.fpl_chance_next_round,
+  );
   if (expMinutes <= 0) return 0.0;
 
   const pos = player.primary_position;

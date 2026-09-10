@@ -4,6 +4,7 @@ import {
   estimateExpectedMinutes,
   type PlayerProjectionInput,
 } from '../playerProjections';
+import { resolvePlayerMinutesRole } from '../calculateGameweekProjections';
 import type { TeamMatchEnvironment } from '../teamExpectations';
 
 describe('playerProjections', () => {
@@ -66,6 +67,24 @@ describe('playerProjections', () => {
       expect(nailed).toBeGreaterThan(starter);
       expect(starter).toBeGreaterThan(rotation);
       expect(rotation).toBeGreaterThan(fringe);
+    });
+
+    it('assigns 0 minutes to backup goalkeepers', () => {
+      expect(estimateExpectedMinutes('a', 'rotation_risk', 10, 'GK')).toBe(0);
+      expect(estimateExpectedMinutes('a', 'fringe', 5, 'GK')).toBe(0);
+      expect(estimateExpectedMinutes('a', 'nailed', 30, 'GK')).toBe(84);
+    });
+
+    it('scales minutes by FPL chance_next_round percentage', () => {
+      const full = estimateExpectedMinutes('a', 'nailed', 50, 'LB', 100);
+      const seventyFive = estimateExpectedMinutes('d', 'nailed', 50, 'LB', 75);
+      const twentyFive = estimateExpectedMinutes('d', 'nailed', 50, 'LB', 25);
+      const zero = estimateExpectedMinutes('i', 'nailed', 50, 'LB', 0);
+
+      expect(full).toBe(84);
+      expect(seventyFive).toBe(63);
+      expect(twentyFive).toBe(21);
+      expect(zero).toBe(0);
     });
   });
 
@@ -146,6 +165,56 @@ describe('playerProjections', () => {
       const subPts = calculatePlayerProjectedPoints(sub, solidHomeEnv);
 
       expect(subPts).toBeLessThan(starterPts * 0.6);
+    });
+  });
+
+  describe('resolvePlayerMinutesRole', () => {
+    it('grounds roles in season starts when at least 2 rounds are completed', () => {
+      const calafiori = resolvePlayerMinutesRole(
+        { primary_position: 'LB', market_value: 55, fpl_starts: 3, fpl_minutes: 236 },
+        3,
+      );
+      expect(calafiori).toBe('nailed');
+
+      const mosquera = resolvePlayerMinutesRole(
+        { primary_position: 'CB', market_value: 40, fpl_starts: 2, fpl_minutes: 168 },
+        3,
+      );
+      expect(mosquera).toBe('likely_starter');
+
+      const hincapie = resolvePlayerMinutesRole(
+        { primary_position: 'LB', market_value: 50, fpl_starts: 0, fpl_minutes: 32 },
+        3,
+        'likely_starter', // pre-season outlook overridden by 0 actual starts
+      );
+      expect(hincapie).toBe('rotation_risk');
+
+      const backupGk = resolvePlayerMinutesRole(
+        { primary_position: 'GK', market_value: 8, fpl_starts: 0, fpl_minutes: 0 },
+        3,
+      );
+      expect(backupGk).toBe('fringe');
+    });
+
+    it('falls back to outlook or valuation before season starts (rounds < 2)', () => {
+      const withOutlook = resolvePlayerMinutesRole(
+        { primary_position: 'LB', market_value: 50, fpl_starts: 0, fpl_minutes: 0 },
+        0,
+        'likely_starter',
+      );
+      expect(withOutlook).toBe('likely_starter');
+
+      const bigSigning = resolvePlayerMinutesRole(
+        { primary_position: 'ST', market_value: 60, fpl_starts: 0, fpl_minutes: 0 },
+        0,
+      );
+      expect(bigSigning).toBe('likely_starter');
+
+      const squadPlayer = resolvePlayerMinutesRole(
+        { primary_position: 'CM', market_value: 20, fpl_starts: 0, fpl_minutes: 0 },
+        0,
+      );
+      expect(squadPlayer).toBe('rotation_risk');
     });
   });
 });
