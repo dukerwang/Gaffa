@@ -18,6 +18,7 @@ import {
   avgForm, seasonPts, ppgOf, valueOf, countdown,
 } from './clubDerive';
 import { futbolpediaConnectHref } from '@/lib/integrations/futbolpediaConnectUrl';
+import styles from './club.module.css';
 
 // ── Shared prop types ────────────────────────────────────────────────────────
 // Declared alongside the loader that produces them (`@/lib/teams/loadClubView`)
