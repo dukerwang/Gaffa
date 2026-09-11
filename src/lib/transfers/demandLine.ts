@@ -1,19 +1,18 @@
 /**
- * "Who wants this player?" — the line a listing gains from the Targets board.
+ * "Who wants this player?" — what a seller reads on his own listing.
  *
- * This is the single most useful thing the feature produces for a seller, and
- * the reason Targets is not just a tag. `roster_entries.on_trade_block` (029)
- * failed because nothing ever honoured it; what makes this different is that
- * demand shows up ON the supply, where somebody deciding whether to sell is
- * already looking.
+ * The most useful thing a seller gets out of Targets, and the reason the
+ * feature amounts to more than a tag. Nobody ever honoured
+ * `roster_entries.on_trade_block` (029); here a manager meets demand while he
+ * is already looking at the supply and deciding whether to sell.
  *
- * Two shapes, and the named one always wins. A club that has named your player
- * has made a specific statement about him; a club looking for a left-back has
- * made a statement about a slot he happens to fill. Reporting the second while
- * the first exists would bury the better news.
+ * Two shapes, and the named one always wins. Name somebody's player and you
+ * have said something specific about that man; ask for a left-back and you
+ * have said something about a slot he happens to fill. Report the second while
+ * the first stands and you bury the better news.
  *
- * Counts are spelled out to three ("One club", "Two clubs") and numeric after,
- * which is the Google style rule and also just how the line reads aloud.
+ * Spell counts out to three ("One club", "Two clubs") and use numerals after —
+ * the Google style rule, and how you would say it aloud anyway.
  */
 
 import { roleArticle } from '@/lib/scoring/perfBand';
@@ -58,9 +57,9 @@ function clubCountLower(n: number): string {
 /**
  * What this group of clubs is offering, as one clause.
  *
- * Deliberately not a list of every stance: a seller reading a card wants to
- * know whether there is cash in the room, and the detail of who would swap
- * what belongs in the conversation that follows, not on the card.
+ * Deliberately not a list of every stance. A seller glancing at a card wants
+ * to know whether anyone has cash; save who would swap what for the
+ * conversation that follows.
  */
 function detailFor(targets: DemandTarget[], single: boolean): string {
   if (targets.length === 1) {

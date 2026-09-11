@@ -1,0 +1,24 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",   "title": "A — Demand Map",   "x": 0,    "y": 0,    "w": 1400, "h": 940 },
+    { "file": "Squad.dc.html",  "title": "B — Squad First",  "x": 1520, "y": 0,    "w": 1400, "h": 800 },
+    { "file": "Matrix.dc.html", "title": "C — Matrix",       "x": 0,    "y": 1080, "w": 1400, "h": 1020 },
+    { "file": "Stack.dc.html",  "title": "D — Stack",        "x": 1520, "y": 1080, "w": 1120, "h": 1360 },
+    { "file": "Dark.dc.html",   "title": "A in dark",        "x": 0,    "y": 2580, "w": 1400, "h": 940 }
+  ],
+  "annotations": [
+    { "id": "brief", "x": 3060, "y": 0, "w": 340,
+      "text": "Second pass. The first three were one board in three paint jobs — fair hit.\n\nThese are four structures. Each keys off something different and answers a different question.\n\nI lifted the tokens from globals.css. Switch light and dark in each artboard's tweak row." },
+    { "id": "note-a", "x": 3060, "y": 380, "w": 340,
+      "text": "A — DEMAND MAP. Keyed on the pitch.\n\nRead a list and you learn what nine clubs want. You still don't know where the league is short, and you need that to judge whether your spare left-back is worth anything this week.\n\nDisc size and fill count the clubs asking. A green ring says you hold one. In a glance: everybody needs centre-backs and you have none spare; three clubs need a left-back and you have Kerkez.\n\nCost: only twelve positions show here, and somebody chasing one specific man reads weaker on a map than somebody chasing a role." },
+    { "id": "note-b", "x": 3060, "y": 940, "w": 340,
+      "text": "B — SQUAD FIRST. Keyed on your players.\n\nToday you read other clubs' adverts and hold your own roster in your head to work out whether any of it matters. Here you read your own squad, with the market for each man beside him. You can act on every row, because you own every player in it.\n\nI spelled out \"Nobody is asking\" rather than leaving a blank. For most of a squad that's the fact you want.\n\nCost: your own targets drop to a rail." },
+    { "id": "note-c", "x": 3060, "y": 1440, "w": 340,
+      "text": "C — MATRIX. Keyed on clubs against positions.\n\nEight clubs, twelve positions, one screen. Read down a column for one club's shopping list, across a row for who you bid against.\n\nFilled tile: they named a man. Hollow: they want a role. I used shape as well as colour so you can still read it in grayscale.\n\nCost: it's a spreadsheet, and past about ten clubs you'd scroll." },
+    { "id": "note-d", "x": 3060, "y": 1960, "w": 340,
+      "text": "D — STACK. Keyed on the thing people want.\n\nToday two clubs chasing the same player give you two unrelated rows, and from either one you can't tell the other exists. Here: one entry per player or position, suitors underneath, budgets as a range. Nine entries instead of seventeen.\n\nRead the big serif figure on the left as how many clubs chase that one. That's the hierarchy.\n\nCost: you lose \"what is Kingsmead shopping for\" at a glance." },
+    { "id": "note-pick", "x": 3060, "y": 2520, "w": 340,
+      "text": "A and D fit together: the map at the top for where the league is short, the grouped list below it for the detail. Say the word and I'll draw that." }
+  ],
+  "launch": { "view": "canvas" }
+}

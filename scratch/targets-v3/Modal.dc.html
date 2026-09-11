@@ -1,0 +1,416 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700;6..72,800&family=Hanken+Grotesk:wght@400;500;600;700&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap">
+  <style>
+:root {
+  --color-bg-primary:#F8F4EC; --color-bg-secondary:#EBE8E2; --color-bg-card:#FCFAF7;
+  --color-bg-card-hover:#EEEBE5; --color-bg-card-alt:#F9F6F1; --color-bg-elevated:#EBE8E2;
+  --color-bg-inset:#E2DFDA;
+  --color-border:#C2BDB5; --color-border-subtle:#D9D5CF; --color-border-strong:#8C857A;
+  --color-border-accent:rgba(12,109,62,0.40);
+  --color-text-primary:#1B1915; --color-text-secondary:#49443B; --color-text-muted:#635D51;
+  --color-topbar:#185B37;
+  --color-accent:#0C6D3E; --color-accent-hover:#134F2E; --color-accent-dim:rgba(12,109,62,0.10);
+  --color-accent-ink:#1F7144; --color-on-accent:#FFFFFF;
+  --color-warning:#F0A726; --color-warning-text:#875A04; --color-gold:#805D00;
+  --color-live:#B23731; --color-tint-accent:#E2EDE5;
+  --color-pos-gk:#926500;  --color-pos-gk-on:#FFFFFF;  --color-pos-gk-line:#926500;
+  --color-pos-cb:#0076B2;  --color-pos-cb-on:#FFFFFF;  --color-pos-cb-line:#0076B2;
+  --color-pos-lb:#5667B9;  --color-pos-lb-on:#FFFFFF;  --color-pos-lb-line:#5667B9;
+  --color-pos-rb:#5667B9;  --color-pos-rb-on:#FFFFFF;  --color-pos-rb-line:#5667B9;
+  --color-pos-lwb:#008295; --color-pos-lwb-on:#FFFFFF; --color-pos-lwb-line:#008295;
+  --color-pos-dm:#7B56B9;  --color-pos-dm-on:#FFFFFF;  --color-pos-dm-line:#7B56B9;
+  --color-pos-cm:#915397;  --color-pos-cm-on:#FFFFFF;  --color-pos-cm-line:#915397;
+  --color-pos-am:#A34E71;  --color-pos-am-on:#FFFFFF;  --color-pos-am-line:#A34E71;
+  --color-pos-lw:#00866F;  --color-pos-lw-on:#FFFFFF;  --color-pos-lw-line:#00866F;
+  --color-pos-rw:#00866F;  --color-pos-rw-on:#FFFFFF;  --color-pos-rw-line:#00866F;
+  --color-pos-st:#AD4C42;  --color-pos-st-on:#FFFFFF;  --color-pos-st-line:#AD4C42;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
+  --s10:40px; --s12:48px; --s16:64px;
+  --t-10:10px; --t-11:11px; --t-12:12px; --t-13:13px; --t-15:15px; --t-17:17px;
+  --t-20:20px; --t-25:25px; --t-32:32px; --t-40:40px;
+  --r-shell:10px; --r-control:4px; --r-micro:2px; --r-round:50%; --r-pill:999px;
+  --font-serif:'Newsreader',Georgia,'Times New Roman',serif;
+  --font-sans:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono','Fira Code',ui-monospace,monospace;
+  --font-condensed:'Archivo Narrow','Arial Narrow',sans-serif;
+}
+.dark {
+  --color-bg-primary:#1B1F29; --color-bg-secondary:#242934; --color-bg-card:#272D39;
+  --color-bg-card-hover:#313743; --color-bg-card-alt:#202530; --color-bg-elevated:#313743;
+  --color-bg-inset:#131720;
+  --color-border:#3F4552; --color-border-subtle:#2D333E; --color-border-strong:#707787;
+  --color-border-accent:rgba(40,165,100,0.35);
+  --color-text-primary:#EBE7E1; --color-text-secondary:#B5B0A7; --color-text-muted:#989389;
+  --color-accent:#28A564; --color-accent-hover:#43C07A; --color-accent-dim:rgba(40,165,100,0.14);
+  --color-accent-ink:#26A865; --color-on-accent:#1B1915;
+  --color-warning:#F0A726; --color-warning-text:#BC8A3F; --color-gold:#B38E3B;
+  --color-live:#E67066; --color-tint-accent:#26382C;
+  --color-pos-gk-line:#B18331;  --color-pos-cb-line:#4F8FCF;  --color-pos-lb-line:#638AD3;
+  --color-pos-rb-line:#638AD3;  --color-pos-lwb-line:#2F98A6; --color-pos-dm-line:#937ECD;
+  --color-pos-cm-line:#A679C3;  --color-pos-am-line:#C5709A;  --color-pos-lw-line:#2F9B85;
+  --color-pos-rw-line:#2F9B85;  --color-pos-st-line:#CD7167;
+}
+
+  :root { --shadow-xl: 0 16px 48px rgba(28,28,28,.16); }
+  .dark { --shadow-xl: 0 16px 48px rgba(0,0,0,.55); }
+  :root { --dur-fast:140ms; --ease-standard:cubic-bezier(.22,1,.36,1); }
+
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); background:var(--color-bg-primary);
+         color:var(--color-text-primary); -webkit-font-smoothing:antialiased; }
+  button { font-family:inherit; cursor:pointer; }
+  a { color:var(--color-accent-ink); text-decoration:none; }
+  .screen { background:var(--color-bg-primary); min-height:100%; }
+  .page { max-width:1180px; margin:0 auto; padding:var(--s6) var(--s6) var(--s12); }
+
+  /* ── Chrome above the page ──────────────────────────── */
+  .topbar { background:var(--color-topbar); height:44px; display:flex; align-items:center;
+            padding:0 var(--s6); gap:var(--s5); }
+  .wordmark { font-family:var(--font-serif); font-weight:700; font-size:var(--t-17);
+              color:#fff; letter-spacing:-0.01em; }
+  .topLink { font-size:var(--t-12); font-weight:600; color:rgba(255,255,255,.72); }
+  .topLink.on { color:#fff; }
+  .subnav { display:flex; align-items:stretch; gap:var(--s5); padding:0 var(--s6);
+            height:40px; border-bottom:1px solid var(--color-border); }
+  .snItem { display:flex; align-items:center; gap:var(--s1); font-size:var(--t-12);
+            font-weight:600; color:var(--color-text-muted); white-space:nowrap; }
+  .snItem.on { color:var(--color-text-primary); font-weight:700;
+               box-shadow:inset 0 -2px 0 var(--color-text-primary); }
+  .snCount { font-size:var(--t-10); font-weight:500;
+             font-variant-numeric:tabular-nums lining-nums; color:var(--color-text-muted); }
+  .snItem.on .snCount { color:var(--color-text-secondary); }
+
+  /* ── The working bar ────────────────────────────────── */
+  .bar { border:1px solid var(--color-border); border-radius:var(--r-shell);
+         background:var(--color-bg-card); overflow:hidden; }
+  .barTop { display:flex; align-items:center; gap:var(--s3); padding:var(--s2) var(--s3); }
+
+  /* A name at control scale, not a heading. */
+  .barName { flex:none; display:inline-flex; align-items:center; height:34px; margin:0;
+             font-family:var(--font-serif); font-weight:700; font-size:var(--t-17);
+             letter-spacing:-0.02em; line-height:1; color:var(--color-text-primary); }
+  .barDiv { flex:none; width:1px; height:20px; background:var(--color-border-subtle);
+            margin:0 2px; }
+
+  .segs { display:inline-flex; box-sizing:border-box; height:34px; padding:3px; gap:3px;
+          background:var(--color-bg-elevated); border:1px solid var(--color-border-subtle);
+          border-radius:var(--r-control); }
+  .seg, .segOn { display:inline-flex; align-items:baseline; gap:6px; white-space:nowrap;
+                 box-sizing:border-box; height:26px; padding:6px var(--s3); line-height:14px;
+                 border:1px solid transparent; border-radius:var(--r-control);
+                 font-family:var(--font-sans); font-size:var(--t-12); font-weight:600;
+                 background:none; color:var(--color-text-secondary); }
+  .segOn { background:var(--color-text-primary); color:var(--color-bg-primary); }
+  /* A count belongs to its filter, so it inherits the segment's ink. */
+  .segN { font-family:var(--font-condensed); font-size:var(--t-11); font-weight:500;
+          letter-spacing:.03em; font-variant-numeric:tabular-nums lining-nums; opacity:.62; }
+
+  .spacer { flex:1; }
+
+  .search { display:inline-flex; align-items:center; gap:7px; flex:none; width:212px;
+            box-sizing:border-box; height:34px; padding:0 var(--s3);
+            border:1px solid var(--color-border); border-radius:var(--r-control);
+            background:var(--color-bg-card); color:var(--color-text-muted);
+            font-size:var(--t-12); }
+
+  /* Button primitive, size="sm"/"md" — src/components/ui/Button.module.css. */
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:var(--s2);
+         border-radius:var(--r-control); font-family:var(--font-condensed); font-weight:600;
+         letter-spacing:.02em; white-space:nowrap; border:1px solid transparent;
+         font-size:var(--t-12); line-height:1.25; min-height:28px; padding:var(--s1) var(--s3); }
+  .btnMd { font-size:var(--t-13); line-height:1.3; min-height:34px; padding:var(--s2) var(--s4); }
+  .btnPrimary { background:var(--color-accent); color:var(--color-text-inverse);
+                border-color:var(--color-accent); }
+  .btnSecondary { background:var(--color-bg-card); color:var(--color-text-primary);
+                  border-color:var(--color-border); }
+  .btnGhost { background:none; color:var(--color-text-secondary); border-color:transparent; }
+
+  /* The page's shape, divided off rather than floated in space. */
+  .barRead { display:flex; align-items:baseline; gap:7px; flex-wrap:wrap;
+             padding:var(--s2) 13px; border-top:1px solid var(--color-border-subtle);
+             background:var(--color-bg-card-alt); font-size:var(--t-12);
+             color:var(--color-text-muted); line-height:1.5; }
+  .readV { font-family:var(--font-serif); font-size:var(--t-13); font-weight:700;
+           letter-spacing:-0.01em; color:var(--color-text-primary);
+           font-variant-numeric:tabular-nums lining-nums; }
+  .readWarn { color:var(--color-warning-text); }
+  .readDot { color:var(--color-border); }
+
+  /* ── Sections ───────────────────────────────────────── */
+  .sect { display:flex; align-items:baseline; gap:var(--s3); padding-bottom:var(--s2);
+          border-bottom:2px solid var(--color-text-primary); margin:var(--s8) 0 0; }
+  .sectFirst { margin-top:var(--s6); }
+  .sectT { font-family:var(--font-serif); font-weight:700; font-size:var(--t-20);
+           letter-spacing:-0.02em; margin:0; color:var(--color-text-primary); }
+  .sectN { font-family:var(--font-condensed); font-size:var(--t-11); font-weight:500;
+           letter-spacing:.06em; color:var(--color-text-muted);
+           font-variant-numeric:tabular-nums lining-nums; }
+  .sectHint { margin-left:auto; font-size:var(--t-12); color:var(--color-text-muted); }
+
+  /* ── Rows ───────────────────────────────────────────── */
+  .row { display:grid; grid-template-columns:minmax(0,1fr) 180px 220px 160px;
+         align-items:center; gap:var(--s4); padding:13px var(--s2);
+         border-bottom:1px solid var(--color-border-subtle); }
+
+  .target { min-width:0; }
+  .tName { font-family:var(--font-serif); font-weight:700; font-size:var(--t-17);
+           line-height:1.25; letter-spacing:-0.012em; color:var(--color-text-primary); }
+  /* The name carries the serif line; the button is only a target. */
+  .tBtn { appearance:none; border:0; padding:0; background:none; font:inherit; color:inherit;
+          cursor:pointer; text-align:left; }
+  /* The badge sits on the sentence's baseline, so the position reads as part of
+     the name. Inline, so it cannot use .g-namerow — that device wants a flex row. */
+  .posMark { display:inline-flex; vertical-align:baseline; position:relative; top:-1px;
+             margin:0 7px 0 0; }
+  .poschip { display:inline-flex; align-items:center; justify-content:center; font-weight:700;
+             font-size:var(--t-10); letter-spacing:.04em; line-height:1; padding:2px 5px;
+             border-radius:var(--r-micro); background:var(--pf); color:var(--pi);
+             box-shadow:inset 0 0 0 1px var(--pl); }
+  .tMeta { font-size:var(--t-12); color:var(--color-text-muted); margin-top:var(--s1);
+           line-height:1.4; }
+  .tMine { color:var(--color-accent-ink); font-weight:600; }
+
+  /* ── Column 2: who is asking ────────────────────────── */
+  .club { display:flex; align-items:center; gap:var(--s2); min-width:0; }
+  .crest { width:22px; height:22px; border-radius:var(--r-round); flex-shrink:0;
+           background:var(--color-topbar); color:#fff; display:inline-flex;
+           align-items:center; justify-content:center; font-family:var(--font-condensed);
+           font-weight:700; font-size:9px; }
+  .clubName { font-size:var(--t-13); font-weight:600; color:var(--color-text-primary);
+              white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .scope { font-size:var(--t-11); color:var(--color-text-muted); margin-top:2px;
+           padding-left:30px; }
+  .scopeWarn { color:var(--color-warning-text); }
+  /* On your own rows the audience replaces your club name, which would read the
+     same on every one of them. */
+  .audience { display:flex; align-items:center; gap:7px; font-size:var(--t-13);
+              font-weight:600; color:var(--color-text-secondary); }
+  .audIcon { display:flex; flex-shrink:0; color:var(--color-text-muted); }
+  .audClosed { color:var(--color-warning-text); }
+  .audClosed .audIcon { color:var(--color-warning-text); }
+
+  /* ── Column 3: terms ────────────────────────────────── */
+  .terms { display:flex; align-items:center; gap:var(--s3); min-width:0; }
+  .gate { font-family:var(--font-condensed); font-size:var(--t-10); font-weight:700;
+          letter-spacing:.09em; text-transform:uppercase; padding:3px var(--s2);
+          border-radius:var(--r-control); border:1px solid var(--color-border-strong);
+          color:var(--color-text-secondary); white-space:nowrap; }
+  .gateCash { border-color:var(--color-accent-ink); color:var(--color-accent-ink); }
+  .gateOpen { border-style:dashed; color:var(--color-text-muted); }
+  .fig { margin-left:auto; font-family:var(--font-serif); font-weight:700;
+         font-size:var(--t-17); font-variant-numeric:tabular-nums lining-nums;
+         color:var(--color-text-primary); white-space:nowrap; }
+  .figOff { color:var(--color-text-muted); font-weight:400; font-size:var(--t-15); }
+
+  /* ── Column 4: actions ──────────────────────────────── */
+  /* Flex, not a two-slot grid: a row with one action shows one button, and a row
+     with none shows nothing rather than a reserved void. */
+  .acts { display:flex; gap:var(--s2); justify-content:flex-end; }
+
+  /* ── The live match ─────────────────────────────────── */
+  /* A player you targeted has reached the market and a clock is running on him.
+     Border plus tint, not tint alone — a wash by itself disappears for anyone
+     who cannot separate it from the ground, and this is the one row on the page
+     that expires. */
+  .rowLive { background:var(--color-tint-accent); border:1px solid var(--color-border-accent);
+             border-radius:var(--r-control); padding:13px var(--s3); margin:var(--s1) 0; }
+  .live { display:inline-flex; align-items:center; gap:7px; margin-top:7px;
+          font-size:var(--t-12); color:var(--color-text-primary); }
+  .liveDot { width:7px; height:7px; border-radius:var(--r-round);
+             background:var(--color-live); flex-shrink:0; }
+  .liveL { font-weight:600; }
+  /* Mono for the standing bid and the clock: both move while you look at them. */
+  .liveV { font-family:var(--font-mono); font-weight:700; font-size:var(--t-12);
+           font-variant-numeric:tabular-nums; color:var(--color-text-primary); }
+  .liveClock { font-family:var(--font-mono); font-size:var(--t-11);
+               font-variant-numeric:tabular-nums; color:var(--color-warning-text); }
+
+  .empty { padding:var(--s10) var(--s2); text-align:center; font-size:var(--t-13);
+           color:var(--color-text-muted); }
+
+  .scrim { min-height:100%; display:flex; align-items:flex-start; justify-content:center;
+           padding:var(--s6); background:var(--color-bg-secondary); }
+  .panel { background:var(--color-bg-primary); border-radius:var(--r-shell); overflow:hidden;
+           box-shadow:var(--shadow-xl); width:100%; max-width:520px; }
+  .mHead { display:flex; align-items:center; gap:var(--s3); padding:var(--s3) var(--s5);
+           border-bottom:1px solid var(--color-border); background:var(--color-bg-card); }
+  .mTitle { font-family:var(--font-serif); font-weight:700; font-size:var(--t-20);
+            letter-spacing:-0.02em; color:var(--color-text-primary); margin:0; }
+  .mBody { padding:0; }
+  .field { padding:var(--s4) var(--s5); border-bottom:1px solid var(--color-border-subtle); }
+  .fLabel { display:block; font-family:var(--font-condensed); font-weight:700;
+            font-size:var(--t-10); letter-spacing:.14em; text-transform:uppercase;
+            color:var(--color-text-muted); margin-bottom:var(--s2); }
+  .fHint { font-size:var(--t-12); color:var(--color-text-muted); margin:var(--s2) 0 0;
+           line-height:1.45; }
+
+  .mSegs { display:flex; height:34px; padding:3px; gap:3px; background:var(--color-bg-elevated);
+           border:1px solid var(--color-border-subtle); border-radius:var(--r-control); }
+  .mSeg, .mSegOn { flex:1; display:inline-flex; align-items:center; justify-content:center;
+                   height:26px; border:1px solid transparent; border-radius:var(--r-control);
+                   font-family:var(--font-sans); font-size:var(--t-12); font-weight:600;
+                   background:none; color:var(--color-text-secondary); }
+  .mSegOn { background:var(--color-text-primary); color:var(--color-bg-primary); }
+
+  .picker { display:flex; align-items:center; gap:7px; height:34px; padding:0 var(--s3);
+            border:1px solid var(--color-border); border-radius:var(--r-control);
+            background:var(--color-bg-card); font-size:var(--t-12);
+            color:var(--color-text-muted); }
+  .picked { display:flex; align-items:center; gap:var(--s2); margin-top:var(--s2);
+            padding:var(--s2) var(--s3); background:var(--color-bg-card-alt);
+            border-radius:var(--r-control); }
+  .pickedName { font-family:var(--font-serif); font-weight:700; font-size:var(--t-15);
+                color:var(--color-text-primary); }
+  .pickedMeta { font-size:var(--t-11); color:var(--color-text-muted); margin-left:auto; }
+
+  .posGrid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:var(--s1); }
+  .posOpt { height:34px; display:flex; align-items:center; justify-content:center;
+            font-family:var(--font-condensed); font-weight:700; font-size:var(--t-12);
+            letter-spacing:.04em; border:1px solid var(--color-border-subtle);
+            border-radius:var(--r-control); background:var(--color-bg-card);
+            color:var(--color-text-secondary); }
+  .posOptOn { background:var(--pf); color:var(--pi); border-color:var(--pl); }
+
+  .levels { display:flex; gap:var(--s1); margin-top:var(--s2); }
+  .level { flex:1; height:34px; display:flex; align-items:center; justify-content:center;
+           font-family:var(--font-sans); font-size:var(--t-12); font-weight:600;
+           border:1px solid var(--color-border-subtle); border-radius:var(--r-control);
+           background:var(--color-bg-card); color:var(--color-text-secondary); }
+  .levelOn { border-color:var(--color-border-strong); color:var(--color-text-primary);
+             background:var(--color-bg-elevated); }
+
+  /* The audience ladder: three rungs in order of exposure, each saying what
+     happens rather than "public" or "private". */
+  .ladder { display:grid; gap:var(--s1); }
+  .rung { display:flex; align-items:flex-start; gap:var(--s3); text-align:left;
+          padding:var(--s3); border:1px solid var(--color-border-subtle);
+          border-radius:var(--r-control); background:var(--color-bg-card); min-height:44px; }
+  .rungOn { border-color:var(--color-border-accent); background:var(--color-accent-dim); }
+  .radio { width:16px; height:16px; border-radius:var(--r-round); flex-shrink:0; margin-top:2px;
+           border:1px solid var(--color-border-strong); background:var(--color-bg-card); }
+  .radioOn { border:5px solid var(--color-accent); }
+  .rungN { display:block; font-size:var(--t-13); font-weight:700;
+           color:var(--color-text-primary); }
+  .rungH { display:block; font-size:var(--t-12); color:var(--color-text-muted); margin-top:2px;
+           line-height:1.45; }
+
+  .pills { display:flex; gap:var(--s2); flex-wrap:wrap; }
+  .pill { display:inline-flex; align-items:center; gap:7px; height:34px; padding:0 var(--s3);
+          border:1px solid var(--color-border-subtle); border-radius:var(--r-control);
+          background:var(--color-bg-card); font-size:var(--t-13); font-weight:600;
+          color:var(--color-text-secondary); }
+  .pillOn { border-color:var(--color-accent); color:var(--color-accent-ink);
+            background:var(--color-accent-dim); }
+  .box { width:15px; height:15px; border-radius:var(--r-micro); flex-shrink:0;
+         border:1px solid var(--color-border-strong); display:flex; align-items:center;
+         justify-content:center; color:transparent; }
+  .boxOn { background:var(--color-accent); border-color:var(--color-accent);
+           color:var(--color-text-inverse); }
+
+  .money { display:flex; align-items:center; height:38px; padding:0 var(--s3);
+           border:1px solid var(--color-border); border-radius:var(--r-control);
+           background:var(--color-bg-card); font-family:var(--font-serif); font-weight:700;
+           font-size:var(--t-17); font-variant-numeric:tabular-nums lining-nums;
+           color:var(--color-text-primary); }
+  .note { display:block; min-height:58px; padding:var(--s2) var(--s3);
+          border:1px solid var(--color-border); border-radius:var(--r-control);
+          background:var(--color-bg-card); font-family:var(--font-serif);
+          font-size:var(--t-13); color:var(--color-text-muted); line-height:1.45; }
+  .counter { font-family:var(--font-condensed); font-size:var(--t-10); font-weight:500;
+             letter-spacing:.05em; text-transform:uppercase; color:var(--color-text-muted);
+             text-align:right; margin-top:var(--s1); }
+
+  .mFoot { display:flex; gap:var(--s2); justify-content:flex-end; padding:var(--s3) var(--s5);
+           background:var(--color-bg-card); border-top:1px solid var(--color-border); }
+
+  </style>
+</helmet>
+<div class="screen {{themeClass}}">
+  <div class="scrim">
+    <div class="panel">
+      <div class="mHead"><h2 class="mTitle">Add a Target</h2></div>
+      <div class="mBody">
+
+        <div class="field">
+          <span class="fLabel">What you&rsquo;re after</span>
+          <div class="mSegs">
+            <button class="mSegOn">A Specific Player</button>
+            <button class="mSeg">A Tactical Position</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="fLabel">Player</span>
+          <span class="picker"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search by player, club or manager&hellip;</span>
+          <div class="picked">
+            <span class="poschip" style="--pf:var(--color-pos-am);--pi:var(--color-pos-am-on);--pl:var(--color-pos-am-line)">AM</span>
+            <span class="pickedName">C. Palmer</span>
+            <span class="pickedMeta">Chelsea &middot; &euro;85m &middot; Holloway Utd own him</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="fLabel">Who gets told</span>
+          <div class="ladder">
+          <button class="rung">
+            <span class="radio"></span>
+            <span><span class="rungN">Only You</span><span class="rungH">Nobody sees this and nobody is told. You still get an alert when he reaches the market.</span></span>
+          </button>
+          <button class="rung rungOn">
+            <span class="radio radioOn"></span>
+            <span><span class="rungN">Only Holloway Utd</span><span class="rungH">A discreet approach. Only the club that owns him is told, and nobody else sees it.</span></span>
+          </button>
+          <button class="rung">
+            <span class="radio"></span>
+            <span><span class="rungN">Visible to the League</span><span class="rungH">Your club is named on the board beside him, and Holloway Utd are told.</span></span>
+          </button>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="fLabel">What you&rsquo;d give</span>
+          <div class="pills">
+            <span class="pill pillOn"><span class="box boxOn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6.5"/></svg></span>Pay Cash</span>
+            <span class="pill"><span class="box"></span>Offer Players</span>
+            <span class="pill"><span class="box"></span>Take on Loan</span>
+          </div>
+          <p class="fHint">Tick everything you&rsquo;d consider, or nothing at all. Both read as open to whatever somebody brings you.</p>
+        </div>
+
+        <div class="field">
+          <span class="fLabel">Budget</span>
+          <span class="money">&euro;90m</span>
+          <p class="fHint">Optional. Other clubs read it as a starting point, not a limit. Your Club Balance is &euro;164m.</p>
+        </div>
+
+        <div class="field">
+          <span class="fLabel">Note</span>
+          <span class="note">Optional. What you&rsquo;d move to get him, or when you need him by.</span>
+          <div class="counter">140 left</div>
+        </div>
+      </div>
+      <div class="mFoot">
+        <button class="btn btnMd btnSecondary">Cancel</button>
+        <button class="btn btnMd btnPrimary">Post Target</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light","section":"Theme"},"$preview":{"width":620,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: (this.props.theme ?? 'light') === 'dark' ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

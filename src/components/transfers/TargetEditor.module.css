@@ -1,14 +1,14 @@
 /* Post a target, or edit one you already hold.
 
-   Sits in the shared transfers Modal, and takes its field rhythm from
-   ListingEditor so the two dialogs read as one pair — they are the two halves
-   of the same market.
+   Sits in the shared transfers Modal, and borrows its field rhythm from
+   ListingEditor so you read the two as a pair. They are the two halves of the
+   same market.
 
-   The one thing this dialog does that its sibling doesn't is ask WHO GETS TOLD,
-   and that field is written as a ladder of exposure with each rung saying what
-   actually happens rather than "public" / "private". A manager choosing an
-   audience is deciding whether nine rivals learn where he is shopping, which is
-   not a thing to encode in one word. */
+   The one field its sibling has no equivalent for is WHO GETS TOLD. Write it
+   as a ladder of exposure, and on each rung spell out what happens rather than
+   labelling it "public" or "private". Pick an audience and you are deciding
+   whether nine rivals learn where you are shopping; do not encode that in one
+   word. */
 
 .section {
   padding: var(--s4) var(--s5);

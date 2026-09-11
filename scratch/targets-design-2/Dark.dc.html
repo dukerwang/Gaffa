@@ -1,0 +1,361 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700;6..72,800&family=Hanken+Grotesk:wght@400;500;600;700&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap">
+  <style>
+:root {
+  --color-bg-primary:#F8F4EC; --color-bg-secondary:#EBE8E2; --color-bg-card:#FCFAF7;
+  --color-bg-card-hover:#EEEBE5; --color-bg-card-alt:#F9F6F1; --color-bg-elevated:#EBE8E2;
+  --color-bg-inset:#E2DFDA;
+  --color-border:#C2BDB5; --color-border-subtle:#D9D5CF; --color-border-strong:#8C857A;
+  --color-border-accent:rgba(12,109,62,0.40);
+  --color-text-primary:#1B1915; --color-text-secondary:#49443B; --color-text-muted:#635D51;
+  --color-topbar:#185B37;
+  --color-accent:#0C6D3E; --color-accent-hover:#134F2E; --color-accent-dim:rgba(12,109,62,0.10);
+  --color-accent-ink:#1F7144; --color-on-accent:#FFFFFF;
+  --color-warning:#F0A726; --color-warning-text:#875A04; --color-gold:#805D00;
+  --color-live:#B23731; --color-tint-accent:#E2EDE5;
+  --color-pos-gk:#926500;  --color-pos-gk-on:#FFFFFF;  --color-pos-gk-line:#926500;
+  --color-pos-cb:#0076B2;  --color-pos-cb-on:#FFFFFF;  --color-pos-cb-line:#0076B2;
+  --color-pos-lb:#5667B9;  --color-pos-lb-on:#FFFFFF;  --color-pos-lb-line:#5667B9;
+  --color-pos-rb:#5667B9;  --color-pos-rb-on:#FFFFFF;  --color-pos-rb-line:#5667B9;
+  --color-pos-lwb:#008295; --color-pos-lwb-on:#FFFFFF; --color-pos-lwb-line:#008295;
+  --color-pos-dm:#7B56B9;  --color-pos-dm-on:#FFFFFF;  --color-pos-dm-line:#7B56B9;
+  --color-pos-cm:#915397;  --color-pos-cm-on:#FFFFFF;  --color-pos-cm-line:#915397;
+  --color-pos-am:#A34E71;  --color-pos-am-on:#FFFFFF;  --color-pos-am-line:#A34E71;
+  --color-pos-lw:#00866F;  --color-pos-lw-on:#FFFFFF;  --color-pos-lw-line:#00866F;
+  --color-pos-rw:#00866F;  --color-pos-rw-on:#FFFFFF;  --color-pos-rw-line:#00866F;
+  --color-pos-st:#AD4C42;  --color-pos-st-on:#FFFFFF;  --color-pos-st-line:#AD4C42;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
+  --s10:40px; --s12:48px; --s16:64px;
+  --t-10:10px; --t-11:11px; --t-12:12px; --t-13:13px; --t-15:15px; --t-17:17px;
+  --t-20:20px; --t-25:25px; --t-32:32px; --t-40:40px;
+  --r-shell:10px; --r-control:4px; --r-micro:2px; --r-round:50%; --r-pill:999px;
+  --font-serif:'Newsreader',Georgia,'Times New Roman',serif;
+  --font-sans:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono','Fira Code',ui-monospace,monospace;
+  --font-condensed:'Archivo Narrow','Arial Narrow',sans-serif;
+}
+.dark {
+  --color-bg-primary:#1B1F29; --color-bg-secondary:#242934; --color-bg-card:#272D39;
+  --color-bg-card-hover:#313743; --color-bg-card-alt:#202530; --color-bg-elevated:#313743;
+  --color-bg-inset:#131720;
+  --color-border:#3F4552; --color-border-subtle:#2D333E; --color-border-strong:#707787;
+  --color-border-accent:rgba(40,165,100,0.35);
+  --color-text-primary:#EBE7E1; --color-text-secondary:#B5B0A7; --color-text-muted:#989389;
+  --color-accent:#28A564; --color-accent-hover:#43C07A; --color-accent-dim:rgba(40,165,100,0.14);
+  --color-accent-ink:#26A865; --color-on-accent:#1B1915;
+  --color-warning:#F0A726; --color-warning-text:#BC8A3F; --color-gold:#B38E3B;
+  --color-live:#E67066; --color-tint-accent:#26382C;
+  --color-pos-gk-line:#B18331;  --color-pos-cb-line:#4F8FCF;  --color-pos-lb-line:#638AD3;
+  --color-pos-rb-line:#638AD3;  --color-pos-lwb-line:#2F98A6; --color-pos-dm-line:#937ECD;
+  --color-pos-cm-line:#A679C3;  --color-pos-am-line:#C5709A;  --color-pos-lw-line:#2F9B85;
+  --color-pos-rw-line:#2F9B85;  --color-pos-st-line:#CD7167;
+}
+
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); background:var(--color-bg-primary);
+         color:var(--color-text-primary); -webkit-font-smoothing:antialiased; }
+  a { color:var(--color-accent-ink); text-decoration:none; }
+  a:hover { color:var(--color-accent); }
+  button { font-family:inherit; cursor:pointer; }
+  .screen { background:var(--color-bg-primary); min-height:100%; }
+
+  .topbar { background:var(--color-topbar); height:44px; display:flex; align-items:center;
+            padding:0 var(--s6); gap:var(--s5); }
+  .wordmark { font-family:var(--font-serif); font-weight:700; font-size:var(--t-17);
+              color:#fff; letter-spacing:-0.01em; }
+  .topLink { font-size:var(--t-12); font-weight:600; color:rgba(255,255,255,.72); }
+  .topLink.on { color:#fff; }
+  .subnav { display:flex; align-items:stretch; gap:var(--s5); padding:0 var(--s6);
+            height:40px; border-bottom:1px solid var(--color-border); }
+  .snItem { display:flex; align-items:center; gap:var(--s1); font-size:var(--t-12);
+            font-weight:600; color:var(--color-text-muted); white-space:nowrap; }
+  .snItem.on { color:var(--color-text-primary); font-weight:700;
+               box-shadow:inset 0 -2px 0 var(--color-text-primary); }
+  .snCount { font-size:var(--t-10); font-weight:500;
+             font-variant-numeric:tabular-nums lining-nums; color:var(--color-text-muted); }
+  .snItem.on .snCount { color:var(--color-text-secondary); }
+
+  .crest { width:24px; height:24px; border-radius:var(--r-round); flex-shrink:0;
+           background:var(--color-topbar); color:#fff; display:inline-flex;
+           align-items:center; justify-content:center; font-family:var(--font-condensed);
+           font-weight:700; font-size:9px; letter-spacing:.02em; }
+  .poschip { display:inline-flex; align-items:center; justify-content:center;
+             font-weight:700; font-size:var(--t-10); letter-spacing:0.04em; line-height:1;
+             padding:2px 5px; border-radius:var(--r-micro); flex-shrink:0;
+             background:var(--pf); color:var(--pi); box-shadow:inset 0 0 0 1px var(--pl); }
+  .namerow { display:flex; align-items:center; gap:var(--s2); min-width:0; }
+  .namerow > .poschip { transform:translateY(-2.25px); }
+
+  .pageTitle { font-family:var(--font-serif); font-weight:800; font-size:var(--t-32);
+               letter-spacing:-0.035em; line-height:1; margin:0;
+               color:var(--color-text-primary); }
+  .pageSub { font-size:var(--t-13); color:var(--color-text-muted); margin-top:var(--s2); }
+  .label { font-family:var(--font-condensed); font-weight:700; font-size:var(--t-10);
+           letter-spacing:.14em; text-transform:uppercase; color:var(--color-text-muted); }
+
+  .wrap { display:grid; grid-template-columns:640px minmax(0,1fr); gap:var(--s8);
+          padding:var(--s6) var(--s8) var(--s10); align-items:start; }
+  .head { display:flex; align-items:flex-end; justify-content:space-between;
+          gap:var(--s6); margin-bottom:var(--s5); }
+
+  /* The pitch. Green is the ground here, not a control — the one place in the
+     app where a field colour means a field. */
+  .pitch { position:relative; width:640px; height:640px; border-radius:var(--r-shell);
+           background:
+             linear-gradient(180deg, rgba(12,109,62,.10), rgba(12,109,62,.16));
+           border:1px solid var(--color-border); overflow:hidden; }
+  .dark .pitch { background:linear-gradient(180deg, rgba(40,165,100,.09), rgba(40,165,100,.15)); }
+  .mark { position:absolute; border:1px solid var(--color-border-accent); opacity:.5; }
+  .halfway { left:0; right:0; top:50%; height:0; border-width:1px 0 0; }
+  .circle { left:50%; top:50%; width:132px; height:132px; margin:-66px 0 0 -66px;
+            border-radius:var(--r-round); }
+  .boxTop { left:50%; top:0; width:300px; height:104px; margin-left:-150px;
+            border-width:0 1px 1px; }
+  .boxBot { left:50%; bottom:0; width:300px; height:104px; margin-left:-150px;
+            border-width:1px 1px 0; }
+
+  .node { position:absolute; transform:translate(-50%,-50%); display:flex;
+          flex-direction:column; align-items:center; gap:3px; }
+  .disc { display:flex; flex-direction:column; align-items:center; justify-content:center;
+          border-radius:var(--r-round); background:var(--color-bg-card);
+          box-shadow:inset 0 0 0 2px var(--pl); color:var(--color-text-primary); }
+  /* Demand is the fill: the more clubs asking, the more solid the disc. */
+  .d1 { width:46px; height:46px; background:color-mix(in srgb, var(--pf) 16%, var(--color-bg-card)); }
+  .d2 { width:58px; height:58px; background:color-mix(in srgb, var(--pf) 34%, var(--color-bg-card)); }
+  .d3 { width:70px; height:70px; background:var(--pf); color:var(--pi); box-shadow:none; }
+  .d0 { width:30px; height:30px; background:none;
+        box-shadow:inset 0 0 0 1.5px var(--color-border); opacity:.55; }
+  .discN { font-family:var(--font-serif); font-weight:700; font-size:var(--t-20);
+           line-height:1; font-variant-numeric:tabular-nums lining-nums; }
+  .d1 .discN { font-size:var(--t-17); }
+  .discBudget { font-family:var(--font-condensed); font-weight:600; font-size:9px;
+                letter-spacing:.04em; opacity:.85; margin-top:1px; }
+  .nodeLabel { font-family:var(--font-condensed); font-weight:700; font-size:var(--t-11);
+               letter-spacing:.08em; color:var(--color-text-secondary); }
+  .d0 + .nodeLabel { color:var(--color-text-muted); opacity:.7; }
+
+  /* You hold somebody who plays here. Accent as belonging, never as a button. */
+  .yours { position:absolute; inset:-7px; border-radius:var(--r-round);
+           border:2px solid var(--color-accent); }
+  .yoursTag { position:absolute; left:50%; bottom:-9px; transform:translateX(-50%);
+              background:var(--color-accent); color:var(--color-on-accent);
+              font-family:var(--font-condensed); font-weight:700; font-size:9px;
+              letter-spacing:.08em; text-transform:uppercase; padding:1px 5px;
+              border-radius:var(--r-control); white-space:nowrap; }
+  .sel .disc { box-shadow:0 0 0 3px var(--color-text-primary); }
+
+  .legend { display:flex; gap:var(--s5); margin-top:var(--s4); align-items:center;
+            font-size:var(--t-11); color:var(--color-text-muted); }
+  .legKey { display:flex; align-items:center; gap:var(--s2); }
+  .legDot { width:14px; height:14px; border-radius:var(--r-round);
+            background:var(--color-text-muted); opacity:.3; }
+  .legDot.mid { opacity:.55; } .legDot.hot { opacity:1; }
+  .legRing { width:14px; height:14px; border-radius:var(--r-round);
+             border:2px solid var(--color-accent); }
+
+  /* ── Detail rail ── */
+  .rail { position:sticky; top:var(--s4); }
+  .railHead { padding-bottom:var(--s3); border-bottom:2px solid var(--color-text-primary);
+              margin-bottom:var(--s3); }
+  .railT { font-family:var(--font-serif); font-weight:700; font-size:var(--t-25);
+           letter-spacing:-0.025em; margin:var(--s1) 0 0; color:var(--color-text-primary); }
+  .railMeta { font-size:var(--t-12); color:var(--color-text-muted); margin-top:var(--s2); }
+
+  .offer { display:flex; align-items:center; gap:var(--s3); padding:var(--s3);
+           background:var(--color-tint-accent); border-radius:var(--r-control);
+           margin-bottom:var(--s4); }
+  .offerTx { flex:1; min-width:0; font-size:var(--t-13); color:var(--color-text-primary); }
+  .offerTx strong { font-family:var(--font-serif); font-size:var(--t-15); }
+  .go { font-family:var(--font-condensed); font-size:var(--t-11); font-weight:700;
+        letter-spacing:.06em; text-transform:uppercase; padding:0 var(--s3); height:34px;
+        border-radius:var(--r-control); border:1px solid var(--color-accent);
+        background:var(--color-accent); color:var(--color-on-accent); white-space:nowrap; }
+
+  .bidder { display:flex; align-items:center; gap:var(--s3); padding:var(--s3) 0;
+            border-bottom:1px solid var(--color-border-subtle); }
+  .bidderMain { flex:1; min-width:0; }
+  .bidderClub { font-size:var(--t-13); font-weight:600; color:var(--color-text-primary); }
+  .bidderWant { font-size:var(--t-11); color:var(--color-text-muted); margin-top:2px; }
+  .bidderFig { font-family:var(--font-serif); font-weight:700; font-size:var(--t-17);
+               font-variant-numeric:tabular-nums lining-nums;
+               color:var(--color-text-primary); }
+  .bidderFig.cash { color:var(--color-accent-ink); }
+  .bidderFig.none { font-family:var(--font-condensed); font-size:var(--t-11);
+                    font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+                    color:var(--color-text-muted); }
+
+  </style>
+</helmet>
+<div class="screen {{themeClass}}">
+  <div class="topbar">
+    <span class="wordmark">Gaffa</span>
+    <span class="topLink">Home</span><span class="topLink">Matchups</span>
+    <span class="topLink on">Transfers</span><span class="topLink">Players</span>
+    <span class="topLink">Standings</span>
+  </div>
+  <nav class="subnav">
+    <span class="snItem">Market</span>
+    <span class="snItem">Auctions <span class="snCount">3</span></span>
+    <span class="snItem">Listings <span class="snCount">9</span></span>
+    <span class="snItem on">Targets <span class="snCount">14</span></span>
+    <span class="snItem">Free Agents <span class="snCount">412</span></span>
+    <span class="snItem">Deals <span class="snCount">2</span></span>
+  </nav>
+  <div class="wrap">
+    <div>
+      <div class="head">
+        <div>
+          <h1 class="pageTitle">The Targets Board</h1>
+          <div class="pageSub">14 live targets across 8 clubs. Positions ringed in green are ones where you hold a spare.</div>
+        </div>
+      </div>
+      <div class="pitch">
+        <div class="mark halfway"></div>
+        <div class="mark circle"></div>
+        <div class="mark boxTop"></div>
+        <div class="mark boxBot"></div>
+      <div class="node" style="left:50%;top:90%;--pf:var(--color-pos-gk);--pi:var(--color-pos-gk-on);--pl:var(--color-pos-gk-line)">
+        <div class="disc d0">
+          
+        </div>
+        <span class="nodeLabel">GK</span>
+      </div>
+      <div class="node" style="left:50%;top:75%;--pf:var(--color-pos-cb);--pi:var(--color-pos-cb-on);--pl:var(--color-pos-cb-line)">
+        <div class="disc d3">
+          <span class="discN">3</span><span class="discBudget">&euro;62m</span>
+          
+        </div>
+        <span class="nodeLabel">CB</span>
+      </div>
+      <div class="node sel" style="left:15%;top:73%;--pf:var(--color-pos-lb);--pi:var(--color-pos-lb-on);--pl:var(--color-pos-lb-line)">
+        <div class="disc d3">
+          <span class="discN">3</span><span class="discBudget">&euro;60m</span>
+          <span class="yours"></span><span class="yoursTag">You have one</span>
+        </div>
+        <span class="nodeLabel">LB</span>
+      </div>
+      <div class="node" style="left:85%;top:73%;--pf:var(--color-pos-rb);--pi:var(--color-pos-rb-on);--pl:var(--color-pos-rb-line)">
+        <div class="disc d0">
+          
+        </div>
+        <span class="nodeLabel">RB</span>
+      </div>
+      <div class="node" style="left:13%;top:56%;--pf:var(--color-pos-lwb);--pi:var(--color-pos-lwb-on);--pl:var(--color-pos-lwb-line)">
+        <div class="disc d0">
+          
+        </div>
+        <span class="nodeLabel">LWB</span>
+      </div>
+      <div class="node" style="left:87%;top:56%;--pf:var(--color-pos-undefined);--pi:var(--color-pos-undefined-on);--pl:var(--color-pos-undefined-line)">
+        <div class="disc d1">
+          <span class="discN">1</span>
+          
+        </div>
+        <span class="nodeLabel">RWB</span>
+      </div>
+      <div class="node" style="left:50%;top:60%;--pf:var(--color-pos-dm);--pi:var(--color-pos-dm-on);--pl:var(--color-pos-dm-line)">
+        <div class="disc d1">
+          <span class="discN">1</span>
+          
+        </div>
+        <span class="nodeLabel">DM</span>
+      </div>
+      <div class="node" style="left:50%;top:45%;--pf:var(--color-pos-cm);--pi:var(--color-pos-cm-on);--pl:var(--color-pos-cm-line)">
+        <div class="disc d2">
+          <span class="discN">2</span><span class="discBudget">&euro;70m</span>
+          
+        </div>
+        <span class="nodeLabel">CM</span>
+      </div>
+      <div class="node" style="left:50%;top:30%;--pf:var(--color-pos-am);--pi:var(--color-pos-am-on);--pl:var(--color-pos-am-line)">
+        <div class="disc d1">
+          <span class="discN">1</span>
+          
+        </div>
+        <span class="nodeLabel">AM</span>
+      </div>
+      <div class="node" style="left:16%;top:29%;--pf:var(--color-pos-lw);--pi:var(--color-pos-lw-on);--pl:var(--color-pos-lw-line)">
+        <div class="disc d0">
+          
+        </div>
+        <span class="nodeLabel">LW</span>
+      </div>
+      <div class="node" style="left:84%;top:29%;--pf:var(--color-pos-rw);--pi:var(--color-pos-rw-on);--pl:var(--color-pos-rw-line)">
+        <div class="disc d1">
+          <span class="discN">1</span>
+          
+        </div>
+        <span class="nodeLabel">RW</span>
+      </div>
+      <div class="node" style="left:50%;top:13%;--pf:var(--color-pos-st);--pi:var(--color-pos-st-on);--pl:var(--color-pos-st-line)">
+        <div class="disc d2">
+          <span class="discN">2</span>
+          <span class="yours"></span><span class="yoursTag">You have one</span>
+        </div>
+        <span class="nodeLabel">ST</span>
+      </div>
+      </div>
+      <div class="legend">
+        <span class="legKey"><span class="legDot"></span>1 club</span>
+        <span class="legKey"><span class="legDot mid"></span>2 clubs</span>
+        <span class="legKey"><span class="legDot hot"></span>3+ clubs</span>
+        <span class="legKey"><span class="legRing"></span>you hold one</span>
+        <span style="margin-left:auto">Each figure is the biggest budget any club stated at that position.</span>
+      </div>
+    </div>
+
+    <div class="rail">
+      <div class="railHead">
+        <h2 class="railT">Left-Back</h2>
+        <div class="railMeta">Three clubs. &euro;25m&ndash;&euro;60m on the table.</div>
+      </div>
+      <div class="offer">
+        <span class="poschip" style="--pf:var(--color-pos-lb);--pi:var(--color-pos-lb-on);--pl:var(--color-pos-lb-line)">LB</span>
+        <div class="offerTx">You have <strong>M. Kerkez</strong> &mdash; valued &euro;41m, and out of your first eleven.</div>
+        <button class="go">Offer him</button>
+      </div>
+      <div class="bidder">
+        <span class="crest">BF</span>
+        <div class="bidderMain">
+          <div class="bidderClub">Bot FC</div>
+          <div class="bidderWant">starter left-back &middot; will pay cash</div>
+        </div>
+        <div class="bidderFig cash">&euro;25m</div>
+      </div>
+      <div class="bidder">
+        <span class="crest">SG</span>
+        <div class="bidderMain">
+          <div class="bidderClub">Southgate FC</div>
+          <div class="bidderWant">starter left-back &middot; will pay cash</div>
+        </div>
+        <div class="bidderFig cash">&euro;40m</div>
+      </div>
+      <div class="bidder">
+        <span class="crest">MM</span>
+        <div class="bidderMain">
+          <div class="bidderClub">Matchday Militia</div>
+          <div class="bidderWant">wants M. Kerkez &middot; will pay cash</div>
+        </div>
+        <div class="bidderFig cash">&euro;60m</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"dark","section":"Theme"},"$preview":{"width":1400,"height":940}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: (this.props.theme ?? 'dark') === 'dark' ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

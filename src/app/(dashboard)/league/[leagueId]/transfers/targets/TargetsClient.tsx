@@ -26,19 +26,19 @@ import { fold } from '@/lib/text/fold';
 /**
  * The Targets Board — demand from clubs, on its own page.
  *
- * THREE SECTIONS, NOT A GRID. The board's job is to tell you why a row is in
- * front of you before you read it, and the only question that reorders this
- * page usefully is "is any of this about me?". So: what you could answer from
- * your own squad, what everybody else is after, and what you're chasing.
+ * THREE SECTIONS, NOT A GRID. A manager should know why a row sits in front of
+ * him before he reads it, and only one question reorders this page usefully:
+ * is any of this about me? So: what you could answer from your own squad, what
+ * everybody else is after, and what you're chasing.
  *
- * The section rule and the row's buttons are the SAME call — `canAnswerTarget`,
- * used once per row and passed to both. An earlier draft applied it by hand in
- * two places and immediately disagreed with itself, putting rows under "Wanted
- * From You" with nothing to press.
+ * Pick the section and the buttons from the SAME call — `canAnswerTarget`,
+ * once per row, passed to both. An earlier draft applied it by hand in two
+ * places and promptly contradicted itself, filing rows under "Wanted From You"
+ * with nothing to press.
  *
- * The facets are properties of demand — who's asking, what they'd give, what
- * they'd spend — where Listings' are properties of supply. That asymmetry is
- * the reason these are two boards and not one with a mode toggle.
+ * Filter on properties of demand here — who's asking, what they'd give, what
+ * they'd spend — where on Listings you filter on properties of supply. That
+ * asymmetry is why these are two boards rather than one with a mode toggle.
  */
 
 type Facet = 'all' | 'wanted' | 'named' | 'roles' | 'cash' | 'players' | 'loan' | 'mine';
@@ -111,10 +111,10 @@ export default function TargetsClient({
   }, [model.auctions]);
 
   /**
-   * Everything the board needs to know about one target, computed once.
+   * Everything this page needs about one target, worked out once.
    *
-   * `canAnswer` in particular: it decides the section AND the buttons, and
-   * deriving it twice is how those two came apart last time.
+   * `canAnswer` above all: it picks the section AND the buttons, and deriving
+   * it twice is how those two came apart last time.
    */
   const rows = useMemo(() => {
     return model.targets.map((t) => {
@@ -135,7 +135,7 @@ export default function TargetsClient({
         ownerName: owner?.teamName ?? null,
         ownerTeamId: owner?.teamId ?? null,
         // A direct target reaches me only because I hold the player, which the
-        // server already enforced — this is how the row knows to say so.
+        // server already enforced — so I can label it without re-checking.
         sentToMe: !isMine && t.visibility === 'direct',
         matchedListing: matched,
         matchedAuction: matched ? auctionByListing.get(matched.id) ?? null : null,

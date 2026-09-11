@@ -12,15 +12,15 @@ import styles from './TargetRow.module.css';
 /**
  * One target on the board.
  *
- * The row never grows actions of its own. Every button here hands off to
- * machinery that already exists — the offer composer, the listing editor, the
- * bid dialog, chat — because a target is inert and the transactable object is
- * always the listing. A row that could itself be accepted would be
- * `roster_entries.on_trade_block` again: a signal shaped like a mechanism.
+ * Never add an action of its own here. Press any button on a row and you land
+ * in machinery that already exists — the offer composer, the listing editor,
+ * the bid dialog, chat — because you cannot transact a target, only a listing.
+ * Let a manager accept a row outright and you have rebuilt
+ * `roster_entries.on_trade_block`: a signal shaped like a mechanism.
  *
- * Which actions appear is not decided here. `canAnswer` comes from
- * `canAnswerTarget`, the same call that decides which section the row sits in,
- * so the heading and the buttons cannot disagree.
+ * Do not work out here which actions to show. `canAnswer` arrives from
+ * `canAnswerTarget`, the same call that picks the section, so a heading and
+ * its buttons can never contradict each other.
  */
 
 interface Props {
@@ -84,10 +84,10 @@ export default function TargetRow({
   const named = target.target_kind === 'player';
   const stance = targetStance(target);
 
-  // The stance headline already carries the budget when cash is the only thing
-  // on offer ("Will pay cash · up to €62m"). Repeating it in the figure column
-  // would print the same number twice on the same row, so the chip drops it and
-  // the column keeps it — the column is where budgets are compared.
+  // When cash is the only thing on offer the stance headline already spells out
+  // the budget ("Will pay cash · up to €62m"). Print that in the figure column
+  // too and a manager reads the same number twice on one row, so strip it from
+  // the chip and leave it in the column, where budgets line up for comparison.
   const gateLabel = stance.headline.split(' · ')[0];
 
   // Subscribed only when a matched listing is actually counting down. With no
@@ -109,8 +109,8 @@ export default function TargetRow({
     ? target.player?.web_name ?? target.player?.name ?? 'A player'
     : targetRoleTitle(target.role, target.position);
 
-  // Sub-line. A named target says whose he is and what he's worth; a profile
-  // says what level of player is wanted, which is the whole content of a role.
+  // Sub-line. On a named target, whose he is and what he's worth; on a profile,
+  // the level sought, which is all a role amounts to.
   const subParts: string[] = [];
   if (named) {
     if (ownerName) subParts.push(ownerName);
@@ -169,9 +169,9 @@ export default function TargetRow({
       ? styles.rowMine
       : '';
 
-  // Audience. On my own rows this replaces the club name, which would be my own
-  // club every time; on anyone else's it appears only when the answer isn't
-  // "the league", so a public board stays unmarked.
+  // Audience. Show it instead of the club name on my own rows — otherwise I
+  // read my own club ten times over. On anyone else's, show it only when the
+  // answer is not "the league", so a public board carries no marks at all.
   const audience = isMine
     ? target.visibility === 'private'
       ? { text: 'You only', closed: true, off: true, title: 'Nobody else can see this target' }

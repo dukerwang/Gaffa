@@ -5,11 +5,11 @@
    pointed at opposite sides of the market, and the hub's original problem was
    four rooms one click apart each solving this differently.
 
-   The board itself is NOT a card grid. A listing is an object you can take, so
-   it gets a card. A target is a SENTENCE somebody said — "Matchday Militia want
-   Saliba, will pay cash, up to €62m" — and a card would frame another
-   manager's statement as a thing you can pick up. Rows, under three section
-   headings, so you know why a row is in front of you before you read it. */
+   Do NOT make the board a card grid. You can take a listing, so give it a
+   card. A target is a SENTENCE somebody said — "Matchday Militia want Saliba,
+   will pay cash, up to €62m" — and putting another manager's statement in a
+   card invites you to pick it up. Use rows under three section headings, so a
+   manager knows why a row sits in front of him before he reads it. */
 
 .page { min-height: 100%; }
 

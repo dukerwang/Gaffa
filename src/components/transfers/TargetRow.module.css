@@ -1,16 +1,17 @@
 /* One target, as a row.
 
-   Deliberately quieter than ListingCard: no countdown, no bid affordance, no
-   elevation. A listing is transactable and a target is inert, and the moment
-   an inert thing looks clickable you have rebuilt `roster_entries.on_trade_block`
-   (029) — a signal shaped like a mechanism, which nothing honoured.
+   Keep it quieter than ListingCard: no countdown, no bid affordance, no
+   elevation. You can transact a listing; you cannot transact a target, and the
+   moment an inert thing looks clickable you have rebuilt
+   `roster_entries.on_trade_block` (029) — a signal shaped like a mechanism,
+   which nobody ever honoured.
 
-   Where a row DOES carry actions, they belong to the listing/offer machinery
-   next door, never to the target itself.
+   Where a row does offer actions, they hand off to the listing and offer
+   machinery next door. None of them belong to the target itself.
 
-   Column widths are fixed rather than fractional so the five columns line up
-   down the whole board across three sections, which is the only thing making a
-   sectioned list readable as one table. */
+   Fix the column widths rather than letting them flex, so a manager reads five
+   aligned columns straight down three sections. Without that you cannot read a
+   sectioned list as one table. */
 
 .row {
   display: grid;
@@ -52,10 +53,10 @@
   text-overflow: ellipsis;
 }
 
-/* Who can read a target. On your own rows this replaces the club name, which
-   would be your own club on every one of them; on anyone else's it appears only
-   when the answer isn't "the league", so a public board stays unmarked. One
-   line, fixed width, no effect on row height. */
+/* Who can read a target. Show it instead of the club name on your own rows,
+   where you would otherwise read your own club ten times; on anyone else's,
+   show it only when the answer is not "the league", so a public board carries
+   no marks. One line, fixed width, and it never changes the row height. */
 .seen {
   display: flex;
   align-items: center;
@@ -212,9 +213,9 @@
 
 /* ── Column 5: actions ──────────────────────────────────── */
 
-/* Two fixed tracks, so every secondary lines up down one column and every
-   primary down the next however many actions a row has. Labels stay one word
-   for the same reason ListingCard's do. */
+/* Two fixed tracks, so a manager finds every secondary down one column and
+   every primary down the next, whatever a row offers. Keep labels to one word,
+   for the reason ListingCard does. */
 .act {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

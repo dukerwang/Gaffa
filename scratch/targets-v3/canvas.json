@@ -1,0 +1,22 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",        "title": "Targets",            "x": 0,    "y": 0,    "w": 1280, "h": 1080 },
+    { "file": "Dark.dc.html",        "title": "Targets — dark",     "x": 1400, "y": 0,    "w": 1280, "h": 1080 },
+    { "file": "Modal.dc.html",       "title": "Add a Target",       "x": 0,    "y": 1220, "w": 620,  "h": 1120 },
+    { "file": "Mobile.dc.html",      "title": "390px",              "x": 740,  "y": 1220, "w": 390,  "h": 1400 },
+    { "file": "MobileSheet.dc.html", "title": "390px — bottom sheet","x": 1250, "y": 1220, "w": 390,  "h": 1000 }
+  ],
+  "annotations": [
+    { "id": "brief", "x": 2820, "y": 0, "w": 340,
+      "text": "One concept, built to your spec.\n\nHeader is the working bar from transactions.module.css — name at control scale, counts on the segments, totals in the divided strip at the foot. No 38px H1, no floating counters.\n\nRow order: target first, then who's asking, then terms, then actions.\n\nSwitch light and dark in each artboard's tweak row." },
+    { "id": "note-row", "x": 2820, "y": 420, "w": 340,
+      "text": "THE ROW.\n\nColumn one leads with the player or the role, because a transfer starts with who somebody wants. The position badge sits on the sentence's baseline the way .posMark does on Transactions, not in a flex row.\n\nActions are flex and right-aligned, so a row with one button shows one button and a Board row shows nothing. No reserved voids.\n\nGreen in the subline marks what's yours: \"On your squad\", \"You have M. Kerkez\"." },
+    { "id": "note-live", "x": 2820, "y": 880, "w": 340,
+      "text": "THE LIVE MATCH.\n\nSaliba, in Your Targets. Border in --color-border-accent over --color-tint-accent, lifted off the hairline list, with a red dot and the standing bid and clock in mono — the only two numbers on this page that move while you look at them.\n\nPrimary action swaps to Bid in Auction.\n\nTint alone would vanish for anyone who can't separate it from the ground, so it carries a border and a dot as well." },
+    { "id": "note-modal", "x": 2820, "y": 1340, "w": 340,
+      "text": "ADD A TARGET.\n\n520px ResponsiveModal, shadow and no border. Kind toggle, player search with a preview, then the audience ladder in order of exposure — each rung says what happens rather than \"public\" or \"private\".\n\nUnder 640px the same dialog becomes the bottom drawer beside it: rounded top only, 92dvh, safe-area foot, 44px controls." },
+    { "id": "note-mobile", "x": 2820, "y": 1800, "w": 340,
+      "text": "390px.\n\nThree lines per row: name and money, club and stance, then the actions at 44px. The four columns go to two, and the terms column uses display:contents so the money and the stance split to different lines instead of staying glued together." }
+  ],
+  "launch": { "view": "canvas" }
+}

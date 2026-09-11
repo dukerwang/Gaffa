@@ -1,21 +1,21 @@
 /**
  * Can THIS club answer that target?
  *
- * `matchTargets` asks the same question from the other end — a player becomes
- * available, who wanted him — and runs server-side at write time. This one
- * runs on the board, where a manager is reading other clubs' demands and the
- * only question that matters is "is any of this about me?".
+ * `matchTargets` asks the same question from the other end — somebody becomes
+ * available, who wanted him — and runs server-side at write time. Call this
+ * one on the board, where a manager reads other clubs' demands and cares about
+ * exactly one thing: is any of this about me?
  *
- * It exists as one function because the board's sections and the board's
- * buttons both depend on the answer, and an earlier draft applied the rule by
- * hand in two places and immediately disagreed with itself: a row sat under
- * "Wanted From You" with nothing to press. A row is in that section BECAUSE
- * this returns true, and carries actions for the same reason. There is no
- * second copy of the rule to drift.
+ * Keep it as ONE function. The board's sections and the board's buttons both
+ * turn on the answer, and an earlier draft applied the rule by hand in two
+ * places and promptly contradicted itself, filing a row under "Wanted From
+ * You" with nothing to press. File a row in that section because this returns
+ * true, and give it actions for the same reason. Never write a second copy of
+ * the rule.
  *
- * The position half deliberately mirrors `matchTargets`: secondary positions
- * count, because a centre-back who also plays left-back is exactly the player
- * a left-back profile is hoping to shake loose.
+ * Mirror `matchTargets` on positions: count the secondary ones, because a
+ * centre-back who also plays left-back is exactly the player somebody hunting
+ * a left-back hopes to shake loose.
  */
 
 import { POSITION_FLEX_MAP } from '@/types';
@@ -44,9 +44,9 @@ export interface AnswerableTarget {
  * Which of my players answer this target — the named man, or everyone who
  * plays the position asked for.
  *
- * Empty for my own targets. A club cannot answer itself, and showing a
- * manager an "Offer" button pointed at his own advertisement is the kind of
- * thing that makes a board look like it isn't reading its own data.
+ * Empty for my own targets. You cannot answer yourself, and pointing a
+ * manager at an "Offer" button aimed at his own advertisement makes the whole
+ * page look like nobody checked it.
  */
 export function playersAnswering<T extends AnswerablePlayer>(
   target: AnswerableTarget,
@@ -56,8 +56,8 @@ export function playersAnswering<T extends AnswerablePlayer>(
   if (target.team_id === myTeamId) return [];
 
   // Out on loan is out of reach: the borrower has him, and the lender cannot
-  // offer him on again while that stands. Academy and injured players stay in
-  // — both are tradeable, they just aren't playing.
+  // offer him on again while that stands. Keep academy and injured players —
+  // you can trade either, they just aren't playing.
   const available = squad.filter((p) => p.status !== 'loan_out');
 
   if (target.target_kind === 'player') {

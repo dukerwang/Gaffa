@@ -50,12 +50,12 @@ ALTER TABLE public.player_targets
 
 -- ── 3. RLS: the third reader ─────────────────────────────────
 --
--- A direct target is readable by its author (the team clause, unchanged) and
--- by whoever rosters the player right now. "Right now" is the point: the
--- policy reads roster_entries live, so trading the player re-points the
--- target at his new owner without anything having to notice. That matches
--- the rule a target already followed for its player changing PL clubs — the
--- target is about the man, and it follows him.
+-- Two people read a direct target: its author (the team clause, unchanged)
+-- and whoever rosters the player right now. "Right now" is the point — this
+-- policy queries roster_entries live, so trade the player and his new owner
+-- inherits the approach without anyone having to notice. Managers already
+-- expect that when a player changes PL clubs: they targeted the man, so the
+-- approach goes where he goes.
 --
 -- Status is deliberately not filtered. A loaned player has two roster rows —
 -- the lender's, marked loan_out, and the borrower's — and this lets a direct

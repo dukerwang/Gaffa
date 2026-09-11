@@ -1,0 +1,397 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700;6..72,800&family=Hanken+Grotesk:wght@400;500;600;700&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap">
+  <style>
+:root {
+  --color-bg-primary:#F8F4EC; --color-bg-secondary:#EBE8E2; --color-bg-card:#FCFAF7;
+  --color-bg-card-hover:#EEEBE5; --color-bg-card-alt:#F9F6F1; --color-bg-elevated:#EBE8E2;
+  --color-bg-inset:#E2DFDA;
+  --color-border:#C2BDB5; --color-border-subtle:#D9D5CF; --color-border-strong:#8C857A;
+  --color-border-accent:rgba(12,109,62,0.40);
+  --color-text-primary:#1B1915; --color-text-secondary:#49443B; --color-text-muted:#635D51;
+  --color-topbar:#185B37;
+  --color-accent:#0C6D3E; --color-accent-hover:#134F2E; --color-accent-dim:rgba(12,109,62,0.10);
+  --color-accent-ink:#1F7144; --color-on-accent:#FFFFFF;
+  --color-warning:#F0A726; --color-warning-text:#875A04; --color-gold:#805D00;
+  --color-live:#B23731; --color-tint-accent:#E2EDE5;
+  --color-pos-gk:#926500;  --color-pos-gk-on:#FFFFFF;  --color-pos-gk-line:#926500;
+  --color-pos-cb:#0076B2;  --color-pos-cb-on:#FFFFFF;  --color-pos-cb-line:#0076B2;
+  --color-pos-lb:#5667B9;  --color-pos-lb-on:#FFFFFF;  --color-pos-lb-line:#5667B9;
+  --color-pos-rb:#5667B9;  --color-pos-rb-on:#FFFFFF;  --color-pos-rb-line:#5667B9;
+  --color-pos-lwb:#008295; --color-pos-lwb-on:#FFFFFF; --color-pos-lwb-line:#008295;
+  --color-pos-dm:#7B56B9;  --color-pos-dm-on:#FFFFFF;  --color-pos-dm-line:#7B56B9;
+  --color-pos-cm:#915397;  --color-pos-cm-on:#FFFFFF;  --color-pos-cm-line:#915397;
+  --color-pos-am:#A34E71;  --color-pos-am-on:#FFFFFF;  --color-pos-am-line:#A34E71;
+  --color-pos-lw:#00866F;  --color-pos-lw-on:#FFFFFF;  --color-pos-lw-line:#00866F;
+  --color-pos-rw:#00866F;  --color-pos-rw-on:#FFFFFF;  --color-pos-rw-line:#00866F;
+  --color-pos-st:#AD4C42;  --color-pos-st-on:#FFFFFF;  --color-pos-st-line:#AD4C42;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
+  --s10:40px; --s12:48px; --s16:64px;
+  --t-10:10px; --t-11:11px; --t-12:12px; --t-13:13px; --t-15:15px; --t-17:17px;
+  --t-20:20px; --t-25:25px; --t-32:32px; --t-40:40px;
+  --r-shell:10px; --r-control:4px; --r-micro:2px; --r-round:50%; --r-pill:999px;
+  --font-serif:'Newsreader',Georgia,'Times New Roman',serif;
+  --font-sans:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono','Fira Code',ui-monospace,monospace;
+  --font-condensed:'Archivo Narrow','Arial Narrow',sans-serif;
+}
+.dark {
+  --color-bg-primary:#1B1F29; --color-bg-secondary:#242934; --color-bg-card:#272D39;
+  --color-bg-card-hover:#313743; --color-bg-card-alt:#202530; --color-bg-elevated:#313743;
+  --color-bg-inset:#131720;
+  --color-border:#3F4552; --color-border-subtle:#2D333E; --color-border-strong:#707787;
+  --color-border-accent:rgba(40,165,100,0.35);
+  --color-text-primary:#EBE7E1; --color-text-secondary:#B5B0A7; --color-text-muted:#989389;
+  --color-accent:#28A564; --color-accent-hover:#43C07A; --color-accent-dim:rgba(40,165,100,0.14);
+  --color-accent-ink:#26A865; --color-on-accent:#1B1915;
+  --color-warning:#F0A726; --color-warning-text:#BC8A3F; --color-gold:#B38E3B;
+  --color-live:#E67066; --color-tint-accent:#26382C;
+  --color-pos-gk-line:#B18331;  --color-pos-cb-line:#4F8FCF;  --color-pos-lb-line:#638AD3;
+  --color-pos-rb-line:#638AD3;  --color-pos-lwb-line:#2F98A6; --color-pos-dm-line:#937ECD;
+  --color-pos-cm-line:#A679C3;  --color-pos-am-line:#C5709A;  --color-pos-lw-line:#2F9B85;
+  --color-pos-rw-line:#2F9B85;  --color-pos-st-line:#CD7167;
+}
+
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); background:var(--color-bg-primary);
+         color:var(--color-text-primary); -webkit-font-smoothing:antialiased; }
+  a { color:var(--color-accent-ink); text-decoration:none; }
+  a:hover { color:var(--color-accent); }
+  button { font-family:inherit; cursor:pointer; }
+  .screen { background:var(--color-bg-primary); min-height:100%; }
+
+  .topbar { background:var(--color-topbar); height:44px; display:flex; align-items:center;
+            padding:0 var(--s6); gap:var(--s5); }
+  .wordmark { font-family:var(--font-serif); font-weight:700; font-size:var(--t-17);
+              color:#fff; letter-spacing:-0.01em; }
+  .topLink { font-size:var(--t-12); font-weight:600; color:rgba(255,255,255,.72); }
+  .topLink.on { color:#fff; }
+  .subnav { display:flex; align-items:stretch; gap:var(--s5); padding:0 var(--s6);
+            height:40px; border-bottom:1px solid var(--color-border); }
+  .snItem { display:flex; align-items:center; gap:var(--s1); font-size:var(--t-12);
+            font-weight:600; color:var(--color-text-muted); white-space:nowrap; }
+  .snItem.on { color:var(--color-text-primary); font-weight:700;
+               box-shadow:inset 0 -2px 0 var(--color-text-primary); }
+  .snCount { font-size:var(--t-10); font-weight:500;
+             font-variant-numeric:tabular-nums lining-nums; color:var(--color-text-muted); }
+  .snItem.on .snCount { color:var(--color-text-secondary); }
+
+  .crest { width:24px; height:24px; border-radius:var(--r-round); flex-shrink:0;
+           background:var(--color-topbar); color:#fff; display:inline-flex;
+           align-items:center; justify-content:center; font-family:var(--font-condensed);
+           font-weight:700; font-size:9px; letter-spacing:.02em; }
+  .poschip { display:inline-flex; align-items:center; justify-content:center;
+             font-weight:700; font-size:var(--t-10); letter-spacing:0.04em; line-height:1;
+             padding:2px 5px; border-radius:var(--r-micro); flex-shrink:0;
+             background:var(--pf); color:var(--pi); box-shadow:inset 0 0 0 1px var(--pl); }
+  .namerow { display:flex; align-items:center; gap:var(--s2); min-width:0; }
+  .namerow > .poschip { transform:translateY(-2.25px); }
+
+  .pageTitle { font-family:var(--font-serif); font-weight:800; font-size:var(--t-32);
+               letter-spacing:-0.035em; line-height:1; margin:0;
+               color:var(--color-text-primary); }
+  .pageSub { font-size:var(--t-13); color:var(--color-text-muted); margin-top:var(--s2); }
+  .label { font-family:var(--font-condensed); font-weight:700; font-size:var(--t-10);
+           letter-spacing:.14em; text-transform:uppercase; color:var(--color-text-muted); }
+
+  .wrap { padding:var(--s6) var(--s8) var(--s10); max-width:1000px; }
+  .head { margin-bottom:var(--s6); }
+
+  .entry { padding:var(--s4) 0; border-bottom:1px solid var(--color-border-subtle);
+           display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--s5);
+           align-items:start; }
+  .entryTop { padding-top:var(--s5); }
+
+  .subject { display:flex; align-items:center; gap:var(--s3); min-width:0; }
+  /* The heat number IS the hierarchy: how many clubs want this. Serif, large,
+     and the first thing your eye lands on down the left edge. */
+  .heat { font-family:var(--font-serif); font-weight:800; font-size:var(--t-32);
+          line-height:.9; letter-spacing:-0.04em; width:44px; flex-shrink:0;
+          text-align:right; color:var(--color-text-primary);
+          font-variant-numeric:tabular-nums lining-nums; }
+  .heat1 { color:var(--color-text-muted); font-weight:400; }
+  .subjMain { min-width:0; }
+  .subjName { font-family:var(--font-serif); font-weight:700; font-size:var(--t-25);
+              letter-spacing:-0.025em; line-height:1.1; color:var(--color-text-primary); }
+  .subjMeta { font-size:var(--t-12); color:var(--color-text-muted); margin-top:3px; }
+
+  /* Yours: the accent as belonging. Paired with a bolder name so the state
+     survives a colour-blind reader and a hover. */
+  .yours { background:var(--color-accent-dim); margin:0 calc(var(--s4) * -1);
+           padding-left:var(--s4); padding-right:var(--s4); }
+  .flag { display:inline-flex; align-items:center; gap:5px;
+          font-family:var(--font-condensed); font-weight:700; font-size:var(--t-10);
+          letter-spacing:.08em; text-transform:uppercase; color:var(--color-accent-ink); }
+
+  .suitors { display:flex; flex-wrap:wrap; gap:var(--s2); margin-top:var(--s3);
+             margin-left:calc(44px + var(--s3)); }
+  .suitor { display:inline-flex; align-items:center; gap:6px; padding:4px var(--s2) 4px 4px;
+            border-radius:var(--r-pill); background:var(--color-bg-card);
+            border:1px solid var(--color-border-subtle); font-size:var(--t-12);
+            color:var(--color-text-secondary); white-space:nowrap; }
+  .suitorFig { font-family:var(--font-serif); font-weight:700;
+               font-variant-numeric:tabular-nums; color:var(--color-accent-ink); }
+  .suitorNone { color:var(--color-text-muted); font-size:var(--t-11); }
+
+  .side { text-align:right; display:grid; gap:var(--s2); justify-items:end; }
+  .range { font-family:var(--font-serif); font-weight:700; font-size:var(--t-20);
+           font-variant-numeric:tabular-nums lining-nums; color:var(--color-text-primary);
+           white-space:nowrap; }
+  .rangeL { font-family:var(--font-condensed); font-weight:600; font-size:var(--t-10);
+            letter-spacing:.10em; text-transform:uppercase; color:var(--color-text-muted); }
+  .acts { display:flex; gap:var(--s1); }
+  .btn { font-family:var(--font-condensed); font-size:var(--t-10); font-weight:700;
+         letter-spacing:.06em; text-transform:uppercase; padding:0 var(--s3); height:32px;
+         border-radius:var(--r-control); border:1px solid var(--color-border-strong);
+         background:none; color:var(--color-text-primary); white-space:nowrap; }
+  .btnGo { background:var(--color-accent); border-color:var(--color-accent);
+           color:var(--color-on-accent); }
+  .btnQuiet { border-color:var(--color-border-subtle); color:var(--color-text-muted); }
+  .hot { font-size:var(--t-11); color:var(--color-warning-text); font-weight:700; }
+  .hotBid { font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+  .divider { display:flex; align-items:baseline; gap:var(--s3); margin:var(--s8) 0 0;
+             padding-bottom:var(--s2); border-bottom:2px solid var(--color-text-primary); }
+  .dividerT { font-family:var(--font-serif); font-weight:700; font-size:var(--t-20);
+              letter-spacing:-0.02em; margin:0; color:var(--color-text-primary); }
+  .dividerH { margin-left:auto; font-size:var(--t-12); color:var(--color-text-muted); }
+
+  </style>
+</helmet>
+<div class="screen {{themeClass}}">
+  <div class="topbar">
+    <span class="wordmark">Gaffa</span>
+    <span class="topLink">Home</span><span class="topLink">Matchups</span>
+    <span class="topLink on">Transfers</span><span class="topLink">Players</span>
+    <span class="topLink">Standings</span>
+  </div>
+  <nav class="subnav">
+    <span class="snItem">Market</span>
+    <span class="snItem">Auctions <span class="snCount">3</span></span>
+    <span class="snItem">Listings <span class="snCount">9</span></span>
+    <span class="snItem on">Targets <span class="snCount">14</span></span>
+    <span class="snItem">Free Agents <span class="snCount">412</span></span>
+    <span class="snItem">Deals <span class="snCount">2</span></span>
+  </nav>
+  <div class="wrap">
+    <div class="head">
+      <h1 class="pageTitle">The Targets Board</h1>
+      <div class="pageSub">17 targets, gathered into 9 things people actually want. Read the figure on the left as how many clubs chase that one.</div>
+    </div>
+
+    <div class="divider">
+      <h2 class="dividerT">Approaches</h2>
+      <span class="dividerH">Players of yours somebody has named</span>
+    </div>
+      <div class="entry yours entryTop">
+        <div>
+          <div class="subject">
+            <span class="heat heat1">1</span>
+            <div class="subjMain">
+              <div class="namerow" style="--pf:var(--color-pos-am);--pi:var(--color-pos-am-on);--pl:var(--color-pos-am-line)"><span class="poschip">AM</span><span class="subjName">C. Palmer</span></div>
+              <div class="subjMeta">Yours &middot; valued &euro;85m &middot; <span class="flag">They came to you</span></div>
+            </div>
+          </div>
+          <div class="suitors">
+        <span class="suitor"><span class="crest">HU</span>Holloway Utd <span class="suitorNone">players</span></span>
+          </div>
+        </div>
+        <div class="side">
+          <div class="acts"><button class="btn">Offer</button><button class="btn btnGo">List him</button></div>
+        </div>
+      </div>
+      <div class="entry yours">
+        <div>
+          <div class="subject">
+            <span class="heat heat1">1</span>
+            <div class="subjMain">
+              <div class="namerow" style="--pf:var(--color-pos-lb);--pi:var(--color-pos-lb-on);--pl:var(--color-pos-lb-line)"><span class="poschip">LB</span><span class="subjName">M. Kerkez</span></div>
+              <div class="subjMeta">Yours &middot; valued &euro;41m &middot; <span class="flag">They came to you</span></div>
+            </div>
+          </div>
+          <div class="suitors">
+        <span class="suitor"><span class="crest">MM</span>Matchday Militia <span class="suitorFig">&euro;60m</span></span>
+          </div>
+        </div>
+        <div class="side">
+          <div><div class="rangeL">Budget</div><div class="range">&euro;60m</div></div>
+          <div class="acts"><button class="btn">Offer</button><button class="btn btnGo">List him</button></div>
+        </div>
+      </div>
+
+    <div class="divider">
+      <h2 class="dividerT">Open Demand</h2>
+      <span class="dividerH">Most wanted first</span>
+    </div>
+      <div class="entry entryTop">
+        <div>
+          <div class="subject">
+            <span class="heat">2</span>
+            <div class="subjMain">
+              <div class="namerow" style="--pf:var(--color-pos-lb);--pi:var(--color-pos-lb-on);--pl:var(--color-pos-lb-line)"><span class="poschip">LB</span><span class="subjName">Starter left-back</span></div>
+              <div class="subjMeta">starter level</div>
+            </div>
+          </div>
+          <div class="suitors">
+        <span class="suitor"><span class="crest">BF</span>Bot FC <span class="suitorFig">&euro;25m</span></span>
+        <span class="suitor"><span class="crest">SG</span>Southgate FC <span class="suitorFig">&euro;40m</span></span>
+          </div>
+        </div>
+        <div class="side">
+          <div><div class="rangeL">Budgets</div><div class="range">&euro;25m&ndash;&euro;40m</div></div>
+          <div class="acts"><button class="btn btnQuiet">Message</button><button class="btn btnGo">Offer</button></div>
+        </div>
+      </div>
+      <div class="entry">
+        <div>
+          <div class="subject">
+            <span class="heat">2</span>
+            <div class="subjMain">
+              <div class="namerow" style="--pf:var(--color-pos-cb);--pi:var(--color-pos-cb-on);--pl:var(--color-pos-cb-line)"><span class="poschip">CB</span><span class="subjName">Bench centre-back</span></div>
+              <div class="subjMeta">bench / starter level</div>
+            </div>
+          </div>
+          <div class="suitors">
+        <span class="suitor"><span class="crest">VP</span>Vardy Party <span class="suitorNone">players</span></span>
+        <span class="suitor"><span class="crest">KM</span>Kingsmead <span class="suitorFig">&euro;55m</span></span>
+          </div>
+        </div>
+        <div class="side">
+          <div><div class="rangeL">Budget</div><div class="range">&euro;55m</div></div>
+        </div>
+      </div>
+      <div class="entry">
+        <div>
+          <div class="subject">
+            <span class="heat">2</span>
+            <div class="subjMain">
+              <div class="namerow" style="--pf:var(--color-pos-cm);--pi:var(--color-pos-cm-on);--pl:var(--color-pos-cm-line)"><span class="poschip">CM</span><span class="subjName">Star centre-mid</span></div>
+              <div class="subjMeta">star / bench level</div>
+            </div>
+          </div>
+          <div class="suitors">
+        <span class="suitor"><span class="crest">HU</span>Holloway Utd <span class="suitorFig">&euro;70m</span></span>
+        <span class="suitor"><span class="crest">VP</span>Vardy Party <span class="suitorFig">&euro;18m</span></span>
+          </div>
+        </div>
+        <div class="side">
+          <div><div class="rangeL">Budgets</div><div class="range">&euro;18m&ndash;&euro;70m</div></div>
+        </div>
+      </div>
+      <div class="entry">
+        <div>
+          <div class="subject">
+            <span class="heat heat1">1</span>
+            <div class="subjMain">
+              <div class="namerow" style="--pf:var(--color-pos-st);--pi:var(--color-pos-st-on);--pl:var(--color-pos-st-line)"><span class="poschip">ST</span><span class="subjName">Prospect striker</span></div>
+              <div class="subjMeta">prospect level</div>
+            </div>
+          </div>
+          <div class="suitors">
+        <span class="suitor"><span class="crest">RB</span>Redbridge <span class="suitorNone">players</span></span>
+          </div>
+        </div>
+        <div class="side">
+          <div class="acts"><button class="btn btnQuiet">Message</button><button class="btn btnGo">Offer</button></div>
+        </div>
+      </div>
+      <div class="entry">
+        <div>
+          <div class="subject">
+            <span class="heat heat1">1</span>
+            <div class="subjMain">
+              <div class="namerow" style="--pf:var(--color-pos-cb);--pi:var(--color-pos-cb-on);--pl:var(--color-pos-cb-line)"><span class="poschip">CB</span><span class="subjName">W. Saliba</span></div>
+              <div class="subjMeta">Vardy Party &middot; &euro;78m</div>
+            </div>
+          </div>
+          <div class="suitors">
+        <span class="suitor"><span class="crest">MM</span>Matchday Militia <span class="suitorFig">&euro;62m</span></span>
+          </div>
+        </div>
+        <div class="side">
+          <div><div class="rangeL">Budget</div><div class="range">&euro;62m</div></div>
+        </div>
+      </div>
+      <div class="entry">
+        <div>
+          <div class="subject">
+            <span class="heat heat1">1</span>
+            <div class="subjMain">
+              <div class="namerow" style="--pf:var(--color-pos-st);--pi:var(--color-pos-st-on);--pl:var(--color-pos-st-line)"><span class="poschip">ST</span><span class="subjName">A. Isak</span></div>
+              <div class="subjMeta">Holloway Utd &middot; &euro;92m</div>
+            </div>
+          </div>
+          <div class="suitors">
+        <span class="suitor"><span class="crest">KM</span>Kingsmead <span class="suitorNone">open</span></span>
+          </div>
+        </div>
+        <div class="side">
+          <div class="acts"><button class="btn btnQuiet">Message</button><button class="btn btnGo">Offer</button></div>
+        </div>
+      </div>
+      <div class="entry">
+        <div>
+          <div class="subject">
+            <span class="heat heat1">1</span>
+            <div class="subjMain">
+              <div class="namerow" style="--pf:var(--color-pos-undefined);--pi:var(--color-pos-undefined-on);--pl:var(--color-pos-undefined-line)"><span class="poschip">RWB</span><span class="subjName">Bench right wing-back</span></div>
+              <div class="subjMeta">bench level</div>
+            </div>
+          </div>
+          <div class="suitors">
+        <span class="suitor"><span class="crest">BF</span>Bot FC <span class="suitorNone">loan</span></span>
+          </div>
+        </div>
+        <div class="side">
+        </div>
+      </div>
+      <div class="entry">
+        <div>
+          <div class="subject">
+            <span class="heat heat1">1</span>
+            <div class="subjMain">
+              <div class="namerow" style="--pf:var(--color-pos-dm);--pi:var(--color-pos-dm-on);--pl:var(--color-pos-dm-line)"><span class="poschip">DM</span><span class="subjName">Starter defensive mid</span></div>
+              <div class="subjMeta">starter level</div>
+            </div>
+          </div>
+          <div class="suitors">
+        <span class="suitor"><span class="crest">SG</span>Southgate FC <span class="suitorNone">players</span></span>
+          </div>
+        </div>
+        <div class="side">
+        </div>
+      </div>
+      <div class="entry">
+        <div>
+          <div class="subject">
+            <span class="heat heat1">1</span>
+            <div class="subjMain">
+              <div class="namerow" style="--pf:var(--color-pos-rw);--pi:var(--color-pos-rw-on);--pl:var(--color-pos-rw-line)"><span class="poschip">RW</span><span class="subjName">B. Saka</span></div>
+              <div class="subjMeta">Kingsmead &middot; &euro;88m</div>
+            </div>
+          </div>
+          <div class="suitors">
+        <span class="suitor"><span class="crest">RB</span>Redbridge <span class="suitorNone">open</span></span>
+          </div>
+        </div>
+        <div class="side">
+        </div>
+      </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light","section":"Theme"},"$preview":{"width":1120,"height":1360}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: (this.props.theme ?? 'light') === 'dark' ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>
