@@ -10,6 +10,7 @@ import Portrait from '@/components/players/Portrait';
 import { playerHoverProps, usePlayerCard } from '@/components/players/PlayerCardProvider';
 import { useTick, isClosing, formatAuctionClock } from './useTick';
 import { listingStance } from '@/lib/transfers/listingStance';
+import type { DemandLine } from '@/lib/transfers/demandLine';
 import styles from './ListingCard.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 
@@ -51,6 +52,14 @@ export interface ListingCardProps {
   onEdit?: (listing: TransfersListing) => void;
   onReview?: (listing: TransfersListing) => void;
   onOpenPlayer?: (playerId: string) => void;
+  /**
+   * Who is asking for this player, from the Targets board (153).
+   *
+   * Computed by the board rather than here, because the card has no view of
+   * the league's targets and a card that fetched its own would be one query
+   * per listing. Null when nobody is asking, which is most cards.
+   */
+  demand?: DemandLine | null;
 }
 
 const money = (n: number | null | undefined) => (n == null ? '—' : `€${n}m`);
@@ -68,6 +77,7 @@ export default function ListingCard({
   onEdit,
   onReview,
   onOpenPlayer,
+  demand = null,
 }: ListingCardProps) {
   const player = listing.player;
   const { prefetchPlayer } = usePlayerCard();
@@ -190,6 +200,18 @@ export default function ListingCard({
           </span>
         )}
       </div>
+
+      {/* Demand, from the Targets board. The single most useful thing that
+          feature produces for a seller, and the reason it sits HERE rather
+          than only on its own page: somebody deciding whether to sell is
+          already looking at this card. Below the stance, above the actions —
+          it informs the decision, it is not one of the buttons. */}
+      {demand && (
+        <div className={styles.demand}>
+          {demand.title}
+          {demand.detail && <span className={styles.demandSub}>{demand.detail}</span>}
+        </div>
+      )}
 
       <div className={styles.actions}>
         {isMine ? (

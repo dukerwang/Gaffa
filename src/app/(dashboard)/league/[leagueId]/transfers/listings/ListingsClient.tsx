@@ -15,6 +15,7 @@ import { setServerClock } from '@/components/transfers/useTick';
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import styles from './listings.module.css';
 import { fold } from '@/lib/text/fold';
+import { demandLine } from '@/lib/transfers/demandLine';
 
 /**
  * The Listings board — supply from clubs, on its own page.
@@ -91,6 +92,28 @@ export default function ListingsClient({
   }, [model.myOffers]);
 
   const budget = model.myTeam.faab_budget;
+
+  /**
+   * Who wants each listed player, from the Targets board (153).
+   *
+   * Computed once for the whole board rather than per card: the targets are
+   * already in the model, and a card that worked this out for itself would do
+   * it again on every countdown tick.
+   *
+   * `model.targets` is already scoped to what this reader may see — public
+   * across the league, plus their own, plus any direct approach aimed at a
+   * player they hold — so a seller sees the private approach made to him and
+   * nobody else's.
+   */
+  const demandByListing = useMemo(() => {
+    const m = new Map<string, ReturnType<typeof demandLine>>();
+    for (const l of model.listings) {
+      if (!l.player) continue;
+      const line = demandLine(model.targets, l.player, l.seller_team_id);
+      if (line) m.set(l.id, line);
+    }
+    return m;
+  }, [model.listings, model.targets]);
 
   /**
    * The cheapest way into this listing today — the lower of the bid floor and
@@ -304,6 +327,7 @@ export default function ListingsClient({
               onOffer={(x) => setPropose({ listing: x, mode: 'offer' })}
               onLoan={(x) => setPropose({ listing: x, mode: 'loan' })}
               onEdit={(x) => setEditing(x)}
+              demand={demandByListing.get(l.id) ?? null}
               onReview={() => {
                 window.dispatchEvent(new Event('navigation-start'));
                 router.push(`/league/${leagueId}/transfers/deals`);
@@ -354,6 +378,8 @@ export default function ListingsClient({
           leagueId={leagueId}
           listing={editing === 'new' ? null : editing}
           myRoster={model.myRoster}
+          targets={model.targets}
+          myTeamId={model.myTeam.id}
           onDone={refresh}
         />
       )}

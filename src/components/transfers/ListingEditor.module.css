@@ -220,3 +220,35 @@
 @media (max-width: 480px) {
   .prices { grid-template-columns: 1fr; }
 }
+
+/* ── Demand, from the Targets board (153) ───────────────── */
+
+/* Who already wants this player, shown before the seller sets a price. A fact
+   about the market, not a control: card-alt ground, ink text, no accent. The
+   accent in this dialog belongs to the prices and the save button. */
+.demand {
+  margin: 0 var(--s5) var(--s4);
+  padding: var(--s3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card-alt);
+}
+
+.demandTitle {
+  display: block;
+  font-size: var(--t-13);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.demandSub {
+  display: block;
+  font-size: var(--t-12);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .demand { margin: 0 var(--s4) var(--s4); }
+}

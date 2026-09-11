@@ -330,3 +330,27 @@
   .priceLive { font-size: var(--t-13); }
   .name { font-size: var(--t-15); }
 }
+
+/* ── Demand, from the Targets board (153) ───────────────── */
+
+/* Who is asking for this player. Reads as a fact about the market rather than
+   an action, so: card-alt ground, ink text, no accent and no border of its own.
+   The accent on this card belongs to the asking price and the bid button, and
+   lending it to a line you cannot press would make the card's one primary
+   action ambiguous. */
+.demand {
+  padding: var(--s2) var(--s3);
+  border-top: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-card-alt);
+  font-size: var(--t-12);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.demandSub {
+  display: block;
+  font-size: var(--t-11);
+  font-weight: 400;
+  color: var(--card-ink, var(--color-text-muted));
+  margin-top: 2px;
+}

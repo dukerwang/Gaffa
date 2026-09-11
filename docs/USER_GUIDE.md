@@ -372,6 +372,28 @@ When you list a player you can also flag whether you want **cash, players, or a 
 
 **Before anyone bids, you can also negotiate directly.** Send an Offer — cash, players, or a mix — and it lands as a private proposal in your DMs with the seller, who can accept, counter, or decline it, exactly like any other trade. It's a quieter route than the open auction: nobody else sees it, and unlike a bid it needs the seller's yes rather than just being the highest number on the board. A cash-only offer still has to clear your **minimum bid**, when you have one set — the floor protects the auction itself, not just who's allowed to open it — but an offer that includes players isn't priced against anything, since their value isn't one number. Once real bidding starts, this door closes and the listing becomes auction-only.
 
+### Targets — saying what you're looking for
+
+Listings tell the league what you'll part with. **Targets** tell it what you want. A target is an advertisement, not a deal: there's nothing to bid on and nothing to accept, and the only next step is an Offer or a conversation. What makes it worth posting is the matching — when a player you've targeted is actually listed, dropped, or swept onto the market, you're told, and the listing shows up attached to your target.
+
+You can target **a specific player**, or **a position**. A position target also names the level you want — Star, Starter, Bench, or Prospect — because "an LB" could mean a €60m first-choice or a body for the bench, and the clubs who could answer it have no way to tell which.
+
+**Who gets told** is yours to choose, and there are three answers:
+
+- **Only you.** Nobody sees it and nobody is told. You still get the alert when he becomes available. Use it to watch somebody without showing your hand.
+- **Only \<his club\>.** The club that owns him is told, and nobody else can see it. This is a private approach — the natural choice for a named player, and the one the editor starts on.
+- **Visible to the league.** Your club is named on the Targets board beside him, and his owner is told. Use it when you want a third club with a surplus to come to you.
+
+A position target has no owner, so the middle option isn't available on one.
+
+**The board reads in three parts.** *Wanted From You* is every target you could answer from your own squad, and those are the only rows with buttons on them. *The Board* is what everyone else is after. *Your Targets* is what you're chasing, with who can see each one.
+
+**Caps.** You can hold **10 live targets**, of which **5 may be visible to the league**. A private or direct target spends one of the ten and none of the five, since it never reaches the board. Targets stand for **28 days**, and editing one resets that clock.
+
+**Signing the player fills a named target and closes it.** A position target is *not* closed by signing somebody — one left-back arriving doesn't end a search for a left-back, and quietly deleting the target would be the app deciding you're finished when you aren't. Withdraw it yourself when you are.
+
+A target **follows its player**. Trade him to another club and the target re-points at his new owner, exactly as it survives him changing Premier League clubs.
+
 ### Where a transfer fee goes
 
 When you sign a free agent, the fee doesn't vanish. **20% of every winning bid returns to the league**, split two ways:

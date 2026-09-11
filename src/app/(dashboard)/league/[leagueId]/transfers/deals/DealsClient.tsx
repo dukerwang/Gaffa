@@ -677,6 +677,8 @@ export default function DealsClient({
           leagueId={leagueId}
           listing={editing === 'new' ? null : editing}
           myRoster={model.myRoster}
+          targets={model.targets}
+          myTeamId={model.myTeam.id}
           onDone={refresh}
         />
       )}

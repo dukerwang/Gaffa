@@ -8,6 +8,7 @@ import Modal from './Modal';
 import styles from './ListingEditor.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { listingStance } from '@/lib/transfers/listingStance';
+import { demandLine, type DemandTarget } from '@/lib/transfers/demandLine';
 
 /**
  * List a player, or edit a listing that has not been bid on yet.
@@ -44,6 +45,14 @@ interface Props {
   initialPlayerId?: string | null;
   /** Defaults the stated intent when creating, e.g. loan-leaning from a "list for loan" CTA. */
   initialGates?: { trade: boolean; sale: boolean; loan: boolean };
+  /**
+   * Live targets the caller may see, so this dialog can say who already wants
+   * the player being listed. Optional: callers that don't have the board's
+   * model simply don't show the line.
+   */
+  targets?: readonly DemandTarget[];
+  /** My own club, so my own targets are never reported back to me as demand. */
+  myTeamId?: string | null;
   onDone: () => void;
 }
 
@@ -56,7 +65,8 @@ function floorFor(roster: RosterPlayer[], pid: string): number {
 }
 
 export default function ListingEditor({
-  open, onClose, leagueId, listing, myRoster, initialPlayerId, initialGates, onDone,
+  open, onClose, leagueId, listing, myRoster, initialPlayerId, initialGates,
+  targets, myTeamId, onDone,
 }: Props) {
   const editing = Boolean(listing);
 
@@ -98,6 +108,11 @@ export default function ListingEditor({
   const selected = editing
     ? listing?.player
     : listable.find((p) => p.id === playerId);
+
+  const demand = useMemo(
+    () => (selected && targets ? demandLine(targets, selected, myTeamId ?? null) : null),
+    [selected, targets, myTeamId],
+  );
 
   const marketValue = Number(selected?.market_value) || 0;
   // The 077 trigger is the real enforcement; this mirrors it so the seller sees
@@ -272,6 +287,18 @@ export default function ListingEditor({
             {selected.pl_team} · valued {money(marketValue)}
             {floor > 0 && ` · floor ${money(floor)}`}
           </span>
+        </div>
+      )}
+
+      {/* Who already wants him, from the Targets board (153).
+          Placed above the terms rather than below them: knowing that two clubs
+          will pay cash is the sort of thing that changes the asking price you
+          are about to type, and a line underneath would arrive after the
+          decision it should have informed. */}
+      {demand && (
+        <div className={styles.demand}>
+          <span className={styles.demandTitle}>{demand.title}</span>
+          {demand.detail && <span className={styles.demandSub}>{demand.detail}</span>}
         </div>
       )}
 

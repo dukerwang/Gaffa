@@ -16,6 +16,9 @@ import CrestBadge from '@/components/crest/CrestBadge';
 import type { CrestConfig } from '@/components/crest/types';
 import TransfersSubNav from '@/components/transfers/TransfersSubNav';
 import ListingCard from '@/components/transfers/ListingCard';
+import TargetRow from '@/components/transfers/TargetRow';
+import { demandLine } from '@/lib/transfers/demandLine';
+import { playersAnswering } from '@/lib/transfers/answerTarget';
 import AuctionTimingHelp from '@/components/transfers/AuctionTimingHelp';
 import BidDialog, { type BidMode } from '@/components/transfers/BidDialog';
 import ProposeBuilder, { type ProposeMode } from '@/components/transfers/ProposeBuilder';
@@ -75,6 +78,50 @@ export default function MarketClient({
     () => new Map(model.allTeams.map((t) => [t.id, t])),
     [model.allTeams],
   );
+
+  /**
+   * Four targets for the hub slice, best-first.
+   *
+   * "Best" means answerable: a target you could fill from your own squad is
+   * the only kind that is actually about you, so those sort ahead of the rest
+   * and a direct approach ahead of a public ad. `playersAnswering` is the same
+   * call the Targets board uses for its sections, so a row promoted here for
+   * being answerable lands under "Wanted From You" when you follow the link.
+   */
+  const hubTargets = useMemo(() => {
+    const ownerName = (playerId: string | null) => {
+      if (!playerId) return null;
+      for (const [teamId, roster] of Object.entries(model.allRosters)) {
+        if (roster.some((p) => p.id === playerId)) {
+          return model.allTeams.find((t) => t.id === teamId)?.team_name ?? null;
+        }
+      }
+      return null;
+    };
+
+    return model.targets
+      .map((t) => {
+        const isMine = t.team_id === model.myTeam.id;
+        const canAnswer = playersAnswering(
+          { team_id: t.team_id, target_kind: t.target_kind, player_id: t.player_id, position: t.position },
+          model.myTeam.id,
+          model.myRoster,
+        ).length > 0;
+        return {
+          target: t,
+          isMine,
+          canAnswer,
+          sentToMe: !isMine && t.visibility === 'direct',
+          ownerName: ownerName(t.player_id),
+        };
+      })
+      .sort((a, b) => {
+        const rank = (r: typeof a) => (r.canAnswer && !r.isMine ? 0 : r.sentToMe ? 1 : r.isMine ? 3 : 2);
+        return rank(a) - rank(b)
+          || new Date(b.target.created_at).getTime() - new Date(a.target.created_at).getTime();
+      })
+      .slice(0, 4);
+  }, [model.targets, model.myRoster, model.myTeam.id, model.allRosters, model.allTeams]);
 
   // Closing now: free agents and listed players together, soonest first. This is
   // the only place in the hub the two kinds are deliberately mixed — urgency
@@ -329,6 +376,7 @@ export default function MarketClient({
                   auction={auctionByListing.get(l.id) ?? null}
                   seller={teamById.get(l.seller_team_id)}
                   isMine={l.seller_team_id === model.myTeam.id}
+                  demand={l.player ? demandLine(model.targets, l.player, l.seller_team_id) : null}
                   onOpenPlayer={() => l.player && openPlayer(l.player as unknown as Player)}
                   onBid={(x) => {
                     const a = auctionByListing.get(x.id);
@@ -348,6 +396,56 @@ export default function MarketClient({
                 />
               ))}
             </div>
+          )}
+
+          {/* ── Targets slice ───────────────────────────
+              The demand side, beside the supply side. Ordered so anything the
+              reader could answer from his own squad comes first — on a hub
+              page there is room for four rows, and four rows about other
+              people's shopping would be worth nobody's screen space. */}
+          <div className={`${styles.sect} ${styles.sectSpaced}`}>
+            <h2 className={styles.sectTitle}>What Clubs Are After</h2>
+            <span className={styles.sectHint}>who is looking for what, and what they&rsquo;d give for it</span>
+            <NavigationLink href={`/league/${leagueId}/transfers/targets`} className={styles.sectMore}>
+              All {model.counts.targets} targets →
+            </NavigationLink>
+          </div>
+
+          {hubTargets.length === 0 ? (
+            <p className={styles.empty}>No club has posted a target yet.</p>
+          ) : (
+            hubTargets.map((r, i) => (
+              <TargetRow
+                key={r.target.id}
+                target={r.target}
+                isMine={r.isMine}
+                canAnswer={r.canAnswer}
+                sentToMe={r.sentToMe}
+                ownerName={r.ownerName}
+                last={i === hubTargets.length - 1}
+                onOpenPlayer={r.target.player ? () => openPlayer(r.target.player as unknown as Player) : undefined}
+                onOffer={() => {
+                  window.dispatchEvent(new Event('navigation-start'));
+                  router.push(`/league/${leagueId}/transfers/targets`);
+                }}
+                onList={() => {
+                  window.dispatchEvent(new Event('navigation-start'));
+                  router.push(`/league/${leagueId}/transfers/targets`);
+                }}
+                onMessage={() => {
+                  window.dispatchEvent(new Event('navigation-start'));
+                  router.push(`/league/${leagueId}/chat?dm=${r.target.team_id}`);
+                }}
+                onEdit={() => {
+                  window.dispatchEvent(new Event('navigation-start'));
+                  router.push(`/league/${leagueId}/transfers/targets`);
+                }}
+                onWithdraw={() => {
+                  window.dispatchEvent(new Event('navigation-start'));
+                  router.push(`/league/${leagueId}/transfers/targets`);
+                }}
+              />
+            ))
           )}
 
           {/* ── The doors ──────────────────────────────── */}
@@ -511,6 +609,8 @@ export default function MarketClient({
           leagueId={leagueId}
           listing={editing}
           myRoster={model.myRoster}
+          targets={model.targets}
+          myTeamId={model.myTeam.id}
           onDone={refresh}
         />
       )}

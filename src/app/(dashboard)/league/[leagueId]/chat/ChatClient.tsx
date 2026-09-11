@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Icon } from '@/components/ui/Icon';
 import FormattedText from '@/components/ui/FormattedText';
@@ -65,6 +66,12 @@ export default function ChatClient({
   const [loading, setLoading] = useState(true);
   const [unreadDMs, setUnreadDMs] = useState<Set<string>>(new Set());
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
+  const searchParams = useSearchParams();
+  const dmParam = searchParams?.get('dm') ?? null;
+  // Opening the requested thread has to wait for `teams` to arrive, and must
+  // then happen exactly once — otherwise every later render would drag the user
+  // back to it after they clicked away.
+  const dmOpenedRef = useRef(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
@@ -98,6 +105,33 @@ export default function ChatClient({
 
     fetchLogs();
   }, [leagueId]);
+
+  /**
+   * `?dm=<id>` opens straight into one conversation.
+   *
+   * The id may be a USER id or a TEAM id, and both are accepted on purpose:
+   * callers elsewhere in the app hold one or the other (the Targets board has
+   * team ids; a notification has a user id), and making each of them look up
+   * the other first is a lookup this component has already done.
+   *
+   * An id that matches nobody is ignored rather than erroring — a stale link
+   * should land you in the lobby, not on a broken page.
+   */
+  useEffect(() => {
+    if (!dmParam || dmOpenedRef.current || teams.length === 0) return;
+
+    const peer = teams.find((t) => t.user_id === dmParam || t.id === dmParam);
+    if (!peer || peer.user_id === currentUserId) return;
+
+    dmOpenedRef.current = true;
+    setActiveTab({
+      type: 'dm',
+      userId: peer.user_id,
+      username: peer.user?.username ?? peer.team_name,
+      teamName: peer.team_name,
+    });
+    setMobileView('chat');
+  }, [dmParam, teams, currentUserId]);
 
   // Seed unread DM dots from persisted read state so they survive a reload,
   // instead of only reflecting messages received live while this page is open.

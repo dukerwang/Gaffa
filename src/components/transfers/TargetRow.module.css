@@ -1,0 +1,284 @@
+/* One target, as a row.
+
+   Deliberately quieter than ListingCard: no countdown, no bid affordance, no
+   elevation. A listing is transactable and a target is inert, and the moment
+   an inert thing looks clickable you have rebuilt `roster_entries.on_trade_block`
+   (029) — a signal shaped like a mechanism, which nothing honoured.
+
+   Where a row DOES carry actions, they belong to the listing/offer machinery
+   next door, never to the target itself.
+
+   Column widths are fixed rather than fractional so the five columns line up
+   down the whole board across three sections, which is the only thing making a
+   sectioned list readable as one table. */
+
+.row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) 176px 84px 212px;
+  align-items: center;
+  gap: var(--s4);
+  padding: var(--s3) var(--s2);
+  border-bottom: 1px solid var(--color-border-subtle);
+  min-height: 64px;
+}
+
+.rowLast { border-bottom: none; }
+
+/* Your own target on a board of other clubs' — the accent as belonging, not as
+   an action. Nothing here is pressable because it is tinted. */
+.rowMine { background: var(--color-accent-dim); }
+
+/* Both sides have spoken: you targeted him, his club listed him. Warm, the same
+   wash a live lot takes next door, because that listing IS on a clock. */
+.rowMatched {
+  background: color-mix(in srgb, var(--color-warning) 8%, var(--color-bg-primary));
+}
+
+/* ── Column 1: who ──────────────────────────────────────── */
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+}
+
+.clubName {
+  font-size: var(--t-13);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Who can read a target. On your own rows this replaces the club name, which
+   would be your own club on every one of them; on anyone else's it appears only
+   when the answer isn't "the league", so a public board stays unmarked. One
+   line, fixed width, no effect on row height. */
+.seen {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+  color: var(--color-text-secondary);
+}
+
+.seenIcon {
+  flex-shrink: 0;
+  display: flex;
+  color: var(--color-text-muted);
+}
+
+.seenText {
+  font-size: var(--t-13);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seenClosed { color: var(--color-warning-text); }
+.seenClosed .seenIcon { color: var(--color-warning-text); }
+
+/* ── Column 2: what they want ───────────────────────────── */
+
+.want { min-width: 0; }
+
+.wantName {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--t-17);
+  letter-spacing: -0.012em;
+  line-height: 1.1;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A named target opens the player card; a role profile names nobody, so it has
+   nothing to open and stays plain text rather than a dead-looking button. */
+.wantButton {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wantButton:hover .wantName { color: var(--color-accent-ink); }
+}
+
+.wantSub {
+  font-size: var(--t-11);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The terms, folded into the sub-line on narrow screens where columns 3 and 4
+   are gone. Hidden at full width, where those columns carry them. */
+.stackOnly { display: none; }
+
+.note {
+  font-size: var(--t-11);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The listing that answers a target, on the row that targeted him. Live money
+   is mono here — unlike everything else on this board, a standing bid moves
+   while you look at it. */
+.hit {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  margin-top: 3px;
+  font-size: var(--t-11);
+  flex-wrap: wrap;
+}
+
+.hitTitle { font-weight: 700; color: var(--color-warning-text); }
+
+.hitBid {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-warning-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.hitClock {
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Column 3: terms ────────────────────────────────────── */
+
+/* One chip stating what they'd give. Outlined and condensed, matching
+   ListingCard's `.gate`; colour only where it means the same thing it means
+   everywhere else, which is the accent for cash. An absence is a dashed rule,
+   not a different hue. */
+.gate {
+  font-family: var(--font-condensed);
+  font-size: var(--t-10);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: var(--s1) var(--s2);
+  border-radius: var(--r-control);
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  display: inline-block;
+}
+
+.gateCash { color: var(--color-accent-ink); }
+.gateOpen { border-style: dashed; }
+
+/* On a tinted row the outline colours lose their ground; ink reads on both. */
+.rowMine .gate,
+.rowMatched .gate { color: var(--color-text-primary); }
+
+/* ── Column 4: budget ───────────────────────────────────── */
+
+.fig {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--t-17);
+  font-variant-numeric: tabular-nums lining-nums;
+  text-align: right;
+  color: var(--color-text-primary);
+}
+
+/* No budget named. An em dash, not a zero — zero is a number somebody chose. */
+.figOff {
+  color: var(--color-text-muted);
+  font-weight: 400;
+  font-size: var(--t-13);
+}
+
+/* ── Column 5: actions ──────────────────────────────────── */
+
+/* Two fixed tracks, so every secondary lines up down one column and every
+   primary down the next however many actions a row has. Labels stay one word
+   for the same reason ListingCard's do. */
+.act {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s1);
+}
+
+/* Uppercased in CSS, so these are not Title Case strings in the source and the
+   naming rule doesn't reach them. `Add Target` and `Post Target` are typed as
+   they render, and do. */
+.btn {
+  font-family: var(--font-condensed);
+  font-size: var(--t-10);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0 var(--s2);
+  border-radius: var(--r-control);
+  border: 1px solid var(--color-border-strong);
+  background: none;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  height: 34px;
+  width: 100%;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { background: var(--color-bg-card-hover); }
+}
+
+.btnPrimary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btnPrimary:hover { background: var(--color-accent-hover); }
+}
+
+.btnQuiet {
+  border-color: var(--color-border-subtle);
+  color: var(--color-text-secondary);
+}
+
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Mobile ─────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  /* The five columns crush each other well before the full width, so the row
+     stacks: club above the target, terms folded into the sub-line, actions on
+     their own line. */
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s2);
+    padding: var(--s3) 0;
+  }
+
+  .terms,
+  .fig { display: none; }
+
+  .stackOnly { display: block; }
+
+  .btn { min-height: 44px; height: auto; }
+}

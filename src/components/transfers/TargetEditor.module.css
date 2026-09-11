@@ -1,0 +1,366 @@
+/* Post a target, or edit one you already hold.
+
+   Sits in the shared transfers Modal, and takes its field rhythm from
+   ListingEditor so the two dialogs read as one pair — they are the two halves
+   of the same market.
+
+   The one thing this dialog does that its sibling doesn't is ask WHO GETS TOLD,
+   and that field is written as a ladder of exposure with each rung saying what
+   actually happens rather than "public" / "private". A manager choosing an
+   audience is deciding whether nine rivals learn where he is shopping, which is
+   not a thing to encode in one word. */
+
+.section {
+  padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.section:last-child { border-bottom: none; }
+
+.label {
+  display: block;
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: var(--t-10);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: var(--s2);
+}
+
+.hint {
+  font-size: var(--t-12);
+  color: var(--color-text-muted);
+  margin: var(--s2) 0 0;
+  line-height: 1.4;
+}
+
+/* ── Kind ───────────────────────────────────────────────── */
+
+.seg {
+  display: flex;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--r-control);
+  overflow: hidden;
+}
+
+.segBtn {
+  flex: 1;
+  padding: var(--s2) var(--s3);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  font-weight: 600;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--color-border-strong);
+  color: var(--color-text-secondary);
+  min-height: 38px;
+  cursor: pointer;
+}
+
+.segBtn:last-child { border-right: none; }
+
+.segOn {
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  font-weight: 700;
+}
+
+.segBtn:disabled { opacity: 0.45; cursor: default; }
+
+/* ── Player picker ──────────────────────────────────────── */
+
+.select,
+.search {
+  display: block;
+  width: 100%;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  color: var(--color-text-primary);
+  min-height: 38px;
+}
+
+.search { margin-bottom: var(--s2); }
+.search::placeholder { color: var(--color-text-muted); }
+
+.select:focus,
+.search:focus,
+.money:focus,
+.note:focus {
+  outline: 2px solid var(--color-border-accent);
+  outline-offset: -1px;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s2);
+  min-width: 0;
+}
+
+.identityName {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--t-17);
+  letter-spacing: -0.012em;
+  color: var(--color-text-primary);
+}
+
+.identityMeta {
+  font-size: var(--t-12);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Position grid ──────────────────────────────────────── */
+
+.posGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--s1);
+}
+
+.posOpt {
+  padding: var(--s2) 0;
+  text-align: center;
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: var(--t-12);
+  letter-spacing: 0.04em;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  min-height: 38px;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .posOpt:hover { background: var(--color-bg-card-hover); }
+}
+
+/* The selected position takes its own hue from the taxonomy — the one place in
+   this dialog where colour carries identity rather than state. */
+.posOptOn {
+  background: var(--pos-field);
+  color: var(--pos-ink);
+  border-color: var(--pos-line);
+}
+
+/* ── Option ladders (level, audience) ───────────────────── */
+
+.optList { display: grid; gap: var(--s1); }
+
+.opt {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  text-align: left;
+  padding: var(--s3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  min-height: 44px;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .opt:hover { background: var(--color-bg-card-hover); }
+}
+
+.optOn {
+  border-color: var(--color-border-accent);
+  background: var(--color-accent-dim);
+}
+
+.opt:disabled { opacity: 0.45; cursor: default; }
+@media (hover: hover) and (pointer: fine) {
+  .opt:disabled:hover { background: var(--color-bg-card); }
+}
+
+.radio {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-round);
+  flex-shrink: 0;
+  margin-top: 2px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-card);
+}
+
+.radioOn {
+  border: 5px solid var(--color-accent);
+  background: var(--color-bg-card);
+}
+
+.optText { min-width: 0; }
+
+.optName {
+  display: block;
+  font-size: var(--t-13);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.optHint {
+  display: block;
+  font-size: var(--t-12);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ── What you'd give ────────────────────────────────────── */
+
+.checks { display: grid; gap: var(--s2); }
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  font-size: var(--t-13);
+  color: var(--color-text-primary);
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.check input { position: absolute; opacity: 0; pointer-events: none; }
+
+.box {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--r-micro);
+  flex-shrink: 0;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+}
+
+.boxOn {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.check input:focus-visible + .box {
+  outline: 2px solid var(--color-border-accent);
+  outline-offset: 1px;
+}
+
+/* ── Money and note ─────────────────────────────────────── */
+
+.money {
+  display: block;
+  width: 100%;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--t-17);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--color-text-primary);
+  min-height: 38px;
+}
+
+.note {
+  display: block;
+  width: 100%;
+  min-height: 60px;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  font-family: var(--font-serif);
+  font-size: var(--t-13);
+  color: var(--color-text-primary);
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.note::placeholder { color: var(--color-text-muted); }
+
+.counter {
+  font-family: var(--font-condensed);
+  font-size: var(--t-10);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-align: right;
+  margin-top: var(--s1);
+}
+
+.counterOver { color: var(--color-warning-text); }
+
+/* ── Footer ─────────────────────────────────────────────── */
+
+.error {
+  padding: var(--s3) var(--s5);
+  font-size: var(--t-13);
+  color: var(--color-warning-text);
+  background: color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-card));
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.spacer { flex: 1; }
+
+.ghost {
+  padding: var(--s2) var(--s4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--r-control);
+  background: none;
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  font-weight: 600;
+  min-height: 38px;
+  cursor: pointer;
+}
+
+.go {
+  padding: var(--s2) var(--s4);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--r-control);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  font-weight: 700;
+  min-height: 38px;
+  cursor: pointer;
+}
+
+.danger {
+  padding: var(--s2) var(--s4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--r-control);
+  background: none;
+  color: var(--color-warning-text);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  font-weight: 600;
+  min-height: 38px;
+  cursor: pointer;
+}
+
+.go:disabled,
+.ghost:disabled,
+.danger:disabled { opacity: 0.5; cursor: default; }
+
+@media (max-width: 640px) {
+  .section { padding: var(--s4); }
+  .posGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .posOpt, .segBtn, .select, .search, .money { min-height: 44px; }
+}

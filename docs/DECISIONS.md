@@ -190,6 +190,32 @@ labels, which is the opposite of what was written.
 
 ---
 
+## 2026-09-10 — The Targets board is sectioned rows
+
+**Layout A, not the flat table.** Offered the two drawn layouts — three sections
+with a serif title over an ink rule and flat rows beneath (A), or one bounded
+table with column heads (B) — Duke picked A.
+
+> "A — Sectioned rows"
+
+Chosen from a list, so this is a selection rather than a sentence: what is
+recorded is the choice, not a reason. The reason offered alongside the option
+(that section membership answers "can you fill this from your squad?") was the
+agent's framing, not his.
+
+**What is NOT his:** the editor opening on "Only \<his club\>" for a named
+target. Duke's reply to that question was:
+
+> "I STILL DON'T UNDERSTAND THIS QUESTION. AREN'T YOU SUPPOSED TO BE ABLE TO
+> CHOOSE"
+
+He is right that all three audiences are always selectable; the question was
+only which radio starts selected. That default is an **agent choice**, made
+because a named target is usually a private approach, and it was flagged to him
+as a one-line change. Do not cite it back to him as a decision. [inferred]
+
+---
+
 ## Earlier — recorded from CLAUDE.md and docs/USER_GUIDE.md
 
 These predate this file and are load-bearing product decisions, kept here as

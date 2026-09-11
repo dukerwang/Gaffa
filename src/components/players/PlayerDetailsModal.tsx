@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import NavigationLink from '@/components/ui/NavigationLink';
 import type { Player, PlayerOwnership } from '@/types';
 import PremiumPlayerCard from './PremiumPlayerCard';
+import TargetEditor from '@/components/transfers/TargetEditor';
+import { getPlayerDisplayName } from '@/lib/players/displayName';
 import styles from './PlayerDetailsModal.module.css';
 
 interface Props {
@@ -35,7 +37,24 @@ export default function PlayerDetailsModal({
     focusPosition,
 }: Props) {
     const params = useParams();
+    const router = useRouter();
     const leagueId = params?.leagueId as string | undefined;
+    const [targeting, setTargeting] = useState(false);
+
+    /**
+     * "Target" is the demand-side counterpart of the Bid button, and it lives
+     * on the player card because this modal is how you reach a player from
+     * fifteen different surfaces — putting the entry point here covers the
+     * Listings board, Free Agency, the player index and the hub at once,
+     * rather than four separate buttons that would each drift.
+     *
+     * Only on an OWNED player. A free agent needs a bid, not an advertisement,
+     * and there is no owner to approach. Whether the owner is YOU is left to
+     * the route, which answers "He already plays for you" — this component has
+     * no view of which club is the reader's, and inventing that plumbing to
+     * pre-hide one button would be the more fragile of the two.
+     */
+    const canTarget = Boolean(leagueId && player && ownership?.owner);
 
     // Close on Escape
     useEffect(() => {
@@ -85,8 +104,16 @@ export default function PlayerDetailsModal({
                     </div>
                 )}
 
-                {(onPick || onNominate) && (
+                {(onPick || onNominate || canTarget) && (
                     <div className={styles.actions}>
+                        {canTarget && (
+                            <button
+                                className={styles.actionBtn}
+                                onClick={() => setTargeting(true)}
+                            >
+                                Target
+                            </button>
+                        )}
                         {onPick && (
                             <button
                                 className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
@@ -106,6 +133,23 @@ export default function PlayerDetailsModal({
                     </div>
                 )}
             </div>
+
+            {targeting && player && leagueId && (
+                <TargetEditor
+                    open
+                    onClose={() => setTargeting(false)}
+                    leagueId={leagueId}
+                    target={null}
+                    fixedPlayer={{
+                        id: player.id,
+                        name: getPlayerDisplayName(player, 'full'),
+                        position: player.primary_position ?? null,
+                        club: player.pl_team ?? null,
+                        owner: ownership?.owner?.teamName ?? null,
+                    }}
+                    onDone={() => router.refresh()}
+                />
+            )}
         </div>
     );
 }

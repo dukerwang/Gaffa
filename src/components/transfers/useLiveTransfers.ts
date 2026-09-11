@@ -8,6 +8,7 @@ import type {
   TransfersModel,
   TransfersAuction,
   TransfersListing,
+  TransfersTarget,
   TradeProposalRow,
   LoanRow,
   ResolvedAuction,
@@ -17,9 +18,9 @@ import type {
 /**
  * Live-patches the Transfers hub over Supabase Realtime.
  *
- * `auction_state`, `player_sale_listings`, `trade_proposals` and
- * `player_loans` are already on the `supabase_realtime` publication
- * (migrations 078, 101) — this is the first client to actually subscribe to
+ * `auction_state`, `player_sale_listings`, `trade_proposals`, `player_loans`
+ * and `player_targets` are already on the `supabase_realtime` publication
+ * (migrations 078, 101, 153) — this is the first client to actually subscribe to
  * them for the hub itself (chat's `chat_negotiations` channel is a separate,
  * narrower case — see ChatClient.tsx). `model` from the server render stays
  * the source of truth: a `router.refresh()` re-seeds the patch on top of it,
@@ -39,6 +40,7 @@ export function useLiveTransfers(leagueId: string, model: TransfersModel): Trans
   const [myOffers, setMyOffers] = useState(model.myOffers);
   const [leagueFeed, setLeagueFeed] = useState(model.leagueFeed);
   const [loans, setLoans] = useState(model.loans);
+  const [targets, setTargets] = useState(model.targets);
 
   // A server refresh is always the new truth — reset every live patch on top of it.
   useEffect(() => {
@@ -48,6 +50,7 @@ export function useLiveTransfers(leagueId: string, model: TransfersModel): Trans
     setMyOffers(model.myOffers);
     setLeagueFeed(model.leagueFeed);
     setLoans(model.loans);
+    setTargets(model.targets);
   }, [model]);
 
   // Read-only context the row mappers need, kept fresh every render (not just
@@ -173,6 +176,63 @@ export function useLiveTransfers(leagueId: string, model: TransfersModel): Trans
       });
     };
 
+    /**
+     * A target arriving, changing or closing.
+     *
+     * The realtime payload is RLS-filtered, so a private target belonging to
+     * another club never reaches this handler at all and a direct one reaches
+     * only its author and the club that rosters the player. That is the whole
+     * enforcement — there is no client-side visibility check here, deliberately,
+     * because writing one would imply the wire could be trusted to carry rows
+     * it must not.
+     *
+     * A row leaving `active` (withdrawn, filled, expired) is removed rather
+     * than re-rendered: the board shows live demand, and the Deals surfaces are
+     * where a settled thing belongs.
+     */
+    const handleTargetRow = (row: TargetRawRow) => {
+      if (row.status !== 'active') {
+        setTargets((prev) => prev.filter((t) => t.id !== row.id));
+        return;
+      }
+
+      const player = row.player_id ? ctxRef.current.playerMap[row.player_id] ?? null : null;
+      // A named target for a player this page has never loaded cannot be
+      // rendered from local data — one debounced refresh, same as a listing.
+      if (row.player_id && !player) return requestRefresh();
+
+      const team = ctxRef.current.allTeams.find((t) => t.id === row.team_id);
+
+      const mapped: TransfersTarget = {
+        id: row.id,
+        team_id: row.team_id,
+        team_name: team?.team_name ?? null,
+        team_abbreviation: team?.abbreviation ?? null,
+        team_crest: team?.crest_config ?? null,
+        target_kind: row.target_kind,
+        player_id: row.player_id,
+        player,
+        position: row.position,
+        role: row.role,
+        visibility: row.visibility,
+        open_to_sale: row.open_to_sale,
+        open_to_trade: row.open_to_trade,
+        open_to_loan: row.open_to_loan,
+        budget: row.budget,
+        note: row.note,
+        expires_at: row.expires_at,
+        created_at: row.created_at,
+      };
+
+      setTargets((prev) => {
+        const idx = prev.findIndex((t) => t.id === row.id);
+        if (idx === -1) return [mapped, ...prev];
+        const copy = [...prev];
+        copy[idx] = mapped;
+        return copy;
+      });
+    };
+
     const handleTradeRow = (row: TradeProposalRawRow) => {
       const mapped = {
         ...row,
@@ -219,6 +279,8 @@ export function useLiveTransfers(leagueId: string, model: TransfersModel): Trans
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'trade_proposals', filter: `league_id=eq.${leagueId}` }, (p) => handleTradeRow(p.new as TradeProposalRawRow))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'player_loans', filter: `league_id=eq.${leagueId}` }, (p) => handleLoanRow(p.new as LoanRawRow))
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'player_loans', filter: `league_id=eq.${leagueId}` }, (p) => handleLoanRow(p.new as LoanRawRow))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'player_targets', filter: `league_id=eq.${leagueId}` }, (p) => handleTargetRow(p.new as TargetRawRow))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'player_targets', filter: `league_id=eq.${leagueId}` }, (p) => handleTargetRow(p.new as TargetRawRow))
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -254,7 +316,7 @@ export function useLiveTransfers(leagueId: string, model: TransfersModel): Trans
     }
   }, [now, auctions, leagueId]);
 
-  return { ...model, auctions, recentlyResolved, listings, myOffers, leagueFeed, loans };
+  return { ...model, auctions, recentlyResolved, listings, myOffers, leagueFeed, loans, targets };
 }
 
 // ── Raw realtime row shapes (a subset of each table's columns) ─────────────
@@ -290,6 +352,24 @@ interface ListingRow {
   auction_expires_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+interface TargetRawRow {
+  id: string;
+  team_id: string;
+  target_kind: TransfersTarget['target_kind'];
+  player_id: string | null;
+  position: TransfersTarget['position'];
+  role: TransfersTarget['role'];
+  visibility: TransfersTarget['visibility'];
+  open_to_sale: boolean;
+  open_to_trade: boolean;
+  open_to_loan: boolean;
+  budget: number | null;
+  note: string | null;
+  status: 'active' | 'filled' | 'withdrawn' | 'expired';
+  expires_at: string;
+  created_at: string;
 }
 
 interface TradeProposalRawRow {

@@ -1,0 +1,248 @@
+/* The Targets Board.
+
+   Masthead, tools bar and facet chips are ported from listings.module.css
+   without redesign, on purpose: Listings and Targets are the same instrument
+   pointed at opposite sides of the market, and the hub's original problem was
+   four rooms one click apart each solving this differently.
+
+   The board itself is NOT a card grid. A listing is an object you can take, so
+   it gets a card. A target is a SENTENCE somebody said — "Matchday Militia want
+   Saliba, will pay cash, up to €62m" — and a card would frame another
+   manager's statement as a thing you can pick up. Rows, under three section
+   headings, so you know why a row is in front of you before you read it. */
+
+.page { min-height: 100%; }
+
+/* ── Masthead ───────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--s6);
+  padding: var(--s4) var(--s6) var(--s3);
+  flex-wrap: wrap;
+}
+
+.kicker { letter-spacing: 0.16em; }
+
+.title {
+  font-family: var(--font-serif);
+  font-weight: 800;
+  font-size: var(--t-32);
+  letter-spacing: -0.035em;
+  line-height: 1;
+  margin-top: var(--s1);
+  color: var(--color-text-primary);
+}
+
+.stats { display: flex; gap: var(--s6); }
+.stat { text-align: right; }
+
+/* Settled figures: serif, tabular, compared down a column. Nothing in this
+   masthead ticks — a target has no clock to run. */
+.statValue {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--t-20);
+  line-height: 1;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--color-text-primary);
+}
+
+.statAccent { color: var(--color-accent-ink); }
+
+/* --color-warning is a fill with no dark value and measures 2.09 as an ink.
+   The ink half of the pair is --color-warning-text. */
+.statWarn { color: var(--color-warning-text); }
+
+.statLabel { margin-top: var(--s1); }
+
+/* ── Tools ──────────────────────────────────────────────── */
+
+.tools {
+  padding: var(--s3) var(--s6);
+  border-top: 1px solid var(--color-border);
+}
+
+.searchRow {
+  display: flex;
+  gap: var(--s2);
+  margin-bottom: var(--s2);
+  flex-wrap: wrap;
+}
+
+.input {
+  flex: 1;
+  min-width: 200px;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+}
+
+.input::placeholder { color: var(--color-text-muted); }
+
+.input:focus,
+.select:focus {
+  outline: 2px solid var(--color-border-accent);
+  outline-offset: -1px;
+}
+
+.select {
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.cta {
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--color-text-primary);
+  border-radius: var(--r-control);
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cta:hover { opacity: 0.88; }
+}
+
+.facets {
+  display: flex;
+  gap: var(--s1);
+  flex-wrap: wrap;
+}
+
+.facet {
+  font-family: var(--font-condensed);
+  font-size: var(--t-12);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: var(--s1) var(--s2);
+  border-radius: var(--r-control);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-card);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .facet:hover { background: var(--color-bg-card-hover); }
+}
+
+/* --color-on-accent, not --color-bg-card: a label ON a fill has to invert by
+   theme, and the card colour gives a 4.33 label. */
+.facetOn { color: var(--color-on-accent) !important; }
+@media (hover: hover) and (pointer: fine) {
+  .facetOn:hover { color: var(--color-on-accent) !important; }
+}
+
+.facetCount {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: 500;
+  opacity: 0.75;
+  margin-left: var(--s1);
+}
+
+/* ── Board ──────────────────────────────────────────────── */
+
+.board { padding: var(--s4) var(--s6) var(--s8); }
+
+/* A serif title over a 2px ink rule with flat rows beneath and no box — the
+   `.sect` pattern from _home/home.module.css (UI_RULES 5). */
+.sect {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  padding-bottom: var(--s2);
+  border-bottom: 2px solid var(--color-text-primary);
+  margin-bottom: var(--s2);
+}
+
+.sectTitle {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--t-20);
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.sectHint {
+  font-size: var(--t-12);
+  color: var(--color-text-muted);
+}
+
+.sectGap { height: var(--s8); }
+
+.sectEmpty {
+  padding: var(--s5) var(--s2);
+  font-size: var(--t-13);
+  color: var(--color-text-muted);
+}
+
+.empty {
+  padding: var(--s12) var(--s6);
+  text-align: center;
+  font-size: var(--t-13);
+  color: var(--color-text-muted);
+}
+
+/* ── Mobile ─────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .header {
+    padding: var(--s4) var(--s4) var(--s3);
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--s4);
+  }
+
+  .title { font-size: var(--t-25); }
+
+  .stats { gap: var(--s5); width: 100%; flex-wrap: wrap; }
+  .stat { text-align: left; }
+
+  .tools { padding: var(--s3) var(--s4); }
+
+  /* The controls go to a 3-up grid with the search and the CTA full-bleed, so
+     every one of them clears the 44px touch target. */
+  .searchRow {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--s2);
+  }
+
+  .input { grid-column: 1 / -1; min-width: 0; }
+  .cta { grid-column: 1 / -1; justify-content: center; }
+  .input, .select, .cta { min-height: 44px; }
+  .select { text-align: center; }
+
+  .facets {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: var(--s1);
+  }
+  .facets::-webkit-scrollbar { display: none; }
+
+  .board { padding: var(--s4) var(--s4) var(--s8); }
+
+  .sect { flex-direction: column; align-items: flex-start; gap: 2px; }
+}
