@@ -374,6 +374,10 @@
   background: var(--color-bg-primary);
 }
 
+.threadParked {
+  display: none !important;
+}
+
 .messagesFeed {
   flex: 1;
   overflow-y: auto;

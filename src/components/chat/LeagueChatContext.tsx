@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 
 export type ChatTabState =
   | { type: 'lobby' }
+  | { type: 'futbolpedia' }
   | { type: 'dm'; userId: string; username: string; teamName: string };
 
 interface UnreadSummary {

@@ -8,7 +8,8 @@ import FormattedText from '@/components/ui/FormattedText';
 import CrestBadge from '@/components/crest/CrestBadge';
 import TradeOfferCard, { type TradeSummary } from '@/components/chat/TradeOfferCard';
 import LoanOfferCard, { type LoanSummary } from '@/components/chat/LoanOfferCard';
-import { useLeagueChat, type ChatTabState } from './LeagueChatContext';
+import { useLeagueChat } from './LeagueChatContext';
+import FutbolpediaChatPanel from '@/components/integrations/FutbolpediaChatPanel';
 import styles from './LeagueChatWidget.module.css';
 
 interface UserInfo {
@@ -295,7 +296,7 @@ function LeagueChatWidgetContent({
         dmUnreadPeerIds: prev.dmUnreadPeerIds.filter((id) => id !== activeTab.userId),
       }));
       markRead(activeTab.userId);
-    } else {
+    } else if (activeTab.type === 'lobby') {
       setUnreadSummary((prev) => ({ ...prev, lobbyUnread: false }));
       markRead(null);
     }
@@ -303,6 +304,7 @@ function LeagueChatWidgetContent({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (activeTab.type === 'futbolpedia') return;
     if (!inputValue.trim() || isSending) return;
 
     const messageText = inputValue.trim();
@@ -360,12 +362,14 @@ function LeagueChatWidgetContent({
     return messages.filter((m) => {
       if (activeTab.type === 'lobby') {
         return m.recipient_id === null;
-      } else {
+      }
+      if (activeTab.type === 'dm') {
         return (
           (m.sender_id === currentUserId && m.recipient_id === activeTab.userId) ||
           (m.sender_id === activeTab.userId && m.recipient_id === currentUserId)
         );
       }
+      return false;
     });
   }, [messages, activeTab, currentUserId]);
 
@@ -397,6 +401,11 @@ function LeagueChatWidgetContent({
     });
   }, [teams, dmLastActivity, currentUserId]);
 
+  const myTeam = useMemo(
+    () => teams.find((t) => t.user_id === currentUserId) ?? null,
+    [teams, currentUserId],
+  );
+
   const hasAnyUnread = unreadSummary.lobbyUnread || unreadSummary.dmUnreadPeerIds.length > 0;
 
   // Render Minimized Pill
@@ -404,7 +413,9 @@ function LeagueChatWidgetContent({
     const activeLabel =
       activeTab.type === 'lobby'
         ? 'League Lobby'
-        : `@${activeTab.username}`;
+        : activeTab.type === 'futbolpedia'
+          ? 'Futbolpedia'
+          : `@${activeTab.username}`;
 
     return (
       <div className={styles.minimizedPill} onClick={restoreChat} role="button" tabIndex={0}>
@@ -461,6 +472,11 @@ function LeagueChatWidgetContent({
                   <>
                     <Icon name="message-square" size={15} strokeWidth={2} />
                     <span className={styles.headerTitle}>League Lobby</span>
+                  </>
+                ) : activeTab.type === 'futbolpedia' ? (
+                  <>
+                    <Icon name="soccer" size={15} strokeWidth={2} />
+                    <span className={styles.headerTitle}>Futbolpedia</span>
                   </>
                 ) : (
                   <>
@@ -529,6 +545,17 @@ function LeagueChatWidgetContent({
               {unreadSummary.lobbyUnread && activeTab.type !== 'lobby' && <span className={styles.tabBadge} />}
             </button>
 
+            {myTeam && (
+              <button
+                type="button"
+                className={`${styles.tabBtn} ${activeTab.type === 'futbolpedia' ? styles.tabBtnActive : ''}`}
+                onClick={() => setActiveTab({ type: 'futbolpedia' })}
+              >
+                <Icon name="soccer" size={13} strokeWidth={2} />
+                <span>Futbolpedia</span>
+              </button>
+            )}
+
             <button
               type="button"
               className={`${styles.tabBtn} ${activeTab.type === 'dm' ? styles.tabBtnActive : ''}`}
@@ -540,6 +567,33 @@ function LeagueChatWidgetContent({
               </span>
               {unreadSummary.dmUnreadPeerIds.length > 0 && <span className={styles.tabBadge} />}
             </button>
+          </div>
+        )}
+
+        {myTeam && (
+          <div
+            className={`${styles.threadView} ${
+              viewMode === 'chat' && activeTab.type === 'futbolpedia' ? '' : styles.threadParked
+            }`}
+          >
+            <FutbolpediaChatPanel
+              leagueId={leagueId}
+              teamId={myTeam.id}
+              clubName={myTeam.team_name}
+              variant="overlay"
+              active={isOpen && !isMinimized && viewMode === 'chat' && activeTab.type === 'futbolpedia'}
+            />
+          </div>
+        )}
+
+        {viewMode === 'chat' && activeTab.type === 'futbolpedia' && !myTeam && (
+          <div className={styles.threadView}>
+            <div className={styles.emptyState}>
+              <div className={styles.emptyTitle}>Futbolpedia</div>
+              <p className={styles.emptyDesc}>
+                {loading ? 'Retrieving your club…' : 'You need a club in this league.'}
+              </p>
+            </div>
           </div>
         )}
 
@@ -566,6 +620,24 @@ function LeagueChatWidgetContent({
                 </div>
                 {unreadSummary.lobbyUnread && <span className={styles.channelDot} />}
               </button>
+              {myTeam && (
+                <button
+                  type="button"
+                  className={`${styles.channelItem} ${activeTab.type === 'futbolpedia' ? styles.channelItemActive : ''}`}
+                  onClick={() => {
+                    setActiveTab({ type: 'futbolpedia' });
+                    setViewMode('chat');
+                  }}
+                >
+                  <div className={styles.channelItemAvatar}>
+                    <Icon name="soccer" size={18} strokeWidth={2} />
+                  </div>
+                  <div className={styles.channelItemInfo}>
+                    <span className={styles.channelItemName}>Futbolpedia</span>
+                    <span className={styles.channelItemSub}>Ask about {myTeam.team_name}</span>
+                  </div>
+                </button>
+              )}
             </div>
 
             {/* Direct Messages Section */}
@@ -607,7 +679,7 @@ function LeagueChatWidgetContent({
               )}
             </div>
           </div>
-        ) : (
+        ) : activeTab.type === 'futbolpedia' ? null : (
           /* View Mode: Active Message Thread */
           <div className={styles.threadView}>
             <div className={styles.messagesFeed} ref={feedRef}>
@@ -699,12 +771,12 @@ function LeagueChatWidgetContent({
               ) : (
                 <div className={styles.emptyState}>
                   <div className={styles.emptyTitle}>
-                    {activeTab.type === 'lobby' ? 'League Lobby' : `Message @${activeTab.username}`}
+                    {activeTab.type === 'dm' ? `Message @${activeTab.username}` : 'League Lobby'}
                   </div>
                   <p className={styles.emptyDesc}>
-                    {activeTab.type === 'lobby'
-                      ? 'Share banter, transfer gossip, or announcements.'
-                      : `Private direct messages with @${activeTab.username}.`}
+                    {activeTab.type === 'dm'
+                      ? `Private direct messages with @${activeTab.username}.`
+                      : 'Share banter, transfer gossip, or announcements.'}
                   </p>
                 </div>
               )}
@@ -718,9 +790,9 @@ function LeagueChatWidgetContent({
                   <textarea
                     className={styles.inputField}
                     placeholder={
-                      activeTab.type === 'lobby'
-                        ? 'Type a message to the lobby…'
-                        : `Message @${activeTab.username}…`
+                      activeTab.type === 'dm'
+                        ? `Message @${activeTab.username}…`
+                        : 'Type a message to the lobby…'
                     }
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
