@@ -220,6 +220,13 @@ export default function ClubClient({
 }: ClubProps) {
   const router = useRouter();
   const chat = useLeagueChat();
+  const setViewerClub = chat?.setViewerClub;
+
+  useEffect(() => {
+    if (!viewerIsOwner || !setViewerClub) return;
+    setViewerClub({ teamId, name: club.name });
+  }, [setViewerClub, viewerIsOwner, teamId, club.name]);
+
   const [view, setView] = useState('pitch');
   const [sort, setSort] = useState('overall');
   const [filter, setFilter] = useState('all');
