@@ -368,6 +368,12 @@ export default function ChatClient({
     [teams, currentTeamId, currentUserId],
   );
 
+  const askClub = myTeam
+    ? { teamId: myTeam.id, name: myTeam.team_name }
+    : currentTeamId
+      ? { teamId: currentTeamId, name: 'your club' }
+      : null;
+
   return (
     <div className={`${styles.chatLayout} ${mobileView === 'chat' ? styles.mobileShowChat : styles.mobileShowList}`}>
       {/* Sidebar: Channels & Managers */}
@@ -392,7 +398,7 @@ export default function ChatClient({
                 League lobby
               </span>
             </button>
-            {myTeam && (
+            {askClub && (
               <button
                 className={`${styles.sidebarBtn} ${activeTab.type === 'futbolpedia' ? styles.sidebarBtnActive : ''}`}
                 onClick={() => {
@@ -487,7 +493,7 @@ export default function ChatClient({
                 <Icon name="soccer" size={18} strokeWidth={2} />
                 <span>Futbolpedia</span>
                 <span className={styles.panelSubtitle}>
-                  {myTeam ? `Ask about ${myTeam.team_name}` : 'Ask about your club'}
+                  {askClub ? `Ask about ${askClub.name}` : 'Ask about your club'}
                 </span>
               </>
             ) : (
@@ -507,12 +513,12 @@ export default function ChatClient({
           </div>
         </header>
 
-        {myTeam && (
+        {askClub && (
           <div className={activeTab.type === 'futbolpedia' ? styles.futbolpediaSlot : styles.threadParked}>
             <FutbolpediaChatPanel
               leagueId={leagueId}
-              teamId={myTeam.id}
-              clubName={myTeam.team_name}
+              teamId={askClub.teamId}
+              clubName={askClub.name}
               variant="page"
               active={activeTab.type === 'futbolpedia' && mobileView === 'chat'}
             />

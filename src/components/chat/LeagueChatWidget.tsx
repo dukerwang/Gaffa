@@ -52,12 +52,14 @@ function LeagueChatWidgetContent({
   isOpen,
   isMinimized,
   activeTab,
+  viewerClub,
   unreadSummary,
   openChat,
   closeChat,
   minimizeChat,
   restoreChat,
   setActiveTab,
+  setViewerClub,
   setUnreadSummary,
 }: ReturnType<typeof useLeagueChat> & NonNullable<ReturnType<typeof useLeagueChat>>) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -406,6 +408,13 @@ function LeagueChatWidgetContent({
     [teams, currentUserId],
   );
 
+  const askClub = viewerClub ?? (myTeam ? { teamId: myTeam.id, name: myTeam.team_name } : null);
+
+  useEffect(() => {
+    if (!myTeam) return;
+    setViewerClub({ teamId: myTeam.id, name: myTeam.team_name });
+  }, [myTeam, setViewerClub]);
+
   const hasAnyUnread = unreadSummary.lobbyUnread || unreadSummary.dmUnreadPeerIds.length > 0;
 
   // Render Minimized Pill
@@ -545,7 +554,7 @@ function LeagueChatWidgetContent({
               {unreadSummary.lobbyUnread && activeTab.type !== 'lobby' && <span className={styles.tabBadge} />}
             </button>
 
-            {myTeam && (
+            {askClub && (
               <button
                 type="button"
                 className={`${styles.tabBtn} ${activeTab.type === 'futbolpedia' ? styles.tabBtnActive : ''}`}
@@ -570,7 +579,7 @@ function LeagueChatWidgetContent({
           </div>
         )}
 
-        {myTeam && (
+        {askClub && (
           <div
             className={`${styles.threadView} ${
               viewMode === 'chat' && activeTab.type === 'futbolpedia' ? '' : styles.threadParked
@@ -578,15 +587,15 @@ function LeagueChatWidgetContent({
           >
             <FutbolpediaChatPanel
               leagueId={leagueId}
-              teamId={myTeam.id}
-              clubName={myTeam.team_name}
+              teamId={askClub.teamId}
+              clubName={askClub.name}
               variant="overlay"
               active={isOpen && !isMinimized && viewMode === 'chat' && activeTab.type === 'futbolpedia'}
             />
           </div>
         )}
 
-        {viewMode === 'chat' && activeTab.type === 'futbolpedia' && !myTeam && (
+        {viewMode === 'chat' && activeTab.type === 'futbolpedia' && !askClub && (
           <div className={styles.threadView}>
             <div className={styles.emptyState}>
               <div className={styles.emptyTitle}>Futbolpedia</div>
@@ -620,7 +629,7 @@ function LeagueChatWidgetContent({
                 </div>
                 {unreadSummary.lobbyUnread && <span className={styles.channelDot} />}
               </button>
-              {myTeam && (
+              {askClub && (
                 <button
                   type="button"
                   className={`${styles.channelItem} ${activeTab.type === 'futbolpedia' ? styles.channelItemActive : ''}`}
@@ -634,7 +643,7 @@ function LeagueChatWidgetContent({
                   </div>
                   <div className={styles.channelItemInfo}>
                     <span className={styles.channelItemName}>Futbolpedia</span>
-                    <span className={styles.channelItemSub}>Ask about {myTeam.team_name}</span>
+                    <span className={styles.channelItemSub}>Ask about {askClub.name}</span>
                   </div>
                 </button>
               )}
