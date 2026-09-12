@@ -7,10 +7,12 @@ export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{ leagueId: string }>;
+  searchParams: Promise<{ channel?: string }>;
 }
 
-export default async function ChatPage({ params }: Props) {
+export default async function ChatPage({ params, searchParams }: Props) {
   const { leagueId } = await params;
+  const { channel } = await searchParams;
 
   const supabase = await createClient();
   const {
@@ -58,6 +60,7 @@ export default async function ChatPage({ params }: Props) {
       currentUserId={user.id}
       currentUsername={username}
       currentTeamId={myTeam?.id ?? null}
+      initialChannel={channel === 'futbolpedia' ? 'futbolpedia' : 'lobby'}
     />
   );
 }
