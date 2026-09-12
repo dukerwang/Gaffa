@@ -17,7 +17,7 @@ import {
   money, ageOf, overallScores, squadTotals,
   avgForm, seasonPts, ppgOf, valueOf, countdown,
 } from './clubDerive';
-import { futbolpediaConnectHref } from '@/lib/integrations/futbolpediaConnectUrl';
+import FutbolpediaChatDrawer from '@/components/integrations/FutbolpediaChatDrawer';
 import styles from './club.module.css';
 
 // ── Shared prop types ────────────────────────────────────────────────────────
@@ -228,7 +228,7 @@ export default function ClubClient({
     () => (entries.find((e) => e.status === 'active') ?? entries[0])?.id ?? null,
   );
   const [decision, setDecision] = useState<DecisionRequest | null>(null);
-  const futbolpediaHref = viewerIsOwner ? futbolpediaConnectHref(leagueId, teamId) : null;
+  const [futbolpediaOpen, setFutbolpediaOpen] = useState(false);
 
   // Below the layout's single-column breakpoint, the Inspector rail isn't a
   // sidebar any more — it's a sheet, so picking a card has to open it instead
@@ -414,16 +414,15 @@ export default function ClubClient({
           {/* On a rival's club the masthead is also the exit: the reason you
               came to look at someone's squad is almost always to deal for part
               of it. Moving to the next club is the switcher's job, below. */}
-          {viewerIsOwner && futbolpediaHref && (
+          {viewerIsOwner && (
             <div className={styles.mhActions}>
-              <a
-                href={futbolpediaHref}
+              <button
+                type="button"
                 className={styles.mhCtaGhost}
-                target="_blank"
-                rel="noreferrer"
+                onClick={() => setFutbolpediaOpen(true)}
               >
                 Ask Futbolpedia
-              </a>
+              </button>
             </div>
           )}
           {!viewerIsOwner && (
@@ -552,6 +551,18 @@ export default function ClubClient({
           rosterMax={club.rosterMax}
           onClose={() => setDecision(null)}
           onDone={() => { setDecision(null); router.refresh(); }}
+        />
+      )}
+
+      {viewerIsOwner && (
+        <FutbolpediaChatDrawer
+          open={futbolpediaOpen}
+          onClose={() => setFutbolpediaOpen(false)}
+          leagueId={leagueId}
+          teamId={teamId}
+          clubName={club.name}
+          leagueName={club.leagueName}
+          crestConfig={club.crestConfig}
         />
       )}
     </div>
