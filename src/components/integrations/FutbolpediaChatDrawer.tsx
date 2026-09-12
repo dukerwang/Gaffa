@@ -194,9 +194,9 @@ export default function FutbolpediaChatDrawer({
             >
               <span className={styles.bubbleWho}>{t.sender === 'user' ? 'You' : 'Futbolpedia'}</span>
               {t.scorecard ? <LockLine card={t.scorecard} /> : null}
-              <p className={styles.bubbleText}>
+              <div className={styles.bubbleText}>
                 <FormattedText text={t.content} />
-              </p>
+              </div>
             </article>
           ))}
           {sending && <p className={styles.pending}>Gaffa briefing…</p>}
@@ -218,7 +218,7 @@ export default function FutbolpediaChatDrawer({
             id="futbolpedia-chat-input"
             ref={inputRef}
             className={styles.input}
-            rows={2}
+            rows={1}
             value={draft}
             disabled={sending}
             placeholder="Ask about this club"
