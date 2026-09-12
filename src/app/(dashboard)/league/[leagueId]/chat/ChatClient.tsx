@@ -8,6 +8,7 @@ import CrestBadge from '@/components/crest/CrestBadge';
 import TradeOfferCard, { type TradeSummary } from '@/components/chat/TradeOfferCard';
 import LoanOfferCard, { type LoanSummary } from '@/components/chat/LoanOfferCard';
 import FutbolpediaChatPanel from '@/components/integrations/FutbolpediaChatPanel';
+import { FUTBOLPEDIA_ASSISTANT_CAPTION } from '@/lib/chat/isClubChatContext';
 import styles from './Chat.module.css';
 
 interface UserInfo {
@@ -43,6 +44,7 @@ interface ChatClientProps {
   currentUserId: string;
   currentUsername: string;
   currentTeamId: string | null;
+  initialChannel?: 'lobby' | 'futbolpedia';
 }
 
 type TabState =
@@ -55,18 +57,23 @@ export default function ChatClient({
   leagueName,
   currentUserId,
   currentUsername,
-  currentTeamId
+  currentTeamId,
+  initialChannel = 'lobby',
 }: ChatClientProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [teams, setTeams] = useState<TeamInfo[]>([]);
   const [trades, setTrades] = useState<Record<string, TradeSummary>>({});
   const [loans, setLoans] = useState<Record<string, LoanSummary>>({});
-  const [activeTab, setActiveTab] = useState<TabState>({ type: 'lobby' });
+  const [activeTab, setActiveTab] = useState<TabState>(
+    initialChannel === 'futbolpedia' ? { type: 'futbolpedia' } : { type: 'lobby' },
+  );
   const [inputValue, setInputValue] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [unreadDMs, setUnreadDMs] = useState<Set<string>>(new Set());
-  const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
+  const [mobileView, setMobileView] = useState<'list' | 'chat'>(
+    initialChannel === 'futbolpedia' ? 'chat' : 'list',
+  );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
@@ -383,9 +390,29 @@ export default function ChatClient({
         </div>
 
         <div className={styles.sidebarContent}>
-          {/* Public Channels Group */}
+          {askClub && (
+            <div className={styles.section}>
+              <div className={styles.sectionHeader}>Assistant</div>
+              <button
+                className={`${styles.sidebarBtn} ${activeTab.type === 'futbolpedia' ? styles.sidebarBtnActive : ''}`}
+                onClick={() => {
+                  setActiveTab({ type: 'futbolpedia' });
+                  setMobileView('chat');
+                }}
+              >
+                <span className={styles.assistantAvatar}>
+                  <Icon name="soccer" className={styles.icon} size={16} />
+                </span>
+                <span className={styles.managerInfo}>
+                  <span className={styles.managerName}>Futbolpedia</span>
+                  <span className={styles.assistantCaption}>{FUTBOLPEDIA_ASSISTANT_CAPTION}</span>
+                </span>
+              </button>
+            </div>
+          )}
+
           <div className={styles.section}>
-            <div className={styles.sectionHeader}>Channels</div>
+            <div className={styles.sectionHeader}>Public Channels</div>
             <button
               className={`${styles.sidebarBtn} ${activeTab.type === 'lobby' ? styles.sidebarBtnActive : ''}`}
               onClick={() => {
@@ -395,23 +422,9 @@ export default function ChatClient({
             >
               <Icon name="message-square" className={styles.icon} size={16} />
               <span style={{ flex: 1, fontWeight: activeTab.type === 'lobby' ? 'bold' : 'normal' }}>
-                League lobby
+                League Lobby
               </span>
             </button>
-            {askClub && (
-              <button
-                className={`${styles.sidebarBtn} ${activeTab.type === 'futbolpedia' ? styles.sidebarBtnActive : ''}`}
-                onClick={() => {
-                  setActiveTab({ type: 'futbolpedia' });
-                  setMobileView('chat');
-                }}
-              >
-                <Icon name="soccer" className={styles.icon} size={16} />
-                <span style={{ flex: 1, fontWeight: activeTab.type === 'futbolpedia' ? 'bold' : 'normal' }}>
-                  Futbolpedia
-                </span>
-              </button>
-            )}
           </div>
 
           {/* DMs Group */}

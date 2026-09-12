@@ -10,6 +10,7 @@ import TradeOfferCard, { type TradeSummary } from '@/components/chat/TradeOfferC
 import LoanOfferCard, { type LoanSummary } from '@/components/chat/LoanOfferCard';
 import { useLeagueChat } from './LeagueChatContext';
 import FutbolpediaChatPanel from '@/components/integrations/FutbolpediaChatPanel';
+import { FUTBOLPEDIA_ASSISTANT_CAPTION } from '@/lib/chat/isClubChatContext';
 import styles from './LeagueChatWidget.module.css';
 
 interface UserInfo {
@@ -609,7 +610,28 @@ function LeagueChatWidgetContent({
         {/* View Mode: Channel List */}
         {viewMode === 'channels' ? (
           <div className={styles.channelListView}>
-            {/* Lobby Section */}
+            {askClub && (
+              <div className={styles.channelSection}>
+                <div className={styles.channelSectionTitle}>Assistant</div>
+                <button
+                  type="button"
+                  className={`${styles.channelItem} ${activeTab.type === 'futbolpedia' ? styles.channelItemActive : ''}`}
+                  onClick={() => {
+                    setActiveTab({ type: 'futbolpedia' });
+                    setViewMode('chat');
+                  }}
+                >
+                  <div className={`${styles.channelItemAvatar} ${styles.channelItemAvatarAssistant}`}>
+                    <Icon name="soccer" size={16} strokeWidth={2} />
+                  </div>
+                  <div className={styles.channelItemInfo}>
+                    <span className={styles.channelItemName}>Futbolpedia</span>
+                    <span className={styles.channelItemSub}>{FUTBOLPEDIA_ASSISTANT_CAPTION}</span>
+                  </div>
+                </button>
+              </div>
+            )}
+
             <div className={styles.channelSection}>
               <div className={styles.channelSectionTitle}>Public Channels</div>
               <button
@@ -629,24 +651,6 @@ function LeagueChatWidgetContent({
                 </div>
                 {unreadSummary.lobbyUnread && <span className={styles.channelDot} />}
               </button>
-              {askClub && (
-                <button
-                  type="button"
-                  className={`${styles.channelItem} ${activeTab.type === 'futbolpedia' ? styles.channelItemActive : ''}`}
-                  onClick={() => {
-                    setActiveTab({ type: 'futbolpedia' });
-                    setViewMode('chat');
-                  }}
-                >
-                  <div className={styles.channelItemAvatar}>
-                    <Icon name="soccer" size={18} strokeWidth={2} />
-                  </div>
-                  <div className={styles.channelItemInfo}>
-                    <span className={styles.channelItemName}>Futbolpedia</span>
-                    <span className={styles.channelItemSub}>Ask about {askClub.name}</span>
-                  </div>
-                </button>
-              )}
             </div>
 
             {/* Direct Messages Section */}
