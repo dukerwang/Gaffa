@@ -388,20 +388,8 @@ export default function ClubClient({
             </div>
           </div>
 
-          {/* On a rival's club the masthead is also the exit: the reason you
-              came to look at someone's squad is almost always to deal for part
-              of it. Moving to the next club is the switcher's job, below. */}
-          {viewerIsOwner && (
-            <div className={styles.mhActions}>
-              <button
-                type="button"
-                className={styles.mhCtaGhost}
-                onClick={() => chat?.openChat({ type: 'futbolpedia' })}
-              >
-                Ask Futbolpedia
-              </button>
-            </div>
-          )}
+          {/* On a rival's club the masthead is the exit: propose a deal.
+              Ask Futbolpedia lives in league chat, not on this page. */}
           {!viewerIsOwner && (
             <div className={styles.mhActions}>
               <NavigationLink
