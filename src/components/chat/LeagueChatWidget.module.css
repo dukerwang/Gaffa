@@ -327,6 +327,18 @@
   flex-shrink: 0;
 }
 
+.channelItemAvatarAssistant {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-accent-green, #146b40) 16%, var(--color-bg-secondary));
+  color: var(--color-accent-green, #146b40);
+}
+
+.channelItemActive .channelItemAvatarAssistant {
+  background: color-mix(in srgb, var(--color-accent-green, #146b40) 22%, var(--color-bg-primary));
+}
+
 .channelItemInfo {
   display: flex;
   flex-direction: column;
@@ -372,6 +384,10 @@
   flex-direction: column;
   min-height: 0;
   background: var(--color-bg-primary);
+}
+
+.threadParked {
+  display: none !important;
 }
 
 .messagesFeed {

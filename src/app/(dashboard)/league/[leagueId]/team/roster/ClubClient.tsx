@@ -3,8 +3,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CrestBadge from '@/components/crest/CrestBadge';
-import Trophy from '@/components/trophies/Trophy';
 import NavigationLink from '@/components/ui/NavigationLink';
+import { useLeagueChat } from '@/components/chat/LeagueChatContext';
 import type { ClubProps, SquadEntry } from '@/lib/teams/loadClubView';
 import ClubSwitcher from './ClubSwitcher';
 import { ClubPitch, DepthChart, SquadTable } from './SquadViews';
@@ -17,7 +17,6 @@ import {
   money, ageOf, overallScores, squadTotals,
   avgForm, seasonPts, ppgOf, valueOf, countdown,
 } from './clubDerive';
-import FutbolpediaChatDrawer from '@/components/integrations/FutbolpediaChatDrawer';
 import styles from './club.module.css';
 
 // ── Shared prop types ────────────────────────────────────────────────────────
@@ -217,9 +216,17 @@ function CommandPicker({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ClubClient({
-  leagueId, teamId, serverNow, clubs, viewerIsOwner, club, standing, entries, savedLineup, departures, honours,
+  leagueId, teamId, serverNow, clubs, viewerIsOwner, club, standing, entries, savedLineup, departures,
 }: ClubProps) {
   const router = useRouter();
+  const chat = useLeagueChat();
+  const setViewerClub = chat?.setViewerClub;
+
+  useEffect(() => {
+    if (!viewerIsOwner || !setViewerClub) return;
+    setViewerClub({ teamId, name: club.name });
+  }, [setViewerClub, viewerIsOwner, teamId, club.name]);
+
   const [view, setView] = useState('pitch');
   const [sort, setSort] = useState('overall');
   const [filter, setFilter] = useState('all');
@@ -228,7 +235,6 @@ export default function ClubClient({
     () => (entries.find((e) => e.status === 'active') ?? entries[0])?.id ?? null,
   );
   const [decision, setDecision] = useState<DecisionRequest | null>(null);
-  const [futbolpediaOpen, setFutbolpediaOpen] = useState(false);
 
   // Below the layout's single-column breakpoint, the Inspector rail isn't a
   // sidebar any more — it's a sheet, so picking a card has to open it instead
@@ -306,8 +312,6 @@ export default function ClubClient({
     }
   }
 
-  const trophyCount = honours.reduce((n, g) => n + g.count, 0);
-
   const overall = useMemo(() => overallScores(entries), [entries]);
   const totals = useMemo(() => squadTotals(entries), [entries]);
 
@@ -382,49 +386,10 @@ export default function ClubClient({
               <span className={styles.mhDot}>·</span>
               <span className={styles.mhRecord}>{standing.w}W · {standing.d}D · {standing.l}L</span>
             </div>
-
-            {/* One pip per TROPHY, not per competition — if each win is its own
-                object then four of them should look like four.
-
-                The link is ALWAYS here, even with nothing to show. It used to be
-                hidden when the cabinet was empty, on the reasoning that a row
-                reading "no trophies" is worse than the space it takes. True, but
-                it made the cabinet unreachable for every club that had not won
-                anything — which, until a season completes, is every club in the
-                league. The pips carry the flex; the link carries the way in. */}
-            <NavigationLink
-              href={`/league/${leagueId}/heritage/cabinets`}
-              className={styles.mhHonours}
-            >
-              {honours.flatMap((g) =>
-                g.seasons.map((season) => (
-                  <Trophy key={`${g.kind}-${season}`} kind={g.kind} size="pip" />
-                )),
-              )}
-              <span className={styles.mhHonoursCount}>
-                {trophyCount === 0
-                  ? 'Honours'
-                  : trophyCount === 1
-                    ? '1 trophy'
-                    : `${trophyCount} trophies`}
-              </span>
-            </NavigationLink>
           </div>
 
-          {/* On a rival's club the masthead is also the exit: the reason you
-              came to look at someone's squad is almost always to deal for part
-              of it. Moving to the next club is the switcher's job, below. */}
-          {viewerIsOwner && (
-            <div className={styles.mhActions}>
-              <button
-                type="button"
-                className={styles.mhCtaGhost}
-                onClick={() => setFutbolpediaOpen(true)}
-              >
-                Ask Futbolpedia
-              </button>
-            </div>
-          )}
+          {/* On a rival's club the masthead is the exit: propose a deal.
+              Ask Futbolpedia lives in league chat, not on this page. */}
           {!viewerIsOwner && (
             <div className={styles.mhActions}>
               <NavigationLink
@@ -554,17 +519,6 @@ export default function ClubClient({
         />
       )}
 
-      {viewerIsOwner && (
-        <FutbolpediaChatDrawer
-          open={futbolpediaOpen}
-          onClose={() => setFutbolpediaOpen(false)}
-          leagueId={leagueId}
-          teamId={teamId}
-          clubName={club.name}
-          leagueName={club.leagueName}
-          crestConfig={club.crestConfig}
-        />
-      )}
     </div>
   );
 }

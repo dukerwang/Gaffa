@@ -160,11 +160,11 @@ export const Icon: React.FC<IconProps> = ({
     soccer: (
       <>
         <circle cx="12" cy="12" r="10" />
-        <path d="m12 12-4-3 1-4H13l1 4Z" />
-        <path d="m12 12 4-3-1-4" />
-        <path d="m12 12v5h-4l-1-4" />
-        <path d="m12 12v5h4l1-4" />
-        <path d="m9 5-3 1M15 5l3 1M5 11l-3 1M19 11l3 1M8 17l-2 3M16 17l2 3" />
+        <path
+          fill="currentColor"
+          stroke="none"
+          d="M12 7.6 15.4 10.1 14.1 14.2H9.9L8.6 10.1Z"
+        />
       </>
     ),
     gaffa: (

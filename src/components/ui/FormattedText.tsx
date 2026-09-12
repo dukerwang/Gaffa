@@ -1,8 +1,9 @@
 import React from 'react';
 
 const BOLD_PATTERN = /\*\*(.+?)\*\*/g;
+const HEADING_PATTERN = /^(#{1,6})\s+(.*)$/;
 
-function parseLine(line: string, lineKey: number): React.ReactNode[] {
+function parseInline(line: string, lineKey: number): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -26,12 +27,24 @@ function parseLine(line: string, lineKey: number): React.ReactNode[] {
   return nodes;
 }
 
+function parseLine(line: string, lineKey: number): React.ReactNode[] {
+  const heading = HEADING_PATTERN.exec(line);
+  if (heading) {
+    return [
+      <strong key={`${lineKey}-h`} className="fmt-heading">
+        {parseInline(heading[2], lineKey)}
+      </strong>,
+    ];
+  }
+  return parseInline(line, lineKey);
+}
+
 interface FormattedTextProps {
   text: string;
   className?: string;
 }
 
-/** Renders lightweight inline markdown: **bold** and newlines. */
+/** Renders lightweight markdown: **bold**, ATX headings, and newlines. */
 export default function FormattedText({ text, className }: FormattedTextProps) {
   const lines = text.split('\n');
 

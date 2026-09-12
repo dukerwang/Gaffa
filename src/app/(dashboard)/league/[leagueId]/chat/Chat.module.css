@@ -154,6 +154,43 @@
   text-overflow: ellipsis;
 }
 
+.assistantAvatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--color-accent-green, #146b40) 16%, transparent);
+  flex-shrink: 0;
+}
+
+.assistantAvatar .icon {
+  color: var(--color-accent-green, #146b40);
+}
+
+.sidebarBtnActive .assistantAvatar {
+  background: color-mix(in srgb, var(--color-bg-primary) 22%, transparent);
+}
+
+.sidebarBtnActive .assistantAvatar .icon {
+  color: var(--color-bg-primary);
+}
+
+.assistantCaption {
+  font-size: 10px;
+  font-weight: var(--font-normal, 400);
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebarBtnActive .assistantCaption {
+  opacity: 0.8;
+  color: inherit;
+}
+
 .managerDot {
   width: 8px;
   height: 8px;
@@ -176,6 +213,17 @@
   flex-direction: column;
   background: var(--color-bg-primary);
   height: 100%;
+}
+
+.futbolpediaSlot {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.threadParked {
+  display: none !important;
 }
 
 .panelHeader {

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClientFromRequest } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
 
 // GET: fetch chat logs for the league (Lobby + User DMs)
 export async function GET(req: NextRequest) {
-  const supabase = await createClient();
+  const supabase = createClientFromRequest(req);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -224,7 +224,7 @@ export async function GET(req: NextRequest) {
 
 // POST: send a chat message
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
+  const supabase = createClientFromRequest(req);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
