@@ -1,0 +1,208 @@
+diff --git a/src/app/(dashboard)/league/[leagueId]/heritage/HeritageOverview.tsx b/src/app/(dashboard)/league/[leagueId]/heritage/HeritageOverview.tsx
+index 50320be3..2e200a8d 100644
+--- a/src/app/(dashboard)/league/[leagueId]/heritage/HeritageOverview.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/heritage/HeritageOverview.tsx
+@@ -95,8 +95,8 @@ export default function HeritageOverview({
+           </p>
+         </div>
+         <div className={styles.figs}>
+-          <Figure value={String(seasonCount)} stake="Seasons completed" />
+-          <Figure value={String(board.totalTrophies)} stake="Trophies awarded" />
++          <Figure value={String(seasonCount)} stake="Seasons Completed" />
++          <Figure value={String(board.totalTrophies)} stake="Trophies Awarded" />
+           <Figure value={String(board.clubs.length)} stake="Clubs" />
+         </div>
+       </div>
+@@ -125,9 +125,9 @@ export default function HeritageOverview({
+             <div className={styles.heroFigs}>
+               <Figure
+                 value={String(champion.club.trophies.filter((t) => t.kind === 'league_title').length)}
+-                stake="League titles"
++                stake="League Titles"
+               />
+-              <Figure value={String(champion.club.total)} stake="Trophies in total" />
++              <Figure value={String(champion.club.total)} stake="Total Trophies" />
+             </div>
+           </div>
+           {/* The display is a studio sweep, not a cabinet — see
+@@ -150,8 +150,7 @@ export default function HeritageOverview({
+           <div className={styles.heroTx}>
+             <div className={styles.heroName}>No champion yet</div>
+             <p className={styles.heroSub}>
+-              {leagueName} crowns its first champion at the end of {currentSeason}. Until then the
+-              board below is a wall waiting to be filled.
++              {leagueName} crowns its first champion at the end of {currentSeason}.
+             </p>
+           </div>
+         </div>
+@@ -191,7 +190,7 @@ export default function HeritageOverview({
+               </div>
+               <div className={styles.boardCount}>
+                 <div className={styles.figV}>{c.total}</div>
+-                <div className={styles.figS}>{c.total === 1 ? 'trophy' : 'trophies'}</div>
++                <div className={styles.figS}>{c.total === 1 ? 'Trophy' : 'Trophies'}</div>
+               </div>
+             </div>
+           ))}
+@@ -245,8 +244,8 @@ export default function HeritageOverview({
+           ) : (
+             <p className={styles.empty}>
+               {viewerTeamId
+-                ? 'No completed fixtures yet. Your record fills in as the season is scored.'
+-                : 'Head-to-head records are shown for managers with a club in this league.'}
++                ? 'No completed fixtures yet. You’ll see your record after your first one.'
++                : 'You need a club in this league to see head-to-head records.'}
+             </p>
+           )}
+         </div>
+@@ -279,10 +278,10 @@ export default function HeritageOverview({
+                   </div>
+                 )}
+                 <div className={styles.railFigs}>
+-                  <Figure value={String(record.played)} stake="Matches played" />
+-                  <Figure value={`${Math.round(winRate * 1000) / 10}%`} stake="Win rate" />
+-                  <Figure value={`${record.won}–${record.drawn}–${record.lost}`} stake="All-time record" />
+-                  <Figure value={pts(record.pointsFor)} stake="Points scored" accent />
++                  <Figure value={String(record.played)} stake="Matches Played" />
++                  <Figure value={`${Math.round(winRate * 1000) / 10}%`} stake="Win Rate" />
++                  <Figure value={`${record.won}–${record.drawn}–${record.lost}`} stake="All-Time Record" />
++                  <Figure value={pts(record.pointsFor)} stake="Points Scored" accent />
+                 </div>
+               </div>
+             </div>
+diff --git a/src/app/(dashboard)/league/[leagueId]/heritage/cabinets/CabinetsView.tsx b/src/app/(dashboard)/league/[leagueId]/heritage/cabinets/CabinetsView.tsx
+index d36acf9b..cde3dc93 100644
+--- a/src/app/(dashboard)/league/[leagueId]/heritage/cabinets/CabinetsView.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/heritage/cabinets/CabinetsView.tsx
+@@ -37,7 +37,7 @@ export default function CabinetsView({ leagueId, clubs, totalTrophies, viewerTea
+           <p className={styles.subtitle}>
+             {totalTrophies
+               ? `${totalTrophies} ${totalTrophies === 1 ? 'object' : 'objects'} across ${decorated.length} ${decorated.length === 1 ? 'club' : 'clubs'}`
+-              : 'Nothing has been won yet'}
++              : 'No club has won a trophy yet'}
+           </p>
+         </div>
+       </div>
+@@ -77,7 +77,7 @@ export default function CabinetsView({ leagueId, clubs, totalTrophies, viewerTea
+       {bare.length > 0 && (
+         <div className={styles.block}>
+           <div className={styles.sect}>
+-            <h2 className={styles.sectT}>Still Waiting</h2>
++            <h2 className={styles.sectT}>Empty Cabinets</h2>
+             <span className={styles.sectHint}>Clubs yet to win anything</span>
+           </div>
+           <div className={styles.box}>
+diff --git a/src/app/(dashboard)/league/[leagueId]/heritage/head-to-head/RivalriesView.tsx b/src/app/(dashboard)/league/[leagueId]/heritage/head-to-head/RivalriesView.tsx
+index da09092a..d66dd87b 100644
+--- a/src/app/(dashboard)/league/[leagueId]/heritage/head-to-head/RivalriesView.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/heritage/head-to-head/RivalriesView.tsx
+@@ -75,7 +75,7 @@ export default function RivalriesView({ leagueId, pairings, clubs, viewerTeamId
+ 
+       {pairings.length === 0 ? (
+         <p className={styles.empty}>
+-          No club has met another yet. Records appear once the first gameweek is scored.
++          No club has played another yet. You’ll see records after the first completed gameweek.
+         </p>
+       ) : (
+         <>
+@@ -92,7 +92,7 @@ export default function RivalriesView({ leagueId, pairings, clubs, viewerTeamId
+           {rest.length > 0 && (
+             <div className={styles.block}>
+               <div className={styles.sect}>
+-                <h2 className={styles.sectT}>Around the League</h2>
++                <h2 className={styles.sectT}>Other Rivalries</h2>
+                 <span className={styles.sectHint}>Pairings you are not part of</span>
+               </div>
+               <div className={styles.box}>{rest.map((h) => <Row key={`${h.teamId}-${h.opponentId}`} h={h} />)}</div>
+diff --git a/src/app/(dashboard)/league/[leagueId]/heritage/head-to-head/[opponentId]/PairingView.tsx b/src/app/(dashboard)/league/[leagueId]/heritage/head-to-head/[opponentId]/PairingView.tsx
+index 4b5e16f9..0756ca50 100644
+--- a/src/app/(dashboard)/league/[leagueId]/heritage/head-to-head/[opponentId]/PairingView.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/heritage/head-to-head/[opponentId]/PairingView.tsx
+@@ -133,12 +133,12 @@ export default function PairingView({ leagueId, h2h, subject, opponent, isViewer
+           <div className={styles.fixtureFoot}>
+             <div className={styles.fixtureFor}>
+               <div className={styles.figV}>{pts(h2h.pointsFor)}</div>
+-              <div className={styles.figS}>Points for</div>
++              <div className={styles.figS}>Points For</div>
+             </div>
+             <SplitBar t={h2h} />
+             <div>
+               <div className={styles.figV}>{pts(h2h.pointsAgainst)}</div>
+-              <div className={styles.figS}>Points against</div>
++              <div className={styles.figS}>Points Against</div>
+             </div>
+           </div>
+         )}
+@@ -146,7 +146,7 @@ export default function PairingView({ leagueId, h2h, subject, opponent, isViewer
+ 
+       {h2h.played === 0 ? (
+         <p className={styles.empty}>
+-          These two have not met in a completed fixture yet.
++          These two haven’t met in a completed fixture yet.
+         </p>
+       ) : (
+         <>
+diff --git a/src/app/(dashboard)/league/[leagueId]/heritage/records/RecordBookView.tsx b/src/app/(dashboard)/league/[leagueId]/heritage/records/RecordBookView.tsx
+index a5355ba1..a59579ec 100644
+--- a/src/app/(dashboard)/league/[leagueId]/heritage/records/RecordBookView.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/heritage/records/RecordBookView.tsx
+@@ -93,7 +93,7 @@ export default function RecordBookView({ leagueId, records, clubs, titles, viewe
+ 
+       {records.length === 0 && titles.length === 0 ? (
+         <p className={styles.empty}>
+-          Nothing is on record yet. The first completed gameweek sets every one of these.
++          No records yet. You’ll see them after the first completed gameweek.
+         </p>
+       ) : (
+         <>
+diff --git a/src/app/(dashboard)/league/[leagueId]/heritage/seasons/SeasonsView.tsx b/src/app/(dashboard)/league/[leagueId]/heritage/seasons/SeasonsView.tsx
+index 0e1699dc..5e79670b 100644
+--- a/src/app/(dashboard)/league/[leagueId]/heritage/seasons/SeasonsView.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/heritage/seasons/SeasonsView.tsx
+@@ -95,7 +95,7 @@ export default function SeasonsView({
+           <p className={styles.subtitle}>
+             {seasons.length
+               ? `${seasons.length} completed, newest first`
+-              : `${currentSeason} in progress — nothing archived yet`}
++              : `${currentSeason} in progress. No completed seasons yet.`}
+           </p>
+         </div>
+         {seasons.length > 1 && (
+@@ -117,8 +117,8 @@ export default function SeasonsView({
+ 
+       {!selected ? (
+         <p className={styles.empty}>
+-          No season has been archived yet. {currentSeason} is the league&rsquo;s first, and it lands
+-          here when it ends.
++          No completed seasons yet. {currentSeason} is the league&rsquo;s first, and you&rsquo;ll see
++          it here once it ends.
+         </p>
+       ) : (
+         <>
+@@ -166,7 +166,7 @@ export default function SeasonsView({
+                     <span />
+                     <div className={styles.boardCount}>
+                       <div className={styles.figV}>{pts(row.points)}</div>
+-                      <div className={styles.figS}>points</div>
++                      <div className={styles.figS}>Points</div>
+                     </div>
+                   </div>
+                 );
+@@ -198,7 +198,7 @@ export default function SeasonsView({
+                     </div>
+                     <div className={styles.fig}>
+                       <div className={styles.figV}>{xi.playersUsed}</div>
+-                      <div className={styles.figS}>Players used</div>
++                      <div className={styles.figS}>Players Used</div>
+                     </div>
+                   </div>
+                   <div className={styles.xiSquadHd}>
+@@ -224,7 +224,7 @@ export default function SeasonsView({
+               </div>
+             ) : (
+               <p className={styles.empty}>
+-                No lineups were archived for {selected}, so the winning side cannot be reconstructed.
++                Gaffa has no saved lineups for {selected}, so it can’t show the winning side.
+               </p>
+             )}
+           </div>

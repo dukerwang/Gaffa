@@ -532,7 +532,7 @@ function Lot({
 
         <div className={styles.lotActions}>
           {mine ? (
-            <span className={`${styles.go} ${styles.goMuted}`} title="Bidding decides this — you cannot withdraw it">Will sell</span>
+            <span className={`${styles.go} ${styles.goMuted}`} title="You can’t withdraw this lot. The highest bidder signs him.">Will sell</span>
           ) : (
             <button
               type="button"
@@ -664,7 +664,7 @@ function Lot({
                 </div>
               )}
               {clause != null && !mine && (
-                <p className={styles.exNote}>Triggering the buyout ends the auction immediately.</p>
+                <p className={styles.exNote}>Trigger the buyout to sign him immediately and end the auction.</p>
               )}
             </div>
           </div>

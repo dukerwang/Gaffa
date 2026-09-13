@@ -221,7 +221,7 @@ export async function POST(req: NextRequest, { params }: Props) {
   }
 
   if (rosterEntry.status === 'loan_out') {
-    return NextResponse.json({ error: 'Cannot list a player currently loaned out' }, { status: 400 });
+    return NextResponse.json({ error: 'You can’t list a player who’s out on loan' }, { status: 400 });
   }
 
   if (rosterEntry.status === 'loan_in') {

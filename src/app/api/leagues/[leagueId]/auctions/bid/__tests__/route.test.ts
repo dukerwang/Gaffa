@@ -122,7 +122,7 @@ describe('the IR gate', () => {
 
     const res = await bid({ playerId: PLAYER_ID, bidAmount: 30 });
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/healthy player occupying an IR slot/);
+    expect(res.body.error).toMatch(/healthy player is on IR/);
   });
 
   // Held players (R7): holding anyone freezes signings.
@@ -591,7 +591,7 @@ describe('bidding on a listing goes through the same gates', () => {
     });
     const res = await listingBid();
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/healthy player occupying an IR slot/);
+    expect(res.body.error).toMatch(/healthy player is on IR/);
   });
 
   it('refuses a manager who took compensation for this player', async () => {

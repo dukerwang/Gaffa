@@ -214,7 +214,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     .eq('status', 'ir');
 
   if (illegalIr?.some(e => (e.player as unknown as { fpl_status: string | null })?.fpl_status === 'a')) {
-    return NextResponse.json({ error: 'Cannot propose trades while you have a healthy player occupying an IR slot. Please activate them first.' }, { status: 400 });
+    return NextResponse.json({ error: 'You can’t propose a trade while a healthy player is on IR. Activate him first.' }, { status: 400 });
   }
 
   // Verify target team is in this league
@@ -251,7 +251,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       return NextResponse.json({ error: 'One or more offered players are not on your roster' }, { status: 400 });
     }
     if ((myPlayers ?? []).some((e) => e.status === 'loan_in' || e.status === 'loan_out')) {
-      return NextResponse.json({ error: 'One or more offered players are currently out on loan and cannot be traded' }, { status: 400 });
+      return NextResponse.json({ error: 'One or more offered players are out on loan and can’t be traded' }, { status: 400 });
     }
     myOfferedStatuses = (myPlayers ?? []).map((e) => e.status as string);
   }
@@ -268,7 +268,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       return NextResponse.json({ error: 'One or more requested players are not on the target team roster' }, { status: 400 });
     }
     if ((theirPlayers ?? []).some((e) => e.status === 'loan_in' || e.status === 'loan_out')) {
-      return NextResponse.json({ error: 'One or more requested players are currently out on loan and cannot be traded' }, { status: 400 });
+      return NextResponse.json({ error: 'One or more requested players are out on loan and can’t be traded' }, { status: 400 });
     }
     theirRequestedStatuses = (theirPlayers ?? []).map((e) => e.status as string);
   }
