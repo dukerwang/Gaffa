@@ -18,39 +18,40 @@ export default async function DraftPage({ params }: Props) {
 
   const admin = createAdminClient();
 
-  const { data: league } = await admin
-    .from('leagues')
-    .select('*')
-    .eq('id', leagueId)
-    .single();
+  // The league, membership, the clubs in draft order and every pick so far
+  // need only the league id, so they go out together.
+  const [{ data: league }, { data: membership }, { data: teamsData }, { data: picksData }] = await Promise.all([
+    admin
+      .from('leagues')
+      .select('*')
+      .eq('id', leagueId)
+      .single(),
+    // Enforce membership
+    admin
+      .from('teams')
+      .select('id')
+      .eq('league_id', leagueId)
+      .eq('user_id', user.id)
+      .single(),
+    // Fetch teams with draft_order
+    admin
+      .from('teams')
+      .select('id, league_id, user_id, team_name, faab_budget, total_points, draft_order, created_at, updated_at')
+      .eq('league_id', leagueId)
+      .order('draft_order', { ascending: true }),
+    // Fetch all picks with player + team info
+    admin
+      .from('draft_picks')
+      .select('*, player:players(*), team:teams(id, team_name, user_id, draft_order)')
+      .eq('league_id', leagueId)
+      .order('pick', { ascending: true }),
+  ]);
 
   if (!league) notFound();
 
-  // Enforce membership
-  const { data: membership } = await admin
-    .from('teams')
-    .select('id')
-    .eq('league_id', leagueId)
-    .eq('user_id', user.id)
-    .single();
-
   if (!membership && league.commissioner_id !== user.id) redirect('/dashboard');
 
-  // Fetch teams with draft_order
-  const { data: teamsData } = await admin
-    .from('teams')
-    .select('id, league_id, user_id, team_name, faab_budget, total_points, draft_order, created_at, updated_at')
-    .eq('league_id', leagueId)
-    .order('draft_order', { ascending: true });
-
   const teams = (teamsData ?? []) as Team[];
-
-  // Fetch all picks with player + team info
-  const { data: picksData } = await admin
-    .from('draft_picks')
-    .select('*, player:players(*), team:teams(id, team_name, user_id, draft_order)')
-    .eq('league_id', leagueId)
-    .order('pick', { ascending: true });
 
   const picks = (picksData ?? []) as DraftPick[];
 

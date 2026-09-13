@@ -31,39 +31,44 @@ export default async function StatsPage({ params }: Props) {
   const isSiteAdmin = isSiteAdminEmail(user.email);
   const admin = createAdminClient();
 
-  // Validate league
-  const { data: league } = await admin
-    .from('leagues')
-    .select('id, name, current_season, previous_season')
-    .eq('id', leagueId)
-    .single();
+  // Validate league. Its season inputs and its clubs come in the same wave.
+  const [{ data: league }, currentFpl, kickedOff, { data: allTeams }] = await Promise.all([
+    admin
+      .from('leagues')
+      .select('id, name, current_season, previous_season')
+      .eq('id', leagueId)
+      .single(),
+    getCurrentFplSeason(),
+    isFplSeasonKickedOff(),
+    admin
+      .from('teams')
+      .select('id')
+      .eq('league_id', leagueId),
+  ]);
   if (!league) notFound();
-
-  const currentFpl = await getCurrentFplSeason();
-  const kickedOff = await isFplSeasonKickedOff();
 
   let season = (league as any).current_season ?? currentFpl;
   if (season === currentFpl && !kickedOff) {
     season = (league as any).previous_season ?? season;
   }
 
-  // All teams in this league
-  const { data: allTeams } = await admin
-    .from('teams')
-    .select('id')
-    .eq('league_id', leagueId);
   const teamIds = (allTeams ?? []).map((t: { id: string }) => t.id);
 
-  const { players, shadowMaps } = await loadSeasonLeaderboard(admin, season);
+  // The leaderboard is the slow read (every stats row of the season); the
+  // owner lookup beside it no longer waits for it to finish.
+  const [{ players, shadowMaps }, { data: rosterEntries }] = await Promise.all([
+    loadSeasonLeaderboard(admin, season),
+    teamIds.length > 0
+      ? admin
+          .from('roster_entries')
+          .select('player_id, team:teams(id, team_name)')
+          .in('team_id', teamIds)
+      : Promise.resolve({ data: null }),
+  ]);
 
   // Roster entries for this league → owner map
   const ownerMap = new Map<string, { teamId: string; teamName: string }>();
   if (teamIds.length > 0) {
-    const { data: rosterEntries } = await admin
-      .from('roster_entries')
-      .select('player_id, team:teams(id, team_name)')
-      .in('team_id', teamIds);
-
     for (const entry of rosterEntries ?? []) {
       const team = entry.team as any;
       if (team) {
