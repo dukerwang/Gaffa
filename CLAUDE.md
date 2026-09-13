@@ -18,6 +18,16 @@ Every session for this repo opens in this one folder, so a branch switch or an u
 - **To build inside a worktree**, clone the dependencies with `cp -cR "/Users/dukewang/Fantasy Futbol/node_modules" node_modules`. The clone is copy-on-write, so it is instant and uses no extra disk. Don't symlink them: Turbopack rejects a `node_modules` symlink that points outside the worktree. A symlinked `.env.local` is fine.
 - **Before numbering a migration**, check every branch, not only `main`, because parallel branches have already collided on 153, 154, and 166: `git for-each-ref --format='%(refname:short)' refs/heads | xargs -I{} git ls-tree --name-only {} supabase/migrations/ | grep -oE '/[0-9]{3}_' | tr -d '/_' | sort -n | tail -1` prints the highest number in use. Take the next one.
 
+## Branches and worktrees
+
+Every session for this repo opens in this one folder, so a branch switch or an uncommitted edit in one session shows up in all of the others. That is how, by 2026-09-13, seven unrelated projects had piled up as uncommitted changes on a stale `feat/projected-points` checkout and had to be sorted into branches by hand. Duke asked for this on 2026-09-13: each session works on its own branch. A worktree is how that works when every session shares a folder.
+
+- **Edit only inside a worktree.** Before changing any file, call `EnterWorktree` with a short task name. It creates a branch from `origin/main` under `.claude/worktrees/` (git-ignored in this clone) and moves the session there. If that tool isn't available, run `git worktree add .claude/worktrees/<task> -b <type>/<task> origin/main` and work from that path. To continue a branch that already exists, run `git worktree add .claude/worktrees/<task> <branch>` and call `EnterWorktree` with that `path`.
+- **Leave this folder on `main` with a clean working tree.** Don't switch its branch, don't leave uncommitted changes in it, and don't commit feature work here.
+- **Commit to your branch as you go**, so work never exists only as uncommitted files.
+- **To build inside a worktree**, clone the dependencies with `cp -cR "/Users/dukewang/Fantasy Futbol/node_modules" node_modules`. The clone is copy-on-write, so it is instant and uses no extra disk. Don't symlink them: Turbopack rejects a `node_modules` symlink that points outside the worktree. A symlinked `.env.local` is fine.
+- **Before numbering a migration**, check every branch, not only `main`, because parallel branches have already collided on 153 and 154: `git for-each-ref --format='%(refname:short)' refs/heads | xargs -I{} git ls-tree --name-only {} supabase/migrations/ | grep -oE '/[0-9]{3}_' | tr -d '/_' | sort -n | tail -1` prints the highest number in use. Take the next one.
+
 ## Commands
 
 Node is installed at `/opt/homebrew/bin/node` (v25) and npm at `/opt/homebrew/bin/npm`. `npx`/`npm run` wrappers may not resolve on PATH in this environment — prefer invoking the binary directly via `node node_modules/...` if a plain `npm run` fails.
