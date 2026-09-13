@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { describeDeal } from '@/lib/transfers/describeDeal';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
+import { RIGHTS_HELD_STATUSES } from '@/lib/departures/types';
 
 interface Props {
   params: Promise<{ leagueId: string }>;
@@ -276,7 +277,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       .select('id')
       .eq('league_id', leagueId)
       .eq('team_id', holderTeamId)
-      .in('status', ['retained', 'return_pending'])
+      .in('status', RIGHTS_HELD_STATUSES)
       .in('id', rightIds);
 
     if ((rights ?? []).length !== rightIds.length) {

@@ -85,7 +85,7 @@ export async function POST(req: NextRequest, { params }: Props) {
   const expected: Record<Action, string[]> = {
     release: ['pending'],
     retain: ['pending'],
-    relinquish: ['retained'],
+    relinquish: ['retained', 'on_loan'],
     reinstate: ['return_pending'],
     decline: ['return_pending'],
   };

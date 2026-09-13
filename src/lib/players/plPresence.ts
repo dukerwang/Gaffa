@@ -33,6 +33,7 @@ export interface FplElement {
   web_name: string;
   team: number;
   status: string;
+  news?: string;
 }
 
 function normalize(str: string | null | undefined): string {

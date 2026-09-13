@@ -85,6 +85,8 @@ export interface DepartureView {
   compensation: number;
   decideBy: string | null;
   reinstateBy: string | null;
+  /** The club he joined, for a player out on loan abroad. */
+  loanClub: string | null;
 }
 
 /** One entry in the club switcher — every club in the league, in table order. */
@@ -473,6 +475,7 @@ export async function loadClubView(
       compensation: Number(d.compensation_offered ?? 0),
       decideBy: d.decide_by ?? null,
       reinstateBy: d.reinstate_by ?? null,
+      loanClub: d.loan_club ?? null,
     };
   };
 

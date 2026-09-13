@@ -464,7 +464,7 @@ The catch: once an Academy player **turns 21** he no longer qualifies. Gaffa che
 
 ## 13. Departures & the Retained List
 
-When a rostered player **leaves the Premier League** — transfer abroad, relegation, retirement — you don't simply lose him. You get a **choice**, per departure:
+When a rostered player **leaves the Premier League** — transfer abroad, relegation, retirement — you don't simply lose him. You get a **choice**, per departure (a loan works differently, see below):
 
 - **RELEASE** — take compensation worth **60% of his market value**. He enters the auction pool. **You are then barred from bidding on his return auction.**
 - **RETAIN** — forfeit the compensation and keep his **rights**. He's off your roster and out of the competition, but he's still yours: if he ever returns to the Premier League he reverts to you with no auction.
@@ -478,6 +478,20 @@ Retention itself uses **scarce slots**, commonly **3** — not an expiry clock.
 **Why it works this way.** The original design paid you out automatically and deleted the player, which created a genuine exploit: a player paid out at kickoff can sign for a Premier League club before the window shuts weeks later. The ex-owner then held a windfall equal to his value *and* could spend it bidding on him at the return auction — a free option nobody else had. An established player at a relegated club is the single most likely profile for exactly that. Forcing the choice closes it: take the money and you're excluded from the buy-back, or keep the claim and take no money.
 
 The slot limit rather than a timer is deliberate too. No one can know when a player might come back, so any expiry date would be arbitrary; scarcity instead makes holding one claim cost you the ability to hold another. Rights can be **given up for nothing** but **never cashed in** — otherwise "retain everything, cash out whatever doesn't return" would be strictly optimal.
+
+### Players who leave on loan
+
+A player who leaves the Premier League **on loan** doesn't get a Release/Retain decision. He's still yours, and he goes on the Retained List under **On Loan Abroad**:
+
+- He's off your squad and **doesn't count toward your roster limit**. If he was in your academy, he doesn't hold an academy place either.
+- He **doesn't use a retained slot**, and there's **no compensation**.
+- When he's back in the Premier League he **rejoins your squad automatically**, or your academy if he left from it and still qualifies. If that puts you over the roster limit, you can't sign anyone until you drop or move a player out.
+- You can **trade** him like any other retained right, or **drop** him for nothing. There's no severance, and when he returns he's a free agent.
+- If a new season is under way and he hasn't come back or gone out on loan again, the loan is treated as a permanent move and you get the normal Release/Retain decision.
+
+**Why loans are different.** The 60% rate and the slot limit assume nobody knows whether a departed player will come back. A loan has a return built in. Treating it as a departure made Release a forced sale of a player you'd have back within a year, into an auction you couldn't bid in, and made Retain spend a scarce slot on a near-certain claim. He doesn't take a squad place while he's away because you didn't choose to send him, so there's nothing to stockpile.
+
+Loans are recognised from the Premier League's own player news ("has joined Juventus on loan"). Anything that doesn't clearly say loan gets the normal decision.
 
 ### Retained rights are tradeable
 
@@ -535,3 +549,4 @@ The permanent record book: final standings and podium for every past season, eac
 | **IR** | Injured Reserve. Doesn't count against your roster, capped at 2 — and you can't bid while a healthy player occupies it. |
 | **Release / Retain** | The choice when a player leaves the Premier League: take his market value and forfeit the buy-back, or keep his rights and take nothing. |
 | **Retained rights** | A tradeable claim on a departed player that matures if he returns to the Premier League. |
+| **On Loan Abroad** | A player of yours on loan outside the Premier League. Uses no squad place or retained slot, and rejoins your squad when he's back. |
