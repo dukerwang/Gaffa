@@ -1916,18 +1916,26 @@ export async function buildHomeModel(
       : `${money(balance)} to spend · the most in the league`;
 
   // ── the wire ────────────────────────────────────────────────
-  // A single auction/drop can fan out one solidarity_payment row per recipient club, all
-  // with identical notes/timing — collapse those into one Wire entry so the feed doesn't
-  // read as spam.
-  const seenSolidarityNotes = new Set<string>();
-  const dedupedTransactions = transactions.filter((tx) => {
-    if (tx.type !== 'solidarity_payment') return true;
-    if (seenSolidarityNotes.has(tx.notes)) return false;
-    seenSolidarityNotes.add(tx.notes);
-    return true;
-  });
+  // Money-only rows are Finance's ledger, not news. Left in, they dominated the
+  // rail: solidarity and prizes alone are half of every `transactions` row, so
+  // Dynasty Dragoon's rail opened on a scout's fee described as "refunded €16m
+  // for player release" (a scout's fee is not a refund) followed by a raw
+  // database note printed verbatim, because `solidarity_payment` has no case in
+  // the headline generator and falls through to `tx.notes`. Same cut the
+  // register makes — see LEDGER_ONLY in src/lib/transactions/buildRegister.ts.
+  const LEDGER_ONLY = new Set([
+    'rebate',
+    'prize_payout',
+    'merit_payment',
+    'solidarity_payment',
+    'loan_fee',
+    'loan_bonus',
+    'loan_recall_penalty',
+    'loan_slot_buyback',
+  ]);
+  const movementsOnly = transactions.filter((tx) => !LEDGER_ONLY.has(tx.type));
 
-  const wire: WireItem[] = dedupedTransactions.slice(0, 5).map((tx) => ({
+  const wire: WireItem[] = movementsOnly.slice(0, 5).map((tx) => ({
     id: tx.id,
     text: generateTransactionHeadline({
       type: tx.type,

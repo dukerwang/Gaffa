@@ -8,7 +8,10 @@ import styles from './home.module.css';
  * The rail.
  *
  * It carries three things the old page's rail did not: the opponent as a
- * PERSON, a shortened Wire, and the dynasty. What it deliberately no longer
+ * PERSON, a shortened register of transactions, and the dynasty. That card used
+ * to be called The Wire, which collided with the live market ticker of the same
+ * name on /transfers — two different feeds, one name. The ticker keeps the name;
+ * this one is the settled record, so it takes the page's. What it deliberately no longer
  * carries is the "desk summary" — four unrelated numbers where "Squad 23 of
  * 25" was a My Club stat and "Unread messages 3" was a nav badge. That block
  * existed because the rail ran short, which is a content problem; the honest
@@ -21,12 +24,12 @@ export default function Rail({ model }: { model: HomeModel }) {
 
       <div className={styles.railCard}>
         <div className={styles.railHd}>
-          <h2 className={styles.railT}>The Wire</h2>
+          <h2 className={styles.railT}>Transactions</h2>
         </div>
         {model.wire.length === 0 ? (
           <div className={styles.ev}>
             <span className={styles.evDot} />
-            <div className={styles.evText}>Nothing has moved yet this season.</div>
+            <div className={styles.evText}>No player has changed hands yet this season.</div>
           </div>
         ) : (
           model.wire.map((e) => (
@@ -45,7 +48,7 @@ export default function Rail({ model }: { model: HomeModel }) {
           ))
         )}
         <NavigationLink href={`/league/${model.leagueId}/activity`} className={styles.railMore}>
-          Full activity &rarr;
+          All transactions &rarr;
         </NavigationLink>
       </div>
 
