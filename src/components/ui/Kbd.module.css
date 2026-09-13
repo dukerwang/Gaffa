@@ -1,0 +1,26 @@
+/* Gaffa UI Primitive: Kbd
+   Keycap display component for keyboard shortcuts and interaction affordances.
+   Elevation declared once: border, no shadow (UI_RULES rule 7). */
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px var(--s2);
+  min-width: 20px;
+  font-family: var(--font-condensed);
+  font-size: var(--t-11);
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-control);
+  vertical-align: baseline;
+  user-select: none;
+}
+
+:global([data-theme='dark']) .kbd {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border-strong);
+}
