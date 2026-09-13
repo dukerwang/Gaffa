@@ -419,31 +419,45 @@ export async function buildHomeModel(
 ): Promise<HomeModel | null> {
   const serverNow = new Date().toISOString();
 
-  const { data: league } = await admin
-    .from('leagues')
-    .select(
-      `id, name, status, season, current_season, previous_season, total_gameweeks,
+  // Every read in this function waits only on what it actually uses. These
+  // three share no inputs, so they go out together.
+  const [{ data: league }, { data: myTeamRow }, fpl] = await Promise.all([
+    admin
+      .from('leagues')
+      .select(
+        `id, name, status, season, current_season, previous_season, total_gameweeks,
        roster_size, taxi_size, taxi_age_limit, retained_slots, prize_config, ir_size, max_loan_outs,
        merit_win, merit_draw, merit_loss, merit_bye, free_agent_bid_floor`,
-    )
-    .eq('id', leagueId)
-    .single();
+      )
+      .eq('id', leagueId)
+      .single(),
+    admin
+      .from('teams')
+      .select('id, team_name, abbreviation, crest_config, faab_budget, user_id, academy_slots, ir_slots, loan_out_slots')
+      .eq('league_id', leagueId)
+      .eq('user_id', userId)
+      .single(),
+    getFplStatus(),
+  ]);
   if (!league) return null;
-
-  const { data: myTeamRow } = await admin
-    .from('teams')
-    .select('id, team_name, abbreviation, crest_config, faab_budget, user_id, academy_slots, ir_slots, loan_out_slots')
-    .eq('league_id', leagueId)
-    .eq('user_id', userId)
-    .single();
   if (!myTeamRow) return null;
 
   const myTeamId = myTeamRow.id as string;
   const season = (league.current_season ?? league.season) as string;
   const totalGameweeks = (league.total_gameweeks as number) ?? 38;
-
-  const fpl = await getFplStatus();
   const gameweek = fpl.currentGw;
+
+  // Both debriefs score against the same reference stats: one read, shared.
+  // It is started before whichever debrief awaits it, so it is marked handled
+  // here and any failure surfaces at that await, inside its try/catch.
+  let referenceStatsLoad: ReturnType<typeof loadReferenceStats> | null = null;
+  const referenceStats = () => {
+    if (!referenceStatsLoad) {
+      referenceStatsLoad = loadReferenceStats(admin, season);
+      referenceStatsLoad.catch(() => {});
+    }
+    return referenceStatsLoad;
+  };
 
   const [
     teamsRes,
@@ -554,6 +568,22 @@ export async function buildHomeModel(
   const archiveStandings = (archiveStandingsRes.data ?? []) as any[];
   const archiveCups = (archiveCupsRes.data ?? []) as any[];
   const archiveMatchups = (archiveMatchupsRes.data ?? []) as any[];
+
+  // The market's two lookups need nothing computed below, so they start now
+  // and are awaited where the market is built.
+  const lotPlayerIds = liveAuctions.map((a) => a.player_id);
+  const lotListingIds = liveAuctions.map((a) => a.sale_listing_id).filter(Boolean);
+  const lotPlayersRead = lotPlayerIds.length
+    ? Promise.resolve(
+        admin
+          .from('players')
+          .select('id, web_name, name, full_name, sofifa_common_name, primary_position, pl_team, market_value')
+          .in('id', lotPlayerIds),
+      )
+    : null;
+  const lotListingsRead = lotListingIds.length
+    ? Promise.resolve(admin.from('player_sale_listings').select('id, min_bid').in('id', lotListingIds))
+    : null;
 
   const clubOf = (id: string | null | undefined): HomeClub => {
     const t = teams.find((x) => x.id === id);
@@ -775,15 +805,26 @@ export async function buildHomeModel(
   }
 
   const missingPlayerIds = [...neededPlayerIds].filter((id) => !playerById.has(id));
-  if (missingPlayerIds.length > 0) {
-    const { data: extraPlayers } = await admin
-      .from('players')
-      .select('id, web_name, name, full_name, sofifa_common_name, primary_position, secondary_positions, pl_team, fpl_status, date_of_birth, market_value')
-      .in('id', missingPlayerIds);
-    for (const p of (extraPlayers ?? []) as any[]) {
-      playerById.set(p.id, p);
-    }
-  }
+  // Started here and merged after the Team of the Week, which never reads
+  // playerById, so this lookup and the hero gameweek's fixtures run alongside
+  // that block's queries instead of ahead of them.
+  const extraPlayersRead =
+    missingPlayerIds.length > 0
+      ? Promise.resolve(
+          admin
+            .from('players')
+            .select('id, web_name, name, full_name, sofifa_common_name, primary_position, secondary_positions, pl_team, fpl_status, date_of_birth, market_value')
+            .in('id', missingPlayerIds),
+        )
+      : null;
+  const heroGameweek = heroMatchup?.gameweek ?? gameweek;
+  const heroPlFixturesRead = Promise.resolve(
+    admin
+      .from('pl_fixtures')
+      .select('home_club, away_club, kickoff_time, finished')
+      .eq('season', season)
+      .eq('gameweek', heroGameweek),
+  );
 
   // ── Team of the Week, league-wide ───────────────────────────
   // The latest settled gameweek's best legal XI, whoever owns the players.
@@ -840,28 +881,29 @@ export async function buildHomeModel(
         ...best.starters.map((starter) => starter.playerId),
         ...Object.values(best.bench).filter((id): id is string => !!id),
       ];
-      const { data: pickedPlayers } = await admin
-        .from('players')
-        .select(
-          'id, web_name, name, full_name, sofifa_common_name, primary_position, pl_team, photo_url, photo_version, portrait_head_top_pct, portrait_head_width_pct',
-        )
-        .in('id', pickedIds);
-      const pickedById = new Map<string, any>();
-      for (const player of (pickedPlayers ?? []) as any[]) pickedById.set(player.id, player);
-
-      // Must scope to this league's teams — the same player is rostered in every
-      // test/militia league too, and an unfiltered lookup picks whichever row
-      // PostgREST returns first (Bot FC 4, Tea FC, …). Only the fifteen picked
-      // players need an owner, so this is bounded by the XI, not by the league.
+      // The owner lookup must scope to this league's teams — the same player is
+      // rostered in every test/militia league too, and an unfiltered lookup
+      // picks whichever row PostgREST returns first (Bot FC 4, Tea FC, …). Only
+      // the fifteen picked players need an owner, so this is bounded by the XI,
+      // not by the league. It shares no input with the display read beside it.
       const leagueTeamIds = teams.map((t) => t.id as string);
-      const { data: ownerRows } =
+      const [{ data: pickedPlayers }, { data: ownerRows }] = await Promise.all([
+        admin
+          .from('players')
+          .select(
+            'id, web_name, name, full_name, sofifa_common_name, primary_position, pl_team, photo_url, photo_version, portrait_head_top_pct, portrait_head_width_pct',
+          )
+          .in('id', pickedIds),
         leagueTeamIds.length
-          ? await admin
+          ? admin
               .from('roster_entries')
               .select('player_id, team:teams(team_name)')
               .in('team_id', leagueTeamIds)
               .in('player_id', pickedIds)
-          : { data: [] as any[] };
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const pickedById = new Map<string, any>();
+      for (const player of (pickedPlayers ?? []) as any[]) pickedById.set(player.id, player);
       const ownerByPlayer = new Map<string, string>();
       for (const o of ownerRows ?? []) {
         const team = o.team as any;
@@ -896,7 +938,9 @@ export async function buildHomeModel(
     }
   }
 
-  const heroGameweek = heroMatchup?.gameweek ?? gameweek;
+  for (const p of ((await extraPlayersRead)?.data ?? []) as any[]) {
+    playerById.set(p.id, p);
+  }
 
   /**
    * Has the fixture on show actually been played?
@@ -927,11 +971,7 @@ export async function buildHomeModel(
   const clubsWithFixture = new Set<string>();
   let heroPlFixtures: any[] = [];
   {
-    const { data: plFixtures } = await admin
-      .from('pl_fixtures')
-      .select('home_club, away_club, kickoff_time, finished')
-      .eq('season', season)
-      .eq('gameweek', heroGameweek);
+    const { data: plFixtures } = await heroPlFixturesRead;
     heroPlFixtures = (plFixtures ?? []) as any[];
     const nowMs = new Date(serverNow).getTime();
     for (const f of heroPlFixtures) {
@@ -1338,6 +1378,18 @@ export async function buildHomeModel(
       cupLine: null,
     };
 
+    // The cup line below needs only the tournaments already in hand, so its
+    // first read starts before the debrief's rather than after them.
+    const tourneyIds = tournaments.map((t) => t.id);
+    const roundsRead = tourneyIds.length
+      ? Promise.resolve(
+          admin
+            .from('tournament_rounds')
+            .select('id, tournament_id, name, round_number, start_gameweek, end_gameweek, is_two_leg')
+            .in('tournament_id', tourneyIds),
+        )
+      : null;
+
     // ── your gameweek + the debrief ───────────────────────────
     // Both come from the same scoring call the matchup itself uses, so the
     // explanation can never disagree with the score it is explaining.
@@ -1347,12 +1399,39 @@ export async function buildHomeModel(
         ...((heroLineupRaw.bench ?? []).map((b: any) => b.player_id) as string[]),
       ].filter(Boolean);
 
-      const { data: statRows } = await admin
-        .from('player_stats')
-        .select('player_id, fantasy_points, match_rating, stats, gameweek, season')
-        .eq('season', season)
-        .eq('gameweek', heroMatchup.gameweek)
-        .in('player_id', lineupIds);
+      // The opponent's side feeds only the full-time match report below.
+      const theirLineup = (iAmA ? heroEffectiveB : heroEffectiveA) as any;
+      const theirIds: string[] =
+        phase === 'ft'
+          ? [
+              ...((theirLineup?.starters ?? []).map((s: any) => s.player_id) as string[]),
+              ...((theirLineup?.bench ?? []).map((b: any) => b.player_id) as string[]),
+            ].filter(Boolean)
+          : [];
+
+      const refStatsRead = referenceStats();
+      const [{ data: statRows }, theirReads] = await Promise.all([
+        admin
+          .from('player_stats')
+          .select('player_id, fantasy_points, match_rating, stats, gameweek, season')
+          .eq('season', season)
+          .eq('gameweek', heroMatchup.gameweek)
+          .in('player_id', lineupIds),
+        theirIds.length
+          ? Promise.all([
+              admin
+                .from('players')
+                .select('id, web_name, name, full_name, sofifa_common_name, primary_position, pl_team')
+                .in('id', theirIds),
+              admin
+                .from('player_stats')
+                .select('player_id, fantasy_points, stats')
+                .eq('season', season)
+                .eq('gameweek', heroMatchup.gameweek)
+                .in('player_id', theirIds),
+            ])
+          : Promise.resolve(null),
+      ]);
 
       const rows = (statRows ?? []) as any[];
       const record = new Map<string, PlayerScoreRecord>();
@@ -1377,7 +1456,7 @@ export async function buildHomeModel(
 
       const detail = emptyTeamScoreDetail();
       try {
-        const refStats = await loadReferenceStats(admin, season);
+        const refStats = await refStatsRead;
         calculateTeamScore(
           heroLineupRaw,
           record,
@@ -1416,25 +1495,8 @@ export async function buildHomeModel(
        * not on every render of every phase.
        */
       if (phase === 'ft') {
-        const theirLineup = (iAmA ? heroEffectiveB : heroEffectiveA) as any;
-        const theirIds: string[] = [
-          ...((theirLineup?.starters ?? []).map((s: any) => s.player_id) as string[]),
-          ...((theirLineup?.bench ?? []).map((b: any) => b.player_id) as string[]),
-        ].filter(Boolean);
-
-        if (theirIds.length) {
-          const [{ data: theirPlayers }, { data: theirStats }] = await Promise.all([
-            admin
-              .from('players')
-              .select('id, web_name, name, full_name, sofifa_common_name, primary_position, pl_team')
-              .in('id', theirIds),
-            admin
-              .from('player_stats')
-              .select('player_id, fantasy_points, stats')
-              .eq('season', season)
-              .eq('gameweek', heroMatchup.gameweek)
-              .in('player_id', theirIds),
-          ]);
+        if (theirReads) {
+          const [{ data: theirPlayers }, { data: theirStats }] = theirReads;
 
           const playerMap: Record<string, any> = {};
           for (const [id, p] of playerById.entries()) playerMap[id] = p;
@@ -1479,12 +1541,8 @@ export async function buildHomeModel(
     }
 
     // ── cups: the fixture, not a status noun ──────────────────
-    const tourneyIds = tournaments.map((t) => t.id);
-    if (tourneyIds.length) {
-      const { data: rounds } = await admin
-        .from('tournament_rounds')
-        .select('id, tournament_id, name, round_number, start_gameweek, end_gameweek, is_two_leg')
-        .in('tournament_id', tourneyIds);
+    if (roundsRead) {
+      const { data: rounds } = await roundsRead;
       const activeRounds = (rounds ?? []).filter(
         (r: any) => r.start_gameweek <= heroMatchup.gameweek && r.end_gameweek >= heroMatchup.gameweek,
       );
@@ -1580,15 +1638,41 @@ export async function buildHomeModel(
     const secMyLineup = iAmA ? secLineupA : secLineupB;
     const secTheirLineup = iAmA ? secLineupB : secLineupA;
 
+    // This fixture's two reads depend only on the matchup and my lineup for
+    // it, so they go out together rather than one after the other.
+    const secPlFixturesRead =
+      secondaryMatchup.gameweek !== heroGameweek
+        ? Promise.resolve(
+            admin
+              .from('pl_fixtures')
+              .select('home_club, away_club, kickoff_time, finished')
+              .eq('season', season)
+              .eq('gameweek', secondaryMatchup.gameweek),
+          )
+        : null;
+    const wantsSecondaryDebrief = settledSecondary && hasScores && !!secMyLineup?.starters?.length;
+    const secLineupIds: string[] = wantsSecondaryDebrief
+      ? [
+          ...secMyLineup.starters.map((s: any) => s.player_id),
+          ...((secMyLineup.bench ?? []).map((b: any) => b.player_id) as string[]),
+        ].filter(Boolean)
+      : [];
+    const secStatsRead = wantsSecondaryDebrief
+      ? Promise.resolve(
+          admin
+            .from('player_stats')
+            .select('player_id, fantasy_points, match_rating, stats, gameweek, season')
+            .eq('season', season)
+            .eq('gameweek', secondaryMatchup.gameweek)
+            .in('player_id', secLineupIds),
+        )
+      : null;
+
     let secPlFixtures = heroPlFixtures;
     let secLockedSlugs = lockedSlugs;
     let secClubsWithFixture = clubsWithFixture;
-    if (secondaryMatchup.gameweek !== heroGameweek) {
-      const { data: pfData } = await admin
-        .from('pl_fixtures')
-        .select('home_club, away_club, kickoff_time, finished')
-        .eq('season', season)
-        .eq('gameweek', secondaryMatchup.gameweek);
+    if (secPlFixturesRead) {
+      const { data: pfData } = await secPlFixturesRead;
       secPlFixtures = (pfData ?? []) as any[];
       secLockedSlugs = new Set();
       secClubsWithFixture = new Set();
@@ -1689,18 +1773,9 @@ export async function buildHomeModel(
         : 'No lineup saved yet';
     }
 
-    if (settledSecondary && hasScores && secondaryLineupRaw?.starters?.length) {
-      const lineupIds: string[] = [
-        ...secondaryLineupRaw.starters.map((s: any) => s.player_id),
-        ...((secondaryLineupRaw.bench ?? []).map((b: any) => b.player_id) as string[]),
-      ].filter(Boolean);
-
-      const { data: statRows } = await admin
-        .from('player_stats')
-        .select('player_id, fantasy_points, match_rating, stats, gameweek, season')
-        .eq('season', season)
-        .eq('gameweek', secondaryMatchup.gameweek)
-        .in('player_id', lineupIds);
+    if (secStatsRead) {
+      const lineupIds = secLineupIds;
+      const { data: statRows } = await secStatsRead;
 
       const rows = (statRows ?? []) as any[];
       const record = new Map<string, PlayerScoreRecord>();
@@ -1725,7 +1800,7 @@ export async function buildHomeModel(
 
       const detail = emptyTeamScoreDetail();
       try {
-        const refStats = await loadReferenceStats(admin, season);
+        const refStats = await referenceStats();
         calculateTeamScore(
           secondaryLineupRaw,
           record,
@@ -1881,25 +1956,11 @@ export async function buildHomeModel(
       : [];
 
   // ── the market ──────────────────────────────────────────────
-  const lotPlayerIds = liveAuctions.map((a) => a.player_id);
+  const [lotPlayersRes, lotListingsRes] = await Promise.all([lotPlayersRead, lotListingsRead]);
   const lotPlayers = new Map<string, any>();
-  if (lotPlayerIds.length) {
-    const { data: lp } = await admin
-      .from('players')
-      .select('id, web_name, name, full_name, sofifa_common_name, primary_position, pl_team, market_value')
-      .in('id', lotPlayerIds);
-    for (const p of lp ?? []) lotPlayers.set(p.id, p);
-  }
-
-  const lotListingIds = liveAuctions.map((a) => a.sale_listing_id).filter(Boolean);
+  for (const p of lotPlayersRes?.data ?? []) lotPlayers.set(p.id, p);
   const minBidByListing = new Map<string, number | null>();
-  if (lotListingIds.length) {
-    const { data: sl } = await admin
-      .from('player_sale_listings')
-      .select('id, min_bid')
-      .in('id', lotListingIds);
-    for (const l of sl ?? []) minBidByListing.set(l.id, l.min_bid);
-  }
+  for (const l of lotListingsRes?.data ?? []) minBidByListing.set(l.id, l.min_bid);
 
   const freeAgentBidFloor = Number(league.free_agent_bid_floor) || 0.5;
 

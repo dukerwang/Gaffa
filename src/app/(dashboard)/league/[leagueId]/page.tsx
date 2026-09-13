@@ -45,18 +45,18 @@ export default async function LeaguePage({ params }: Props) {
 
   const admin = createAdminClient();
 
-  const { data: league } = await admin.from('leagues').select('*').eq('id', leagueId).single();
+  // The league and the viewer's club in it: one row answers both membership
+  // and "my team", and neither read waits on the other.
+  const [{ data: league }, { data: myTeam }] = await Promise.all([
+    admin.from('leagues').select('*').eq('id', leagueId).single(),
+    admin
+      .from('teams')
+      .select('id, abbreviation')
+      .eq('league_id', leagueId)
+      .eq('user_id', user.id)
+      .maybeSingle(),
+  ]);
   if (!league) notFound();
-
-  // Membership and "my team" were two identical queries against `teams` --
-  // same league, same user -- differing only in whether `abbreviation` was
-  // selected. One row answers both questions.
-  const { data: myTeam } = await admin
-    .from('teams')
-    .select('id, abbreviation')
-    .eq('league_id', leagueId)
-    .eq('user_id', user.id)
-    .maybeSingle();
 
   if (!myTeam && league.commissioner_id !== user.id) redirect('/dashboard');
 
@@ -102,18 +102,28 @@ export default async function LeaguePage({ params }: Props) {
   // the matchup check on purpose: gating the cup backfill behind "zero
   // matchups exist" is exactly what left two production leagues with a full
   // schedule and no cups, permanently.
-  if (league.status === 'active') {
-    const [{ count: matchupCount }, { count: tournamentCount }] = await Promise.all([
-      admin
-        .from('matchups')
-        .select('id', { count: 'exact', head: true })
-        .eq('league_id', leagueId),
-      admin
-        .from('tournaments')
-        .select('id', { count: 'exact', head: true })
-        .eq('league_id', leagueId),
-    ]);
+  //
+  // The FPL status for step 3 is fetched alongside these counts: it reads
+  // nothing the scaffold writes. The matchup lookup that uses it still runs
+  // after the scaffold, which may be what creates that matchup.
+  const [scaffoldCounts, fplStatus] = await Promise.all([
+    league.status === 'active'
+      ? Promise.all([
+          admin
+            .from('matchups')
+            .select('id', { count: 'exact', head: true })
+            .eq('league_id', leagueId),
+          admin
+            .from('tournaments')
+            .select('id', { count: 'exact', head: true })
+            .eq('league_id', leagueId),
+        ])
+      : null,
+    myTeam ? getFplStatus() : null,
+  ]);
 
+  if (scaffoldCounts) {
+    const [{ count: matchupCount }, { count: tournamentCount }] = scaffoldCounts;
     if ((matchupCount ?? 0) === 0 || (tournamentCount ?? 0) === 0) {
       const { ensureSeasonScaffold } = await import('@/lib/schedule/ensureSeasonScaffold');
       await ensureSeasonScaffold(admin, leagueId, league.current_season);
@@ -124,8 +134,7 @@ export default async function LeaguePage({ params }: Props) {
   // If the current gameweek's matchup still reads 0.0–0.0, resolve it before
   // the first paint rather than letting the page flash zeros and correct
   // itself a moment later.
-  if (myTeam) {
-    const fplStatus = await getFplStatus();
+  if (myTeam && fplStatus) {
     const { data: currentMatchup } = await admin
       .from('matchups')
       .select('id, status, score_a, score_b')
