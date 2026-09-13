@@ -161,7 +161,7 @@ All frontend UI copy, microcopy, error messages, documentation, and agent respon
   - `full-output-enforcement`: Prevents code truncation and placeholder comments.
   - `animate`: Targeted CSS and Framer Motion transitions calibrated to Gaffa's tokens.
 - **Banned skills (do not use in this repo)**:
-  - `industrial-brutalist-ui`: Conflicts with Gaffa's calm European broadsheet journal identity; enforces military/CRT terminal aesthetics and all-caps headings.
+  - `industrial-brutalist-ui`: Enforces military/CRT terminal aesthetics and all-caps headings, neither of which fits Gaffa.
   - `high-end-visual-design` (`soft-skill`): Mandates title eyebrows (banned by Duke), bans sticky topbars (violates the green topbar), and forces pill buttons.
   - `design-taste-frontend` (`taste-skill` v1/v2) & `gpt-taste`: Designed for marketing landing pages/portfolios, not dashboards or data tables; attempts to introduce Tailwind and GSAP marketing heroes.
   - `minimalist-ui`: Bans colored header sections (breaks green topbar) and forces monochrome `#111111` buttons with pastels, conflicting with the green ramp and 12 tactical position colors.

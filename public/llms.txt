@@ -1,7 +1,7 @@
 # Gaffa UI Architecture & Components
 
 > Dynasty fantasy football platform for the Premier League.
-> Calm, tactile, data-dense broadsheet sports journal crossed with high-performance trading platform.
+> Not a newspaper: elegant, impressive aesthetics with ease of use (Duke, 2026-08-10). See docs/DECISIONS.md.
 
 ## Design Tokens & Philosophy
 - Theme: Cream ground (`#F8F4EC`), deep forest green chrome (`#185B37`), green accent ramp (`--color-accent`: `#0C6D3E`). Both light and dark themes pass WCAG AA.
