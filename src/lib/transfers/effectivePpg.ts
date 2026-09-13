@@ -125,6 +125,10 @@ export async function buildEffectivePpgMap(
         .order('season', { ascending: false })
         .order('gameweek', { ascending: false })
         .order('player_id', { ascending: true })
+        // A double gameweek gives one player two rows with the same season and
+        // gameweek. Without a unique last key those two can swap across a page
+        // boundary between requests, reading one twice and the other not at all.
+        .order('id', { ascending: true })
         .range(offset, offset + PAGE - 1);
 
       for (const s of stats ?? []) {

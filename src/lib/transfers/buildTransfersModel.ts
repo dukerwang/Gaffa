@@ -25,6 +25,7 @@ import {
   type StatOverrides,
 } from './playerEnrichment';
 import { buildEffectivePpgMap } from './effectivePpg';
+import { fetchAllPages } from '@/lib/supabase/pagination';
 import { getFplStatus } from '@/lib/fpl/api';
 import { TRADEABLE_RIGHTS_STATUSES } from '@/lib/departures/types';
 import { UNCOUNTED_ROSTER_STATUSES } from '@/lib/roster/capacity';
@@ -408,8 +409,18 @@ export async function buildTransfersModel(
     // alone fires for both (syncPlayers sets it on any pl_team change), and a
     // player swapping one PL club for another isn't "new" the way loadDraftPool's
     // isNewToPrem already defines it; this reuses that same definition.
+    // Paged: one row per player per season, 796 for 2025-26, close enough to
+    // PostgREST's silent 1,000-row cap that a truncated read is one busy
+    // summer away, and it would mark established players as new arrivals.
     league.previous_season
-      ? admin.from('player_season_clubs').select('player_id').eq('season', league.previous_season)
+      ? fetchAllPages<{ player_id: string }>((from, to) =>
+          admin
+            .from('player_season_clubs')
+            .select('player_id')
+            .eq('season', league.previous_season!)
+            .order('player_id', { ascending: true })
+            .range(from, to),
+        ).then((data) => ({ data }))
       : Promise.resolve({ data: [] as { player_id: string }[] }),
   ]);
 

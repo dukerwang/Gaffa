@@ -38,7 +38,8 @@ vi.mock('@/lib/notifications/createNotification', () => ({
   createNotification: vi.fn(async () => {}),
 }));
 
-import { POST } from '../route';
+import { GET, POST } from '../route';
+import { calculateEffectivePpg, type PpgSample } from '@/lib/transfers/effectivePpg';
 
 let admin: FakeClient;
 
@@ -429,5 +430,64 @@ describe('a proposal that clears everything', () => {
       recipient_id: OTHER_USER_ID,
       loan_id: tables.player_loans[0].id,
     });
+  });
+});
+
+describe('reading the loans hub', () => {
+  async function read() {
+    const res = await GET({} as any, { params: Promise.resolve({ leagueId: LEAGUE_ID }) });
+    return { status: res.status, body: await res.json() };
+  }
+
+  it('rejects an unauthenticated caller', async () => {
+    state.user = null;
+    expect((await read()).status).toBe(401);
+  });
+
+  it('refuses a caller with no club in this league', async () => {
+    state.user = { id: 'user-stranger' };
+    expect((await read()).status).toBe(403);
+  });
+
+  it("returns every other club, and not the caller's own", async () => {
+    const { status, body } = await read();
+    expect(status).toBe(200);
+    expect(body.allTeams.map((t: { id: string }) => t.id)).toEqual([RIVAL_TEAM_ID]);
+  });
+
+  /**
+   * 24 players with 38 prior-season appearances and 8 this season: 1,104 stats
+   * rows. This route used to read them in one request ordered newest first, so
+   * the cap cut off the oldest prior-season weeks, and with eight appearances
+   * the prior season still carries a fifth of the figure.
+   */
+  it('computes recent_ppg from every stats row, past the 1,000-row cap', async () => {
+    const tables = setup((t) => {
+      Object.assign(t, leagueFixture({ rosterCount: 24 }));
+      t.chat_messages = [];
+      let id = 0;
+      t.player_stats = t.roster_entries.flatMap((e) => [
+        ...Array.from({ length: 8 }, (_, g) => ({
+          id: ++id, player_id: e.player_id, season: '2026-27', gameweek: 8 - g,
+          fantasy_points: 4, stats: { minutes_played: 90 },
+        })),
+        ...Array.from({ length: 38 }, (_, g) => ({
+          id: ++id, player_id: e.player_id, season: '2025-26', gameweek: 38 - g,
+          fantasy_points: 38 - g, stats: { minutes_played: 90 },
+        })),
+      ]);
+    });
+    expect(tables.player_stats.length).toBeGreaterThan(1_000);
+
+    const current: PpgSample[] = Array.from({ length: 8 }, () => ({ points: 4, minutes: 90 }));
+    const prior: PpgSample[] = Array.from({ length: 38 }, (_, g) => ({ points: 38 - g, minutes: 90 }));
+    const expected = calculateEffectivePpg(current, prior, 10);
+
+    const { status, body } = await read();
+    expect(status).toBe(200);
+    expect(body.myRoster).toHaveLength(24);
+    for (const entry of body.myRoster) {
+      expect(entry.player.recent_ppg).toBeCloseTo(expected, 10);
+    }
   });
 });
