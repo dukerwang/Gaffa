@@ -143,7 +143,7 @@ export const getSystemAuctionsEmail = (
   } else if (count === 1 && top) {
     preamble = `A new high-profile signing has entered the Premier League. <strong>${top.name}</strong> (€${top.value}m) is now available on the open market.`;
   } else {
-    preamble = `The transfer market is heating up. <strong>${count} marquee signings</strong> (€${thresholdM}m+ valuation) have just been posted to the auction board.`;
+    preamble = `The transfer market is heating up. <strong>${count} marquee signings</strong> (€${thresholdM}m+ valuation) are on the auction board.`;
   }
 
   const standard = players.filter((p) => getValueTier(p.value) === 'standard');
@@ -245,7 +245,7 @@ export const getPlayerSoldEmail = (
     <p style="font-family: ${FONT_SERIF}; font-size: 1.2em; margin-top: 0; color: ${INK};">${lead}</p>
     <a href="${leagueUrl}/team" class="button">View Your Team</a>
   `;
-  return baseTemplate('Player Sold!', body);
+  return baseTemplate('Player Sold', body);
 };
 
 export const getDraftStartedEmail = (leagueName: string, draftUrl: string) => {
@@ -258,7 +258,7 @@ export const getDraftStartedEmail = (leagueName: string, draftUrl: string) => {
     </div>
     <p>Good luck, and may your scouting pay off.</p>
   `;
-  return baseTemplate('The Draft is Starting!', body);
+  return baseTemplate('The Draft Is Starting', body);
 };
 
 export const getMatchweekSummaryEmail = (

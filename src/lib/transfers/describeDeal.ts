@@ -101,7 +101,7 @@ export function describeDeal(
       return out(
         'cash-only',
         'Not a deal',
-        'Cash for cash just moves budget around — put a player or a retained right on the table.',
+        'A cash-for-cash swap changes nothing. Add a player or a retained right.',
       );
     }
     return out('empty', 'Nothing yet', 'Nothing on the table yet.');

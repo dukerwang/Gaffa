@@ -383,7 +383,7 @@ export default function TradesClient({
       if (!res.ok) {
         setActionError((prev) => ({ ...prev, [loanId]: data.error ?? 'Something went wrong.' }));
       } else {
-        let msg = `Loan recalled! Penalty paid: €${data.penalty}m.`;
+        let msg = `Loan recalled. Penalty paid: €${data.penalty}m.`;
         if (data.bonusPaid > 0) msg += ` Bonus paid: €${data.bonusPaid}m.`;
         if (data.pendingActivation) msg += ` Player returning — roster full (pending drop).`;
         setProposeSuccess(msg);
@@ -409,7 +409,7 @@ export default function TradesClient({
       if (!res.ok) {
         setActionError((prev) => ({ ...prev, [loanId]: data.error ?? 'Something went wrong.' }));
       } else {
-        setProposeSuccess(`Slot buyback activated! Paid €${data.feePaid}m.`);
+        setProposeSuccess(`Slot buyback activated. Paid €${data.feePaid}m.`);
         await refreshLoans();
       }
     } catch {
@@ -931,7 +931,7 @@ export default function TradesClient({
 
           {listings.length === 0 ? (
             <div className={styles.emptyState}>
-              <p>No players are currently listed on the market.</p>
+              <p>No players are on the market.</p>
               <button className={styles.proposeBtn} onClick={() => setShowListModal(true)}>
                 List your players
               </button>
@@ -1219,7 +1219,7 @@ export default function TradesClient({
           totalGameweeks={leagueSettings.total_gameweeks}
           onClose={() => setShowRequestLoanModal(false)}
           onRequested={async () => {
-            setProposeSuccess('Loan request sent! They will be notified to review your terms.');
+            setProposeSuccess('Loan request sent. They’ll get a notification to review your terms.');
             await refreshLoans();
           }}
         />

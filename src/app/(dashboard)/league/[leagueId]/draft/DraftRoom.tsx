@@ -604,11 +604,11 @@ export default function DraftRoom({
 
       if (remain === 0 && isMyTurn && !autoPickTriggeredRef.current) {
         if (league.name?.toLowerCase().includes('demo') || league.name?.toLowerCase().includes('test')) {
-          setPickError('Timer expired! (Auto-pick disabled for Demo/Test leagues)');
+          setPickError('Time expired. Auto-pick is off in demo and test leagues.');
           return;
         }
         autoPickTriggeredRef.current = true;
-        setPickError('Time expired! Auto-picking...');
+        setPickError('Time expired. Auto-picking…');
         fetch(`/api/leagues/${leagueId}/draft/auto-pick`, { method: 'POST' })
           .then(() => router.refresh())
           .catch(console.error);
@@ -861,7 +861,7 @@ export default function DraftRoom({
       if (json.status === 'active') router.refresh();
     } catch {
       setOptimisticPick(null);
-      setPickError('Network error. Please try again.');
+      setPickError('Network error. Try again.');
       setLoadingPick(false);
       pickInFlightRef.current = false;
     }

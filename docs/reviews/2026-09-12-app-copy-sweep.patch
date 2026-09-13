@@ -1,0 +1,573 @@
+--- a/src/app/(dashboard)/league/[leagueId]/_home/Fixture.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/_home/Fixture.tsx
+@@ -396,9 +396,9 @@
+         <div>
+           <div className={styles.closedMv}>{c.openDepartures}</div>
+           <div className={styles.closedMs}>
+-            {c.openDepartures === 1 ? 'Departure decision' : 'Departure decisions'} open. Release
+-            takes the compensation and bars you from his return auction; retain keeps the claim and
+-            pays nothing.
++            {c.openDepartures === 1 ? 'Departure decision' : 'Departure decisions'} open. Release him and you
++            take the compensation but can’t bid in his return auction. Retain him and you keep the
++            claim at no cost.
+           </div>
+         </div>
+       </div>
+--- a/src/app/(dashboard)/league/[leagueId]/_home/Sections.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/_home/Sections.tsx
+@@ -302,7 +302,7 @@
+       <div className={styles.tableWrap}>
+         <table className={styles.table}>
+           <caption>
+-            Pays is the placement prize at that finish, on today&rsquo;s table. Form reads newest
++            Pays: the placement prize for that finish on today&rsquo;s table. Form: newest result
+             first.
+           </caption>
+           <thead>
+--- a/src/app/(dashboard)/league/[leagueId]/transfers/auctions/AuctionsClient.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/transfers/auctions/AuctionsClient.tsx
+@@ -529,7 +529,7 @@
+ 
+         <div className={styles.lotActions}>
+           {mine ? (
+-            <span className={`${styles.go} ${styles.goMuted}`} title="Bidding decides this — you cannot withdraw it">Will sell</span>
++            <span className={`${styles.go} ${styles.goMuted}`} title="You can’t withdraw this lot. The highest bidder signs him.">Will sell</span>
+           ) : (
+             <button
+               type="button"
+@@ -661,7 +661,7 @@
+                 </div>
+               )}
+               {clause != null && !mine && (
+-                <p className={styles.exNote}>Triggering the buyout ends the auction immediately.</p>
++                <p className={styles.exNote}>Trigger the buyout to sign him immediately and end the auction.</p>
+               )}
+             </div>
+           </div>
+--- a/src/components/settings/SettingsClient.tsx
++++ b/src/components/settings/SettingsClient.tsx
+@@ -103,7 +103,7 @@
+       <section className={styles.section}>
+         <h2 className={styles.sectionTitle}>Notifications</h2>
+         <p className={styles.sectionHint}>
+-          In-game mail always arrives. Push and email follow the switches below.
++          You always get in-game mail. Use the switches below to turn push and email on or off.
+         </p>
+         <div className={styles.panel}>
+           <div className={styles.deviceBlock}>
+--- a/src/components/transfers/ProposeBuilder.tsx
++++ b/src/components/transfers/ProposeBuilder.tsx
+@@ -1117,7 +1117,7 @@
+                       <span className={`${styles.ledgerVal} ${styles.risk}`}>up to {money(loanFinalTerms.cap)}</span>
+                     </div>
+                     <div className={styles.ledgerRow}>
+-                      <span>Likely bonus if he holds {recentPPG.toFixed(2)} PPG</span>
++                      <span>Projected bonus at {recentPPG.toFixed(2)} PPG</span>
+                       <span className={styles.ledgerDots} />
+                       <span className={styles.ledgerVal}>≈ €{loanEstBonusPayout.toFixed(1)}m</span>
+                     </div>
+@@ -1247,8 +1247,8 @@
+               <span className={styles.ledgerBig}>{money(Math.abs(deal.netFaab))}</span>
+               <span className={styles.ledgerSub}>
+                 {deal.netFaab > 0
+-                  ? `Leaves ${money(Math.max(0, budget - deal.netFaab))} of ${money(budget)}`
+-                  : `Takes you to ${money(budget - deal.netFaab)}`}
++                  ? `${money(Math.max(0, budget - deal.netFaab))} left of ${money(budget)}`
++                  : `Balance after: ${money(budget - deal.netFaab)}`}
+               </span>
+             </div>
+           )}
+--- a/src/lib/transfers/describeDeal.ts
++++ b/src/lib/transfers/describeDeal.ts
+@@ -101,7 +101,7 @@
+       return out(
+         'cash-only',
+         'Not a deal',
+-        'Cash for cash just moves budget around — put a player or a retained right on the table.',
++        'A cash-for-cash swap changes nothing. Add a player or a retained right.',
+       );
+     }
+     return out('empty', 'Nothing yet', 'Nothing on the table yet.');
+--- a/src/app/(dashboard)/league/[leagueId]/inbox/InboxClient.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/inbox/InboxClient.tsx
+@@ -271,8 +271,8 @@
+           </h2>
+           <p className={styles.emptyDesc}>
+             {filter === 'unread'
+-              ? 'You have catch up on all events! Switch back to "All Alerts" to review historical ledger logs.'
+-              : 'There are no active notifications for your manager profile in this league yet.'}
++              ? 'You’re all caught up. Switch to All Alerts to see earlier events.'
++              : 'You have no notifications in this league yet.'}
+           </p>
+         </div>
+       )}
+--- a/src/app/(dashboard)/league/[leagueId]/team/roster/SquadViews.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/team/roster/SquadViews.tsx
+@@ -428,7 +428,7 @@
+         <span className={styles.pitchFootNote}>
+           {includeSidelined
+             ? 'Showing squad strength as if everyone were fit and eligible.'
+-            : 'Showing only players who can actually be fielded this week.'}
++            : 'Showing only players you can field this week.'}
+         </span>
+       </div>
+     </section>
+--- a/src/components/auth/AuthShowcase.tsx
++++ b/src/components/auth/AuthShowcase.tsx
+@@ -131,7 +131,7 @@
+   {
+     eyebrow: 'Scoring Engine',
+     title: 'Every action, precisely valued.',
+-    desc: 'Our scoring engine values actual on-pitch contributions — not arbitrary points. Flip any premium card to view real game logs, form ratings, and granular match statistics.',
++    desc: 'Gaffa scores what a player does on the pitch, not an arbitrary points table. Flip any premium card to view real game logs, form ratings, and granular match statistics.',
+     visual: <ScoutingDeckVisual />
+   },
+   {
+--- a/src/lib/email/templates.ts
++++ b/src/lib/email/templates.ts
+@@ -143,7 +143,7 @@
+   } else if (count === 1 && top) {
+     preamble = `A new high-profile signing has entered the Premier League. <strong>${top.name}</strong> (€${top.value}m) is now available on the open market.`;
+   } else {
+-    preamble = `The transfer market is heating up. <strong>${count} marquee signings</strong> (€${thresholdM}m+ valuation) have just been posted to the auction board.`;
++    preamble = `The transfer market is heating up. <strong>${count} marquee signings</strong> (€${thresholdM}m+ valuation) are on the auction board.`;
+   }
+ 
+   const standard = players.filter((p) => getValueTier(p.value) === 'standard');
+@@ -245,7 +245,7 @@
+     <p style="font-family: ${FONT_SERIF}; font-size: 1.2em; margin-top: 0; color: ${INK};">${lead}</p>
+     <a href="${leagueUrl}/team" class="button">View Your Team</a>
+   `;
+-  return baseTemplate('Player Sold!', body);
++  return baseTemplate('Player Sold', body);
+ };
+ 
+ export const getDraftStartedEmail = (leagueName: string, draftUrl: string) => {
+@@ -258,7 +258,7 @@
+     </div>
+     <p>Good luck, and may your scouting pay off.</p>
+   `;
+-  return baseTemplate('The Draft is Starting!', body);
++  return baseTemplate('The Draft Is Starting', body);
+ };
+ 
+ export const getMatchweekSummaryEmail = (
+--- a/src/app/(dashboard)/league/[leagueId]/draft/DraftRoom.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/draft/DraftRoom.tsx
+@@ -604,11 +604,11 @@
+ 
+       if (remain === 0 && isMyTurn && !autoPickTriggeredRef.current) {
+         if (league.name?.toLowerCase().includes('demo') || league.name?.toLowerCase().includes('test')) {
+-          setPickError('Timer expired! (Auto-pick disabled for Demo/Test leagues)');
++          setPickError('Time expired. Auto-pick is off in demo and test leagues.');
+           return;
+         }
+         autoPickTriggeredRef.current = true;
+-        setPickError('Time expired! Auto-picking...');
++        setPickError('Time expired. Auto-picking…');
+         fetch(`/api/leagues/${leagueId}/draft/auto-pick`, { method: 'POST' })
+           .then(() => router.refresh())
+           .catch(console.error);
+@@ -861,7 +861,7 @@
+       if (json.status === 'active') router.refresh();
+     } catch {
+       setOptimisticPick(null);
+-      setPickError('Network error. Please try again.');
++      setPickError('Network error. Try again.');
+       setLoadingPick(false);
+       pickInFlightRef.current = false;
+     }
+--- a/src/app/(auth)/login/page.tsx
++++ b/src/app/(auth)/login/page.tsx
+@@ -20,7 +20,7 @@
+   const isEnvMissing = !supabaseUrl.startsWith('http') || !supabaseKey;
+ 
+   const error = isEnvMissing
+-    ? 'Supabase environment variables are missing in Vercel. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your Vercel project settings.'
++    ? 'Supabase environment variables are missing in Vercel. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your Vercel project settings.'
+     : errorParam;
+ 
+   const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
+--- a/src/app/api/leagues/[leagueId]/auctions/bid/route.ts
++++ b/src/app/api/leagues/[leagueId]/auctions/bid/route.ts
+@@ -91,7 +91,7 @@
+     .eq('status', 'ir');
+ 
+   if (illegalIr?.some(e => (e.player as unknown as { fpl_status: string } | null)?.fpl_status === 'a')) {
+-    return NextResponse.json({ error: 'Cannot place a bid while you have a healthy player occupying an IR slot. Please activate them first.' }, { status: 400 });
++    return NextResponse.json({ error: 'You can’t bid while a healthy player is on IR. Activate him first.' }, { status: 400 });
+   }
+ 
+   // League settings for roster/academy validations
+--- a/src/app/api/leagues/[leagueId]/trades/route.ts
++++ b/src/app/api/leagues/[leagueId]/trades/route.ts
+@@ -212,7 +212,7 @@
+     .eq('status', 'ir');
+ 
+   if (illegalIr?.some(e => (e.player as unknown as { fpl_status: string | null })?.fpl_status === 'a')) {
+-    return NextResponse.json({ error: 'Cannot propose trades while you have a healthy player occupying an IR slot. Please activate them first.' }, { status: 400 });
++    return NextResponse.json({ error: 'You can’t propose a trade while a healthy player is on IR. Activate him first.' }, { status: 400 });
+   }
+ 
+   // Verify target team is in this league
+@@ -246,7 +246,7 @@
+       return NextResponse.json({ error: 'One or more offered players are not on your roster' }, { status: 400 });
+     }
+     if ((myPlayers ?? []).some((e) => e.status === 'loan_in' || e.status === 'loan_out')) {
+-      return NextResponse.json({ error: 'One or more offered players are currently out on loan and cannot be traded' }, { status: 400 });
++      return NextResponse.json({ error: 'One or more offered players are out on loan and can’t be traded' }, { status: 400 });
+     }
+   }
+ 
+@@ -262,7 +262,7 @@
+       return NextResponse.json({ error: 'One or more requested players are not on the target team roster' }, { status: 400 });
+     }
+     if ((theirPlayers ?? []).some((e) => e.status === 'loan_in' || e.status === 'loan_out')) {
+-      return NextResponse.json({ error: 'One or more requested players are currently out on loan and cannot be traded' }, { status: 400 });
++      return NextResponse.json({ error: 'One or more requested players are out on loan and can’t be traded' }, { status: 400 });
+     }
+   }
+ 
+--- a/src/app/api/leagues/[leagueId]/loans/route.ts
++++ b/src/app/api/leagues/[leagueId]/loans/route.ts
+@@ -470,7 +470,7 @@
+ 
+     if (loanFee === 0 && bonusCap === 0) {
+       return NextResponse.json({
+-        error: 'A performance bonus clause on a €0-fee loan is invalid because the bonus cap is calculated as 3x the loan fee (€0). Please set a loan fee of at least €1m or ask the commissioner to configure a default flat cap.'
++        error: 'A performance bonus clause on a €0-fee loan is invalid because the bonus cap is calculated as 3x the loan fee (€0). Set a loan fee of at least €1m or ask the commissioner to configure a default flat cap.'
+       }, { status: 400 });
+     }
+   }
+--- a/src/app/(dashboard)/league/[leagueId]/PreDraftLobby.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/PreDraftLobby.tsx
+@@ -288,7 +288,7 @@
+           </h2>
+           <p className={styles.ctaDesc}>
+             {isActive
+-              ? 'Picks are being made in real time. Enter the draft room now to make selections, set your queue, and configure scouting lists!'
++              ? 'Picks are being made in real time. Enter the draft room now to make selections, set your queue, and configure scouting lists.'
+               : league.draft_scheduled_at
+               ? 'The countdown has begun. Research players, configure your queue, and prepare your draft room. Kickoff is automated.'
+               : 'Join the League lobby, customize your club credentials, and review the drafting pool. Once the commissioner randomizes the picks and launches the draft, the entry gate will open.'}
+--- a/src/app/(dashboard)/league/[leagueId]/SidebarChat.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/SidebarChat.tsx
+@@ -216,7 +216,7 @@
+           <div className={styles.emptyState}>
+             <div className={styles.emptyTitle}>Lobby is quiet</div>
+             <p className={styles.emptyDesc}>
+-              Banter, draft strategies, or announcements start right here. Write the first message!
++              Banter, draft strategies, or announcements start right here. Write the first message.
+             </p>
+           </div>
+         )}
+--- a/src/app/(dashboard)/league/[leagueId]/trades/TradesClient.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/trades/TradesClient.tsx
+@@ -383,7 +383,7 @@
+       if (!res.ok) {
+         setActionError((prev) => ({ ...prev, [loanId]: data.error ?? 'Something went wrong.' }));
+       } else {
+-        let msg = `Loan recalled! Penalty paid: €${data.penalty}m.`;
++        let msg = `Loan recalled. Penalty paid: €${data.penalty}m.`;
+         if (data.bonusPaid > 0) msg += ` Bonus paid: €${data.bonusPaid}m.`;
+         if (data.pendingActivation) msg += ` Player returning — roster full (pending drop).`;
+         setProposeSuccess(msg);
+@@ -409,7 +409,7 @@
+       if (!res.ok) {
+         setActionError((prev) => ({ ...prev, [loanId]: data.error ?? 'Something went wrong.' }));
+       } else {
+-        setProposeSuccess(`Slot buyback activated! Paid €${data.feePaid}m.`);
++        setProposeSuccess(`Slot buyback activated. Paid €${data.feePaid}m.`);
+         await refreshLoans();
+       }
+     } catch {
+@@ -931,7 +931,7 @@
+ 
+           {listings.length === 0 ? (
+             <div className={styles.emptyState}>
+-              <p>No players are currently listed on the market.</p>
++              <p>No players are on the market.</p>
+               <button className={styles.proposeBtn} onClick={() => setShowListModal(true)}>
+                 List your players
+               </button>
+@@ -1219,7 +1219,7 @@
+           totalGameweeks={leagueSettings.total_gameweeks}
+           onClose={() => setShowRequestLoanModal(false)}
+           onRequested={async () => {
+-            setProposeSuccess('Loan request sent! They will be notified to review your terms.');
++            setProposeSuccess('Loan request sent. They’ll get a notification to review your terms.');
+             await refreshLoans();
+           }}
+         />
+--- a/src/lib/notifications/valueTiers.ts
++++ b/src/lib/notifications/valueTiers.ts
+@@ -134,10 +134,10 @@
+   const status = opensLabel
+     ? `Bidding opens ${opensLabel}.`
+     : timeLeftLabel === 'closing now'
+-      ? 'Closing now!'
++      ? 'Closing now.'
+       : window
+-        ? `On the market now! ${window} to bid.`
+-        : 'On the market now!';
++        ? `On the market now. ${window} to bid.`
++        : 'On the market now.';
+   const move = top.club ? `${top.name} to ${top.club}` : top.name;
+   const alsoLong = others > 0 ? ` Plus ${others} other arrival${others === 1 ? '' : 's'}.` : '';
+   const tier = getValueTier(top.value);
+--- a/src/lib/notifications/copy.ts
++++ b/src/lib/notifications/copy.ts
+@@ -206,7 +206,7 @@
+       title: `ADVANCING: ${abbr} closing in on ${playerName}`,
+       pushTitle: `ADVANCING: ${playerName} · ${abbr}`,
+       content: `**BREAKING:** **${name}** are in advanced stages to complete a marquee deal for **${playerName}** (**${euro(amount)}**). ${left ? `${left} on the open market` : 'Final hours'} before the agreement is sealed.`,
+-      pushBody: `ADVANCING: ${playerName} to ${abbr} (${euro(amount)}). ${timeClause}!`,
++      pushBody: `ADVANCING: ${playerName} to ${abbr} (${euro(amount)}). ${timeClause}.`,
+     };
+   }
+ 
+@@ -215,7 +215,7 @@
+       title: `Closing in: ${abbr} on verge of ${playerName}`,
+       pushTitle: `Closing in: ${playerName} · ${abbr}`,
+       content: `**${name}** are closing in on a blockbuster agreement for **${playerName}** at **${euro(amount)}**. ${left ? `${left} to submit` : 'Final hours to submit'} a competing offer.`,
+-      pushBody: `Closing in: ${abbr} lead for ${playerName} at ${euro(amount)}. ${timeClause}!`,
++      pushBody: `Closing in: ${abbr} lead for ${playerName} at ${euro(amount)}. ${timeClause}.`,
+     };
+   }
+ 
+--- a/src/lib/roster/executeDrop.ts
++++ b/src/lib/roster/executeDrop.ts
+@@ -282,7 +282,7 @@
+ 
+                     await admin.from('chat_messages').insert({
+                         league_id: team.league_id,
+-                        message: `📢 [SYSTEM:ANNOUNCEMENT] Returned loan activated! **${(pendingLoan.player as any)?.name}** has returned to the ${spot} of **${team.team_name}**.`,
++                        message: `📢 [SYSTEM:ANNOUNCEMENT] Returned loan activated. **${(pendingLoan.player as any)?.name}** has returned to the ${spot} of **${team.team_name}**.`,
+                     });
+                 }
+             }
+--- a/src/app/(dashboard)/league/[leagueId]/team/PitchUI.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/team/PitchUI.tsx
+@@ -1065,7 +1065,7 @@
+             if (pid) benchPayload.push({ player_id: pid, slot });
+         }
+         if (benchPayload.length !== 4) {
+-            setSaveError(`Fill all 4 bench slots. Currently ${benchPayload.length}/4.`);
++            setSaveError(`Fill all 4 bench slots (${benchPayload.length}/4 filled).`);
+             return;
+         }
+         setSaving(true); setSaveError(null); setSaveSuccess(false);
+--- a/src/app/api/leagues/[leagueId]/draft/start/route.ts
++++ b/src/app/api/leagues/[leagueId]/draft/start/route.ts
+@@ -51,7 +51,7 @@
+     const isDemoOrTest = league.name?.toLowerCase().includes('demo') || league.name?.toLowerCase().includes('test');
+     if (!isDemoOrTest) {
+       return NextResponse.json(
+-        { error: `Leagues require at least 4 registered managers to start drafting. Currently only ${teams.length} teams have joined.` },
++        { error: `Leagues require at least 4 registered managers to start drafting. So far only ${teams.length} teams have joined.` },
+         { status: 400 }
+       );
+     }
+--- a/src/app/api/leagues/[leagueId]/listings/route.ts
++++ b/src/app/api/leagues/[leagueId]/listings/route.ts
+@@ -221,7 +221,7 @@
+   }
+ 
+   if (rosterEntry.status === 'loan_out') {
+-    return NextResponse.json({ error: 'Cannot list a player currently loaned out' }, { status: 400 });
++    return NextResponse.json({ error: 'You can’t list a player who’s out on loan' }, { status: 400 });
+   }
+ 
+   if (rosterEntry.status === 'loan_in') {
+--- a/src/app/api/teams/[teamId]/ir/route.ts
++++ b/src/app/api/teams/[teamId]/ir/route.ts
+@@ -65,7 +65,7 @@
+             return NextResponse.json({ error: 'Both players are already on IR' }, { status: 400 });
+         }
+         if (outgoingEntry.status !== 'ir') {
+-            return NextResponse.json({ error: 'Target player is not currently on IR' }, { status: 400 });
++            return NextResponse.json({ error: 'Target player isn’t on IR' }, { status: 400 });
+         }
+         if (incomingEntry.status === 'loan_in' || incomingEntry.status === 'loan_out') {
+             return NextResponse.json({ error: 'Cannot move loaned players to IR' }, { status: 400 });
+@@ -215,7 +215,7 @@
+     // Activate Action
+     if (action === 'activate') {
+         if (entry.status !== 'ir') {
+-            return NextResponse.json({ error: 'Player is not currently on IR' }, { status: 400 });
++            return NextResponse.json({ error: 'Player isn’t on IR' }, { status: 400 });
+         }
+ 
+         // Validate roster space. IR and taxi players don't count against the active roster limit.
+--- a/src/app/api/teams/[teamId]/taxi/route.ts
++++ b/src/app/api/teams/[teamId]/taxi/route.ts
+@@ -91,7 +91,7 @@
+             return NextResponse.json({ error: 'Both players are already in the academy' }, { status: 400 });
+         }
+         if (outgoingEntry.status !== 'taxi') {
+-            return NextResponse.json({ error: 'Target player is not currently in the academy' }, { status: 400 });
++            return NextResponse.json({ error: 'Target player isn’t in the academy' }, { status: 400 });
+         }
+         if (incomingEntry.status === 'ir') {
+             return NextResponse.json({ error: 'Player is on IR. Activate them first before moving to the academy.' }, { status: 400 });
+@@ -280,7 +280,7 @@
+ 
+     if (action === 'activate') {
+         if (entry.status !== 'taxi') {
+-            return NextResponse.json({ error: 'Player is not currently in the academy' }, { status: 400 });
++            return NextResponse.json({ error: 'Player isn’t in the academy' }, { status: 400 });
+         }
+ 
+         // Check active roster space (excludes IR, taxi, and loan_in)
+--- a/src/lib/departures/decisions.ts
++++ b/src/lib/departures/decisions.ts
+@@ -198,7 +198,7 @@
+   // Also how a player out on loan abroad is dropped. No severance: a normal drop
+   // charges it because it frees a squad place, and a loanee never held one.
+   if (decision.status !== 'retained' && decision.status !== 'on_loan') {
+-    throw new DepartureError('NOT_RETAINED', 'Those rights are not currently held.');
++    throw new DepartureError('NOT_RETAINED', 'You don’t hold those rights.');
+   }
+ 
+   const { error } = await admin
+--- a/src/app/api/teams/[teamId]/ir/__tests__/route.test.ts
++++ b/src/app/api/teams/[teamId]/ir/__tests__/route.test.ts
+@@ -223,7 +223,7 @@
+   it('refuses a player who is not on IR', async () => {
+     const res = await ir({ playerId: HEALTHY, action: 'activate' });
+     expect(res.status).toBe(400);
+-    expect(res.body.error).toBe('Player is not currently on IR');
++    expect(res.body.error).toBe('Player isn’t on IR');
+   });
+ 
+   it('refuses when the active roster has no room', async () => {
+@@ -285,7 +285,7 @@
+     setup();
+     const res = await ir({ playerId: INJURED, action: 'swap', swapWithPlayerId: HEALTHY });
+     expect(res.status).toBe(400);
+-    expect(res.body.error).toBe('Target player is not currently on IR');
++    expect(res.body.error).toBe('Target player isn’t on IR');
+   });
+ 
+   it('refuses when both are already on IR', async () => {
+--- a/src/lib/notifications/__tests__/valueTiers.test.ts
++++ b/src/lib/notifications/__tests__/valueTiers.test.ts
+@@ -8,8 +8,8 @@
+     const c = buildArrivalNotification([BARCOLA], '3d left');
+     expect(c.title).toBe('Blockbuster Signing: Bradley Barcola');
+     expect(c.pushTitle).toBe('Blockbuster: Bradley Barcola');
+-    expect(c.content).toBe('**Bradley Barcola to Liverpool** — On the market now! 3 days to bid.');
+-    expect(c.pushBody).toBe('Bradley Barcola to Liverpool. On the market now! 3 days to bid.');
++    expect(c.content).toBe('**Bradley Barcola to Liverpool** — On the market now. 3 days to bid.');
++    expect(c.pushBody).toBe('Bradley Barcola to Liverpool. On the market now. 3 days to bid.');
+   });
+ 
+   /** The old copy opened on a count and the push never named anybody. */
+@@ -42,7 +42,7 @@
+   it('names the player at standard tier too', () => {
+     const c = buildArrivalNotification([{ name: 'Milos Kerkez', value: 45, club: 'Bournemouth' }], '12h left');
+     expect(c.title).toBe('Milos Kerkez is on the market');
+-    expect(c.pushBody).toBe('Milos Kerkez to Bournemouth. On the market now! 12 hours to bid.');
++    expect(c.pushBody).toBe('Milos Kerkez to Bournemouth. On the market now. 12 hours to bid.');
+   });
+ 
+   it('leads on the biggest of a standard batch', () => {
+@@ -51,13 +51,13 @@
+       '1d left',
+     );
+     expect(c.title).toBe('B and 1 more on the market');
+-    expect(c.pushBody).toBe('B to Leeds, plus 1 more. On the market now! 1 day to bid.');
++    expect(c.pushBody).toBe('B to Leeds, plus 1 more. On the market now. 1 day to bid.');
+   });
+ 
+   it('handles closing now, a missing clock, and a missing club', () => {
+-    expect(buildArrivalNotification([BARCOLA], 'closing now').pushBody).toBe('Bradley Barcola to Liverpool. Closing now!');
+-    expect(buildArrivalNotification([BARCOLA], null).pushBody).toBe('Bradley Barcola to Liverpool. On the market now!');
+-    expect(buildArrivalNotification([{ name: 'No Club', value: 90 }], '3d left').pushBody).toBe('No Club. On the market now! 3 days to bid.');
++    expect(buildArrivalNotification([BARCOLA], 'closing now').pushBody).toBe('Bradley Barcola to Liverpool. Closing now.');
++    expect(buildArrivalNotification([BARCOLA], null).pushBody).toBe('Bradley Barcola to Liverpool. On the market now.');
++    expect(buildArrivalNotification([{ name: 'No Club', value: 90 }], '3d left').pushBody).toBe('No Club. On the market now. 3 days to bid.');
+   });
+ 
+   it('spells the window rather than abbreviating it', () => {
+@@ -78,7 +78,7 @@
+ 
+   it('quotes the bidding window once the lot is already open', () => {
+     const c = buildArrivalNotification([BARCOLA], '3d left', null);
+-    expect(c.pushBody).toBe('Bradley Barcola to Liverpool. On the market now! 3 days to bid.');
++    expect(c.pushBody).toBe('Bradley Barcola to Liverpool. On the market now. 3 days to bid.');
+   });
+ 
+   it('does not throw on an empty batch', () => {
+--- a/src/lib/notifications/__tests__/copy.test.ts
++++ b/src/lib/notifications/__tests__/copy.test.ts
+@@ -164,7 +164,7 @@
+       expect(n.pushTitle).toBe('ADVANCING: Kylian Mbappé · VDP');
+       expect(n.content).toContain('**BREAKING:** **Vardy Party** are in advanced stages');
+       expect(n.content).toContain('(**€110m**)');
+-      expect(n.pushBody).toBe('ADVANCING: Kylian Mbappé to VDP (€110m). 2h left to bid!');
++      expect(n.pushBody).toBe('ADVANCING: Kylian Mbappé to VDP (€110m). 2h left to bid.');
+     });
+ 
+     it('generates blockbuster alert for 80m+ deals', () => {
+@@ -172,14 +172,14 @@
+       expect(n.title).toBe('Closing in: VDP on verge of Cole Palmer');
+       expect(n.pushTitle).toBe('Closing in: Cole Palmer · VDP');
+       expect(n.content).toContain('blockbuster agreement');
+-      expect(n.pushBody).toBe('Closing in: VDP lead for Cole Palmer at €85m. 2h left to bid!');
++      expect(n.pushBody).toBe('Closing in: VDP lead for Cole Palmer at €85m. 2h left to bid.');
+     });
+ 
+     it('generates standard countdown for regular deals', () => {
+       const n = closingInNotice(vdp, 'Alex Iwobi', 25, 20, in2h);
+       expect(n.title).toBe('VDP closing in on Alex Iwobi');
+       expect(n.content).toContain('lead the race for **Alex Iwobi** at **€25m**');
+-      expect(n.pushBody).toBe('Closing in: VDP lead for Alex Iwobi at €25m. 2h left to bid!');
++      expect(n.pushBody).toBe('Closing in: VDP lead for Alex Iwobi at €25m. 2h left to bid.');
+     });
+   });
+ 
+--- a/src/app/api/leagues/[leagueId]/trades/__tests__/route.test.ts
++++ b/src/app/api/leagues/[leagueId]/trades/__tests__/route.test.ts
+@@ -167,7 +167,7 @@
+     });
+     const res = await propose(deal());
+     expect(res.status).toBe(400);
+-    expect(res.body.error).toMatch(/healthy player occupying an IR slot/);
++    expect(res.body.error).toMatch(/healthy player is on IR/);
+   });
+ 
+   it('allows it when the player on IR is injured', async () => {
+@@ -203,10 +203,10 @@
+ 
+   it('refuses a player who is out on loan on either side', async () => {
+     setup((t) => { t.roster_entries.find((e) => e.player_id === MINE)!.status = 'loan_out'; });
+-    expect((await propose(deal())).body.error).toMatch(/offered players are currently out on loan/);
++    expect((await propose(deal())).body.error).toMatch(/offered players are out on loan/);
+ 
+     setup((t) => { t.roster_entries.find((e) => e.player_id === THEIRS)!.status = 'loan_in'; });
+-    expect((await propose(deal())).body.error).toMatch(/requested players are currently out on loan/);
++    expect((await propose(deal())).body.error).toMatch(/requested players are out on loan/);
+   });
+ 
+   it('refuses any player whose auction is live, and names him', async () => {
+--- a/src/app/api/leagues/[leagueId]/auctions/bid/__tests__/route.test.ts
++++ b/src/app/api/leagues/[leagueId]/auctions/bid/__tests__/route.test.ts
+@@ -122,7 +122,7 @@
+ 
+     const res = await bid({ playerId: PLAYER_ID, bidAmount: 30 });
+     expect(res.status).toBe(400);
+-    expect(res.body.error).toMatch(/healthy player occupying an IR slot/);
++    expect(res.body.error).toMatch(/healthy player is on IR/);
+   });
+ 
+   it('allows bidding when the player on IR is actually injured', async () => {
+@@ -577,7 +577,7 @@
+     });
+     const res = await listingBid();
+     expect(res.status).toBe(400);
+-    expect(res.body.error).toMatch(/healthy player occupying an IR slot/);
++    expect(res.body.error).toMatch(/healthy player is on IR/);
+   });
+ 
+   it('refuses a manager who took compensation for this player', async () => {

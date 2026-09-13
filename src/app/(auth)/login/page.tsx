@@ -20,7 +20,7 @@ function LoginCard() {
   const isEnvMissing = !supabaseUrl.startsWith('http') || !supabaseKey;
 
   const error = isEnvMissing
-    ? 'Supabase environment variables are missing in Vercel. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your Vercel project settings.'
+    ? 'Supabase environment variables are missing in Vercel. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your Vercel project settings.'
     : errorParam;
 
   const handleOAuthSignIn = async (provider: 'google' | 'apple') => {

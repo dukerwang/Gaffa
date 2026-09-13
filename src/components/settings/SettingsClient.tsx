@@ -103,7 +103,7 @@ export default function SettingsClient({
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Notifications</h2>
         <p className={styles.sectionHint}>
-          In-game mail always arrives. Push and email follow the switches below.
+          You always get in-game mail. Use the switches below to turn push and email on or off.
         </p>
         <div className={styles.panel}>
           <div className={styles.deviceBlock}>

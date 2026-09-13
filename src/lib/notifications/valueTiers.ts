@@ -134,10 +134,10 @@ export function buildArrivalNotification(
   const status = opensLabel
     ? `Bidding opens ${opensLabel}.`
     : timeLeftLabel === 'closing now'
-      ? 'Closing now!'
+      ? 'Closing now.'
       : window
-        ? `On the market now! ${window} to bid.`
-        : 'On the market now!';
+        ? `On the market now. ${window} to bid.`
+        : 'On the market now.';
   const move = top.club ? `${top.name} to ${top.club}` : top.name;
   const alsoLong = others > 0 ? ` Plus ${others} other arrival${others === 1 ? '' : 's'}.` : '';
   const tier = getValueTier(top.value);
