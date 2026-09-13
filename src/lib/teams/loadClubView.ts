@@ -192,8 +192,73 @@ export async function loadClubView(
     retained_slots: number | null;
   };
 
-  const currentFpl = await getCurrentFplSeason();
-  const kickedOff = await isFplSeasonKickedOff();
+  // Every read below that needs only the league, this club or FPL starts here,
+  // together, and is collected where the code has always used it. Nothing in
+  // between reads their results, so this changes when they run, not what they
+  // see. They used to run one after another: about fourteen round trips.
+  const currentGwRead = resolveCurrentGw();
+  const statsSeasonRead = getCurrentFplSeason(undefined, true);
+  const rosterRead = Promise.resolve(
+    admin
+      .from('roster_entries')
+      .select(
+        `
+      id, team_id, player_id, status, acquisition_type, acquisition_value, acquired_at,
+      player:players(${FULL_PLAYER_SELECT})
+    `,
+      )
+      .eq('team_id', team.id)
+      .order('status', { ascending: true }),
+  );
+  const listingsRead = Promise.resolve(
+    admin
+      .from('player_sale_listings')
+      .select(
+        `id, player_id, status, min_bid, ask_price, buy_now_price,
+         open_to_trade, open_to_sale, open_to_loan, auction_expires_at,
+         created_at, updated_at`,
+      )
+      .eq('league_id', leagueId)
+      .in('status', ['pending', 'active']),
+  );
+  // PRIVATE: a pending drop is an intention, not a transaction — it says
+  // "I am about to cut this player" before anyone has been cut. Surfacing it
+  // on a rival's page would leak the manager's hand.
+  const pendingDropsRead = viewerIsOwner
+    ? Promise.resolve(admin.from('pending_drops').select('player_id').eq('team_id', team.id))
+    : Promise.resolve({ data: [] as never[] });
+  const standingsRead = Promise.all([
+    admin
+      .from('league_standings')
+      .select('team_id, team_name, username, rank, wins, draws, losses, league_points, points_for')
+      .eq('league_id', leagueId),
+    admin.from('teams').select('id, team_name, user_id, crest_config').eq('league_id', leagueId),
+  ]);
+  // Failures here must not vanish silently — an empty Retained List reads as
+  // "you hold no rights", not "this query broke". Log for diagnosis and carry
+  // an error flag through so the UI can tell the manager the difference.
+  const decisionsRead = listDecisions(admin, leagueId, {
+    statuses: [...new Set([...OPEN_STATUSES, ...RIGHTS_HELD_STATUSES])],
+  }).then(
+    (data) => ({ ok: true as const, data }),
+    (err) => {
+      console.error('[club-view] Failed to load departure decisions:', err);
+      return { ok: false as const, data: [] };
+    },
+  );
+  const slotsRead = getSlotUsage(admin, leagueId, team.id).then(
+    (data) => ({ ok: true as const, data }),
+    (err) => {
+      console.error('[club-view] Failed to load retained slot usage:', err);
+      return { ok: false as const, data: { used: 0, total: 0, remaining: 0 } };
+    },
+  );
+  const honoursRead = getClubHonours(admin, leagueId, [team.id]);
+  // Awaited at the end, where a failure still throws; marked handled so it
+  // cannot surface as an unhandled rejection while earlier awaits are pending.
+  honoursRead.catch(() => {});
+
+  const [currentFpl, kickedOff] = await Promise.all([getCurrentFplSeason(), isFplSeasonKickedOff()]);
   // Preseason club card must show the completed stats season (2025-26), not
   // a stale previous_season default (2024-25) or the empty upcoming year.
   let season = league.current_season ?? league.season ?? currentFpl;
@@ -202,16 +267,7 @@ export async function loadClubView(
   }
 
   // ── Roster + player data ────────────────────────────────────────────────────
-  const { data: rosterRaw } = await admin
-    .from('roster_entries')
-    .select(
-      `
-      id, team_id, player_id, status, acquisition_type, acquisition_value, acquired_at,
-      player:players(${FULL_PLAYER_SELECT})
-    `,
-    )
-    .eq('team_id', team.id)
-    .order('status', { ascending: true });
+  const { data: rosterRaw } = await rosterRead;
 
   const rosterEntries = (rosterRaw ?? []) as unknown as {
     id: string;
@@ -228,11 +284,14 @@ export async function loadClubView(
 
   // Rankings (a view — fetch separately, FILTERED to this roster) + archive overlay,
   // listings, pending drops, last-5 form, all in parallel.
-  const currentGw = await resolveCurrentGw();
+  const [currentGw, statsSeason] = await Promise.all([currentGwRead, statsSeasonRead]);
   const formFrom = Math.max(1, currentGw - 4);
   // player_stats keeps every past season's rows uncleared, and gameweek numbers
   // repeat every season — the form/gameweek window must be season-scoped too.
-  const statsSeason = await getCurrentFplSeason(undefined, true);
+
+  // The lineup editor's target needs only the club and the gameweek; it runs
+  // alongside the roster-scoped reads and is collected below.
+  const editMatchupRead = resolveLineupEditMatchup(admin, team.id, currentGw);
 
   const [
     { data: rankings },
@@ -252,21 +311,8 @@ export async function loadClubView(
           .eq('season', season)
           .in('player_id', rosterIds)
       : Promise.resolve({ data: [] as never[] }),
-    admin
-      .from('player_sale_listings')
-      .select(
-        `id, player_id, status, min_bid, ask_price, buy_now_price,
-         open_to_trade, open_to_sale, open_to_loan, auction_expires_at,
-         created_at, updated_at`,
-      )
-      .eq('league_id', leagueId)
-      .in('status', ['pending', 'active']),
-    // PRIVATE: a pending drop is an intention, not a transaction — it says
-    // "I am about to cut this player" before anyone has been cut. Surfacing it
-    // on a rival's page would leak the manager's hand.
-    viewerIsOwner
-      ? admin.from('pending_drops').select('player_id').eq('team_id', team.id)
-      : Promise.resolve({ data: [] as never[] }),
+    listingsRead,
+    pendingDropsRead,
     rosterIds.length && currentGw > 0
       ? admin
           .from('player_stats')
@@ -341,7 +387,7 @@ export async function loadClubView(
   // Match the editor's target first. If that matchup has not yet been saved,
   // keep the most recently saved valid lineup visible instead of showing an
   // apparently broken empty state between gameweeks.
-  const editMatchup = await resolveLineupEditMatchup(admin, team.id, currentGw);
+  const editMatchup = await editMatchupRead;
   const lineupFrom = (row: { team_a_id: string; lineup_a: MatchupLineup | null; lineup_b: MatchupLineup | null }) =>
     normalizeMatchupLineup(row.team_a_id === team.id ? row.lineup_a : row.lineup_b);
   let savedLineup = editMatchup
@@ -373,13 +419,7 @@ export async function loadClubView(
   }
 
   // ── Standings (rank, record, points-for) + the league's other clubs ─────────
-  const [{ data: standingsRows }, { data: leagueTeams }] = await Promise.all([
-    admin
-      .from('league_standings')
-      .select('team_id, team_name, username, rank, wins, draws, losses, league_points, points_for')
-      .eq('league_id', leagueId),
-    admin.from('teams').select('id, team_name, user_id, crest_config').eq('league_id', leagueId),
-  ]);
+  const [{ data: standingsRows }, { data: leagueTeams }] = await standingsRead;
 
   const rows = standingsRows ?? [];
   const mine = rows.find((r: any) => r.team_id === team.id) as any;
@@ -415,38 +455,29 @@ export async function loadClubView(
   };
 
   // ── Departures / Retained List ───────────────────────────────────────────────
-  // Failures here must not vanish silently — an empty Retained List reads as
-  // "you hold no rights", not "this query broke". Log for diagnosis and carry
-  // an error flag through so the UI can tell the manager the difference.
-  const decisionsResult = await listDecisions(admin, leagueId, {
-    statuses: [...new Set([...OPEN_STATUSES, ...RIGHTS_HELD_STATUSES])],
-  }).then(
-    (data) => ({ ok: true as const, data }),
-    (err) => {
-      console.error('[club-view] Failed to load departure decisions:', err);
-      return { ok: false as const, data: [] };
-    },
-  );
+  // Started at the top with the error handling described there.
+  const decisionsResult = await decisionsRead;
   const decisions = decisionsResult.data;
 
   const teamDecisions = decisions.filter((d: any) => d.team_id === team.id);
   const depPlayerIds = [...new Set(teamDecisions.map((d: any) => d.player_id))];
 
-  const { data: depPlayers } = depPlayerIds.length
-    ? await admin
-        .from('players')
-        .select('id, name, web_name, pl_team, primary_position, photo_url')
-        .in('id', depPlayerIds)
-    : { data: [] as any[] };
+  // The departed players, and their last PL club keyed on the season they
+  // left: two reads over the same ids, so one wave.
+  const [{ data: depPlayers }, { data: seasonClubs }] = depPlayerIds.length
+    ? await Promise.all([
+        admin
+          .from('players')
+          .select('id, name, web_name, pl_team, primary_position, photo_url')
+          .in('id', depPlayerIds),
+        admin
+          .from('player_season_clubs')
+          .select('player_id, season, club_slug')
+          .in('player_id', depPlayerIds),
+      ])
+    : [{ data: [] as any[] }, { data: [] as any[] }];
   const depPlayerById = new Map((depPlayers ?? []).map((p: any) => [p.id, p]));
 
-  // Last PL club per departed player, keyed on the season they left.
-  const { data: seasonClubs } = depPlayerIds.length
-    ? await admin
-        .from('player_season_clubs')
-        .select('player_id, season, club_slug')
-        .in('player_id', depPlayerIds)
-    : { data: [] as any[] };
   const clubByPlayerSeason = new Map(
     (seasonClubs ?? []).map((r: any) => [`${r.player_id}:${r.season}`, r.club_slug]),
   );
@@ -476,13 +507,7 @@ export async function loadClubView(
     };
   };
 
-  const slotsResult = await getSlotUsage(admin, leagueId, team.id).then(
-    (data) => ({ ok: true as const, data }),
-    (err) => {
-      console.error('[club-view] Failed to load retained slot usage:', err);
-      return { ok: false as const, data: { used: 0, total: 0, remaining: 0 } };
-    },
-  );
+  const slotsResult = await slotsRead;
 
   const departures = {
     // PRIVATE: an open decision is a choice this manager has not made yet
@@ -494,7 +519,7 @@ export async function loadClubView(
     error: !decisionsResult.ok || !slotsResult.ok,
   };
 
-  const honoursByTeam = await getClubHonours(admin, leagueId, [team.id]);
+  const honoursByTeam = await honoursRead;
 
   return {
     leagueId,
