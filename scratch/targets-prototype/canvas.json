@@ -1,0 +1,35 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1180, "h": 1180, "title": "A — Sectioned Rows" },
+    { "file": "Table.dc.html", "x": 1300, "y": 0, "w": 1180, "h": 1030, "title": "B — One Flat Table" },
+    { "file": "Dark.dc.html", "x": 2600, "y": 0, "w": 1180, "h": 1180, "title": "A — Dark" },
+    { "file": "Editor.dc.html", "x": 0, "y": 1360, "w": 620, "h": 1060, "title": "Add a Target — Named" },
+    { "file": "EditorRole.dc.html", "x": 740, "y": 1360, "w": 620, "h": 990, "title": "Add a Target — Role" },
+    { "file": "Mobile.dc.html", "x": 1480, "y": 1360, "w": 390, "h": 2180, "title": "Mobile" },
+    { "file": "Listings.dc.html", "x": 1990, "y": 1360, "w": 660, "h": 300, "title": "Listings — The Demand Line" }
+  ],
+  "annotations": [
+    {
+      "id": "the-fork",
+      "x": 0,
+      "y": -360,
+      "w": 620,
+      "text": "A — Sectioned rows.\n\nOne rule decides the section: can you answer this target from your squad? Yes, and it sits under Wanted From You with buttons. No, and it sits on the board with none. The section and the buttons never disagree.\n\nThis squad has a spare left-back and a spare striker but no spare centre-back, which is why Bot FC's two requests are answerable and Vardy Party's centre-back is not.\n\nCosts about 150px of height over B. Buys the thing the old table lacked: on a flat board every row looks the same whether it concerns you or not."
+    },
+    {
+      "id": "the-other-fork",
+      "x": 1300,
+      "y": -360,
+      "w": 620,
+      "text": "B — One flat table.\n\nDenser, one bounded board, column heads, sorted however you pick. Row tint carries the only grouping: green for yours, warm for a target somebody has answered.\n\nTwo honest costs. The three rows that concern you sit at the top here only because the sample is ordered that way — under \"newest first\" they land wherever they land. And one column holds a club on most rows and an audience on your own, so its head has to read \"Who\" rather than \"Club\"."
+    },
+    {
+      "id": "visibility",
+      "x": 0,
+      "y": 1230,
+      "w": 620,
+      "text": "Who gets told — three rungs, and the middle one is new.\n\nOnly you · nobody sees it, nobody is told, you still get the alert.\nOnly Holloway Utd · the club that owns him is told, nobody else.\nVisible to the league · your club is named on the board beside him.\n\nA role target has no owner, so there is nobody to approach privately. That editor shows two rungs and says why.\n\nOn the board this takes no extra room. Under Your Targets the first column already held your own club name on every row, so it holds the audience instead. Everywhere else it stays blank unless the answer is something other than the league."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}
