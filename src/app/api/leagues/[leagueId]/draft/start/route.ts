@@ -51,7 +51,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     const isDemoOrTest = league.name?.toLowerCase().includes('demo') || league.name?.toLowerCase().includes('test');
     if (!isDemoOrTest) {
       return NextResponse.json(
-        { error: `Leagues require at least 4 registered managers to start drafting. Currently only ${teams.length} teams have joined.` },
+        { error: `Leagues require at least 4 registered managers to start drafting. So far only ${teams.length} teams have joined.` },
         { status: 400 }
       );
     }

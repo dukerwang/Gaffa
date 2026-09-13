@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { describeDeal } from '@/lib/transfers/describeDeal';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
+import { RIGHTS_HELD_STATUSES } from '@/lib/departures/types';
 
 interface Props {
   params: Promise<{ leagueId: string }>;
@@ -211,7 +212,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     .eq('status', 'ir');
 
   if (illegalIr?.some(e => (e.player as unknown as { fpl_status: string | null })?.fpl_status === 'a')) {
-    return NextResponse.json({ error: 'Cannot propose trades while you have a healthy player occupying an IR slot. Please activate them first.' }, { status: 400 });
+    return NextResponse.json({ error: 'You can’t propose a trade while a healthy player is on IR. Activate him first.' }, { status: 400 });
   }
 
   // Verify target team is in this league
@@ -245,7 +246,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       return NextResponse.json({ error: 'One or more offered players are not on your roster' }, { status: 400 });
     }
     if ((myPlayers ?? []).some((e) => e.status === 'loan_in' || e.status === 'loan_out')) {
-      return NextResponse.json({ error: 'One or more offered players are currently out on loan and cannot be traded' }, { status: 400 });
+      return NextResponse.json({ error: 'One or more offered players are out on loan and can’t be traded' }, { status: 400 });
     }
   }
 
@@ -261,7 +262,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       return NextResponse.json({ error: 'One or more requested players are not on the target team roster' }, { status: 400 });
     }
     if ((theirPlayers ?? []).some((e) => e.status === 'loan_in' || e.status === 'loan_out')) {
-      return NextResponse.json({ error: 'One or more requested players are currently out on loan and cannot be traded' }, { status: 400 });
+      return NextResponse.json({ error: 'One or more requested players are out on loan and can’t be traded' }, { status: 400 });
     }
   }
 
@@ -276,7 +277,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       .select('id')
       .eq('league_id', leagueId)
       .eq('team_id', holderTeamId)
-      .in('status', ['retained', 'return_pending'])
+      .in('status', RIGHTS_HELD_STATUSES)
       .in('id', rightIds);
 
     if ((rights ?? []).length !== rightIds.length) {

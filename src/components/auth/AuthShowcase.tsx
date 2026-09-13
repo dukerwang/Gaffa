@@ -131,7 +131,7 @@ const slides = [
   {
     eyebrow: 'Scoring Engine',
     title: 'Every action, precisely valued.',
-    desc: 'Our scoring engine values actual on-pitch contributions — not arbitrary points. Flip any premium card to view real game logs, form ratings, and granular match statistics.',
+    desc: 'Gaffa scores what a player does on the pitch, not an arbitrary points table. Flip any premium card to view real game logs, form ratings, and granular match statistics.',
     visual: <ScoutingDeckVisual />
   },
   {

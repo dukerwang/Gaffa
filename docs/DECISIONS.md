@@ -26,6 +26,27 @@ Do not paraphrase into something more decisive than what he said.
 
 ---
 
+## 2026-08-10 — Gaffa is not a newspaper
+
+**Don't frame design work in print or editorial terms.**
+> "keep in mind this is gaffa, the dynasty fantasy football platform, not a
+> newspaper. the focus should be on elegant and impressive aesthetics but also
+> ease of use."
+
+Two requirements, not a style: impressive to look at, easy to use. Football
+supplies the references when a visual move needs one — matchday, the crest, the
+score bug, the pitch, the twelve-position spine. Print references (mastheads,
+datelines, standfirsts, column measure) do not land.
+
+Recorded here on 2026-09-12, a month late. It had been sitting only in agent
+memory while `DESIGN.md`'s opening paragraph — agent-authored, tagged
+`[inferred]` — described Gaffa as a "European broadsheet sports journal". Two
+dashboard redesigns were built as newspapers off the back of that line before
+anyone checked it against this quote. The gap is exactly what this file exists
+to close: a decision that lives outside the repo does not defend itself.
+
+---
+
 ## 2026-08-22 — Design system revision
 
 **"One job per colour" is not binding.**
@@ -244,3 +265,128 @@ was inherited from the Google developer style guide rather than decided here.
 
 The rest of the Google style guidance in `CLAUDE.md` — active voice, no
 throat-clearing, no inanimate agency, prose over lists — is untouched by this.
+
+---
+
+## 2026-09-10 — Targets: role, direct visibility, and rows over cards
+
+**The `role` column stays as built, and "Roles" is the user-facing word.**
+
+Migration `155_target_role.sql` and `src/lib/transfers/targetRole.ts` added a
+required `role` (star / starter / bench / prospect) on profile targets, and
+renamed the concept from "profile" to "Roles" in the UI. Neither was in the
+approved spec — `docs/superpowers/specs/2026-09-04-targets-design.md` deliberates
+the word "profile" at length and rejects four alternatives. Asked whether to
+revert it, Duke chose:
+
+> "Keep it exactly as built"
+
+So the spec moves to match the code, not the other way round. A profile target
+is a **role target**; the two kinds are a **named target** and a **role**.
+
+**A third visibility: tell only the owner.**
+> "i don't know if it replaces "public", but if i want cole palmer for example,
+> wouldn't it make sense to have an option to only show/tell the owner of palmer
+> that you want him? since it could be a disadvantage to show other managers
+> your intentions."
+
+Additive, not a replacement. The ladder is now: **Only you** (nobody sees it,
+nobody is told) → **Only <the owning club>** (that club is told, nobody else) →
+**Visible to the league** (your club is named on the board, and the owner is
+told). A role target has no owner, so it keeps two rungs.
+
+Duke also rejected the first attempt at labelling this on the board:
+> "also, "only matchday militia" makes zero sense, every fuckin target/listing
+> is only in the league. i also don't like the indicators that show visiblity,
+> they take up space and fuck up the formatting"
+
+The resolution: no tag line. Under **Your Targets** the first column already
+carried your own club name on every row, so it carries the audience instead
+(an eye glyph plus "The league" / the club / "You only"). Everywhere else it
+stays blank unless the answer is something other than the league.
+
+**Target cards are out; the board is rows.**
+> "i think i'm going to have to retract the cards idea, i think it works for
+> listings because it's sort of like you're shopping/posting your own player,
+> but i think it starts to get confusing when you're posting a card for another
+> manager's player."
+
+A listing is an object you own and are putting up. A target is a sentence
+somebody else is saying. A card frames its subject as a thing you can take,
+which is wrong on another manager's player.
+
+**One rule decides which section a row lands in: can you answer it from your
+squad?** Duke caught the first draft applying this inconsistently:
+> "how is "starting left-back" wanted from me, but if "vardy party" asks for a
+> bench center-back that's somehow not "wanted from you""
+
+Yes → **Wanted From You**, with buttons. No → **The Board**, with none. The
+section and the buttons never disagree.
+
+---
+
+## 2026-09-10 — Transactions: scope, the position badge, and page headers
+
+**The page covers completed transactions only. Bids are not transactions.**
+> "since 'the wire' already covers so much of the economic and transfer stuff, i
+> want the new activity page to cover purely just transactions, like when a
+> player is signed, not whenever a new player gets bid for"
+
+Asked where standalone money rows go — solidarity, prizes, merit revenue,
+scout's fees — Duke chose to cut them entirely: a fee shows only as a property
+of a transaction, and `/finance` keeps the full ledger. He also chose grouping
+by calendar day over gameweek or transfer window, and a season selector that
+defaults to the current season.
+
+Implemented as `src/lib/transactions/buildRegister.ts` — a union of
+`transactions`, `trade_proposals` and `player_loans`, because the old page read
+`transactions` alone and its "Trades" filter could therefore never match
+anything.
+
+**There are two different things called The Wire, and only one keeps the name.**
+> "do you think there's a world we can replace 'the wire', in the home page at
+> least with an activity component? i do think the auction stuff like bidding is
+> important to know though..."
+
+The League Home rail called The Wire was already a transactions feed reading
+`transactions` directly; the one on `/transfers` is the live market ticker
+(bids, offers, listings). The home rail takes the page's name, the ticker keeps
+The Wire, and bidding stays on Transfers where the auctions are.
+
+**Nav and page are both "Transactions".**
+> "let's call it Transactions in the nav too."
+
+The route stays `/activity`; only the labels changed.
+
+**A position badge belongs in the sentence, not beside it.**
+> "i feel like the position badge should not be the kind of 'bullet' or
+> 'headline' on the left hand side of each transactions, if anything it should be
+> right in the title, like 'united... signed LW (badge) bradley barcola'."
+
+So the register has no left-hand marker column at all. The badge sits on the
+text baseline immediately before the player's name. Note this is NOT the
+`.g-namerow` case: that device is a flex row, and a flex line would stop the
+sentence wrapping.
+
+**Title-plus-figures page headers are the generic-HTML tell.**
+> "my only gripe is the header. i had the same issue in our lineups page
+> redesign, it seems a ton of pages in gaffa have this generic html header and
+> then a bunch of numbers on the right. gaffa should feel like a real app, not
+> some html page"
+
+This is about the `_home/home.module.css` `.mast` + `.figs` device — a 38px
+display title with read-only figures floated right — which League Home
+established and later pages copied. Offered three replacements, Duke chose the
+working bar: one bounded control bar where the season's counts ride ON the
+filters, plus search and the selects, and the totals in a divided strip along
+its foot. A number becomes something to press rather than only to read.
+
+He rejected deleting the page name along with it:
+> "A looks good, but i didn't say just take the page title out entirely... like
+> you can still say what page it is, just don't make it a generic h1 title or
+> something"
+
+The resolution: the name stays, demoted from heading to chrome — inside the bar,
+at control scale, ahead of a divider. Shipped on
+`activity/transactions.module.css`; `_home` and `team/roster` still carry the
+old device.

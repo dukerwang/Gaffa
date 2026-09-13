@@ -1065,7 +1065,7 @@ export default function PitchUI({
             if (pid) benchPayload.push({ player_id: pid, slot });
         }
         if (benchPayload.length !== 4) {
-            setSaveError(`Fill all 4 bench slots. Currently ${benchPayload.length}/4.`);
+            setSaveError(`Fill all 4 bench slots (${benchPayload.length}/4 filled).`);
             return;
         }
         setSaving(true); setSaveError(null); setSaveSuccess(false);

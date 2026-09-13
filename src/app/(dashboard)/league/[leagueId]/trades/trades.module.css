@@ -1109,78 +1109,7 @@
   }
 }
 
-/* ── AddToBlockModal ── */
-.modalOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(3px);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-.modalContent {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  width: 100%;
-  max-width: 560px;
-  max-height: 80vh;
-  max-height: 80dvh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-}
-
-.modalHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid var(--color-border-subtle);
-  position: sticky;
-  top: 0;
-  background: var(--color-bg-card);
-  z-index: 1;
-}
-
-.modalLabel {
-  font-family: var(--font-sans);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  display: block;
-  margin-bottom: 4px;
-}
-
-.modalTitle {
-  font-family: var(--font-serif);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0;
-}
-
-.modalClose {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  color: var(--color-text-muted);
-  padding: 4px;
-  line-height: 1;
-  transition: color 0.15s;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .modalClose:hover {
-    color: var(--color-text-primary);
-  }
-}
+/* ── Trade modals now use ResponsiveModal primitive ── */
 
 .modalHint {
   font-size: 13px;

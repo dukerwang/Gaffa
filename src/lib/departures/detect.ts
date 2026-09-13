@@ -9,9 +9,11 @@
  * status 'u'. This module only notices which of those are on a roster and
  * opens a decision for them.
  *
- * Safe to run repeatedly. The partial unique index on
- * (league_id, player_id) WHERE status IN ('pending','retained','return_pending')
- * is the real guard — this module filters first so a rerun is a no-op rather
+ * A player FPL reports as out on loan gets no decision. He is recorded as an
+ * `on_loan` right instead and taken off the roster (loanAbroad.ts).
+ *
+ * Safe to run repeatedly. The partial unique index on (league_id, player_id)
+ * over the open statuses (migration 160) is the real guard — this module filters first so a rerun is a no-op rather
  * than a burst of constraint violations.
  */
 
@@ -20,6 +22,8 @@ import { getDepartureCompensationRate } from '@/lib/transfers/compensation';
 import { createNotification } from '@/lib/notifications/createNotification';
 import { fetchFplElements, findStillInPl } from '@/lib/players/plPresence';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { findLoanAbroad } from './loanAbroad';
+import { getCurrentFplSeason } from '@/lib/season/currentSeason';
 import { MIDSEASON_DECISION_HOURS, OPEN_STATUSES, type DepartureDecision } from './types';
 
 export interface RecordedDeparture {
@@ -84,7 +88,7 @@ export async function recordDepartures(
 
   const { data: departed, error: playersErr } = await admin
     .from('players')
-    .select('id, name, full_name, sofifa_common_name, web_name, pl_team, market_value')
+    .select('id, name, full_name, sofifa_common_name, web_name, pl_team, market_value, fpl_id')
     .eq('is_active', false)
     .in('id', rosteredIds);
   if (playersErr) throw new Error(`Failed to load departed players: ${playersErr.message}`);
@@ -164,8 +168,17 @@ export async function recordDepartures(
     decide_by: string | null;
   }
 
+  interface LoanAbroadCandidate {
+    playerId: string;
+    playerName: string;
+    teamId: string;
+    marketValue: number;
+    club: string | null;
+  }
+
   const rows: DepartureDecisionRow[] = [];
   const recorded: RecordedDeparture[] = [];
+  const loans: LoanAbroadCandidate[] = [];
 
   for (const player of departed) {
     if (alreadyOpen.has(player.id)) continue;
@@ -177,6 +190,24 @@ export async function recordDepartures(
     if (!team) continue;
 
     const marketValue = Number(player.market_value ?? 0);
+
+    // Out on loan: no decision to make. He is held off the roster and comes
+    // back on his own (see loanAbroad.ts for why anything unclear falls through).
+    const loan = findLoanAbroad(
+      { fpl_id: (player.fpl_id as number | null) ?? null, name: (player.name ?? player.web_name ?? '') as string },
+      elements,
+    );
+    if (loan) {
+      loans.push({
+        playerId: player.id,
+        playerName: getPlayerDisplayName(player, 'full'),
+        teamId,
+        marketValue,
+        club: loan.club,
+      });
+      continue;
+    }
+
     const offer = Math.round(marketValue * rate * 100) / 100;
 
     rows.push({
@@ -203,9 +234,10 @@ export async function recordDepartures(
     });
   }
 
-  if (rows.length === 0) return [];
+  if (rows.length === 0 && loans.length === 0) return [];
 
-  // End any live loan on a departing player before opening the decision.
+  // End any live loan between managers on a departing player before touching
+  // his roster entry.
   //
   // The decision only ever touches the owner's roster entry, but a loaned
   // player has two — `loan_out` on the lender and `loan_in` on the borrower.
@@ -213,8 +245,11 @@ export async function recordDepartures(
   // the competition and can never score again, for the rest of the season.
   // This also flips the owner's entry back from `loan_out` to `bench`, so the
   // release/retain RPCs act on an ordinary owned row.
-  for (const row of rows) {
-    const playerId = row.player_id as string;
+  const departing = [
+    ...recorded.map((r) => ({ playerId: r.playerId, playerName: r.playerName })),
+    ...loans.map((l) => ({ playerId: l.playerId, playerName: l.playerName })),
+  ];
+  for (const { playerId, playerName } of departing) {
     try {
       const { data: loanResult, error: loanErr } = await admin.rpc('terminate_loan_on_departure_rpc', {
         p_league_id: leagueId,
@@ -229,13 +264,39 @@ export async function recordDepartures(
       // tell them, rather than letting a player quietly vanish off their team.
       const terminated = (loanResult as { terminated?: { borrower_team_id: string }[] } | null)?.terminated ?? [];
       for (const t of terminated) {
-        const record = recorded.find((r) => r.playerId === playerId);
-        await notifyLoanTermination(admin, leagueId, t.borrower_team_id, record?.playerName ?? 'A loaned player');
+        await notifyLoanTermination(admin, leagueId, t.borrower_team_id, playerName);
       }
     } catch (err) {
       console.error(`[departures] Loan termination threw for player ${playerId}:`, err);
     }
   }
+
+  if (loans.length > 0) {
+    const loanSeason = await getCurrentFplSeason();
+    for (const l of loans) {
+      const { data: decisionId, error: loanErr } = await admin.rpc('open_loan_abroad_rpc', {
+        p_league_id: leagueId,
+        p_team_id: l.teamId,
+        p_player_id: l.playerId,
+        p_season_from: opts.seasonFrom,
+        p_loan_season: loanSeason,
+        p_market_value: l.marketValue,
+        p_loan_club: l.club,
+      });
+      if (loanErr) {
+        console.error(`[departures] Failed to record loan abroad for player ${l.playerId}:`, loanErr.message);
+        continue;
+      }
+      // Null means another run already recorded him.
+      if (!decisionId) continue;
+      // Notified even when `notify` is false. That flag exists for Kickoff,
+      // which resolves a pending decision straight after opening it; a loanee
+      // is not resolved, he just leaves the squad, and the manager should know.
+      await notifyLoanAbroad(admin, leagueId, l.teamId, l.playerName, l.club);
+    }
+  }
+
+  if (rows.length === 0) return [];
 
   const { data: inserted, error: insertErr } = await admin
     .from('departure_decisions')
@@ -252,6 +313,33 @@ export async function recordDepartures(
   }
 
   return recorded;
+}
+
+async function notifyLoanAbroad(
+  admin: SupabaseClient,
+  leagueId: string,
+  teamId: string,
+  playerName: string,
+  club: string | null,
+): Promise<void> {
+  try {
+    const { data: team } = await admin.from('teams').select('user_id').eq('id', teamId).single();
+    if (!team?.user_id) return;
+
+    await createNotification(admin, {
+      kind: 'club',
+      leagueId,
+      userId: team.user_id,
+      title: 'Loaned Abroad',
+      content:
+        `**${playerName}** has joined ${club ?? 'a club outside the Premier League'} on loan. ` +
+        `He's off your squad and doesn't count toward your roster limit. ` +
+        `He rejoins your squad when he's back in the Premier League.`,
+      url: `/league/${leagueId}/team/roster`,
+    });
+  } catch (err) {
+    console.error('[departures] loan abroad notification failed:', err);
+  }
 }
 
 async function notifyDepartures(

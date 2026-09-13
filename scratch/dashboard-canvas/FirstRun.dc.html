@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..700&family=Hanken+Grotesk:wght@400;500;600;700&family=Archivo+Narrow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #F8F4EC; color: #1B1915; font-family: 'Hanken Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #0C6D3E; text-decoration: none; } a:hover { color: #134F2E; }
+    * { box-sizing: border-box; }
+    .cond { font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif; }
+    .num { font-variant-numeric: tabular-nums lining-nums; }
+    .head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+    .headT { font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 23px; letter-spacing: -0.026em; margin: 0; line-height: 1.05; }
+    .headM { font-family: 'Archivo Narrow', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #635D51; }
+    .card { position: relative; border: 1px solid #C2BDB5; border-radius: 12px; background: #FCFAF7; overflow: hidden; }
+    .btn { display: inline-grid; place-items: center; min-height: 48px; border-radius: 6px; font-size: 15px; font-weight: 600; transition: transform 140ms cubic-bezier(.22,1,.36,1); }
+    .btn:active { transform: scale(0.97); }
+    .btnP { background: #0C6D3E; color: #FFFFFF; }
+    .btnS { border: 1px solid #C2BDB5; color: #1B1915; background: #FCFAF7; }
+    .chip { display: inline-grid; place-items: center; min-width: 27px; height: 17px; padding: 0 5px; border-radius: 3px; color: #FFF; font-family: 'Archivo Narrow', sans-serif; font-size: 10px; font-weight: 700; }
+    .fxr { display: flex; align-items: center; gap: 9px; padding: 10px 0; border-bottom: 1px solid #E2DFDA; }
+    .ptImg { position: relative; height: 132px; border-radius: 10px; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+    .ptImg img.face { display: block; width: 116%; max-width: none; }
+    .ptR { position: absolute; left: 8px; bottom: 6px; font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 21px; color: #FFF; line-height: 1; text-shadow: 0 1px 6px rgba(0,0,0,0.5); font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="width: 390px; min-height: 1090px; background: #F8F4EC;">
+
+  <div style="height: 52px; background: #185B37; display: flex; align-items: center; justify-content: space-between; padding: 0 14px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F1EDE4" stroke-width="1.9" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"></path></svg>
+      <span style="font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 21px; letter-spacing: -0.02em; color: #F6F2E9;">Gaffa</span>
+    </div>
+    <div style="width: 26px; height: 26px; border-radius: 50%; background: #0C6D3E; border: 1px solid #4E8A67; display: grid; place-items: center;"><span class="cond" style="font-size: 11px; font-weight: 700; color: #F6F2E9;">SM</span></div>
+  </div>
+
+  <!-- the pitch -->
+  <div style="padding: 26px 16px 0;">
+    <h1 style="font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 30px; line-height: 1.12; letter-spacing: -0.028em; margin: 0; text-wrap: pretty;">Fantasy football that knows a full-back from a striker.</h1>
+    <p style="font-size: 14px; line-height: 1.55; color: #49443B; margin: 12px 0 0;">Twelve tactical roles, dynasty squads you keep for good, and a transfer market run on real money.</p>
+    <div style="display: grid; gap: 10px; margin-top: 18px;">
+      <a href="#" class="btn btnP">Create a league</a>
+      <a href="#" class="btn btnS">Join with an invite code</a>
+    </div>
+  </div>
+
+  <!-- proof, shown not described -->
+  <div style="padding: 30px 16px 0;">
+    <div class="head">
+      <h2 class="headT">Scored by Role</h2>
+      <span class="headM">Matchweek 3</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div>
+        <div class="ptImg" style="background: #5E4100;">
+          <img class="face" src="alisson.png" alt="">
+          <span class="ptR">8.72</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
+          <span class="chip" style="background: #926500;">GK</span>
+          <span style="font-size: 13px; font-weight: 600;">Alisson</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #635D51; margin-top: 3px;"><img src="liverpool.png" alt="" style="width: 14px; height: 14px; object-fit: contain; flex: none;">Liverpool &middot; 6th of 654</div>
+      </div>
+      <div>
+        <div class="ptImg" style="background: #75302A;">
+          <img class="face" src="haaland.png" alt="">
+          <span class="ptR">8.42</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
+          <span class="chip" style="background: #AD4C42;">ST</span>
+          <span style="font-size: 13px; font-weight: 600;">Haaland</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #635D51; margin-top: 3px;"><img src="man-city.png" alt="" style="width: 14px; height: 14px; object-fit: contain; flex: none;">Man City &middot; 12th of 654</div>
+      </div>
+    </div>
+
+    <p style="font-size: 13px; line-height: 1.55; color: #49443B; margin: 13px 0 0;">Both were excellent. Gaffa rates each against the median for <b>his own role</b>, so the keeper finishes higher &mdash; a comparison a flat points table cannot make.</p>
+  </div>
+
+  <!-- the green floor -->
+  <div style="padding: 28px 16px 0;">
+    <div style="border-radius: 12px; background: #185B37; padding: 18px 16px 16px;">
+      <h2 style="font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 22px; letter-spacing: -0.024em; margin: 0; color: #FFFFFF;">What You Get</h2>
+      <div style="display: grid; gap: 9px; margin-top: 13px;">
+        <div style="border-radius: 8px; background: #14492D; padding: 12px 13px;">
+          <div style="font-size: 13px; font-weight: 600; color: #FFFFFF;">Dynasty, not a reset</div>
+          <div style="font-size: 12px; line-height: 1.45; color: #A9CBB7; margin-top: 2px;">One draft, ever. You keep your squad season to season.</div>
+        </div>
+        <div style="border-radius: 8px; background: #14492D; padding: 12px 13px;">
+          <div style="font-size: 13px; font-weight: 600; color: #FFFFFF;">A real market</div>
+          <div style="font-size: 12px; line-height: 1.45; color: #A9CBB7; margin-top: 2px;">Auctions, loans and trades on a club balance in euros.</div>
+        </div>
+        <div style="border-radius: 8px; background: #14492D; padding: 12px 13px;">
+          <div style="font-size: 13px; font-weight: 600; color: #FFFFFF;">Cups as well as a league</div>
+          <div style="font-size: 12px; line-height: 1.45; color: #A9CBB7; margin-top: 2px;">Champions Cup, League Cup and a Consolation Cup, every season.</div>
+        </div>
+      </div>
+      <a href="#" class="btn" style="background: #F6F2E9; color: #14492D; width: 100%; margin-top: 14px; min-height: 44px;">Read the guide</a>
+    </div>
+  </div>
+
+  <!-- football still runs -->
+  <div style="padding: 28px 16px 0;">
+    <div class="head">
+      <h2 class="headT">Matchweek 4</h2>
+      <span class="headM">3 in play</span>
+    </div>
+    <div class="fxr">
+      <img src="aston-villa.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+      <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600;">Villa</span>
+      <span class="num" style="font-family: 'Newsreader', Georgia, serif; font-size: 19px; font-weight: 700;">2&ndash;1</span>
+      <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600; text-align: right;">Forest</span>
+      <img src="nottingham-forest.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+      <span class="num" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: #B23731; width: 26px; text-align: right;">67&prime;</span>
+    </div>
+    <div class="fxr">
+      <img src="liverpool.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+      <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600;">Liverpool</span>
+      <span class="num" style="font-family: 'Newsreader', Georgia, serif; font-size: 19px; font-weight: 700;">1&ndash;1</span>
+      <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600; text-align: right;">Fulham</span>
+      <img src="fulham.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+      <span class="num" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: #B23731; width: 26px; text-align: right;">66&prime;</span>
+    </div>
+    <div class="fxr">
+      <img src="chelsea.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+      <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600;">Chelsea</span>
+      <span class="num" style="font-family: 'Newsreader', Georgia, serif; font-size: 19px; font-weight: 700;">3&ndash;0</span>
+      <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600; text-align: right; color: #6E685D;">Hull</span>
+      <img src="hull-city.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+      <span class="cond" style="font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: #635D51; width: 26px; text-align: right;">FT</span>
+    </div>
+  </div>
+
+  <div style="height: 40px;"></div>
+</div>
+</x-dc>
+</body>
+</html>

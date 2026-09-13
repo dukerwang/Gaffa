@@ -1,0 +1,29 @@
+# Gaffa UI Architecture & Components
+
+> Dynasty fantasy football platform for the Premier League.
+> Calm, tactile, data-dense broadsheet sports journal crossed with high-performance trading platform.
+
+## Design Tokens & Philosophy
+- Theme: Cream ground (`#F8F4EC`), deep forest green chrome (`#185B37`), green accent ramp (`--color-accent`: `#0C6D3E`). Both light and dark themes pass WCAG AA.
+- Typography: Newsreader serif (`--font-serif`) for titles/scores, Archivo Narrow (`--font-condensed`) for labels/badges/buttons, Hanken Grotesk (`--font-sans`) for body, JetBrains Mono (`--font-mono`) for tickers/stopwatches.
+- Surfaces: Border XOR shadow, declared once. No ghost cards. No white panels floating on cream ground without bounded context.
+- Mobile: First-class touch target (44px min). Modals become bottom sheets on `<640px` with `dvh` and safe area insets.
+
+## UI Primitives (`@/components/ui`)
+Use these primitives rather than authoring bespoke CSS modules for common controls:
+
+- `Button` (`@/components/ui`): Archivo Narrow, Title Case labels, Emil Kowalski press scale (`--press-scale: 0.97`), loading spinner, lead/tail icons. Variants: `primary`, `secondary`, `ghost`, `danger`. Sizes: `sm`, `md`, `lg`. Supports `href` (polymorphic).
+- `ResponsiveModal` (`@/components/ui`): Desktop centered dialog (`>640px`) with Newsreader serif title, auto-converting to bottom drawer on mobile (`<=640px`) with swipe handle and safe-area padding. Scrim mousedown protection, Escape stack handling, body scroll locking.
+- `SegmentedControl` (`@/components/ui`): Tablist view switcher with arrow-key keyboard navigation and Archivo Narrow typography.
+- `SimpleSelect` (`@/components/ui`): Styled desktop select falling back to native mobile OS picker on touch.
+- `Kbd` (`@/components/ui`): Shortcut keycap hints. Affordances must use infinitive purpose ("Enter to open") or direct imperatives ("Press Enter to open").
+- `Icon` (`@/components/ui`): Inline SVG editorial icon set.
+- `NavigationLink` (`@/components/ui`): TopBar loading-aware Next.js link.
+
+## Binding UI Rules
+1. Headings, section titles, and action buttons are Title Case ("Save Lineup", not "Save lineup").
+2. No eyebrow labels / kickers above titles.
+3. "Club Balance", never "FAAB".
+4. Elevation is border XOR shadow (never declare both on a card or panel).
+5. No coloured accent bars on container edges (no left stripes or top colored rules).
+6. Keys, tools, and UI objects do not perform actions (no inanimate agency: "Enter to open", never "Enter opens it").

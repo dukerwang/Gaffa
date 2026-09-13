@@ -1,0 +1,410 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..700&family=Hanken+Grotesk:wght@400;500;600;700&family=Archivo+Narrow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #F8F4EC; color: #1B1915; font-family: 'Hanken Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #0C6D3E; text-decoration: none; } a:hover { color: #134F2E; }
+    * { box-sizing: border-box; }
+    .cond { font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif; }
+    .num { font-variant-numeric: tabular-nums lining-nums; }
+
+    .head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+    .headT { font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 26px; letter-spacing: -0.028em; margin: 0; line-height: 1.02; }
+    .headM { font-family: 'Archivo Narrow', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #635D51; }
+    .headL { margin-left: auto; font-size: 12px; font-weight: 600; white-space: nowrap; }
+
+    .card { position: relative; border: 1px solid #C2BDB5; border-radius: 12px; background: #FCFAF7; overflow: hidden; transition: border-color 160ms cubic-bezier(.22,1,.36,1); }
+    @media (hover: hover) and (pointer: fine) { .card:hover { border-color: #8C857A; } }
+    .lgBar { display: flex; align-items: center; gap: 9px; padding: 11px 16px; background: #EFEBE3; border-bottom: 1px solid #D9D5CF; }
+    .lgName { font-family: 'Archivo Narrow', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .clubNm { font-size: 15px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .clubMt { font-size: 11px; color: #635D51; line-height: 1.3; margin-top: 1px; }
+    .scr { font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 36px; line-height: 1; letter-spacing: -0.026em; font-variant-numeric: tabular-nums lining-nums; }
+    .btn { display: inline-grid; place-items: center; min-height: 40px; border-radius: 6px; font-size: 13px; font-weight: 600; transition: transform 140ms cubic-bezier(.22,1,.36,1), background 160ms ease; }
+    .btn:active { transform: scale(0.97); }
+    .btnP { background: #0C6D3E; color: #FFFFFF; }
+    @media (hover: hover) and (pointer: fine) { .btnP:hover { background: #134F2E; } }
+    .btnS { border: 1px solid #C2BDB5; color: #1B1915; background: #FCFAF7; }
+    @media (hover: hover) and (pointer: fine) { .btnS:hover { background: #F2EEE6; } }
+
+    .wm { position: absolute; right: -40px; top: -22px; width: 190px; opacity: 0.07; pointer-events: none; }
+
+    /* desktop portrait tile — bigger, the row is the point */
+    .pt { min-width: 0; }
+    .ptImg { position: relative; height: 208px; border-radius: 12px; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+    .ptImg img.face { display: block; width: 112%; max-width: none; }
+    .ptR { position: absolute; left: 11px; bottom: 9px; font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 28px; color: #FFFFFF; line-height: 1; letter-spacing: -0.022em; text-shadow: 0 2px 8px rgba(0,0,0,0.5); font-variant-numeric: tabular-nums; }
+    .ptRk { position: absolute; left: 11px; top: 9px; font-family: 'Archivo Narrow', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: rgba(255,255,255,0.75); }
+    .chip { display: inline-grid; place-items: center; min-width: 27px; height: 17px; padding: 0 5px; border-radius: 3px; color: #FFF; font-family: 'Archivo Narrow', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; }
+    .fxr { display: flex; align-items: center; gap: 11px; padding: 11px 0; border-bottom: 1px solid #E2DFDA; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; min-height: 1420px; background: #F8F4EC;">
+
+  <div style="height: 56px; background: #185B37; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
+    <div style="display: flex; align-items: center; gap: 30px;">
+      <span style="font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 23px; letter-spacing: -0.02em; color: #F6F2E9;">Gaffa</span>
+      <div style="display: flex; align-items: center; gap: 22px; font-size: 13px; font-weight: 500; color: #CFE0D5;">
+        <span style="color: #FFFFFF; font-weight: 600;">Home</span><span>Guide</span><span>Stats</span>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#DCE8DF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+      <div style="width: 27px; height: 27px; border-radius: 50%; background: #0C6D3E; border: 1px solid #4E8A67; display: grid; place-items: center;"><span class="cond" style="font-size: 11px; font-weight: 700; color: #F6F2E9;">DU</span></div>
+    </div>
+  </div>
+
+  <div style="max-width: 1180px; margin: 0 auto; padding: 26px 24px 56px;">
+
+    <!-- ══ Row 1 · leagues (2/3) + the doors (1/3) ══ -->
+    <div style="display: grid; grid-template-columns: minmax(0, 2fr) 348px; gap: 28px; align-items: start;">
+
+      <div style="min-width: 0;">
+        <div class="head">
+          <h2 class="headT">Your Leagues</h2>
+          <span style="display: inline-flex; align-items: center; gap: 5px;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #B23731;"></span>
+            <span class="headM" style="color: #B23731;">2 live</span>
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;">
+
+          <div class="card">
+            <svg class="wm" viewBox="0 0 100 120">
+              <defs><clipPath id="dw1"><path d="M 50 12 A 48 48 0 1 0 50 108 A 48 48 0 1 0 50 12 Z"></path></clipPath></defs>
+              <g clip-path="url(#dw1)"><rect width="100" height="120" fill="#4338CA"></rect><rect width="50" height="60" fill="#1C1C1C"></rect><rect x="50" y="60" width="50" height="60" fill="#1C1C1C"></rect></g>
+            </svg>
+            <div class="lgBar">
+              <span style="display: grid; place-items: center; width: 21px; height: 21px; border-radius: 4px; background: #AD4C42; flex: none;"><span class="cond" style="font-size: 10px; font-weight: 700; color: #FFF;">MM</span></span>
+              <span class="lgName" style="flex: 1 1 auto;">Matchday Militia</span>
+              <span class="cond" style="font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #B23731; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #B23731;"></span>MW4</span>
+            </div>
+            <div style="position: relative; padding: 16px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <svg width="32" height="38" viewBox="0 0 100 120" style="flex: none;">
+                  <defs><clipPath id="dc1"><path d="M 50 12 A 48 48 0 1 0 50 108 A 48 48 0 1 0 50 12 Z"></path></clipPath></defs>
+                  <g clip-path="url(#dc1)"><rect width="100" height="120" fill="#4338CA"></rect><rect width="50" height="60" fill="#1C1C1C"></rect><rect x="50" y="60" width="50" height="60" fill="#1C1C1C"></rect></g>
+                  <path d="M 50 12 A 48 48 0 1 0 50 108 A 48 48 0 1 0 50 12 Z" fill="none" stroke="#D4A017" stroke-width="6"></path>
+                </svg>
+                <div style="flex: 1 1 auto; min-width: 0;">
+                  <div class="clubNm">Not Too Xabi</div>
+                  <div class="clubMt">You &middot; 2nd, 3&ndash;0&ndash;1</div>
+                </div>
+                <span class="scr">112.4</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px; margin-top: 14px;">
+                <svg width="32" height="38" viewBox="0 0 100 120" style="flex: none;">
+                  <defs><clipPath id="dc2"><path d="M 10 10 L 90 10 C 90 45, 90 80, 50 110 C 10 80, 10 45, 10 10 Z"></path></clipPath></defs>
+                  <g clip-path="url(#dc2)"><rect width="100" height="120" fill="#E8E2D5"></rect><path d="M 50 40 C 60 55, 66 66, 58 78 C 54 84, 46 84, 42 78 C 34 66, 40 55, 50 40 Z" fill="#2A5A92"></path></g>
+                  <path d="M 10 10 L 90 10 C 90 45, 90 80, 50 110 C 10 80, 10 45, 10 10 Z" fill="none" stroke="#1C1C1C" stroke-width="6"></path>
+                </svg>
+                <div style="flex: 1 1 auto; min-width: 0;">
+                  <div class="clubNm">tottenyang FC</div>
+                  <div class="clubMt">Andrew &middot; 5th, 1&ndash;1&ndash;2</div>
+                </div>
+                <span class="scr" style="color: #6E685D;">98.7</span>
+              </div>
+              <div style="display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 16px; background: #E2DFDA;">
+                <div style="width: 53.2%; background: #0C6D3E;"></div><div style="width: 1%; background: #FCFAF7;"></div><div style="width: 45.8%; background: #BEB8AE;"></div>
+              </div>
+              <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 9px;">
+                <span style="font-size: 12px; font-weight: 600; color: #1F7144;">Ahead by 13.7</span>
+                <span style="font-size: 11px; color: #635D51;">8 to play &middot; 6 theirs</span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px;">
+                <a href="#" class="btn btnS">My Squad</a><a href="#" class="btn btnP">Matchup</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <svg class="wm" viewBox="0 0 100 120">
+              <defs><clipPath id="dw2"><path d="M 10 20 L 50 12 L 90 20 L 88 65 C 88 92, 72 110, 50 110 C 28 110, 12 92, 12 65 Z"></path></clipPath></defs>
+              <g clip-path="url(#dw2)"><rect width="100" height="120" fill="#FBBF24"></rect><rect width="34" height="120" fill="#2A5A92"></rect><rect x="66" width="34" height="120" fill="#DC2626"></rect></g>
+            </svg>
+            <div class="lgBar">
+              <span style="display: grid; place-items: center; width: 21px; height: 21px; border-radius: 4px; background: #7B56B9; flex: none;"><span class="cond" style="font-size: 10px; font-weight: 700; color: #FFF;">DD</span></span>
+              <span class="lgName" style="flex: 1 1 auto;">Dynasty Dragoon</span>
+              <span class="cond" style="font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #B23731; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #B23731;"></span>MW4</span>
+            </div>
+            <div style="position: relative; padding: 16px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <svg width="32" height="38" viewBox="0 0 100 120" style="flex: none;">
+                  <defs><clipPath id="dc3"><path d="M 10 20 L 50 12 L 90 20 L 88 65 C 88 92, 72 110, 50 110 C 28 110, 12 92, 12 65 Z"></path></clipPath></defs>
+                  <g clip-path="url(#dc3)"><rect width="100" height="120" fill="#FBBF24"></rect><rect width="34" height="120" fill="#2A5A92"></rect><rect x="66" width="34" height="120" fill="#DC2626"></rect></g>
+                  <path d="M 10 20 L 50 12 L 90 20 L 88 65 C 88 92, 72 110, 50 110 C 28 110, 12 92, 12 65 Z" fill="none" stroke="#4A4A4A" stroke-width="6"></path>
+                </svg>
+                <div style="flex: 1 1 auto; min-width: 0;">
+                  <div class="clubNm">Moises FC</div>
+                  <div class="clubMt">You &middot; 4th, 2&ndash;0&ndash;2</div>
+                </div>
+                <span class="scr" style="color: #6E685D;">104.2</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px; margin-top: 14px;">
+                <svg width="32" height="38" viewBox="0 0 100 120" style="flex: none;">
+                  <defs><clipPath id="dc4"><path d="M 50 12 A 48 48 0 1 0 50 108 A 48 48 0 1 0 50 12 Z"></path></clipPath></defs>
+                  <g clip-path="url(#dc4)"><rect width="100" height="120" fill="#F7F3ED"></rect><path d="M -10 90 L 70 -10 L 100 10 L 20 110 Z" fill="#2A5A92"></path></g>
+                  <path d="M 50 12 A 48 48 0 1 0 50 108 A 48 48 0 1 0 50 12 Z" fill="none" stroke="#60A5FA" stroke-width="6"></path>
+                </svg>
+                <div style="flex: 1 1 auto; min-width: 0;">
+                  <div class="clubNm">Stamford &amp; Sons</div>
+                  <div class="clubMt">ZNoh &middot; 1st, 3&ndash;1&ndash;0</div>
+                </div>
+                <span class="scr">121.9</span>
+              </div>
+              <div style="display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 16px; background: #E2DFDA;">
+                <div style="width: 45.8%; background: #905156;"></div><div style="width: 1%; background: #FCFAF7;"></div><div style="width: 53.2%; background: #BEB8AE;"></div>
+              </div>
+              <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 9px;">
+                <span style="font-size: 12px; font-weight: 600; color: #905156;">Behind by 17.7</span>
+                <span style="font-size: 11px; color: #635D51;">9 to play &middot; 7 theirs</span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px;">
+                <a href="#" class="btn btnS">My Squad</a><a href="#" class="btn btnP">Matchup</a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- the doors, in the rail where desktop has room -->
+      <div style="min-width: 0; padding-top: 44px; display: flex; flex-direction: column; gap: 14px;">
+        <div class="card">
+          <div class="lgBar">
+            <span style="display: grid; place-items: center; width: 21px; height: 21px; border-radius: 4px; background: #0076B2; flex: none;"><span class="cond" style="font-size: 10px; font-weight: 700; color: #FFF;">HE</span></span>
+            <span class="lgName" style="flex: 1 1 auto;">Hello1</span>
+            <span class="cond" style="font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #635D51;">Pre-draft</span>
+          </div>
+          <div style="padding: 14px 16px 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="flex: 1 1 auto; min-width: 0;">
+                <div style="font-size: 15px; font-weight: 600;">Waiting on managers</div>
+                <div class="clubMt">You&rsquo;re commissioner</div>
+              </div>
+              <span class="cond num" style="font-size: 15px; font-weight: 700;">3 / 6</span>
+            </div>
+            <div style="height: 6px; border-radius: 3px; background: #E2DFDA; overflow: hidden; margin-top: 12px;">
+              <div style="width: 50%; height: 100%; background: #3B8D5D;"></div>
+            </div>
+            <a href="#" class="btn btnS" style="width: 100%; margin-top: 14px;">Invite Managers</a>
+          </div>
+        </div>
+
+        <a href="#" class="card" style="display: flex; align-items: center; gap: 13px; padding: 15px 16px; color: inherit;">
+          <span style="display: grid; place-items: center; width: 38px; height: 38px; border-radius: 9px; background: #E2EDE5; flex: none;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0C6D3E" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+          </span>
+          <span style="min-width: 0;">
+            <span style="display: block; font-size: 15px; font-weight: 600;">Create a league</span>
+            <span style="display: block; font-size: 12px; color: #635D51; margin-top: 2px;">Set the rules, invite friends.</span>
+          </span>
+        </a>
+
+        <a href="#" class="card" style="display: flex; align-items: center; gap: 13px; padding: 15px 16px; color: inherit;">
+          <span style="display: grid; place-items: center; width: 38px; height: 38px; border-radius: 9px; background: #E2EDE5; flex: none;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0C6D3E" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0"></path></svg>
+          </span>
+          <span style="min-width: 0;">
+            <span style="display: block; font-size: 15px; font-weight: 600;">Join a league</span>
+            <span style="display: block; font-size: 12px; color: #635D51; margin-top: 2px;">Enter an invite code.</span>
+          </span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ══ Row 2 · the portrait row, full width — this is what desktop is for ══ -->
+    <div style="margin-top: 40px;">
+      <div class="head">
+        <h2 class="headT">Top Rated</h2>
+        <span class="headM">Matchweek 4, so far</span>
+        <a href="#" class="headL">Full ratings &rarr;</a>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px;">
+
+        <div class="pt">
+          <div class="ptImg" style="background: #00584A;">
+            <img class="face" src="schade.png" alt="">
+            <span class="ptRk">01</span><span class="ptR">9.14</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px; margin-top: 9px;">
+            <span class="chip" style="background: #00866F;">LW</span>
+            <span style="font-size: 13px; font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Schade</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #635D51; margin-top: 4px;"><img src="brentford.png" alt="" style="width: 14px; height: 14px; object-fit: contain; flex: none;">Brentford</div>
+        </div>
+
+        <div class="pt">
+          <div class="ptImg" style="background: #00584A;">
+            <img class="face" src="tavernier.png" alt="">
+            <span class="ptRk">02</span><span class="ptR">8.94</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px; margin-top: 9px;">
+            <span class="chip" style="background: #00866F;">LW</span>
+            <span style="font-size: 13px; font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Tavernier</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #635D51; margin-top: 4px;"><img src="bournemouth.png" alt="" style="width: 14px; height: 14px; object-fit: contain; flex: none;">Bournemouth</div>
+        </div>
+
+        <div class="pt">
+          <div class="ptImg" style="background: #00584A;">
+            <img class="face" src="belloumi.png" alt="">
+            <span class="ptRk">03</span><span class="ptR">8.91</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px; margin-top: 9px;">
+            <span class="chip" style="background: #00866F;">RW</span>
+            <span style="font-size: 13px; font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Belloumi</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #635D51; margin-top: 4px;"><img src="hull-city.png" alt="" style="width: 14px; height: 14px; object-fit: contain; flex: none;">Hull City</div>
+        </div>
+
+        <div class="pt">
+          <div class="ptImg" style="background: #6E3049;">
+            <img class="face" src="gibbswhite.png" alt="">
+            <span class="ptRk">04</span><span class="ptR">8.83</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px; margin-top: 9px;">
+            <span class="chip" style="background: #A34E71;">AM</span>
+            <span style="font-size: 13px; font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Gibbs-White</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #635D51; margin-top: 4px;"><img src="nottingham-forest.png" alt="" style="width: 14px; height: 14px; object-fit: contain; flex: none;">Nott&rsquo;m Forest</div>
+        </div>
+
+        <div class="pt">
+          <div class="ptImg" style="background: #75302A;">
+            <img class="face" src="emersonn.png" alt="">
+            <span class="ptRk">05</span><span class="ptR">8.80</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px; margin-top: 9px;">
+            <span class="chip" style="background: #AD4C42;">ST</span>
+            <span style="font-size: 13px; font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Emersonn</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #635D51; margin-top: 4px;"><img src="ipswich-town.png" alt="" style="width: 14px; height: 14px; object-fit: contain; flex: none;">Ipswich Town</div>
+        </div>
+
+        <div class="pt">
+          <div class="ptImg" style="background: #5E4100;">
+            <img class="face" src="raya.png" alt="">
+            <span class="ptRk">06</span><span class="ptR">8.74</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px; margin-top: 9px;">
+            <span class="chip" style="background: #926500;">GK</span>
+            <span style="font-size: 13px; font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Raya</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #635D51; margin-top: 4px;"><img src="arsenal.png" alt="" style="width: 14px; height: 14px; object-fit: contain; flex: none;">Arsenal</div>
+        </div>
+
+      </div>
+      <div style="font-size: 12px; color: #635D51; margin-top: 11px;">Rated against the median for each player&rsquo;s own role &mdash; which is how a goalkeeper reaches sixth.</div>
+    </div>
+
+    <!-- ══ Row 3 · fixtures + the green block ══ -->
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 348px; gap: 28px; margin-top: 40px; align-items: start;">
+
+      <div style="min-width: 0;">
+        <div class="head">
+          <h2 class="headT">Matchweek 4</h2>
+          <span class="headM">3 in play &middot; 2 finished</span>
+          <a href="#" class="headL">All fixtures &rarr;</a>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px;">
+          <div class="fxr">
+            <img src="aston-villa.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600;">Villa</span>
+            <span class="num" style="font-family: 'Newsreader', Georgia, serif; font-size: 19px; font-weight: 700;">2&ndash;1</span>
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600; text-align: right;">Forest</span>
+            <img src="nottingham-forest.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span class="num" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: #B23731; width: 30px; text-align: right;">67&prime;</span>
+          </div>
+          <div class="fxr">
+            <img src="bournemouth.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600;">Bournemouth</span>
+            <span class="num" style="font-family: 'Newsreader', Georgia, serif; font-size: 19px; font-weight: 700;">0&ndash;0</span>
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600; text-align: right;">Brentford</span>
+            <img src="brentford.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span class="num" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: #B23731; width: 30px; text-align: right;">64&prime;</span>
+          </div>
+          <div class="fxr">
+            <img src="liverpool.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600;">Liverpool</span>
+            <span class="num" style="font-family: 'Newsreader', Georgia, serif; font-size: 19px; font-weight: 700;">1&ndash;1</span>
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600; text-align: right;">Fulham</span>
+            <img src="fulham.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span class="num" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: #B23731; width: 30px; text-align: right;">66&prime;</span>
+          </div>
+          <div class="fxr">
+            <img src="chelsea.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600;">Chelsea</span>
+            <span class="num" style="font-family: 'Newsreader', Georgia, serif; font-size: 19px; font-weight: 700;">3&ndash;0</span>
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600; text-align: right; color: #6E685D;">Hull City</span>
+            <img src="hull-city.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span class="cond" style="font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: #635D51; width: 30px; text-align: right;">FT</span>
+          </div>
+          <div class="fxr">
+            <img src="crystal-palace.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600;">Palace</span>
+            <span class="num" style="font-family: 'Newsreader', Georgia, serif; font-size: 19px; font-weight: 700;">1&ndash;0</span>
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600; text-align: right; color: #6E685D;">Ipswich</span>
+            <img src="ipswich-town.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span class="cond" style="font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: #635D51; width: 30px; text-align: right;">FT</span>
+          </div>
+          <div class="fxr" style="opacity: 0.6;">
+            <img src="spurs.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600;">Spurs</span>
+            <span class="num" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; color: #635D51;">17:30</span>
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600; text-align: right;">Everton</span>
+            <img src="everton.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span style="width: 30px;"></span>
+          </div>
+          <div class="fxr" style="opacity: 0.6;">
+            <img src="sunderland.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600;">Sunderland</span>
+            <span class="num" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; color: #635D51;">20:00</span>
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600; text-align: right;">Arsenal</span>
+            <img src="arsenal.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span style="width: 30px;"></span>
+          </div>
+          <div class="fxr" style="opacity: 0.6;">
+            <img src="man-utd.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600;">Man Utd</span>
+            <span class="num" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; color: #635D51;">Sun</span>
+            <span style="flex: 1 1 0; min-width: 0; font-size: 14px; font-weight: 600; text-align: right;">Man City</span>
+            <img src="man-city.png" alt="" style="width: 24px; height: 24px; object-fit: contain;">
+            <span style="width: 30px;"></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-radius: 12px; background: #185B37; padding: 20px 18px 18px; overflow: hidden;">
+        <h2 style="font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 23px; letter-spacing: -0.026em; margin: 0; color: #FFFFFF;">How Gaffa Works</h2>
+        <p style="font-size: 13px; line-height: 1.6; color: #D6E7DC; margin: 9px 0 0;">Twelve tactical roles, and every player rated against the median for <b style="color: #FFFFFF;">his own</b>. A full-back is judged as a full-back, so an overlap and a clean sheet can beat a striker&rsquo;s quiet goal.</p>
+        <div style="display: grid; gap: 9px; margin-top: 16px;">
+          <div style="border-radius: 8px; background: #14492D; padding: 12px 13px;">
+            <div style="font-size: 13px; font-weight: 600; color: #FFFFFF;">Dynasty, not a reset</div>
+            <div style="font-size: 12px; line-height: 1.45; color: #A9CBB7; margin-top: 2px;">One draft, ever. You keep your squad season to season.</div>
+          </div>
+          <div style="border-radius: 8px; background: #14492D; padding: 12px 13px;">
+            <div style="font-size: 13px; font-weight: 600; color: #FFFFFF;">A real market</div>
+            <div style="font-size: 12px; line-height: 1.45; color: #A9CBB7; margin-top: 2px;">Auctions, loans and trades, run on a club balance in euros.</div>
+          </div>
+        </div>
+        <a href="#" class="btn" style="background: #F6F2E9; color: #14492D; width: 100%; margin-top: 14px;">Read the guide</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

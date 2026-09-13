@@ -206,7 +206,7 @@ export function closingInNotice(
       title: `ADVANCING: ${abbr} closing in on ${playerName}`,
       pushTitle: `ADVANCING: ${playerName} · ${abbr}`,
       content: `**BREAKING:** **${name}** are in advanced stages to complete a marquee deal for **${playerName}** (**${euro(amount)}**). ${left ? `${left} on the open market` : 'Final hours'} before the agreement is sealed.`,
-      pushBody: `ADVANCING: ${playerName} to ${abbr} (${euro(amount)}). ${timeClause}!`,
+      pushBody: `ADVANCING: ${playerName} to ${abbr} (${euro(amount)}). ${timeClause}.`,
     };
   }
 
@@ -215,7 +215,7 @@ export function closingInNotice(
       title: `Closing in: ${abbr} on verge of ${playerName}`,
       pushTitle: `Closing in: ${playerName} · ${abbr}`,
       content: `**${name}** are closing in on a blockbuster agreement for **${playerName}** at **${euro(amount)}**. ${left ? `${left} to submit` : 'Final hours to submit'} a competing offer.`,
-      pushBody: `Closing in: ${abbr} lead for ${playerName} at ${euro(amount)}. ${timeClause}!`,
+      pushBody: `Closing in: ${abbr} lead for ${playerName} at ${euro(amount)}. ${timeClause}.`,
     };
   }
 

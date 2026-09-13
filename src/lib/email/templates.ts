@@ -113,7 +113,7 @@ export const getTradeAcceptedEmail = (params: {
   const body = `
     ${eyebrow ? `<p style="margin: 0 0 4px; font-size: 0.75em; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: ${GOLD};">${eyebrow}</p>` : ''}
     <p>${lead}</p>
-    <a href="${leagueUrl}/activity" class="button">View League Activity</a>
+    <a href="${leagueUrl}/activity" class="button">View the transactions</a>
   `;
   return baseTemplate(title, body);
 };
@@ -143,7 +143,7 @@ export const getSystemAuctionsEmail = (
   } else if (count === 1 && top) {
     preamble = `A new high-profile signing has entered the Premier League. <strong>${top.name}</strong> (€${top.value}m) is now available on the open market.`;
   } else {
-    preamble = `The transfer market is heating up. <strong>${count} marquee signings</strong> (€${thresholdM}m+ valuation) have just been posted to the auction board.`;
+    preamble = `The transfer market is heating up. <strong>${count} marquee signings</strong> (€${thresholdM}m+ valuation) are on the auction board.`;
   }
 
   const standard = players.filter((p) => getValueTier(p.value) === 'standard');
@@ -224,7 +224,7 @@ export const getAuctionWonEmail = (
         <p style="margin: 0;">To make room, ${winnerClub} have released <strong>${droppedPlayerName}</strong> into the auction pool.</p>
       </div>
     ` : ''}
-    <a href="${leagueUrl}/activity" class="button">Read the Transaction Log</a>
+    <a href="${leagueUrl}/activity" class="button">View the transactions</a>
   `;
   return baseTemplate('Official: Auction Concluded', body);
 };
@@ -245,7 +245,7 @@ export const getPlayerSoldEmail = (
     <p style="font-family: ${FONT_SERIF}; font-size: 1.2em; margin-top: 0; color: ${INK};">${lead}</p>
     <a href="${leagueUrl}/team" class="button">View Your Team</a>
   `;
-  return baseTemplate('Player Sold!', body);
+  return baseTemplate('Player Sold', body);
 };
 
 export const getDraftStartedEmail = (leagueName: string, draftUrl: string) => {
@@ -258,7 +258,7 @@ export const getDraftStartedEmail = (leagueName: string, draftUrl: string) => {
     </div>
     <p>Good luck, and may your scouting pay off.</p>
   `;
-  return baseTemplate('The Draft is Starting!', body);
+  return baseTemplate('The Draft Is Starting', body);
 };
 
 export const getMatchweekSummaryEmail = (

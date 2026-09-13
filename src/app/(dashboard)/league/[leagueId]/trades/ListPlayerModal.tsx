@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import PositionBadge from '@/components/players/PositionBadge';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { ResponsiveModal, Button } from '@/components/ui';
 import styles from './trades.module.css';
 
 export interface ListablePlayer {
@@ -62,51 +63,50 @@ export default function ListPlayerModal({
     }
 
     try {
-      const res = await fetch(`/api/leagues/${leagueId}/listings`, {
+      const res = await fetch(`/api/leagues/${leagueId}/auctions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          playerId: selectedPlayer.id,
-          minBid,
-          buyNowPrice: buyNowNum,
+          player_id: selectedPlayer.id,
+          min_bid: minBid,
+          buy_now_price: buyNowNum,
         }),
       });
 
       const data = await res.json();
-
-      if (res.ok) {
-        onListed(selectedPlayer.id, data.listing);
-        onClose();
-      } else {
-        setError(data.error ?? 'Failed to list player.');
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to list player');
       }
-    } catch (err) {
+
+      onListed(selectedPlayer.id, data.listing);
+      setSelectedPlayer(null);
+    } catch (err: any) {
       console.error(err);
-      setError('An unexpected error occurred.');
+      setError(err.message || 'An unexpected error occurred.');
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function handleCancelListing(player: ListablePlayer, event: React.MouseEvent) {
-    event.stopPropagation(); // Prevent row selection click
-    if (!player.listing) return;
+  async function handleCancelListing(p: ListablePlayer, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!p.listing) return;
 
+    setCancellingId(p.id);
     setError(null);
-    setCancellingId(player.id);
 
     try {
-      const res = await fetch(`/api/leagues/${leagueId}/listings/${player.listing.id}`, {
+      const res = await fetch(`/api/leagues/${leagueId}/auctions?listing_id=${p.listing.id}`, {
         method: 'DELETE',
       });
 
-      if (res.ok) {
-        onCancelled(player.id);
-      } else {
+      if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? 'Failed to cancel listing.');
+        throw new Error(data.error || 'Failed to cancel listing');
       }
-    } catch (err) {
+
+      onCancelled(p.id);
+    } catch (err: any) {
       console.error(err);
       setError('An unexpected error occurred.');
     } finally {
@@ -115,169 +115,161 @@ export default function ListPlayerModal({
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <div>
-            <span className={styles.modalLabel}>PLAYER MARKET</span>
-            <h2 className={styles.modalTitle}>
-              {selectedPlayer ? 'List Player' : 'Your Roster'}
-            </h2>
-          </div>
-          <button className={styles.modalClose} onClick={onClose} aria-label="Close">
-            ✕
-          </button>
+    <ResponsiveModal
+      open={true}
+      onClose={onClose}
+      title={selectedPlayer ? 'List Player' : 'Your Roster'}
+    >
+      {error && (
+        <div className={styles.modalHint} style={{ color: 'var(--color-accent-red)', borderBottom: 'none' }}>
+          {error}
         </div>
+      )}
 
-        {error && (
-          <div className={styles.modalHint} style={{ color: 'var(--color-accent-red)', borderBottom: 'none' }}>
-            {error}
-          </div>
-        )}
+      {!selectedPlayer ? (
+        <>
+          <p className={styles.modalHint}>
+            Select a player to list on the market, or manage your current listings.
+          </p>
 
-        {!selectedPlayer ? (
-          <>
-            <p className={styles.modalHint}>
-              Select a player to list on the market, or manage your current listings.
-            </p>
-
-            {eligiblePlayers.length === 0 ? (
-              <p className={styles.modalEmpty}>Your roster is empty or all players have live auctions.</p>
-            ) : (
-              <div className={styles.blockToggleList}>
-                {eligiblePlayers.map((p) => {
-                  const isPending = p.listing?.status === 'pending';
-                  const isCancelling = cancellingId === p.id;
-                  return (
-                    <div
-                      key={p.id}
-                      className={`${styles.blockToggleRow} ${isPending ? styles.blockToggleRowActive : ''}`}
-                      onClick={() => !isPending && setSelectedPlayer(p)}
-                      style={{ cursor: isPending ? 'default' : 'pointer' }}
-                    >
-                      <div className={styles.blockToggleLeft}>
-                        <PositionBadge position={p.primary_position as any} size="sm" />
-                        <div className={styles.blockToggleInfo}>
-                          <span className={styles.blockToggleName}>
-                            {getPlayerDisplayName(p, 'initial_last')}
-                          </span>
-                          <span className={styles.blockToggleClub}>
-                            {p.pl_team ?? ''}
-                            {p.market_value ? ` · €${p.market_value.toFixed(1)}m` : ''}
-                          </span>
-                        </div>
-                        {isPending && (
-                          <span className={styles.blockOnIndicator}>LISTED</span>
-                        )}
+          {eligiblePlayers.length === 0 ? (
+            <p className={styles.modalEmpty}>Your roster is empty or all players have live auctions.</p>
+          ) : (
+            <div className={styles.blockToggleList}>
+              {eligiblePlayers.map((p) => {
+                const isPending = p.listing?.status === 'pending';
+                const isCancelling = cancellingId === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    className={`${styles.blockToggleRow} ${isPending ? styles.blockToggleRowActive : ''}`}
+                    onClick={() => !isPending && setSelectedPlayer(p)}
+                    style={{ cursor: isPending ? 'default' : 'pointer' }}
+                  >
+                    <div className={styles.blockToggleLeft}>
+                      <PositionBadge position={p.primary_position as any} size="sm" />
+                      <div className={styles.blockToggleInfo}>
+                        <span className={styles.blockToggleName}>
+                          {getPlayerDisplayName(p, 'initial_last')}
+                        </span>
+                        <span className={styles.blockToggleClub}>
+                          {p.pl_team ?? ''}
+                          {p.market_value ? ` · €${p.market_value.toFixed(1)}m` : ''}
+                        </span>
                       </div>
-                      <div className={styles.blockToggleRight}>
-                        {isPending && (
-                          <button
-                            className={styles.blockToggleBtn}
-                            onClick={(e) => handleCancelListing(p, e)}
-                            disabled={isCancelling}
-                            style={{ borderColor: 'var(--color-accent-red)', color: 'var(--color-accent-red)' }}
-                          >
-                            {isCancelling ? '…' : 'Cancel Listing'}
-                          </button>
-                        )}
-                        {!isPending && (
-                          <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                            Click to List
-                          </span>
-                        )}
-                      </div>
+                      {isPending && (
+                        <span className={styles.blockOnIndicator}>LISTED</span>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        ) : (
-          <form onSubmit={handleCreateListing} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--color-bg-elevated)', padding: '16px', borderRadius: 'var(--radius-sm)' }}>
-              <PositionBadge position={selectedPlayer.primary_position as any} size="md" />
-              <div>
-                <h3 style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: '16px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-                  {getPlayerDisplayName(selectedPlayer, 'full')}
-                </h3>
-                <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', fontWeight: 600 }}>
-                  {selectedPlayer.pl_team ?? ''} {selectedPlayer.market_value ? `· €${selectedPlayer.market_value.toFixed(1)}m MV` : ''}
-                </span>
-              </div>
+                    <div className={styles.blockToggleRight}>
+                      {isPending && (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={(e) => handleCancelListing(p, e)}
+                          disabled={isCancelling}
+                          loading={isCancelling}
+                        >
+                          Cancel Listing
+                        </Button>
+                      )}
+                      {!isPending && (
+                        <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                          Click to List
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-secondary)' }}>
-                Minimum Bid (€m)
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                required
-                value={minBid}
-                onChange={(e) => setMinBid(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                style={{
-                  padding: '12px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--color-border)',
-                  background: 'var(--color-bg-card)',
-                  color: 'var(--color-text-primary)',
-                  fontSize: '16px',
-                }}
-              />
-              <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                Set to €0 to accept any offer. Minimum bid to start the auction.
+          )}
+        </>
+      ) : (
+        <form onSubmit={handleCreateListing} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--color-bg-secondary)', padding: '14px', borderRadius: 'var(--r-control)' }}>
+            <PositionBadge position={selectedPlayer.primary_position as any} size="md" />
+            <div>
+              <h3 style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: '16px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                {getPlayerDisplayName(selectedPlayer, 'full')}
+              </h3>
+              <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+                {selectedPlayer.pl_team ?? ''} {selectedPlayer.market_value ? `· €${selectedPlayer.market_value.toFixed(1)}m MV` : ''}
               </span>
             </div>
+          </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-secondary)' }}>
-                Buy Now Price (€m) — Optional
-              </label>
-              <input
-                type="number"
-                min={minBid + 1}
-                step="1"
-                value={buyNowPrice}
-                onChange={(e) => setBuyNowPrice(e.target.value)}
-                placeholder="No Buy Now price"
-                style={{
-                  padding: '12px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--color-border)',
-                  background: 'var(--color-bg-card)',
-                  color: 'var(--color-text-primary)',
-                  fontSize: '16px',
-                }}
-              />
-              <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                Leave blank for auction only. If a user bids this amount, they win the player immediately.
-              </span>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-condensed)' }}>
+              Minimum Bid (€m)
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              required
+              value={minBid}
+              onChange={(e) => setMinBid(Math.max(0, parseInt(e.target.value, 10) || 0))}
+              style={{
+                padding: '10px 12px',
+                borderRadius: 'var(--r-control)',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-card)',
+                color: 'var(--color-text-primary)',
+                fontFamily: 'var(--font-condensed)',
+                fontSize: '15px',
+              }}
+            />
+            <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+              Set to €0 to accept any offer. Minimum bid to start the auction.
+            </span>
+          </div>
 
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '12px' }}>
-              <button
-                type="button"
-                className={styles.blockToggleBtn}
-                onClick={() => setSelectedPlayer(null)}
-                disabled={submitting}
-              >
-                Back
-              </button>
-              <button
-                type="submit"
-                className={styles.blockToggleBtn}
-                style={{ background: 'var(--color-accent-green)', borderColor: 'var(--color-accent-green)', color: '#fff' }}
-                disabled={submitting}
-              >
-                {submitting ? 'Creating Listing…' : 'List Player'}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-condensed)' }}>
+              Buy Now Price (€m) — Optional
+            </label>
+            <input
+              type="number"
+              min={minBid + 1}
+              step="1"
+              value={buyNowPrice}
+              onChange={(e) => setBuyNowPrice(e.target.value)}
+              placeholder="No Buy Now price"
+              style={{
+                padding: '10px 12px',
+                borderRadius: 'var(--r-control)',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-card)',
+                color: 'var(--color-text-primary)',
+                fontFamily: 'var(--font-condensed)',
+                fontSize: '15px',
+              }}
+            />
+            <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+              Leave blank for auction only. If a user bids this amount, they win the player immediately.
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
+            <Button
+              variant="secondary"
+              onClick={() => setSelectedPlayer(null)}
+              disabled={submitting}
+            >
+              Back
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              loading={submitting}
+              disabled={submitting}
+            >
+              List Player
+            </Button>
+          </div>
+        </form>
+      )}
+    </ResponsiveModal>
   );
 }

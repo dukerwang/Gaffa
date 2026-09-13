@@ -282,7 +282,7 @@ export async function executeDrop(
 
                     await admin.from('chat_messages').insert({
                         league_id: team.league_id,
-                        message: `📢 [SYSTEM:ANNOUNCEMENT] Returned loan activated! **${(pendingLoan.player as any)?.name}** has returned to the ${spot} of **${team.team_name}**.`,
+                        message: `📢 [SYSTEM:ANNOUNCEMENT] Returned loan activated. **${(pendingLoan.player as any)?.name}** has returned to the ${spot} of **${team.team_name}**.`,
                     });
                 }
             }

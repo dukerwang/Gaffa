@@ -396,9 +396,9 @@ export function SeasonClosed({ model }: { model: HomeModel }) {
         <div>
           <div className={styles.closedMv}>{c.openDepartures}</div>
           <div className={styles.closedMs}>
-            {c.openDepartures === 1 ? 'Departure decision' : 'Departure decisions'} open. Release
-            takes the compensation and bars you from his return auction; retain keeps the claim and
-            pays nothing.
+            {c.openDepartures === 1 ? 'Departure decision' : 'Departure decisions'} open. Release him and you
+            take the compensation but can’t bid in his return auction. Retain him and you keep the
+            claim at no cost.
           </div>
         </div>
       </div>

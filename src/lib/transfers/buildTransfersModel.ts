@@ -105,7 +105,7 @@ export interface RosterPlayer extends EnrichedPlayer {
 
 /**
  * A retained claim as the hub reads it — a `departure_decisions` row still
- * held by a club (status `retained` or `return_pending`), tradeable via
+ * held by a club (status `retained`, `return_pending` or `on_loan`), tradeable via
  * `offered_rights`/`requested_rights` on `trade_proposals`.
  *
  * Not a roster player: `id` is the decision id, not the player id — the same

@@ -516,7 +516,7 @@ export default function ProposeBuilder({
           <span className={styles.pickName}>Unknown</span>
         )}
         <span className={styles.pickMeta}>
-          Retained rights{r.status === 'return_pending' ? ' · back in the PL' : ''}
+          {r.status === 'on_loan' ? 'On loan abroad' : `Retained rights${r.status === 'return_pending' ? ' · back in the PL' : ''}`}
         </span>
       </span>
       <span className={styles.pickValue}>{money(r.marketValueAtDeparture)}</span>
@@ -573,7 +573,7 @@ export default function ProposeBuilder({
           <span className={styles.pickName}>Unknown</span>
         )}
         <span className={styles.pickMeta}>
-          Retained rights{r.status === 'return_pending' ? ' · back in the PL' : ''}
+          {r.status === 'on_loan' ? 'On loan abroad' : `Retained rights${r.status === 'return_pending' ? ' · back in the PL' : ''}`}
         </span>
       </span>
       <span className={styles.pickValue}>{money(r.marketValueAtDeparture)}</span>
@@ -1117,7 +1117,7 @@ export default function ProposeBuilder({
                       <span className={`${styles.ledgerVal} ${styles.risk}`}>up to {money(loanFinalTerms.cap)}</span>
                     </div>
                     <div className={styles.ledgerRow}>
-                      <span>Likely bonus if he holds {recentPPG.toFixed(2)} PPG</span>
+                      <span>Projected bonus at {recentPPG.toFixed(2)} PPG</span>
                       <span className={styles.ledgerDots} />
                       <span className={styles.ledgerVal}>≈ €{loanEstBonusPayout.toFixed(1)}m</span>
                     </div>
@@ -1247,8 +1247,8 @@ export default function ProposeBuilder({
               <span className={styles.ledgerBig}>{money(Math.abs(deal.netFaab))}</span>
               <span className={styles.ledgerSub}>
                 {deal.netFaab > 0
-                  ? `Leaves ${money(Math.max(0, budget - deal.netFaab))} of ${money(budget)}`
-                  : `Takes you to ${money(budget - deal.netFaab)}`}
+                  ? `${money(Math.max(0, budget - deal.netFaab))} left of ${money(budget)}`
+                  : `Balance after: ${money(budget - deal.netFaab)}`}
               </span>
             </div>
           )}

@@ -65,7 +65,7 @@ export async function POST(req: NextRequest, { params }: Props) {
             return NextResponse.json({ error: 'Both players are already on IR' }, { status: 400 });
         }
         if (outgoingEntry.status !== 'ir') {
-            return NextResponse.json({ error: 'Target player is not currently on IR' }, { status: 400 });
+            return NextResponse.json({ error: 'Target player isn’t on IR' }, { status: 400 });
         }
         if (incomingEntry.status === 'loan_in' || incomingEntry.status === 'loan_out') {
             return NextResponse.json({ error: 'Cannot move loaned players to IR' }, { status: 400 });
@@ -215,7 +215,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     // Activate Action
     if (action === 'activate') {
         if (entry.status !== 'ir') {
-            return NextResponse.json({ error: 'Player is not currently on IR' }, { status: 400 });
+            return NextResponse.json({ error: 'Player isn’t on IR' }, { status: 400 });
         }
 
         // Validate roster space. IR and taxi players don't count against the active roster limit.

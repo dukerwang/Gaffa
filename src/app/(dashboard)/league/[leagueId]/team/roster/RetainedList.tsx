@@ -27,6 +27,13 @@ export default function RetainedList({
   // isn't worth a panel.
   if (!viewerIsOwner && held.length === 0) return null;
 
+  // Loanees are held rights too, but they use no slot and come back on their
+  // own, so they get their own group rather than sitting among the claims the
+  // slot count above describes.
+  const retained = held.filter((d) => d.status !== 'on_loan');
+  const onLoan = held.filter((d) => d.status === 'on_loan');
+  const groupCount = [pending, retained, onLoan].filter((g) => g.length > 0).length;
+
   return (
     <section className={`${styles.panel} ${styles.retained} g-panel`}>
       <div className={styles.panelHead}>
@@ -42,15 +49,15 @@ export default function RetainedList({
 
       {pending.length > 0 && (
         <div className={styles.retGroup}>
-          <div className={styles.retGroupH}>Awaiting your decision</div>
+          <div className={styles.retGroupH}>Awaiting Your Decision</div>
           {pending.map((d) => <PendingRow key={d.id} d={d} onDecision={onDecision} serverNow={serverNow} />)}
         </div>
       )}
 
-      {held.length > 0 ? (
+      {retained.length > 0 && (
         <div className={styles.retGroup}>
-          {pending.length > 0 && <div className={styles.retGroupH}>Held rights</div>}
-          {held.map((d) => (
+          {groupCount > 1 && <div className={styles.retGroupH}>Held Rights</div>}
+          {retained.map((d) => (
             <HeldRow
               key={d.id}
               leagueId={leagueId}
@@ -61,7 +68,25 @@ export default function RetainedList({
             />
           ))}
         </div>
-      ) : pending.length === 0 ? (
+      )}
+
+      {onLoan.length > 0 && (
+        <div className={styles.retGroup}>
+          <div className={styles.retGroupH}>On Loan Abroad</div>
+          {onLoan.map((d) => (
+            <HeldRow
+              key={d.id}
+              leagueId={leagueId}
+              d={d}
+              viewerIsOwner={viewerIsOwner}
+              teamId={teamId}
+              onDecision={onDecision}
+            />
+          ))}
+        </div>
+      )}
+
+      {held.length === 0 && pending.length === 0 ? (
         <p className={styles.retEmpty}>
           No retained players yet. When one of your players leaves the Premier League you can keep his
           rights here instead of taking the cash — he reverts to you free if he ever returns.
@@ -72,6 +97,8 @@ export default function RetainedList({
         {viewerIsOwner
           ? 'Rights never expire and can’t be cashed out — relinquish one to free its slot. They’re tradeable from the Transfer Market’s Deals page.'
           : 'Rights never expire and can’t be cashed out, but they can be traded — make an offer from the Deals page.'}
+        {viewerIsOwner && onLoan.length > 0 &&
+          ' Players on loan abroad don’t use a slot or a squad place, and rejoin your squad when they’re back in the Premier League.'}
       </div>
     </section>
   );
@@ -128,6 +155,12 @@ function HeldRow({
   onDecision: (r: DecisionRequest) => void;
 }) {
   const returning = d.status === 'return_pending';
+  const onLoan = d.status === 'on_loan';
+  const meta = returning
+    ? `Back with ${d.backClub ?? 'a PL club'}`
+    : onLoan
+      ? `${d.loanClub ? `At ${d.loanClub}` : 'On loan'} · from ${d.lastClub}`
+      : `ex-${d.lastClub} · left ${fmtSeason(d.seasonFrom)}`;
   return (
     <div className={`${styles.retRow} ${returning ? styles.retReturning : ''}`}>
       <Mono d={d} />
@@ -135,7 +168,7 @@ function HeldRow({
         <div className={styles.retName}>{getPlayerDisplayName({ name: d.name, web_name: d.webName }, 'initial_last')}</div>
         <div className={`${styles.retMeta} g-namerow`}>
           <PosBadge pos={d.pos} />
-          <span>{returning ? `Back with ${d.backClub ?? 'a PL club'}` : `ex-${d.lastClub} · left ${fmtSeason(d.seasonFrom)}`}</span>
+          <span>{meta}</span>
         </div>
       </div>
 
@@ -152,13 +185,13 @@ function HeldRow({
         <>
           <div className={styles.retFig}>
             <div className={styles.retFigV}>{money(d.marketValue)}</div>
-            <div className={styles.retFigK}>value at departure</div>
+            <div className={styles.retFigK}>{onLoan ? 'value when loaned' : 'value at departure'}</div>
           </div>
           <div className={styles.retActions}>
             {viewerIsOwner ? (
               <>
                 <NavigationLink href={`/league/${leagueId}/transfers/deals?proposeRight=${d.id}`} className={styles.retBtn}>Trade</NavigationLink>
-                <button type="button" className={`${styles.retBtn} ${styles.retBtnDanger}`} onClick={() => onDecision({ mode: 'relinquish', dep: d })}>Relinquish</button>
+                <button type="button" className={`${styles.retBtn} ${styles.retBtnDanger}`} onClick={() => onDecision({ mode: 'relinquish', dep: d })}>{onLoan ? 'Drop' : 'Relinquish'}</button>
               </>
             ) : (
               <NavigationLink

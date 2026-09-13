@@ -195,8 +195,10 @@ export async function retainDeparture(
  */
 export async function relinquishRights(admin: SupabaseClient, decisionId: string): Promise<void> {
   const decision = await loadDecision(admin, decisionId);
-  if (decision.status !== 'retained') {
-    throw new DepartureError('NOT_RETAINED', 'Those rights are not currently held.');
+  // Also how a player out on loan abroad is dropped. No severance: a normal drop
+  // charges it because it frees a squad place, and a loanee never held one.
+  if (decision.status !== 'retained' && decision.status !== 'on_loan') {
+    throw new DepartureError('NOT_RETAINED', 'You don’t hold those rights.');
   }
 
   const { error } = await admin
@@ -207,7 +209,7 @@ export async function relinquishRights(admin: SupabaseClient, decisionId: string
       updated_at: new Date().toISOString(),
     })
     .eq('id', decisionId)
-    .eq('status', 'retained');
+    .eq('status', decision.status);
 
   if (error) throw new DepartureError('RELINQUISH_FAILED', error.message);
 }

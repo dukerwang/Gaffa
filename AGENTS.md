@@ -14,7 +14,7 @@ read that. These are the files worth knowing exist:
 
 | When you are about to | Read first |
 |---|---|
-| Touch UI, CSS, layout, or typography | `docs/UI_RULES.md`, then `DESIGN.md` |
+| Touch UI, CSS, layout, or typography | `docs/UI_RULES.md`, `docs/UI_COMPONENTS.md`, then `DESIGN.md` |
 | Write or rename anything a manager reads | `docs/UI_RULES.md` rules 1–4 |
 | Make a design argument or assert a policy | `docs/DECISIONS.md` |
 | Change a league mechanic or scoring rule | `docs/USER_GUIDE.md` |

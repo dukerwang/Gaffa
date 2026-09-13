@@ -1,0 +1,110 @@
+/* Gaffa UI Primitive: SegmentedControl
+   Accessible tablist/segmented switcher with Archivo Narrow typography.
+   Follows UI_RULES: elevation declared once, WCAG AA contrast. */
+
+.container {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-bg-secondary);
+  padding: 3px;
+  border-radius: var(--r-control);
+  gap: 2px;
+  user-select: none;
+}
+
+.fullWidth {
+  display: flex;
+  width: 100%;
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-condensed);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: calc(var(--r-control) - 2px);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-standard),
+              background-color var(--dur-fast) var(--ease-standard),
+              transform var(--dur-fast) var(--ease-standard);
+  position: relative;
+  --press-scale: 0.98;
+}
+
+.segment:active:not(:disabled) {
+  transform: scale(var(--press-scale));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segment,
+  .segment:active:not(:disabled) {
+    transition: none;
+    transform: none;
+  }
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Sizing */
+.size_sm {
+  padding: var(--s1) var(--s3);
+  font-size: var(--t-12);
+  min-height: 26px;
+}
+
+.size_md {
+  padding: var(--s2) var(--s4);
+  font-size: var(--t-13);
+  min-height: 32px;
+}
+
+.fullWidth .segment {
+  flex: 1;
+}
+
+/* Hover on inactive */
+@media (hover: hover) and (pointer: fine) {
+  .segment:not(.active):not(:disabled):hover {
+    color: var(--color-text-primary);
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  :global([data-theme='dark']) .segment:not(.active):not(:disabled):hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* Active Segment */
+.active {
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+:global([data-theme='dark']) .active {
+  background: var(--color-bg-elevated);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.segment:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1em;
+  flex-shrink: 0;
+}
