@@ -8,6 +8,7 @@
 import { unstable_cache } from 'next/cache';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { fetchAllPages } from '@/lib/supabase/pagination';
 import { getLatestReferenceStatsSeason, resolveDraftStatsSeason } from '@/lib/season/currentSeason';
 import { calculateMatchRating, DEFAULT_REFERENCE_STATS } from '@/lib/scoring/matchRating';
 import { MEANINGFUL_MINUTES } from '@/lib/scoring/positionAggregates';
@@ -65,7 +66,16 @@ const loadDraftStatsForSeason = unstable_cache(
           .from('season_player_stats_archive')
           .select('player_id, ppg, form_rating, overall_rank, position_ranks')
           .eq('season', season),
-        admin.from('player_season_clubs').select('player_id').eq('season', season),
+        // Paged: 796 rows for 2025-26 against a silent 1,000-row cap, and a
+        // truncated read flags established players as new to the Premier League.
+        fetchAllPages<{ player_id: string }>((from, to) =>
+          admin
+            .from('player_season_clubs')
+            .select('player_id')
+            .eq('season', season)
+            .order('player_id', { ascending: true })
+            .range(from, to),
+        ).then((data) => ({ data })),
       ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -209,3 +209,51 @@ describe('isolation', () => {
     expect(data).toEqual([]);
   });
 });
+
+describe('the PostgREST row cap', () => {
+  function big(n: number) {
+    return createFakeSupabase({
+      stats: Array.from({ length: n }, (_, i) => ({ id: i, season: '2026-27' })),
+    });
+  }
+
+  it('returns at most 1,000 rows from an unpaginated read, without an error', async () => {
+    const { data, error } = await big(1_200).from('stats').select('id').eq('season', '2026-27');
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1_000);
+  });
+
+  it('caps a range wider than 1,000 rows too', async () => {
+    const { data } = await big(2_500).from('stats').select('id').order('id').range(0, 1_999);
+    expect(data).toHaveLength(1_000);
+  });
+
+  it('serves the rest of the rows to the next page', async () => {
+    const { data } = await big(1_200).from('stats').select('id').order('id').range(1_000, 1_999);
+    expect(data.map((r: any) => r.id)).toEqual(Array.from({ length: 200 }, (_, i) => 1_000 + i));
+  });
+});
+
+describe('filtering on an !inner embed', () => {
+  function leagues() {
+    return createFakeSupabase({
+      leagues: [
+        { id: 'l1', status: 'active', name: 'Live' },
+        { id: 'l2', status: 'setup', name: 'Pending' },
+      ],
+      matchups: [
+        { id: 'm1', league_id: 'l1', gameweek: 5 },
+        { id: 'm2', league_id: 'l2', gameweek: 5 },
+      ],
+    });
+  }
+
+  it('drops parents whose embedded row does not match', async () => {
+    const { data } = await leagues()
+      .from('matchups')
+      .select('id, league:leagues!inner(name, status)')
+      .eq('gameweek', 5)
+      .eq('league.status', 'active');
+    expect(data).toEqual([{ id: 'm1', league: { name: 'Live', status: 'active' } }]);
+  });
+});

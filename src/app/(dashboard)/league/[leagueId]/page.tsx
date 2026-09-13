@@ -140,7 +140,14 @@ export default async function LeaguePage({ params }: Props) {
       Number(currentMatchup.score_a) === 0 &&
       Number(currentMatchup.score_b) === 0
     ) {
-      await processMatchupsForGameweek(fplStatus.currentGw, fplStatus.isFinished);
+      // Best effort. The processor throws when a read fails rather than score
+      // from partial data; the page renders the stored scores and the sync
+      // cron resolves the gameweek on its next pass.
+      try {
+        await processMatchupsForGameweek(fplStatus.currentGw, fplStatus.isFinished);
+      } catch (err) {
+        console.error('[league home] Score sync failed; rendering stored scores:', err);
+      }
     }
   }
 
