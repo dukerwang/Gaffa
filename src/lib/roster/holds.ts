@@ -69,15 +69,20 @@ export async function getHoldState(admin: SupabaseClient, teamId: string): Promi
   };
 }
 
-/** Throws {@link HoldFreezeError} if the team holds anyone (R7). */
-export async function assertNotHolding(admin: SupabaseClient, teamId: string): Promise<void> {
+/** Whether the team holds anyone, which freezes squad additions (R7). */
+export async function isHolding(admin: SupabaseClient, teamId: string): Promise<boolean> {
   const { count, error } = await admin
     .from('roster_entries')
     .select('id', { count: 'exact', head: true })
     .eq('team_id', teamId)
     .eq('status', 'held');
   if (error) throw new Error(`Failed to check held players: ${error.message}`);
-  if ((count ?? 0) > 0) throw new HoldFreezeError();
+  return (count ?? 0) > 0;
+}
+
+/** Throws {@link HoldFreezeError} if the team holds anyone (R7). */
+export async function assertNotHolding(admin: SupabaseClient, teamId: string): Promise<void> {
+  if (await isHolding(admin, teamId)) throw new HoldFreezeError();
 }
 
 /**

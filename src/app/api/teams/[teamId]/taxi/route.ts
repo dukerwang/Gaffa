@@ -5,6 +5,7 @@ import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { resolveLineupEditMatchup } from '@/lib/lineups/editTarget';
 import { resolveCurrentGw } from '@/lib/season/currentGameweek';
 import { countBuybackSlots, DEFAULT_ROSTER_SIZE } from '@/lib/roster/capacity';
+import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
 
 interface Props {
     params: Promise<{ teamId: string }>;
@@ -287,6 +288,10 @@ export async function POST(req: NextRequest, { params }: Props) {
     if (action === 'activate') {
         if (entry.status !== 'taxi') {
             return NextResponse.json({ error: 'Player is not currently in the academy' }, { status: 400 });
+        }
+        // Held players (R7): promoting from the academy is an addition.
+        if (await isHolding(admin, teamId)) {
+            return NextResponse.json({ error: HOLD_FREEZE_MESSAGE }, { status: 409 });
         }
 
         // Check active roster space (excludes IR, taxi, and loan_in)

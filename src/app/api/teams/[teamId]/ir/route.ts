@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { countBuybackSlots, DEFAULT_ROSTER_SIZE } from '@/lib/roster/capacity';
+import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
 
 interface Props {
     params: Promise<{ teamId: string }>;
@@ -222,6 +223,10 @@ export async function POST(req: NextRequest, { params }: Props) {
     if (action === 'activate') {
         if (entry.status !== 'ir') {
             return NextResponse.json({ error: 'Player is not currently on IR' }, { status: 400 });
+        }
+        // Held players (R7): moving a player back into the squad is an addition.
+        if (await isHolding(admin, teamId)) {
+            return NextResponse.json({ error: HOLD_FREEZE_MESSAGE }, { status: 409 });
         }
 
         // Validate roster space. IR and taxi players don't count against the active roster limit.
