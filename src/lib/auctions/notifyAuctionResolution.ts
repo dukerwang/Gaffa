@@ -145,12 +145,15 @@ export async function notifyAuctionResolution(
     // notification below: a €1-10m credit doesn't need an email blast the way
     // the winner announcement does.
     if (resData.scout_team_id && resData.scout_user_id && resData.scout_amount) {
+      const scoutWon = resData.scout_team_id === resData.winner_team_id;
       await createNotification(admin, {
         kind: 'auctions',
         leagueId,
         userId: resData.scout_user_id,
         title: 'Scout Fee',
-        content: `You earned **€${resData.scout_amount}m** for opening the auction on **${playerName}** — won by **${winnerTeamName ?? 'another club'}** for €${winnerBid}m.`,
+        content: scoutWon
+          ? `You earned **€${resData.scout_amount}m** back for opening the auction on **${playerName}**, which you won for €${winnerBid}m.`
+          : `You earned **€${resData.scout_amount}m** for opening the auction on **${playerName}**. **${winnerTeamName ?? 'Another club'}** won it for €${winnerBid}m.`,
         url: `/league/${leagueId}/finance`,
       });
     }

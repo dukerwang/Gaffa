@@ -376,10 +376,12 @@ When you list a player you can also flag whether you want **cash, players, or a 
 
 When you sign a free agent, the fee doesn't vanish. **20% of every winning bid returns to the league**, split two ways:
 
-- **Half to the Scout** — the manager who opened that auction by nominating the player, if they didn't win it. That's **10% of the winning bid, with no cap**: surfacing a €150m signing pays €15m.
+- **Half to the Scout** — the manager who opened that auction by nominating the player, whether they won it or not. That's **10% of the winning bid, with no cap**: surfacing a €150m signing pays €15m. If the Scout wins, it comes back to them as a rebate on their own bid.
 - **Half shared equally among the other clubs** who didn't win, as a **solidarity payment**.
 
 The remaining 80% is retired from the league's money supply.
+
+**Why pay the Scout on a win too?** If the fee only came when you lost, losing would be worth 10% of the price, so you'd have a reason to stop bidding below what the player is actually worth to you. Paying the same 10% either way means you can bid up to exactly what the player is worth to your squad. It's no more than 10%, so opening an auction first never lets you outbid a club that values the player more.
 
 **Why?** Because a fee that simply disappears drains the league every time somebody spends. Your squad is only sellable if the other managers still have money, so a market where every big signing destroys cash eventually has no buyers in it. Football handles this the same way — a slice of every transfer fee is distributed to a player's former clubs, and the Premier League's central pot is largely an equal share. A bidding war between two clubs now funds everyone else.
 
@@ -523,7 +525,7 @@ The permanent record book: final standings and podium for every past season, eac
 |---|---|
 | **Club Balance** | Your club's budget, used for signings, trades and loans. Earned monthly through results and at the reset through placement and cups. Never resets between seasons. |
 | **Open auction** | How every signing works. Bids are public — you see the current high bid and who holds it, and must beat it to lead. |
-| **Scout's Fee** | 10% of the winning bid, uncapped, paid to the manager who nominated a free agent into an auction they went on to lose. Not paid on system-opened auctions. |
+| **Scout's Fee** | 10% of the winning bid, uncapped, paid to the manager who nominated a free agent into the auction, whether they win it or lose it. Not paid on system-opened auctions. |
 | **Solidarity payment** | An equal share of another 10% of every winning bid, paid to the clubs that didn't win it. |
 | **Match Revenue** | Your monthly income, settled every four gameweeks on your results. |
 | **Severance fee** | The cost of dropping a rostered player to make room — 20% of his market value, minimum €2m, on top of the winning bid. |
