@@ -19,7 +19,7 @@ There is also existing drift. `resolve_single_player_auction_rpc` (migration 152
 ### Arrivals
 
 1. **[decided]** When an arrival finds no room, the player is held: he's yours, off the squad, and doesn't count toward the roster limit. The squad never goes over the limit through an arrival.
-2. **[inferred]** Arrivals that find room join directly: the academy if he left from it and still qualifies, otherwise the bench.
+2. **[decided]** Holding applies only when there's no room. Any arrival that finds room joins directly, with no Activate step. An auction win goes to reserves, or the academy if the bid asked for it, unchanged from today. A returning player goes to the academy if he left from it and still qualifies, otherwise reserves. (Duke: "if i'm at 15/20 players and i win an auction they should automatically join my reserves, or my academy if i specified that.") "Reserves" is roster status `bench`, not assigned to a lineup slot; wherever this spec says bench, it means reserves.
 3. Sources that can produce a hold:
    - A loan between managers ending, at expiry or on recall.
    - A loanee back from abroad (`on_loan` departure decision).
@@ -38,7 +38,7 @@ There is also existing drift. `resolve_single_player_auction_rpc` (migration 152
    - Placing auction bids.
    - Trades and loans that bring in more players than they send out, including loan recalls.
    - Moving a player from the academy or IR back into the squad. (Activating a held player into the academy or IR is not blocked: it's how a hold gets resolved, rule 6.)
-8. **[inferred]** Still allowed: drops, sale listings, trades that bring in the same number of players or fewer, moving players to IR or the academy, loaning players out, and lineup changes until the lock.
+8. **[open: Duke is still thinking this over]** Still allowed: drops, sale listings, trades that bring in the same number of players or fewer, moving players to IR or the academy, loaning players out, and lineup changes until the lock.
 9. **[decided, loophole]** A held player can't be loaned out or listed for loan. Without this rule, loaning him to a friend and back gives a permanent extra player beyond the limit.
 10. **[inferred]** Several held players: the freeze lasts until the last one is resolved.
 
@@ -46,7 +46,9 @@ There is also existing drift. `resolve_single_player_auction_rpc` (migration 152
 
 11. **[decided]** Additions freeze as soon as a player is held. If a player is still held when the first match of the next gameweek kicks off, the team's lineup also locks until nobody is held. "Next gameweek" means the first gameweek whose earliest kickoff is after `held_at`, so a hold that starts mid-gameweek doesn't lock the current week.
 12. **[decided, loophole]** This includes gameweek 1 after the summer, so a player can't be stored across the offseason for free.
-13. **[inferred]** While locked, the last saved lineup stands. Auto-subs and system lineup backfill still run.
+13. **[decided]** While locked, the last saved lineup carries forward each gameweek, and the manager is told their lineup was set for them. The lock is itself the prompt to fix the roster. Auto-subs still run.
+    - A locked lineup can still break. The manager can drop, trade away, or move a starter to IR or the academy; a starter can leave the Premier League; a borrowed player's loan can end; a position change can make a starter ineligible for his slot. When that happens, keep every valid pick and fill only the empty slots with the best eligible player.
+    - Today's `carryForward.ts` regenerates the whole lineup when any pick is invalid. During a lock that could give the manager a better XI than their own, so the lock path must fill gaps instead of using that fallback.
 
 ### Dropping and trading a held player
 
@@ -58,7 +60,7 @@ There is also existing drift. `resolve_single_player_auction_rpc` (migration 152
 16. **[decided]** Placing a bid doesn't change: a full squad still names a drop player or qualifies for the academy route.
 17. **[decided]** At settlement, bids are still walked highest first:
     - A bidder who can't afford bid plus severance is skipped (unchanged).
-    - **[inferred]** A bidder whose team is already holding a player is skipped with reason `players_held` (the freeze).
+    - **[inferred]** A bidder whose team is already holding a player is skipped with reason `players_held`, and the next highest bidder is considered. This is the freeze applied at the clock: a holding team can't sign anyone, including through a bid placed before the hold began. Example: a loan return is held on your team on Tuesday; your bid on an auction ending Wednesday is ignored unless you activate or drop the held player first.
     - Otherwise the top remaining bidder wins. The player goes to the bench if there's room, through the nominated drop if that player is still on the roster, to the academy if requested or as the fallback, and otherwise **he's held** with `held_source = 'auction'`.
 18. Because a held auction win skips that team's other live bids, a team can hold at most one player from auctions at a time.
 19. **[inferred]** Live bids from a team that becomes holding are skipped at settlement. The hold notification lists them.
@@ -66,7 +68,7 @@ There is also existing drift. `resolve_single_player_auction_rpc` (migration 152
 
 ### Offseason and Kickoff
 
-21. **[inferred]** The freeze applies in the offseason. Kickoff preflight warns about teams with held players and doesn't block Kickoff.
+21. **[inferred]** The freeze applies in the offseason. Season Kickoff (the commissioner action that opens a new season) runs preflight checks, some of which stop it entirely. A team holding a player is not one of those: the commissioner sees a warning naming the team and can still start the season.
 
 ### Loopholes checked
 
@@ -129,6 +131,7 @@ A TypeScript guard (`assertNotHolding`) in the routes, plus the same check insid
 - SQL helper `held_lineup_locked(team_id)`: true when a `held` entry exists and some gameweek of the current season has its earliest `pl_fixtures.kickoff_time` after `held_at` and at or before now.
 - `teams/[teamId]/lineup/route.ts` refuses saves while it's true. That route also resets unassigned entries to `bench`, so it has to skip `held` (and must never write `held` entries into a lineup).
 - Exclude `held` from `generateValidLineup.ts`, `fill-matchup-lineups`, `set-bot-lineups` and `matchupProcessor.ts`.
+- For a locked team, `carryForward.ts` copies the last saved lineup and fills only the invalid slots (rule 13), instead of regenerating the whole XI. `smartLock.ts` already maps players into slots and may be reusable for the fill. The carry-forward writes a notice to the manager that their lineup was set for them.
 
 ### Status filter sweep
 
@@ -143,13 +146,17 @@ A one-time data migration:
 
 Check how many records exist in each state before writing the migration.
 
+### Release sequencing with the Scout's Fee change
+
+`feat/scout-fee-both-ways` changes who receives the Scout's Fee inside `resolve_single_player_auction_rpc`, the same function this spec rewrites. Its migration (`_pending_scout_fee_win_or_lose.sql`) is deliberately unnumbered and unapplied, and edits two lines of whatever version is live. Duke has decided the two ship in one update. Apply the held migrations first, then number and apply the Scout's Fee migration after them; applying it first would let the held rewrite quietly restore the old fee rule. Before numbering either, check the highest migration number across every branch, as `CLAUDE.md` describes.
+
 ## Manager-facing
 
 Read `DESIGN.md` and `docs/UI_RULES.md` before building, and use the `gaffa-ui-copy` skill for every string.
 
 - **Notification "Player Held":** the player, why he's held, what's frozen, the exact kickoff when the lineup locks, and the live bids that will be skipped unless the manager activates or drops before those auctions end.
 - **Roster page:** a Held group with Activate (only the targets he qualifies for) and Drop. A club to-do item counting down to the lineup lock. In the Retained List, Reinstate becomes Activate and Decline stays.
-- **Pitch page:** before the lock, "1 player held. Activate or drop him before {kickoff}, or your lineup locks." After it, the lineup is shown as locked.
+- **Pitch page:** before the lock, "1 player held. Activate or drop him before {kickoff}, or your lineup locks." After it, the page says the lineup was set for the manager and stays locked until the held player is activated or dropped.
 - **Blocked controls:** the bid dialog, offer builder, loan modals, and academy and IR controls are disabled with the reason "Activate or drop your held player first."
 
 ## Docs
