@@ -55,7 +55,7 @@ const STATUS: Record<string, { label: string; short: string; tone: string }> = {
   taxi: { label: 'Academy', short: 'Academy', tone: 'var(--color-warning-text)' },
   loan_in: { label: 'Loan In', short: 'Loan In', tone: 'var(--color-accent-ink)' },
   loan_out: { label: 'Loan Out', short: 'Loan Out', tone: 'var(--color-text-muted)' },
-  pending_activation: { label: 'Returning', short: 'Returning', tone: 'var(--color-warning-text)' },
+  held: { label: 'Held', short: 'Held', tone: 'var(--color-warning-text)' },
 };
 export const statusMeta = (s: string) => STATUS[s] ?? { label: s, short: s, tone: 'var(--color-text-muted)' };
 

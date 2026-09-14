@@ -91,7 +91,7 @@ export default function RequestLoanModal({
 
   const teamRoster: SimplePlayer[] = selectedTeamId ? (allRosters[selectedTeamId] ?? []) : [];
   const eligibleRoster = teamRoster.filter(
-    (p) => !p.status || !['ir', 'loan_in', 'loan_out'].includes(p.status)
+    (p) => !p.status || !['ir', 'loan_in', 'loan_out', 'held'].includes(p.status)
   );
 
   function handleSelectPlayer(p: SimplePlayer) {

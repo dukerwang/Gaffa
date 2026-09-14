@@ -41,6 +41,7 @@ const GROUP_LABELS: { key: RosterStatus; label: string }[] = [
   { key: 'ir', label: 'Injured Reserve' },
   { key: 'loan_in', label: 'On loan in' },
   { key: 'loan_out', label: 'Out on loan' },
+  { key: 'held', label: 'Held' },
 ];
 
 export async function GET(_req: NextRequest, { params }: Props) {
@@ -108,7 +109,7 @@ export async function GET(_req: NextRequest, { params }: Props) {
     if (!p) continue;
     if (e.status === 'taxi') counts.academy += 1;
     else if (e.status === 'ir') counts.ir += 1;
-    else counts.squad += 1;
+    else if (e.status !== 'held') counts.squad += 1;
     byId.set(p.id, {
       id: p.id,
       name: p.name,

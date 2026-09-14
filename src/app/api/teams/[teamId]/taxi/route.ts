@@ -99,6 +99,9 @@ export async function POST(req: NextRequest, { params }: Props) {
         if (incomingEntry.status === 'loan_in' || incomingEntry.status === 'loan_out') {
             return NextResponse.json({ error: 'Cannot move loaned players to the academy' }, { status: 400 });
         }
+        if (incomingEntry.status === 'held') {
+            return NextResponse.json({ error: 'Activate a held player from your Held list.' }, { status: 400 });
+        }
 
         const incomingPlayer = incomingEntry.player as unknown as { id: string; name: string; date_of_birth: string | null; pl_team_id: number | null; web_name: string | null };
         const outgoingPlayer = outgoingEntry.player as unknown as { id: string; name: string; date_of_birth: string | null; pl_team_id: number | null; web_name: string | null };
@@ -210,6 +213,9 @@ export async function POST(req: NextRequest, { params }: Props) {
         if (entry.status === 'loan_in' || entry.status === 'loan_out') {
             return NextResponse.json({ error: 'Cannot move loaned players to the academy' }, { status: 400 });
         }
+        if (entry.status === 'held') {
+            return NextResponse.json({ error: 'Activate a held player from your Held list.' }, { status: 400 });
+        }
         if (entry.status === 'taxi') {
             return NextResponse.json({ error: 'Player is already in the academy' }, { status: 400 });
         }
@@ -288,7 +294,7 @@ export async function POST(req: NextRequest, { params }: Props) {
             .from('roster_entries')
             .select('id')
             .eq('team_id', teamId)
-            .not('status', 'in', '("ir","taxi","loan_in")');
+            .not('status', 'in', '("ir","taxi","loan_in","held")');
 
         if (rosterErr) return NextResponse.json({ error: rosterErr.message }, { status: 500 });
 

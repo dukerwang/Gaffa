@@ -116,7 +116,7 @@ export async function getEffectiveLineupForTeam(
     .from('roster_entries')
     .select('player_id, status')
     .eq('team_id', teamId)
-    .not('status', 'in', '("ir","taxi","loan_out")');
+    .not('status', 'in', '("ir","taxi","loan_out","held")');
 
   const eligibleIds = new Set((rosterEntries ?? []).map((r) => r.player_id));
 

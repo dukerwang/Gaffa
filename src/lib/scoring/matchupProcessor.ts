@@ -162,7 +162,7 @@ export async function processMatchupsForGameweek(
     for (const e of allRosterEntries ?? []) {
         if (!teamRosterMap.has(e.team_id)) teamRosterMap.set(e.team_id, new Set());
         teamRosterMap.get(e.team_id)!.add(e.player_id);
-        if (e.status === 'ir' || e.status === 'loan_out') {
+        if (e.status === 'ir' || e.status === 'loan_out' || e.status === 'held') {
             if (!teamIrMap.has(e.team_id)) teamIrMap.set(e.team_id, new Set());
             teamIrMap.get(e.team_id)!.add(e.player_id);
         }

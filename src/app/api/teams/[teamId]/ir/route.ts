@@ -70,6 +70,9 @@ export async function POST(req: NextRequest, { params }: Props) {
         if (incomingEntry.status === 'loan_in' || incomingEntry.status === 'loan_out') {
             return NextResponse.json({ error: 'Cannot move loaned players to IR' }, { status: 400 });
         }
+        if (incomingEntry.status === 'held') {
+            return NextResponse.json({ error: 'Activate a held player from your Held list.' }, { status: 400 });
+        }
 
         const incomingPlayer = incomingEntry.player as unknown as { id: string; name: string; fpl_status: string | null; pl_team_id: number | null; web_name: string | null };
         const outgoingPlayer = outgoingEntry.player as unknown as { id: string; name: string; fpl_status: string | null; pl_team_id: number | null; web_name: string | null };
@@ -167,6 +170,9 @@ export async function POST(req: NextRequest, { params }: Props) {
         if (entry.status === 'loan_in' || entry.status === 'loan_out') {
             return NextResponse.json({ error: 'Cannot move loaned players to IR' }, { status: 400 });
         }
+        if (entry.status === 'held') {
+            return NextResponse.json({ error: 'Activate a held player from your Held list.' }, { status: 400 });
+        }
 
         if (entry.status === 'ir') {
             return NextResponse.json({ error: 'Player is already on IR' }, { status: 400 });
@@ -223,7 +229,7 @@ export async function POST(req: NextRequest, { params }: Props) {
             .from('roster_entries')
             .select('id')
             .eq('team_id', teamId)
-            .not('status', 'in', '("ir","taxi","loan_in")');
+            .not('status', 'in', '("ir","taxi","loan_in","held")');
             
         const { data: league } = await admin
             .from('leagues')

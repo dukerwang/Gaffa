@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
       .from('roster_entries')
       .select('id', { count: 'exact', head: true })
       .eq('team_id', row.team_id)
-      .not('status', 'in', '("ir","taxi")');
+      .not('status', 'in', '("ir","taxi","loan_in","held")');
 
     if ((activeCount ?? 0) >= rosterSize) {
       unresolved.push({

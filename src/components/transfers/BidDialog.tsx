@@ -135,7 +135,8 @@ export default function BidDialog({
   // A drop is only demanded when the roster is full AND the academy cannot
   // absorb the arrival — the route decides that itself, so this is an offer of
   // a drop rather than a hard gate, and the server still has the final word.
-  const droppable = myRoster.filter((r) => r.status !== 'loan_in' && r.id !== player.id);
+  // A held player frees no squad place, so dropping him can't make room for a bid.
+  const droppable = myRoster.filter((r) => r.status !== 'loan_in' && r.status !== 'held' && r.id !== player.id);
 
   // Proactive academy routing (117): offered any time the player is
   // age-eligible and the academy has room, independent of whether the active

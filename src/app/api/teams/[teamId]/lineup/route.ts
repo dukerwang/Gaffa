@@ -95,7 +95,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     .from('roster_entries')
     .select('id, player_id, status, player:players(id, name, primary_position, secondary_positions, pl_team_id, web_name, full_name, sofifa_common_name)')
     .eq('team_id', teamId)
-    .not('status', 'in', '("ir","taxi","loan_out")');
+    .not('status', 'in', '("ir","taxi","loan_out","held")');
 
   if (!entries) {
     return NextResponse.json({ error: 'Failed to fetch roster' }, { status: 500 });

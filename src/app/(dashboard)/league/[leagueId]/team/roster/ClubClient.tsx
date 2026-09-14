@@ -534,7 +534,7 @@ export default function ClubClient({
           req={decision}
           leagueId={leagueId}
           slots={departures.slots}
-          rosterCount={entries.filter((e) => e.status !== 'ir' && e.status !== 'taxi' && e.status !== 'loan_in').length}
+          rosterCount={entries.filter((e) => e.status !== 'ir' && e.status !== 'taxi' && e.status !== 'loan_in' && e.status !== 'held').length}
           rosterMax={club.rosterMax}
           onClose={() => setDecision(null)}
           onDone={() => { setDecision(null); router.refresh(); }}

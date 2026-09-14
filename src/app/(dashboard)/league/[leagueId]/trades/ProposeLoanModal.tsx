@@ -88,7 +88,7 @@ export default function ProposeLoanModal({
   }, [selectedPlayer, duration]);
 
   const eligiblePlayers = myRoster.filter(
-    (p) => !['ir', 'loan_in', 'loan_out'].includes(p.status)
+    (p) => !['ir', 'loan_in', 'loan_out', 'held'].includes(p.status)
   );
 
   // ─── Loan Calculations ───────────────────────────────────────────────────

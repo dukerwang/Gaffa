@@ -1677,9 +1677,9 @@ function ListingCard({
     return () => clearInterval(interval);
   }, [isLive, listing.auction_expires_at]);
 
-  const activeCount = localMyRoster.filter((r) => r.status !== 'ir' && r.status !== 'taxi').length;
+  const activeCount = localMyRoster.filter((r) => r.status !== 'ir' && r.status !== 'taxi' && r.status !== 'loan_in' && r.status !== 'held').length;
   const showDropSelect = activeCount >= rosterSize;
-  const eligibleDrops = localMyRoster.filter((r) => r.status !== 'ir' && r.status !== 'taxi');
+  const eligibleDrops = localMyRoster.filter((r) => r.status !== 'ir' && r.status !== 'taxi' && r.status !== 'held');
 
   async function handleBid(e: React.FormEvent) {
     e.preventDefault();

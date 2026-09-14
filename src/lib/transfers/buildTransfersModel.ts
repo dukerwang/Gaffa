@@ -26,6 +26,7 @@ import {
 import { buildEffectivePpgMap } from './effectivePpg';
 import { getFplStatus } from '@/lib/fpl/api';
 import { RIGHTS_HELD_STATUSES } from '@/lib/departures/types';
+import { UNCOUNTED_ROSTER_STATUSES } from '@/lib/roster/capacity';
 import type { Player, TradeProposal, Team } from '@/types';
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -524,7 +525,7 @@ export async function buildTransfersModel(
     // immediately regardless of bid count.
     .filter((a) => a.kind !== 'listing' || a.bid_count > 0);
 
-  const activeRosterCount = myRoster.filter((r) => r.status !== 'ir' && r.status !== 'taxi' && r.status !== 'loan_in').length;
+  const activeRosterCount = myRoster.filter((r) => !(UNCOUNTED_ROSTER_STATUSES as readonly string[]).includes(r.status)).length;
 
   // Free-agency count, derived rather than queried.
   //
