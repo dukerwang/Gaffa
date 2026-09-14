@@ -27,6 +27,7 @@ import {
 import { listDecisions, getSlotUsage } from '@/lib/departures/decisions';
 import { OPEN_STATUSES, RIGHTS_HELD_STATUSES } from '@/lib/departures/types';
 import { CLUB_BY_SLUG } from '@/lib/clubs/registry';
+import { getHoldState, isGameweekInProgress, type HeldEntry } from '@/lib/roster/holds';
 import { resolveCurrentGw } from '@/lib/season/currentGameweek';
 import { resolveLineupEditMatchup } from '@/lib/lineups/editTarget';
 import { normalizeMatchupLineup } from '@/lib/lineups/normalizeMatchupLineup';
@@ -58,6 +59,9 @@ export interface SquadEntry {
   acquisitionType: 'draft' | 'waiver' | 'free_agent' | 'trade' | 'retained_return';
   acquisitionValue: number | null;
   acquiredAt: string;
+  /** Set only while status is `held` (migration 162). */
+  heldAt: string | null;
+  heldSource: HeldEntry['heldSource'] | null;
   isPendingDrop: boolean;
   listing: SquadListing | null;
   form: number[];
@@ -138,6 +142,11 @@ export interface ClubProps {
     ofTeams: number;
   };
   entries: SquadEntry[];
+  /**
+   * Held players (spec 2026-09-13): when the lineup locks, whether it already
+   * has, and whether Activate is open right now (closed mid-gameweek, R6).
+   */
+  hold: { lineupLockAt: string | null; lineupLocked: boolean; activationOpen: boolean };
   /** The editor-target lineup, with the most recent valid saved lineup as a fallback. */
   savedLineup: { gameweek: number; lineup: MatchupLineup | null } | null;
   departures: {
@@ -208,7 +217,7 @@ export async function loadClubView(
     .from('roster_entries')
     .select(
       `
-      id, team_id, player_id, status, acquisition_type, acquisition_value, acquired_at,
+      id, team_id, player_id, status, acquisition_type, acquisition_value, acquired_at, held_at, held_source,
       player:players(${FULL_PLAYER_SELECT})
     `,
     )
@@ -223,6 +232,8 @@ export async function loadClubView(
     acquisition_type: 'draft' | 'waiver' | 'free_agent' | 'trade' | 'retained_return';
     acquisition_value: number | null;
     acquired_at: string;
+    held_at: string | null;
+    held_source: HeldEntry['heldSource'] | null;
     player: Player;
   }[];
 
@@ -325,6 +336,8 @@ export async function loadClubView(
       acquisitionType: e.acquisition_type,
       acquisitionValue: e.acquisition_value,
       acquiredAt: e.acquired_at,
+      heldAt: e.held_at ?? null,
+      heldSource: e.held_source ?? null,
       isPendingDrop: pendingDropIds.has(e.player_id),
       listing: listingsMap.get(e.player_id) ?? null,
       form: formByPlayer.get(e.player_id) ?? [],
@@ -499,6 +512,16 @@ export async function loadClubView(
 
   const honoursByTeam = await getClubHonours(admin, leagueId, [team.id]);
 
+  const hasHeld = entries.some((e) => e.status === 'held');
+  const [holdState, gwInProgress] = hasHeld
+    ? await Promise.all([getHoldState(admin, team.id), isGameweekInProgress(admin)])
+    : [null, false];
+  const hold = {
+    lineupLockAt: holdState?.lineupLockAt ?? null,
+    lineupLocked: holdState?.lineupLocked ?? false,
+    activationOpen: !gwInProgress,
+  };
+
   return {
     leagueId,
     teamId: team.id,
@@ -520,6 +543,7 @@ export async function loadClubView(
     },
     standing,
     entries,
+    hold,
     savedLineup,
     departures,
     honours: groupHonours(honoursByTeam.get(team.id) ?? []),

@@ -13,6 +13,7 @@ import { getEffectiveLineupForTeam } from '@/lib/lineups/carryForward';
 import { getLockedPlTeamIds } from '@/lib/fixtures/lockout';
 import { loadReferenceStats, type RefStatsMap } from '@/lib/scoring/matchups';
 import { countBuybackSlots, deriveRosterCapacity } from '@/lib/roster/capacity';
+import { getHoldState } from '@/lib/roster/holds';
 import { buildProjectionMap } from '@/lib/projections/currentProjection';
 import type { RawStats } from '@/types';
 import styles from './my-team.module.css';
@@ -74,7 +75,7 @@ export default async function MyTeamPage({ params }: Props) {
   // scoped to it. They used to fetch the entire rankings view and the entire
   // season archive — every active player in the database — to look up the
   // twenty-odd players on one squad.
-  const [{ data: rosterData }, { data: listings }, { data: pendingActivations }] = await Promise.all([
+  const [{ data: rosterData }, { data: listings }, holdState] = await Promise.all([
     admin
       .from('roster_entries')
       .select(
@@ -90,11 +91,7 @@ export default async function MyTeamPage({ params }: Props) {
       .select('id, player_id, status, min_bid, buy_now_price')
       .eq('league_id', leagueId)
       .in('status', ['pending', 'active']),
-    admin
-      .from('player_loans')
-      .select('id, player:players(name)')
-      .eq('lender_team_id', team.id)
-      .eq('status', 'pending_activation'),
+    getHoldState(admin, team.id),
   ]);
 
   const rosterPlayerIds = (rosterData ?? [])
@@ -351,11 +348,13 @@ export default async function MyTeamPage({ params }: Props) {
 
   return (
     <div className={`${styles.page} g-page`}>
-      {pendingActivations && pendingActivations.length > 0 && (
+      {holdState.holding && (
         <div className={styles.capacityNote}>
           <span className={styles.capacityIcon}><Icon name="alert" size={16} /></span>
           <span>
-            Roster Over Capacity. Drop a player to activate returned loan: {pendingActivations.map(p => (p.player as any)?.name).join(', ')}.
+            {holdState.lineupLocked
+              ? `Your lineup is locked while ${holdState.held.length === 1 ? 'a player is' : 'players are'} held, so your last saved lineup is used. Activate or drop ${holdState.held.length === 1 ? 'him' : 'them'} to pick your own lineup.`
+              : `${holdState.held.length} player${holdState.held.length === 1 ? '' : 's'} held. Activate or drop ${holdState.held.length === 1 ? 'him' : 'them'}${holdState.lineupLockAt ? ` before ${new Date(holdState.lineupLockAt).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })} UK time` : ' before the next gameweek kicks off'}, or your lineup locks.`}
           </span>
           <NavigationLink href={`/league/${leagueId}/team/roster`} className={styles.capacityLink}>
             Go to Roster →

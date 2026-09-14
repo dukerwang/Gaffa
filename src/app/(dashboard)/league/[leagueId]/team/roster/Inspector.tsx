@@ -15,15 +15,17 @@ interface Props {
   /** False on a rival's club: the file stays, every control that mutates it goes. */
   viewerIsOwner: boolean;
   academyAgeLimit: number;
+  /** Held players: whether Activate is open right now (closed mid-gameweek). */
+  hold: { activationOpen: boolean };
   onAfter: () => void;
 }
 
 // Auction wins are recorded as 'waiver' in this app (see migration 059).
 const ACQ_LABEL: Record<string, string> = {
-  waiver: 'Auction', draft: 'Drafted', trade: 'Traded in', free_agent: 'Free agent', retained_return: 'Reinstated',
+  waiver: 'Auction', draft: 'Drafted', trade: 'Traded in', free_agent: 'Free agent', retained_return: 'Returned',
 };
 
-export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, academyAgeLimit, onAfter }: Props) {
+export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, academyAgeLimit, hold, onAfter }: Props) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [confirmDrop, setConfirmDrop] = useState(false);
@@ -84,7 +86,7 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
     ? []
     : [{ ...(p as unknown as EnrichedPlayer), status: entry.status, recent_ppg: 0, listing: null }];
 
-  async function call(path: string, body: { playerId: string; action?: string; actionType?: string }) {
+  async function call(path: string, body: { playerId: string; action?: string; actionType?: string; target?: string }) {
     setBusy(true); setErr(null); setConfirmDrop(false);
     try {
       const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -102,7 +104,19 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
   // checks `team.user_id !== user.id`), so this is the UI half of a rule the
   // server keeps regardless.
   const primary: { label: string; run: () => void }[] = [];
+  const activate = (target: 'bench' | 'taxi' | 'ir') =>
+    call(`/api/teams/${teamId}/held/${entry.id}`, { playerId: entry.playerId, target });
   if (!viewerIsOwner) { /* no transitions offered */ }
+  else if (entry.status === 'held') {
+    // Held players (R6): Activate into reserves, or straight into the academy or
+    // IR where he qualifies. The server re-checks room and eligibility.
+    if (hold.activationOpen) {
+      primary.push({ label: 'Activate', run: () => activate('bench') });
+      if (age != null && age <= academyAgeLimit) primary.push({ label: 'Activate to Academy', run: () => activate('taxi') });
+      const f = p.fpl_status;
+      if (f === 'i' || f === 'd' || f === 'u') primary.push({ label: 'Activate to IR', run: () => activate('ir') });
+    }
+  }
   else if (entry.status === 'ir') primary.push({ label: 'Activate from IR', run: () => call(`/api/teams/${teamId}/ir`, { playerId: entry.playerId, action: 'activate' }) });
   else if (entry.status === 'taxi') primary.push({ label: 'Promote to squad', run: () => call(`/api/teams/${teamId}/taxi`, { playerId: entry.playerId, action: 'activate' }) });
   else {
@@ -134,6 +148,9 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
         </div>
 
         {err && <div className={styles.inspErr}>{err}</div>}
+        {viewerIsOwner && entry.status === 'held' && !hold.activationOpen && (
+          <div className={styles.inspErr}>You can activate him once this gameweek’s last match has kicked off.</div>
+        )}
 
         {!viewerIsOwner ? (
           <div className={styles.acts}>
