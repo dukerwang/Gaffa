@@ -22,6 +22,7 @@ import { describeDeal } from '@/lib/transfers/describeDeal';
 import { listingStance } from '@/lib/transfers/listingStance';
 import { fold } from '@/lib/text/fold';
 import { UNCOUNTED_ROSTER_STATUSES } from '@/lib/roster/capacity';
+import { squadPlaceDelta } from '@/lib/roster/squadPlaces';
 
 /**
  * One builder for both deal types.
@@ -350,9 +351,31 @@ export default function ProposeBuilder({
   const cashOut = mode === 'loan' ? (loanDirection === 'borrow' ? loanFinalTerms.fee : 0) : myCash;
   const overBudget = cashOut > budget;
 
+  // Held players (spec R7–R8): a club holding a player can't grow its squad, so
+  // an offer that would add to it can't go through. The server refuses too;
+  // this says why before you send.
+  const iHold = myRoster.some((p) => p.status === 'held');
+  const theyHold = theirRoster.some((p) => p.status === 'held');
+  const statusOf = (id: string) => byId.get(id)?.status ?? 'bench';
+  const holdBlock: string | null = (() => {
+    if (mode === 'loan') {
+      if (loanDirection === 'borrow' && iHold) return 'Activate or drop your held player before borrowing.';
+      if (loanDirection === 'lend' && theyHold && target) return `${target.team_name} has a held player and can’t take a loan until it’s resolved.`;
+      return null;
+    }
+    if (iHold && squadPlaceDelta(give.map(statusOf), want.length) > 0) {
+      return 'You have a held player. Activate or drop him before adding to your squad.';
+    }
+    if (theyHold && target && squadPlaceDelta(want.map(statusOf), give.length) > 0) {
+      return `${target.team_name} has a held player and can’t add to their squad until it’s resolved.`;
+    }
+    return null;
+  })();
+
   const canSend = (() => {
     if (!targetId || busy) return false;
     if (overBudget) return false;
+    if (holdBlock) return false;
     if (mode === 'loan') {
       return Boolean(loanPlayer) && duration >= LOAN_MIN_DURATION && duration <= LOAN_MAX_DURATION && startGw <= lastLoanStart;
     }
@@ -762,6 +785,7 @@ export default function ProposeBuilder({
         <>
           <span className={styles.summary}>{summary}</span>
           {overBudget && <span className={styles.warn}>That is more than your {money(budget)} balance.</span>}
+          {holdBlock && <span className={styles.warn}>{holdBlock}</span>}
           {mode === 'loan' && startGw > lastLoanStart && (
             <span className={styles.warn}>Loans cannot start after GW{lastLoanStart}.</span>
           )}

@@ -146,7 +146,7 @@ export interface ClubProps {
    * Held players (spec 2026-09-13): when the lineup locks, whether it already
    * has, and whether Activate is open right now (closed mid-gameweek, R6).
    */
-  hold: { lineupLockAt: string | null; lineupLocked: boolean; activationOpen: boolean };
+  hold: { holding: boolean; lineupLockAt: string | null; lineupLocked: boolean; activationOpen: boolean };
   /** The editor-target lineup, with the most recent valid saved lineup as a fallback. */
   savedLineup: { gameweek: number; lineup: MatchupLineup | null } | null;
   departures: {
@@ -517,6 +517,7 @@ export async function loadClubView(
     ? await Promise.all([getHoldState(admin, team.id), isGameweekInProgress(admin)])
     : [null, false];
   const hold = {
+    holding: hasHeld,
     lineupLockAt: holdState?.lineupLockAt ?? null,
     lineupLocked: holdState?.lineupLocked ?? false,
     activationOpen: !gwInProgress,

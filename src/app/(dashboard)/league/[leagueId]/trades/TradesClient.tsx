@@ -1216,6 +1216,7 @@ export default function TradesClient({
           loanSlotsRemaining={remainingLoanIns}
           bonusCapDefault={leagueSettings.loan_bonus_cap_default}
           totalGameweeks={leagueSettings.total_gameweeks}
+          holding={localMyRoster.some((r) => r.status === 'held')}
           onClose={() => setShowRequestLoanModal(false)}
           onRequested={async () => {
             setProposeSuccess('Loan request sent! They will be notified to review your terms.');

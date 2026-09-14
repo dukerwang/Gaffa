@@ -16,7 +16,7 @@ interface Props {
   viewerIsOwner: boolean;
   academyAgeLimit: number;
   /** Held players: whether Activate is open right now (closed mid-gameweek). */
-  hold: { activationOpen: boolean };
+  hold: { holding: boolean; activationOpen: boolean };
   onAfter: () => void;
 }
 
@@ -117,6 +117,7 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
       if (f === 'i' || f === 'd' || f === 'u') primary.push({ label: 'Activate to IR', run: () => activate('ir') });
     }
   }
+  else if ((entry.status === 'ir' || entry.status === 'taxi') && hold.holding) { /* R7: moving up is an addition; see the note below */ }
   else if (entry.status === 'ir') primary.push({ label: 'Activate from IR', run: () => call(`/api/teams/${teamId}/ir`, { playerId: entry.playerId, action: 'activate' }) });
   else if (entry.status === 'taxi') primary.push({ label: 'Promote to squad', run: () => call(`/api/teams/${teamId}/taxi`, { playerId: entry.playerId, action: 'activate' }) });
   else {
@@ -148,6 +149,9 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
         </div>
 
         {err && <div className={styles.inspErr}>{err}</div>}
+        {viewerIsOwner && (entry.status === 'ir' || entry.status === 'taxi') && hold.holding && (
+          <div className={styles.inspErr}>Activate or drop your held player before moving him up.</div>
+        )}
         {viewerIsOwner && entry.status === 'held' && !hold.activationOpen && (
           <div className={styles.inspErr}>You can activate him once this gameweek’s last match has kicked off.</div>
         )}

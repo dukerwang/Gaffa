@@ -164,6 +164,8 @@ interface Props {
     maxRosterSize?: number;
     capacity?: RosterCapacity;
     leagueId?: string;
+    /** Held players (R11): the saved lineup stands until the hold is resolved. */
+    lineupLocked?: boolean;
     /** playerId -> projected points, already filtered to this round. */
     projMap?: Record<string, number>;
     projectionGameweek?: number | null;
@@ -402,6 +404,7 @@ export default function PitchUI({
     maxRosterSize,
     capacity,
     leagueId,
+    lineupLocked = false,
     masthead,
     projMap,
     projectionGameweek,
@@ -983,8 +986,14 @@ export default function PitchUI({
         }
     }
 
+    // Held players (R7): moving a player up from the academy or IR is an
+    // addition, frozen while anyone is held. The route refuses too.
+    const holding = (capacity?.held ?? 0) > 0;
+    const HOLD_MESSAGE = 'Activate or drop your held player before moving anyone up.';
+
     // ── Taxi standalone activate ──
     async function handleTaxiActivate(playerId: string) {
+        if (holding) { setSidebarError(HOLD_MESSAGE); setSidebarSelection(null); return; }
         setSidebarLoading(true);
         setSidebarError(null);
         setSidebarSelection(null);
@@ -1034,6 +1043,7 @@ export default function PitchUI({
 
     // ── IR standalone activate ──
     async function handleIrActivate(playerId: string) {
+        if (holding) { setSidebarError(HOLD_MESSAGE); setSidebarSelection(null); return; }
         setSidebarLoading(true);
         setSidebarError(null);
         setSidebarSelection(null);
@@ -1276,7 +1286,10 @@ export default function PitchUI({
                         <div className={styles.boardActions}>
                             {saveError && <span className={styles.errorText}>{saveError}</span>}
                             {saveSuccess && !saveError && <span className={styles.successText}>Lineup Saved.</span>}
-                            <button className={styles.saveBtn} onClick={handleSave} disabled={!canSave}>
+                            {lineupLocked && !saveError && (
+                                <span className={styles.errorText}>Lineup locked while a player is held.</span>
+                            )}
+                            <button className={styles.saveBtn} onClick={handleSave} disabled={!canSave || lineupLocked}>
                                 {saving ? 'Saving…' : 'Save Lineup'}
                             </button>
                         </div>
