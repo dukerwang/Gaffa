@@ -21,26 +21,28 @@ There is also existing drift. `resolve_single_player_auction_rpc` (migration 152
 1. **[decided]** When an arrival finds no room, the player is held: he's yours, off the squad, and doesn't count toward the roster limit. The squad never goes over the limit through an arrival.
 2. **[decided]** Holding applies only when there's no room. Any arrival that finds room joins directly, with no Activate step. An auction win goes to reserves, or the academy if the bid asked for it, unchanged from today. A returning player goes to the academy if he left from it and still qualifies, otherwise reserves. (Duke: "if i'm at 15/20 players and i win an auction they should automatically join my reserves, or my academy if i specified that.") "Reserves" is roster status `bench`, not assigned to a lineup slot; wherever this spec says bench, it means reserves.
 3. Sources that can produce a hold:
-   - A loan between managers ending, at expiry or on recall.
+   - A loan between managers reaching its scheduled end. **[inferred]** A recall is not a hold source: recalling needs room (rule 19).
    - A loanee back from abroad (`on_loan` departure decision).
    - **[decided]** A retained player returning to the Premier League. The 48-hour Reinstate window is removed. He joins if there's room and is held if not.
-   - **[decided]** An auction win where room ran out between placing the bid and settlement (see Auctions).
+   - **[decided]** An auction where no bidder has room (see Auctions).
 4. **[decided]** A returning retained player keeps a free **Decline**, which sends him to auction. The holder already forfeited compensation for him, and the claim can be years old.
 
 ### Activation
 
 5. **[decided]** Held players join only when the manager activates them. There is no automatic activation, including on a drop. (Duke: "a bit like sleeper, where it tells you, you're 2 players over the limit or something, and then after you free some space you can move players in manually.")
-6. **[inferred]** Activate works whenever the target has room or eligibility, mid-gameweek included. Targets: bench (needs room), academy (U21 and a free place), IR (injured and a free place; the existing rule that blocks bidding with a healthy player on IR still applies). Once activated, he follows the normal lock for his own club.
+6. **[decided]** Activate is not available mid-gameweek. It follows the same window as academy moves (`src/lib/lineups/editTarget.ts`): open before the gameweek's first kickoff and again once its last dated kickoff has passed, closed in between. A hold that starts mid-gameweek can be resolved once the last match has kicked off, which still leaves the whole gap before the next gameweek's first kickoff (rule 11). Drops stay available as they are today. Targets: reserves (needs room), academy (U21 and a free place), IR (injured and a free place; the existing rule that blocks bidding with a healthy player on IR still applies).
 
 ### The freeze
 
-7. **[decided]** While a team has at least one held player, moves that add to the squad are blocked:
+7. **[decided]** While a team has at least one held player, moves that add to the squad are blocked. The test for every move is whether it grows the squad:
    - Placing auction bids.
-   - Trades and loans that bring in more players than they send out, including loan recalls.
+   - Trades that bring in more players than they send out.
+   - Loans in and loan recalls.
    - Moving a player from the academy or IR back into the squad. (Activating a held player into the academy or IR is not blocked: it's how a hold gets resolved, rule 6.)
-8. **[open: Duke is still thinking this over]** Still allowed: drops, sale listings, trades that bring in the same number of players or fewer, moving players to IR or the academy, loaning players out, and lineup changes until the lock.
+8. **[decided]** Still allowed, because none of them grow the squad: trades that send out as many players as they bring in or more, drops, sale listings, moving players to IR or the academy, loaning squad players out, and lineup changes until the lock. Allowing trades keeps the other manager in a deal from being punished and keeps trades open as a way out of the hold.
+   - **[decided]** Counting for trades is by squad places. A held player going out doesn't free a squad place, because he was never in the squad. Trading your held player for another team's squad player therefore counts as bringing one player in, and needs room.
 9. **[decided, loophole]** A held player can't be loaned out or listed for loan. Without this rule, loaning him to a friend and back gives a permanent extra player beyond the limit.
-10. **[inferred]** Several held players: the freeze lasts until the last one is resolved.
+10. **[decided]** Several held players: the freeze lasts until the last one is resolved.
 
 ### The lineup lock
 
@@ -53,22 +55,23 @@ There is also existing drift. `resolve_single_player_auction_rpc` (migration 152
 ### Dropping and trading a held player
 
 14. **[decided]** Dropping a held player costs normal severance (20%, minimum €2m) and sends him to auction. The only exception is a returning retained player's Decline, which stays free.
-15. **[inferred]** A held player can be traded away. The receiving team needs room under the normal trade check, and he arrives on their bench. Held players don't count toward the 15-player trade floor (`MIN_ACTIVE_ROSTER`), the same as IR and the academy.
+15. **[decided]** A held player can be traded away. The receiving team needs room under the normal trade check, and he arrives on their bench. Held players don't count toward the 15-player trade floor (`MIN_ACTIVE_ROSTER`), the same as IR and the academy.
 
 ### Auctions
 
 16. **[decided]** Placing a bid doesn't change: a full squad still names a drop player or qualifies for the academy route.
-17. **[decided]** At settlement, bids are still walked highest first:
-    - A bidder who can't afford bid plus severance is skipped (unchanged).
-    - **[inferred]** A bidder whose team is already holding a player is skipped with reason `players_held`, and the next highest bidder is considered. This is the freeze applied at the clock: a holding team can't sign anyone, including through a bid placed before the hold began. Example: a loan return is held on your team on Tuesday; your bid on an auction ending Wednesday is ignored unless you activate or drop the held player first.
-    - Otherwise the top remaining bidder wins. The player goes to the bench if there's room, through the nominated drop if that player is still on the roster, to the academy if requested or as the fallback, and otherwise **he's held** with `held_source = 'auction'`.
-18. Because a held auction win skips that team's other live bids, a team can hold at most one player from auctions at a time.
-19. **[inferred]** Live bids from a team that becomes holding are skipped at settlement. The hold notification lists them.
+17. **[decided]** A hold only happens in an auction nobody with room bid on. (Duke: "only uncontested bids can be held basically, although i guess if both players were over the limit the highest bidder would get the 'held'".) Settlement makes two passes over the bids, highest first:
+    - **First pass:** the first bidder who can afford bid plus severance and has room wins him normally. Room means an open squad place, a nominated drop player still on the roster, or the academy route (requested, or the fallback). This is today's rule.
+    - **Second pass, only if the first found nobody:** the highest bidder who can afford it wins, and **he's held** with `held_source = 'auction'`.
+    - In both passes a bidder whose team is holding a player is skipped with reason `players_held`. Rule 19 withdraws those bids when the hold begins, so this is a backstop.
+18. A held auction win withdraws that team's other live bids (rule 19), so a team can hold at most one player from auctions at a time.
+19. **[decided, Duke: "just do what's right"]** When one of a team's players becomes held, all of that team's live bids are withdrawn and the manager is told which. They can bid again after activating or dropping, if the auction is still open. Leaving the bids live would show other managers a leading bid that can't win and might put them off bidding.
+    - **Loophole this creates:** a manager could trigger a hold on purpose to escape a bid they regret. The only hold they control directly is a loan recall, so a recall needs room: a recall into a full squad is refused rather than held. A scheduled loan end is fixed when the loan is agreed, and the other sources aren't the manager's choice.
 20. Settlement uses the shared room calculation (see Build), which fixes the drift described above.
 
 ### Offseason and Kickoff
 
-21. **[inferred]** The freeze applies in the offseason. Season Kickoff (the commissioner action that opens a new season) runs preflight checks, some of which stop it entirely. A team holding a player is not one of those: the commissioner sees a warning naming the team and can still start the season.
+21. **[decided]** The freeze applies in the offseason. Season Kickoff (the commissioner action that opens a new season) runs preflight checks, some of which stop it entirely. A team holding a player is not one of those: the commissioner sees a warning naming the team and can still start the season.
 
 ### Loopholes checked
 
@@ -76,6 +79,9 @@ There is also existing drift. `resolve_single_player_auction_rpc` (migration 152
 - Loaning a held player out and back: blocked by rule 9.
 - Storing a held player as injury cover: allowed within the grace window, and costs the lineup from the next kickoff.
 - One-for-one trades while holding: allowed. The squad count doesn't change and the held player stays out.
+- Swapping the held player for a squad player to dodge the freeze: counts as bringing one in, needs room (rule 8).
+- Triggering a hold to escape a regretted bid: recalls need room (rule 19).
+- Bidding while full and hoping to be held: only possible when no bidder with room wants him (rule 17), and placing the bid still needs a drop nomination or the academy route (rule 16).
 - Declining a retained return, then bidding on his auction: nothing is held after declining. The full squad still needs a drop nomination to bid.
 - A cheaper exit through the hold: none, severance matches a squad drop.
 - A held player scoring: excluded from lineups, auto-subs and the bench depth bonus.
@@ -103,7 +109,7 @@ A commissioner lowering `leagues.roster_size` can leave a squad over the limit w
 
 `place_arrival_rpc(team_id, player_id, origin_status, source)` returns the resulting status: `taxi`, `bench` or `held`. It replaces:
 
-- `place_returning_loanee` (migration 138), and the `pending_activation` branches of loan expiry and recall.
+- `place_returning_loanee` (migration 138), and the `pending_activation` branch of loan expiry. `execute_loan_recall_rpc` stops producing `pending_activation` and refuses a recall without room instead (rule 19).
 - The placement inside `return_from_loan_rpc` (migration 160).
 - `reinstate_departure_rpc` and `openReturnWindows` / `expireReturnWindows` in `src/lib/departures/resolve.ts`. A returning retained player's decision stays `return_pending` while he's held, becomes `returned` on activation, and becomes `lapsed` on Decline.
 
@@ -111,7 +117,9 @@ Remove the pending-loan activation block from `src/lib/roster/executeDrop.ts`.
 
 ### Activation
 
-`activate_held_rpc(entry_id, target)`, where the target is `bench`, `taxi` or `ir`. It checks room or eligibility under lock, clears `held_at` and `held_source`, and resolves any linked `return_pending` decision.
+`activate_held_rpc(entry_id, target)`, where the target is `bench`, `taxi` or `ir`. It checks room or eligibility under lock, clears `held_at` and `held_source`, and resolves any linked `return_pending` decision. The route calling it refuses mid-gameweek using the same window check as academy moves (rule 6).
+
+Whenever any path sets a roster entry to `held`, it also withdraws that team's pending auction bids in the same transaction (rule 19): set their `waiver_claims` rows to `rejected`, which the `auction_state` projection triggers from migration 078 pick up. Check how a withdrawn leading bid interacts with the inactivity timeout in `src/lib/auction/timer.ts` before building, and add a notification listing the withdrawn bids.
 
 ### Freeze enforcement
 
@@ -120,9 +128,9 @@ A TypeScript guard (`assertNotHolding`) in the routes, plus the same check insid
 | Where | Check |
 |---|---|
 | `auctions/bid/route.ts` | refuse bid |
-| `resolve_single_player_auction_rpc` | skip holding bidder (`players_held`); hold a winner with no room |
-| `trades/route.ts`, `trades/[tradeId]/route.ts`, `execute_trade_transaction_rpc` | refuse when a holding team receives more players than it sends |
-| `loans/route.ts`, `loans/[loanId]/route.ts`, recall route | refuse loan-in or recall for a holding team; refuse loaning out a held player |
+| `resolve_single_player_auction_rpc` | two passes (rule 17): first bidder with room wins; if none, highest affordable bidder wins held; skip holding bidders (`players_held`) |
+| `trades/route.ts`, `trades/[tradeId]/route.ts`, `execute_trade_transaction_rpc` | refuse when a holding team gains squad places; outgoing held players don't count as places freed (rule 8) |
+| `loans/route.ts`, `loans/[loanId]/route.ts`, recall route, `execute_loan_recall_rpc` | refuse loan-in or recall for a holding team; refuse any recall without room; refuse loaning out a held player |
 | `listings/route.ts` | refuse a loan listing on a held player |
 | `teams/[teamId]/taxi/route.ts`, `teams/[teamId]/ir/route.ts` | refuse promotion or IR activation for a holding team |
 
@@ -168,6 +176,6 @@ Read `DESIGN.md` and `docs/UI_RULES.md` before building, and use the `gaffa-ui-c
 
 ## Testing
 
-- Vitest: `deriveRosterCapacity` with held entries; the lineup lock boundary (a hold mid-gameweek doesn't lock the current week; a hold before the next first kickoff does); the route guards.
-- Database functions, run in a transaction that is rolled back on a test league, as done for migration 160: placement (academy, bench, held), activation into each target, a settlement that holds the winner, a settlement that skips a holding bidder, the trade count check, loan-out refusal, `held_lineup_locked`, and the existing-records migration.
+- Vitest: `deriveRosterCapacity` with held entries; the lineup lock boundary (a hold mid-gameweek doesn't lock the current week; a hold before the next first kickoff does); the activation window; gap-filling a locked lineup keeps every valid pick; the route guards.
+- Database functions, run in a transaction that is rolled back on a test league, as done for migration 160: placement (academy, reserves, held); activation into each target; settlement where a lower bidder with room beats a higher bidder without; settlement where nobody has room and the highest bidder is held; settlement that skips a holding bidder; bids withdrawn when a hold begins; the trade check including a held-for-squad swap; recall refused without room; loan-out of a held player refused; `held_lineup_locked`; and the existing-records migration.
 - `npm run build` and the full Vitest suite before handing over.
