@@ -230,6 +230,45 @@ describe('who is actually tradeable', () => {
   });
 });
 
+/**
+ * Held players (R8): a club holding a player can't gain squad places through a
+ * trade, counted by places — a held player going out frees nothing.
+ */
+describe('held players', () => {
+  function holding(teamId: string, playerId: string) {
+    return (t: Tables) => {
+      const e = t.roster_entries.find((r) => r.team_id === teamId && r.player_id === playerId);
+      if (e) Object.assign(e, { status: 'held', held_at: '2026-09-12T10:00:00.000Z', held_source: 'loan_return' });
+      else t.roster_entries.push({ id: `held-${playerId}`, team_id: teamId, player_id: playerId, status: 'held', held_at: '2026-09-12T10:00:00.000Z', held_source: 'loan_return' });
+    };
+  }
+
+  it('allows a one-for-one while holding', async () => {
+    setup(holding(MY_TEAM_ID, 'squad-19'));
+    expect((await propose(deal())).status).toBe(201);
+  });
+
+  it('refuses a deal that adds to a holding club', async () => {
+    setup(holding(MY_TEAM_ID, 'squad-19'));
+    const res = await propose(deal({ offeredPlayerIds: [], offeredFaab: 10 }));
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/held player/);
+  });
+
+  it('counts the held player going out as no place freed', async () => {
+    setup(holding(MY_TEAM_ID, 'squad-19'));
+    const res = await propose(deal({ offeredPlayerIds: ['squad-19'] }));
+    expect(res.status).toBe(409);
+  });
+
+  it('refuses a deal that adds to a counterparty who is holding', async () => {
+    setup(holding(RIVAL_TEAM_ID, 'rival-held'));
+    const res = await propose(deal({ requestedPlayerIds: [], requestedFaab: 10 }));
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/That club has a held player/);
+  });
+});
+
 describe('retained rights', () => {
   function withRight(teamId: string, status = 'retained') {
     return setup((t) => {
@@ -242,9 +281,21 @@ describe('retained rights', () => {
     expect((await propose(deal({ offeredRightIds: ['right-1'] }))).status).toBe(201);
   });
 
-  it('accepts a right that is pending return', async () => {
-    withRight(MY_TEAM_ID, 'return_pending');
+  it('accepts a player out on loan abroad as a right', async () => {
+    withRight(MY_TEAM_ID, 'on_loan');
     expect((await propose(deal({ offeredRightIds: ['right-1'] }))).status).toBe(201);
+  });
+
+  /**
+   * A returning retained player now waits as a held roster row (migration 163),
+   * so he's traded as a player. Trading the claim separately would split the
+   * decision from the row.
+   */
+  it('refuses a right that is pending return', async () => {
+    withRight(MY_TEAM_ID, 'return_pending');
+    const res = await propose(deal({ offeredRightIds: ['right-1'] }));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/offered retained rights are no longer held/);
   });
 
   it('refuses a right the proposer does not hold', async () => {

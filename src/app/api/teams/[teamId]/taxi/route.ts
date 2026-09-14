@@ -5,6 +5,7 @@ import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { resolveLineupEditMatchup } from '@/lib/lineups/editTarget';
 import { resolveCurrentGw } from '@/lib/season/currentGameweek';
 import { countBuybackSlots, DEFAULT_ROSTER_SIZE } from '@/lib/roster/capacity';
+import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
 
 interface Props {
     params: Promise<{ teamId: string }>;
@@ -98,6 +99,9 @@ export async function POST(req: NextRequest, { params }: Props) {
         }
         if (incomingEntry.status === 'loan_in' || incomingEntry.status === 'loan_out') {
             return NextResponse.json({ error: 'Cannot move loaned players to the academy' }, { status: 400 });
+        }
+        if (incomingEntry.status === 'held') {
+            return NextResponse.json({ error: 'Activate a held player from your Held list.' }, { status: 400 });
         }
 
         const incomingPlayer = incomingEntry.player as unknown as { id: string; name: string; date_of_birth: string | null; pl_team_id: number | null; web_name: string | null };
@@ -210,6 +214,9 @@ export async function POST(req: NextRequest, { params }: Props) {
         if (entry.status === 'loan_in' || entry.status === 'loan_out') {
             return NextResponse.json({ error: 'Cannot move loaned players to the academy' }, { status: 400 });
         }
+        if (entry.status === 'held') {
+            return NextResponse.json({ error: 'Activate a held player from your Held list.' }, { status: 400 });
+        }
         if (entry.status === 'taxi') {
             return NextResponse.json({ error: 'Player is already in the academy' }, { status: 400 });
         }
@@ -282,13 +289,17 @@ export async function POST(req: NextRequest, { params }: Props) {
         if (entry.status !== 'taxi') {
             return NextResponse.json({ error: 'Player is not currently in the academy' }, { status: 400 });
         }
+        // Held players (R7): promoting from the academy is an addition.
+        if (await isHolding(admin, teamId)) {
+            return NextResponse.json({ error: HOLD_FREEZE_MESSAGE }, { status: 409 });
+        }
 
         // Check active roster space (excludes IR, taxi, and loan_in)
         const { data: activeRoster, error: rosterErr } = await admin
             .from('roster_entries')
             .select('id')
             .eq('team_id', teamId)
-            .not('status', 'in', '("ir","taxi","loan_in")');
+            .not('status', 'in', '("ir","taxi","loan_in","held")');
 
         if (rosterErr) return NextResponse.json({ error: rosterErr.message }, { status: 500 });
 

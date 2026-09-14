@@ -5,6 +5,7 @@ import { FORMATION_SLOTS, POSITION_FLEX_MAP, BENCH_FLEX_MAP, getExpectedBenchSlo
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { resolveLineupEditMatchup } from '@/lib/lineups/editTarget';
 import { validateLineupSmartLock } from '@/lib/lineups/smartLock';
+import { getHoldState } from '@/lib/roster/holds';
 import type { Formation, GranularPosition, MatchupLineup, BenchSlot } from '@/types';
 
 interface Props {
@@ -64,6 +65,15 @@ export async function POST(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: 'League not found' }, { status: 404 });
   }
 
+  // Held players (R11): once a player has been held through a gameweek's first
+  // kickoff, the last saved lineup stands until he's activated or dropped.
+  if ((await getHoldState(admin, teamId)).lineupLocked) {
+    return NextResponse.json(
+      { error: 'Your lineup is locked while a player is held. Activate or drop him to change it.' },
+      { status: 409 },
+    );
+  }
+
   if (!Array.isArray(bench) || bench.length !== 4) {
     return NextResponse.json({ error: 'Must have exactly 4 bench players (DEF, MID, ATT, FLEX)' }, { status: 400 });
   }
@@ -95,7 +105,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     .from('roster_entries')
     .select('id, player_id, status, player:players(id, name, primary_position, secondary_positions, pl_team_id, web_name, full_name, sofifa_common_name)')
     .eq('team_id', teamId)
-    .not('status', 'in', '("ir","taxi","loan_out")');
+    .not('status', 'in', '("ir","taxi","loan_out","held")');
 
   if (!entries) {
     return NextResponse.json({ error: 'Failed to fetch roster' }, { status: 500 });

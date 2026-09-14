@@ -7,7 +7,8 @@ import {
 import { getLeagueAuctionSettings } from '@/lib/auction/leagueAuctionSettings';
 import { getLockedPlTeamIds } from '@/lib/auction/lockedClubs';
 import { notifyAuctionResolution, type AuctionResolutionResult } from '@/lib/auctions/notifyAuctionResolution';
-import { countBuybackSlots, DEFAULT_ROSTER_SIZE } from '@/lib/roster/capacity';
+import { countBuybackSlots, DEFAULT_ROSTER_SIZE, UNCOUNTED_ROSTER_STATUSES } from '@/lib/roster/capacity';
+import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
 
 interface Props {
   params: Promise<{ leagueId: string }>;
@@ -75,6 +76,12 @@ export async function POST(req: NextRequest, { params }: Props) {
     .single();
 
   if (!myTeam) return NextResponse.json({ error: 'No team in this league' }, { status: 403 });
+
+  // Held players (R7): a team holding a player can't sign anyone. Settlement
+  // re-checks under lock (migration 164).
+  if (await isHolding(admin, myTeam.id)) {
+    return NextResponse.json({ error: HOLD_FREEZE_MESSAGE }, { status: 409 });
+  }
 
   const auctionSettings = await getLeagueAuctionSettings(admin, leagueId);
 
@@ -282,7 +289,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     .from('roster_entries')
     .select('id', { count: 'exact', head: true })
     .eq('team_id', myTeam.id)
-    .not('status', 'in', '("ir","taxi","loan_in")');
+    .not('status', 'in', `(${UNCOUNTED_ROSTER_STATUSES.join(',')})`);
 
   const effectiveRosterLimit =
     (league.roster_size ?? DEFAULT_ROSTER_SIZE) + (await countBuybackSlots(admin, myTeam.id));

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
+import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
 
 interface Props {
   params: Promise<{ leagueId: string }>;
@@ -383,7 +384,7 @@ export async function POST(req: NextRequest, { params }: Props) {
   }
 
   // Academy (taxi) is loanable — IR and in-progress loans are not.
-  if (['ir', 'loan_in', 'loan_out'].includes(rosterEntry.status)) {
+  if (['ir', 'loan_in', 'loan_out', 'held'].includes(rosterEntry.status)) {
     return NextResponse.json({ error: `Cannot loan out a player who is currently in status '${rosterEntry.status}'` }, { status: 400 });
   }
 
@@ -455,6 +456,14 @@ export async function POST(req: NextRequest, { params }: Props) {
   const maxIns = league.max_loan_ins ?? 2;
   if ((borrowerActiveLoans ?? 0) >= maxIns) {
     return NextResponse.json({ error: `The borrower has reached the maximum number of active loan-ins (${maxIns})` }, { status: 400 });
+  }
+
+  // Held players (R7): a team holding a player can't borrow. Acceptance
+  // re-checks under lock (migration 163).
+  if (await isHolding(admin, effectiveBorrowerTeamId)) {
+    return NextResponse.json({
+      error: requestMode ? HOLD_FREEZE_MESSAGE : 'That club has a held player and can’t take a loan until it’s resolved.',
+    }, { status: 409 });
   }
 
   // 9. Determine bonus cap

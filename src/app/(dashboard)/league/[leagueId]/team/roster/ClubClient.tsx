@@ -11,6 +11,7 @@ import { ClubPitch, DepthChart, SquadTable } from './SquadViews';
 import Inspector from './Inspector';
 import Intel from './Intel';
 import RetainedList from './RetainedList';
+import HeldList from './HeldList';
 import DepartureDecisionModal, { type DecisionRequest } from '@/components/teams/DepartureDecisionModal';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import {
@@ -47,6 +48,7 @@ const FILTERS: { k: string; label: string }[] = [
   { k: 'ir', label: 'Injured Reserve' },
   { k: 'loan_in', label: 'Loans in' },
   { k: 'loan_out', label: 'Loans out' },
+  { k: 'held', label: 'Held' },
 ];
 const SORTS = [
   { k: 'overall', label: 'Overall' },
@@ -68,19 +70,21 @@ interface TodoItem {
   entryId?: string;
 }
 
-function buildTodos(serverNow: string, entries: SquadEntry[], departures: ClubProps['departures'], academyAgeLimit: number): TodoItem[] {
+function buildTodos(serverNow: string, entries: SquadEntry[], departures: ClubProps['departures'], academyAgeLimit: number, hold: ClubProps['hold']): TodoItem[] {
   const out: TodoItem[] = [];
+
+  entries.filter((e) => e.status === 'held').forEach((e) =>
+    out.push({
+      group: 'decision', subject: getPlayerDisplayName(e.player, 'initial_last'),
+      detail: hold.lineupLocked ? 'is held and your lineup is locked' : 'is held',
+      when: hold.lineupLocked ? null : countdown(serverNow, hold.lineupLockAt), act: 'Manage', entryId: e.id,
+    }),
+  );
 
   departures.pending.forEach((d) =>
     out.push({
       group: 'decision', subject: getPlayerDisplayName({ name: d.name, web_name: d.webName }, 'initial_last'), detail: 'left the Premier League',
       when: countdown(serverNow, d.decideBy), act: 'Decide', decision: { mode: 'decide', dep: d },
-    }),
-  );
-  departures.held.filter((d) => d.status === 'return_pending').forEach((d) =>
-    out.push({
-      group: 'decision', subject: getPlayerDisplayName({ name: d.name, web_name: d.webName }, 'initial_last'), detail: 'is back in the Premier League',
-      when: countdown(serverNow, d.reinstateBy), act: 'Reinstate', decision: { mode: 'reinstate', dep: d },
     }),
   );
 
@@ -217,7 +221,7 @@ function CommandPicker({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ClubClient({
-  leagueId, teamId, serverNow, clubs, viewerIsOwner, club, standing, entries, savedLineup, departures, honours,
+  leagueId, teamId, serverNow, clubs, viewerIsOwner, club, standing, entries, hold, savedLineup, departures, honours,
 }: ClubProps) {
   const router = useRouter();
   const [view, setView] = useState('pitch');
@@ -331,8 +335,8 @@ export default function ClubClient({
   // A to-do list is a list of things YOU must act on. On a rival's club it
   // would be a list of things you can see but can't touch — worse than absent.
   const todos = useMemo(
-    () => (viewerIsOwner ? buildTodos(serverNow, entries, departures, club.academyAgeLimit) : []),
-    [viewerIsOwner, entries, departures, club.academyAgeLimit],
+    () => (viewerIsOwner ? buildTodos(serverNow, entries, departures, club.academyAgeLimit, hold) : []),
+    [viewerIsOwner, entries, departures, club.academyAgeLimit, hold],
   );
 
   function handleTodo(n: TodoItem) {
@@ -503,6 +507,7 @@ export default function ClubClient({
           {view === 'pitch' && <ClubPitch entries={entries} savedLineup={savedLineup} selId={selectedId} onSelect={selectEntry} />}
           {view === 'depth' && <DepthChart entries={shown} allEntries={entries} selId={selectedId} onSelect={selectEntry} />}
           {view === 'table' && <SquadTable entries={shown} selId={selectedId} onSelect={selectEntry} />}
+          <HeldList entries={entries} hold={hold} viewerIsOwner={viewerIsOwner} onSelect={selectEntry} />
           <RetainedList
             leagueId={leagueId}
             teamId={teamId}
@@ -538,6 +543,7 @@ export default function ClubClient({
             leagueId={leagueId}
             viewerIsOwner={viewerIsOwner}
             academyAgeLimit={club.academyAgeLimit}
+            hold={hold}
             onAfter={() => router.refresh()}
           />
         </div>
@@ -548,7 +554,7 @@ export default function ClubClient({
           req={decision}
           leagueId={leagueId}
           slots={departures.slots}
-          rosterCount={entries.filter((e) => e.status !== 'ir' && e.status !== 'taxi' && e.status !== 'loan_in').length}
+          rosterCount={entries.filter((e) => e.status !== 'ir' && e.status !== 'taxi' && e.status !== 'loan_in' && e.status !== 'held').length}
           rosterMax={club.rosterMax}
           onClose={() => setDecision(null)}
           onDone={() => { setDecision(null); router.refresh(); }}

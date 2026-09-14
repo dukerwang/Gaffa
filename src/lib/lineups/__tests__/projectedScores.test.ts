@@ -14,6 +14,8 @@ function squadEntry(
     acquisitionType: 'draft',
     acquisitionValue: null,
     acquiredAt: '2026-07-01T00:00:00.000Z',
+    heldAt: null,
+    heldSource: null,
     isPendingDrop: false,
     listing: null,
     form: [0, 0],

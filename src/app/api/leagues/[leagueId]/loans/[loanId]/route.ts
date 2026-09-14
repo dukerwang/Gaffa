@@ -174,7 +174,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     }
 
     // Academy (taxi) is loanable — IR and in-progress loans are not.
-    if (['ir', 'loan_in', 'loan_out'].includes(rosterEntry.status)) {
+    if (['ir', 'loan_in', 'loan_out', 'held'].includes(rosterEntry.status)) {
       return NextResponse.json({ error: `Player is currently in status '${rosterEntry.status}' and cannot be loaned` }, { status: 400 });
     }
 

@@ -17,9 +17,16 @@ export type DepartureDecisionStatus =
   | 'return_pending'
   | 'returned'
   | 'relinquished'
-  | 'lapsed';
+  | 'lapsed'
+  // Left the PL on loan. Held off the roster with no slot and no compensation,
+  // and rejoins the holder's squad when he is back (migration 160).
+  | 'on_loan';
 
-/** Statuses that still occupy one of the team's retained slots. */
+/**
+ * Statuses that still occupy one of the team's retained slots. `on_loan` is
+ * deliberately absent: slots ration claims on players who may never return,
+ * and a loanee is expected back.
+ */
 export const SLOT_CONSUMING_STATUSES: DepartureDecisionStatus[] = ['retained', 'return_pending'];
 
 /**
@@ -28,10 +35,18 @@ export const SLOT_CONSUMING_STATUSES: DepartureDecisionStatus[] = ['retained', '
  * without it the nightly sweep would put a retained player on the block out
  * from under the manager who paid for him with forgone compensation.
  */
-export const RIGHTS_HELD_STATUSES: DepartureDecisionStatus[] = ['retained', 'return_pending'];
+export const RIGHTS_HELD_STATUSES: DepartureDecisionStatus[] = ['retained', 'return_pending', 'on_loan'];
 
-/** Statuses awaiting a manager action, i.e. anything that can still change. */
-export const OPEN_STATUSES: DepartureDecisionStatus[] = ['pending', 'retained', 'return_pending'];
+/**
+ * Claims that can be traded as a right. `return_pending` is absent: since the
+ * held players change (migration 163) a returning retained player waits as a
+ * held roster row, so he is traded as a player and his decision goes with him.
+ * Trading the claim separately would split the row from the decision.
+ */
+export const TRADEABLE_RIGHTS_STATUSES: DepartureDecisionStatus[] = ['retained', 'on_loan'];
+
+/** Statuses that can still change. Mirrors the partial unique index (migration 160). */
+export const OPEN_STATUSES: DepartureDecisionStatus[] = ['pending', 'retained', 'return_pending', 'on_loan'];
 
 export interface DepartureDecision {
   id: string;
@@ -51,6 +66,9 @@ export interface DepartureDecision {
   reinstate_by: string | null;
   resolved_at: string | null;
   notes: string | null;
+  roster_status_at_departure: string | null;
+  loan_club: string | null;
+  loan_season: string | null;
 }
 
 /**
@@ -62,10 +80,3 @@ export interface DepartureDecision {
  * seeing the choice. A week gives a normal travel/busy-week gap real room.
  */
 export const MIDSEASON_DECISION_HOURS = 24 * 7;
-
-/**
- * How long a rights holder gets to make roster room once a retained player is
- * back in the Premier League. Matches the standard auction window so the two
- * read consistently to managers.
- */
-export const RETURN_WINDOW_HOURS = 48;

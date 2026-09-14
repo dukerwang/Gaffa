@@ -125,6 +125,20 @@ describe('the IR gate', () => {
     expect(res.body.error).toMatch(/healthy player occupying an IR slot/);
   });
 
+  // Held players (R7): holding anyone freezes signings.
+  it('blocks bidding while the club is holding a player', async () => {
+    const tables = leagueFixture();
+    tables.roster_entries.push({
+      id: 'held-1', team_id: MY_TEAM_ID, player_id: 'squad-20', status: 'held',
+      held_at: '2026-09-12T10:00:00.000Z', held_source: 'loan_return',
+    });
+    setup(tables);
+
+    const res = await bid({ playerId: PLAYER_ID, bidAmount: 30 });
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/Activate or drop your held player first/);
+  });
+
   it('allows bidding when the player on IR is actually injured', async () => {
     const tables = leagueFixture();
     tables.players.find((p) => p.id === 'squad-20')!.fpl_status = 'i';

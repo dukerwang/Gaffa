@@ -18,7 +18,7 @@ import {
   OPEN_STATUSES,
   RIGHTS_HELD_STATUSES,
   SLOT_CONSUMING_STATUSES,
-  RETURN_WINDOW_HOURS,
+  TRADEABLE_RIGHTS_STATUSES,
   type DepartureDecision,
 } from './types';
 
@@ -195,8 +195,10 @@ export async function retainDeparture(
  */
 export async function relinquishRights(admin: SupabaseClient, decisionId: string): Promise<void> {
   const decision = await loadDecision(admin, decisionId);
-  if (decision.status !== 'retained') {
-    throw new DepartureError('NOT_RETAINED', 'Those rights are not currently held.');
+  // Also how a player out on loan abroad is dropped. No severance: a normal drop
+  // charges it because it frees a squad place, and a loanee never held one.
+  if (decision.status !== 'retained' && decision.status !== 'on_loan') {
+    throw new DepartureError('NOT_RETAINED', 'You don’t hold those rights.');
   }
 
   const { error } = await admin
@@ -207,62 +209,27 @@ export async function relinquishRights(admin: SupabaseClient, decisionId: string
       updated_at: new Date().toISOString(),
     })
     .eq('id', decisionId)
-    .eq('status', 'retained');
+    .eq('status', decision.status);
 
   if (error) throw new DepartureError('RELINQUISH_FAILED', error.message);
 }
 
-/** Claim a returned player back onto the roster. Requires an open squad place. */
-export async function reinstateReturned(
-  admin: SupabaseClient,
-  decisionId: string,
-): Promise<{ rosterCount: number; rosterSize: number } | null> {
-  const { data, error } = await admin.rpc('reinstate_departure_rpc', { p_decision_id: decisionId });
-
-  if (error) {
-    if (error.message.includes('ROSTER_FULL')) {
-      throw new DepartureError(
-        'ROSTER_FULL',
-        'Your squad is full. Drop a player to make room before reinstating.',
-      );
-    }
-    throw new DepartureError('REINSTATE_FAILED', error.message);
-  }
-
-  const row = (data as { roster_count: number; roster_size: number }[] | null)?.[0];
-  if (!row) return null;
-  return { rosterCount: Number(row.roster_count), rosterSize: Number(row.roster_size) };
-}
-
 /**
- * Give up a returned player — by choice, or because the window ran out. The
- * player goes to a normal system auction, which the rights holder may still
- * bid in: they are surrendering the free reinstatement, not their eligibility.
+ * Give up a held retained return for nothing (held players spec R4). His held
+ * roster row and the decision change together in one RPC, then he goes to a
+ * normal system auction, which the rights holder may still bid in: they are
+ * surrendering the free return, not their eligibility.
  */
-export async function lapseReturn(
-  admin: SupabaseClient,
-  decisionId: string,
-  reason: 'declined' | 'expired',
-): Promise<void> {
-  const decision = await loadDecision(admin, decisionId);
-  if (decision.status !== 'return_pending') {
-    throw new DepartureError('NOT_RETURNING', 'That player is not awaiting reinstatement.');
+export async function declineHeldReturn(admin: SupabaseClient, decisionId: string): Promise<void> {
+  const { data, error } = await admin.rpc('decline_held_return_rpc', { p_decision_id: decisionId });
+  if (error) throw new DepartureError('DECLINE_FAILED', error.message);
+
+  const row = (data as { league_id: string; player_id: string }[] | null)?.[0];
+  if (!row) {
+    throw new DepartureError('NOT_RETURNING', 'That player isn’t waiting to rejoin your squad.');
   }
 
-  const { error } = await admin
-    .from('departure_decisions')
-    .update({
-      status: 'lapsed',
-      resolved_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      notes: reason === 'declined' ? 'Rights holder declined reinstatement.' : 'Return window expired.',
-    })
-    .eq('id', decisionId)
-    .eq('status', 'return_pending');
-
-  if (error) throw new DepartureError('LAPSE_FAILED', error.message);
-
-  await openSystemAuction(admin, decision.league_id, decision.player_id);
+  await openSystemAuction(admin, row.league_id, row.player_id);
 }
 
 /**
@@ -279,7 +246,7 @@ export async function transferRights(
   toTeamId: string,
 ): Promise<void> {
   const decision = await loadDecision(admin, decisionId);
-  if (!RIGHTS_HELD_STATUSES.includes(decision.status)) {
+  if (!TRADEABLE_RIGHTS_STATUSES.includes(decision.status)) {
     throw new DepartureError('NOT_TRADEABLE', 'Those rights are no longer live and cannot be traded.');
   }
 
@@ -287,7 +254,7 @@ export async function transferRights(
     .from('departure_decisions')
     .update({ team_id: toTeamId, updated_at: new Date().toISOString() })
     .eq('id', decisionId)
-    .in('status', RIGHTS_HELD_STATUSES);
+    .in('status', TRADEABLE_RIGHTS_STATUSES);
 
   if (error) throw new DepartureError('TRANSFER_FAILED', error.message);
 }
@@ -341,5 +308,3 @@ export async function openSystemAuction(
 
   if (error) console.error('[departures] Failed to open system auction:', error.message);
 }
-
-export { RETURN_WINDOW_HOURS };

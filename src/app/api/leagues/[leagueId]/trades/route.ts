@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { describeDeal } from '@/lib/transfers/describeDeal';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
+import { TRADEABLE_RIGHTS_STATUSES } from '@/lib/departures/types';
+import { isHolding, squadPlaceDelta } from '@/lib/roster/holds';
 
 interface Props {
   params: Promise<{ leagueId: string }>;
@@ -234,6 +236,8 @@ export async function POST(req: NextRequest, { params }: Props) {
   // Validate that offered players are actually on the proposer's roster, and
   // aren't out on loan — a loaned player's roster slot is governed by the loan
   // agreement, not by whichever club currently holds the roster_entries row.
+  let myOfferedStatuses: string[] = [];
+  let theirRequestedStatuses: string[] = [];
   if (offeredPlayerIds.length > 0) {
     const { data: myPlayers } = await admin
       .from('roster_entries')
@@ -247,6 +251,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     if ((myPlayers ?? []).some((e) => e.status === 'loan_in' || e.status === 'loan_out')) {
       return NextResponse.json({ error: 'One or more offered players are currently out on loan and cannot be traded' }, { status: 400 });
     }
+    myOfferedStatuses = (myPlayers ?? []).map((e) => e.status as string);
   }
 
   // Validate that requested players are actually on the target team's roster
@@ -263,6 +268,18 @@ export async function POST(req: NextRequest, { params }: Props) {
     if ((theirPlayers ?? []).some((e) => e.status === 'loan_in' || e.status === 'loan_out')) {
       return NextResponse.json({ error: 'One or more requested players are currently out on loan and cannot be traded' }, { status: 400 });
     }
+    theirRequestedStatuses = (theirPlayers ?? []).map((e) => e.status as string);
+  }
+
+  // Held players (R8): a team holding a player can't gain squad places through
+  // a trade. The execute RPC re-checks at acceptance (migration 163); refusing
+  // here saves proposing a deal that can't go through.
+  const [iHold, theyHold] = await Promise.all([isHolding(admin, myTeam.id), isHolding(admin, targetTeamId)]);
+  if (iHold && squadPlaceDelta(myOfferedStatuses, requestedPlayerIds.length) > 0) {
+    return NextResponse.json({ error: 'You have a held player. Activate or drop him before proposing a trade that adds to your squad.' }, { status: 409 });
+  }
+  if (theyHold && squadPlaceDelta(theirRequestedStatuses, offeredPlayerIds.length) > 0) {
+    return NextResponse.json({ error: 'That club has a held player and can’t add to their squad until it’s resolved.' }, { status: 409 });
   }
 
   // Validate retained rights are live and held by the side offering them.
@@ -276,7 +293,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       .select('id')
       .eq('league_id', leagueId)
       .eq('team_id', holderTeamId)
-      .in('status', ['retained', 'return_pending'])
+      .in('status', TRADEABLE_RIGHTS_STATUSES)
       .in('id', rightIds);
 
     if ((rights ?? []).length !== rightIds.length) {

@@ -228,6 +228,12 @@ export async function POST(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: 'Cannot list a player you have loaned in' }, { status: 400 });
   }
 
+  // Held players (R9): a held player can be sold but not offered on loan, or a
+  // loan out and back would keep him beyond the squad limit indefinitely.
+  if (rosterEntry.status === 'held' && gateLoan) {
+    return NextResponse.json({ error: 'Activate him before offering him on loan.' }, { status: 400 });
+  }
+
   // 7. Check for existing active listing for this player in this league
   const { data: activeListing } = await admin
     .from('player_sale_listings')

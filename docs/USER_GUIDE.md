@@ -82,8 +82,22 @@ Every club's roster is split by status:
 - **IR (Injured Reserve)** — a parking spot for injured players that doesn't count against your active roster limit, capped at 2 players.
 - **Academy** — a prospect stash for U21 players (§12).
 - **Loaned out / Loaned in** — players temporarily at another club, or borrowed from one (§10).
+- **Held** — a player who arrived when your squad was full, waiting off it until you activate or drop him (below).
 
 Roster size is a league setting, commonly **22** (11 starters plus 11 bench). IR and Academy players don't count toward it, so a full squad is 22 + 3 Academy + 2 IR = **27**.
+
+### Held players
+
+Sometimes a player arrives when your squad is already full: a loan comes to an end, a player you retained comes back to the Premier League, or you win an auction that nobody with room bid on. He isn't dropped and he doesn't push you over the limit. He's **held**: still yours, off the squad, and not counted toward your roster limit.
+
+- **You activate him yourself.** Once you've made room, activate him into your reserves, or straight into your academy or IR if he qualifies. Nothing activates him for you, not even a drop.
+- **Not mid-gameweek.** Activation is closed from a gameweek's first kickoff until its last match has kicked off, the same window as academy moves.
+- **While anyone is held, your squad can't grow.** You can't bid, borrow, recall a loan, move a player up from the academy or IR, or accept a trade that brings in more players than it sends out. A held player going out in a trade doesn't count as a player leaving, because he was never in the squad. Drops, sales, one-for-one trades, moves to IR or the academy and loaning players out all still work.
+- **Your live bids are withdrawn** the moment a player is held. You can bid again once you've resolved him, if the auction is still open.
+- **Your lineup locks if you wait.** If he's still held when the next gameweek's first match kicks off, your lineup locks from then until you resolve him. Your last saved lineup is used each week and you're told it was set for you. If a player in it is no longer available, only that slot is filled. This includes gameweek 1 after the summer.
+- **Dropping a held player** costs normal severance and sends him to auction. A held player can be sold or traded away, but not loaned out.
+
+**Why a hold rather than an auto-drop or going over the limit?** Arrivals you didn't choose shouldn't cost you a player you did, and a squad over the limit breaks lineups and trades. The freeze is the price: the only thing a held player can do for you is wait, so there's nothing to gain from keeping him there. The lineup lock stops the one thing that would pay, keeping him as spare cover you activate when someone gets injured. It starts at the next gameweek rather than immediately, so a return you only just heard about never costs you a lineup.
 
 **IR isn't a free extra slot.** IR is capped at **2 players** (a league setting), and on top of that the game polices it at the point it matters: **you cannot place an auction bid while a healthy player is sitting on IR.** You have to activate him first. Rather than auditing injuries continuously, Gaffa blocks the benefit you'd be stashing him for, in addition to bounding how many you can stash at once.
 
@@ -327,6 +341,7 @@ It also keeps the skill in the right place. In a sealed format the winner is usu
 - **Your bid must beat the current high.** Matching it is rejected, as is lowering your own standing bid. There is therefore no such thing as a tied bid.
 - If you're at your roster limit you nominate a player to **drop** as part of your bid. Dropping charges a **severance fee** of 20% of his market value, minimum **€2m**, on top of your winning bid — so churn isn't free.
 - If you win but your active roster is full and the player is U21, he can be routed to your **Academy** rather than blocking the transfer.
+- **When an auction ends, the highest bidder with room wins.** If the top bidder has no room left by then (they won something else in the meantime, say), the next bidder who does have room wins at their own bid. Only if **nobody** who bid has room does the highest bidder win him, and he's **held** (§2). You can't bid while holding a player, and any bids you have live when a player is held are withdrawn.
 - Free agent bids must reach at least the league's **minimum bid floor** (default **50% of market value**).
 - **A brand-new Premier League arrival can't be bid on until Transfermarkt has priced them** — usually within a day of them appearing in the app. There's no floor to enforce before that, so bidding is blocked outright rather than left open at zero.
 - **The league seeds auctions automatically at season kickoff** for any player worth **€50m or more**, *or* who plays for a **newly-promoted club**. Everyone is emailed. Promoted-club players are seeded regardless of price, because at kickoff nobody owns them and a cheap newly-promoted starter is exactly the kind of asset a dynasty league should compete for rather than claim first. To keep managers focused on the same marquee targets, elite-tier auctions (€50m+) are **released in staggered waves** (roughly half the league size per wave, spaced 3 days apart).
@@ -414,9 +429,10 @@ Send a rostered player to another club **temporarily** — for **4 to 16 gamewee
 - If the player has already kicked off in a live gameweek, an accepted loan is **deferred** until that week finishes — same reason as trades.
 - Terms are an **upfront fee** and, optionally, a **performance bonus** paid per fantasy point the player scores while away, subject to a cap. Presets — Fixed Fee Only, Balanced, Performance-Heavy — or hand-adjust.
 - A **recall clause** lets the lender pull him back early for a flat penalty. The lender can instead pay a **slot buyback fee** (commonly **25**) to reclaim the roster spot without recalling the player.
-- The player counts toward the **borrowing** club's active roster while out.
+- While he's away he keeps his place in the **lender's** squad count, and doesn't count against the borrower's (the loan-in cap limits those instead). A slot buyback frees the lender's place for the length of the loan.
+- **Recalling needs room.** You can't recall a player into a full squad, or while you're holding a player (§2).
 - **There are hard caps:** by default you may have only **1 player out on loan** and **2 in** at any time.
-- At expiry everything settles automatically: bonus paid, player returns to the **spot they left** — academy back to academy if they still qualify and a slot is free, otherwise **Reserves**. A returning player is never written into this week's XI or a matchday bench slot. If the lender's roster is full and they can't go back to academy, the return waits until space is made — nothing is auto-dropped on your behalf.
+- At expiry everything settles automatically: bonus paid, player returns to the **spot they left** — academy back to academy if they still qualify and a slot is free, otherwise **Reserves**. A returning player is never written into this week's XI or a matchday bench slot. If the lender's squad is full and he can't go back to the academy, he's **held** (§2) until the lender activates or drops him. Nothing is dropped automatically.
 
 **Why cap loans so tightly?** Without a cap, loans become a way to warehouse a squad you can't field — stash your surplus with a friend, reclaim it when useful. One out and two in keeps a loan what it should be: a specific deal about a specific player, not a second roster.
 
@@ -464,10 +480,10 @@ The catch: once an Academy player **turns 21** he no longer qualifies. Gaffa che
 
 ## 13. Departures & the Retained List
 
-When a rostered player **leaves the Premier League** — transfer abroad, relegation, retirement — you don't simply lose him. You get a **choice**, per departure:
+When a rostered player **leaves the Premier League** — transfer abroad, relegation, retirement — you don't simply lose him. You get a **choice**, per departure (a loan works differently, see below):
 
 - **RELEASE** — take compensation worth **60% of his market value**. He enters the auction pool. **You are then barred from bidding on his return auction.**
-- **RETAIN** — forfeit the compensation and keep his **rights**. He's off your roster and out of the competition, but he's still yours: if he ever returns to the Premier League he reverts to you with no auction.
+- **RETAIN** — forfeit the compensation and keep his **rights**. He's off your roster and out of the competition, but he's still yours: if he ever returns to the Premier League he reverts to you with no auction. He joins your squad if there's room; if not, he's **held** (§2), and you can still **decline** him for nothing, which sends him to auction.
 
 The rate is deliberately below full value. Paid in full, taking the cash would beat keeping the rights in almost every case, and the Retained List would be decoration. At 60% the trade is real: cash now against a claim on a player who might come back.
 
@@ -479,9 +495,23 @@ Retention itself uses **scarce slots**, commonly **3** — not an expiry clock.
 
 The slot limit rather than a timer is deliberate too. No one can know when a player might come back, so any expiry date would be arbitrary; scarcity instead makes holding one claim cost you the ability to hold another. Rights can be **given up for nothing** but **never cashed in** — otherwise "retain everything, cash out whatever doesn't return" would be strictly optimal.
 
+### Players who leave on loan
+
+A player who leaves the Premier League **on loan** doesn't get a Release/Retain decision. He's still yours, and he goes on the Retained List under **On Loan Abroad**:
+
+- He's off your squad and **doesn't count toward your roster limit**. If he was in your academy, he doesn't hold an academy place either.
+- He **doesn't use a retained slot**, and there's **no compensation**.
+- When he's back in the Premier League he **rejoins your squad automatically**, or your academy if he left from it and still qualifies. If your squad is full, he's **held** (§2) until you activate or drop him.
+- You can **trade** him like any other retained right, or **drop** him for nothing. There's no severance, and when he returns he's a free agent.
+- If a new season is under way and he hasn't come back or gone out on loan again, the loan is treated as a permanent move and you get the normal Release/Retain decision.
+
+**Why loans are different.** The 60% rate and the slot limit assume nobody knows whether a departed player will come back. A loan has a return built in. Treating it as a departure made Release a forced sale of a player you'd have back within a year, into an auction you couldn't bid in, and made Retain spend a scarce slot on a near-certain claim. He doesn't take a squad place while he's away because you didn't choose to send him, so there's nothing to stockpile.
+
+Loans are recognised from the Premier League's own player news ("has joined Juventus on loan"). Anything that doesn't clearly say loan gets the normal decision.
+
 ### Retained rights are tradeable
 
-A claim on a player outside the Premier League is a real dynasty asset — one manager rates the player, another just wants the slot — so it can be traded like anything else.
+A claim on a player outside the Premier League is a real dynasty asset — one manager rates the player, another just wants the slot — so it can be traded like anything else. Once he's back and held on your roster, he's traded as a player instead.
 
 One thing deliberately doesn't move with it: **the buy-back exclusion stays with whoever took the compensation.** Otherwise you could release a player, trade the resulting claim to a friend, and bid on his return with the exclusion laundered off.
 
@@ -535,3 +565,5 @@ The permanent record book: final standings and podium for every past season, eac
 | **IR** | Injured Reserve. Doesn't count against your roster, capped at 2 — and you can't bid while a healthy player occupies it. |
 | **Release / Retain** | The choice when a player leaves the Premier League: take his market value and forfeit the buy-back, or keep his rights and take nothing. |
 | **Retained rights** | A tradeable claim on a departed player that matures if he returns to the Premier League. |
+| **Held** | A player who arrived when your squad was full. Off the squad and uncounted until you activate or drop him; while anyone is held your squad can't grow, and if he's still held at the next gameweek's kickoff your lineup locks. |
+| **On Loan Abroad** | A player of yours on loan outside the Premier League. Uses no squad place or retained slot, and rejoins your squad when he's back. |

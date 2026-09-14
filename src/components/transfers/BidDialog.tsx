@@ -135,7 +135,8 @@ export default function BidDialog({
   // A drop is only demanded when the roster is full AND the academy cannot
   // absorb the arrival — the route decides that itself, so this is an offer of
   // a drop rather than a hard gate, and the server still has the final word.
-  const droppable = myRoster.filter((r) => r.status !== 'loan_in' && r.id !== player.id);
+  // A held player frees no squad place, so dropping him can't make room for a bid.
+  const droppable = myRoster.filter((r) => r.status !== 'loan_in' && r.status !== 'held' && r.id !== player.id);
 
   // Proactive academy routing (117): offered any time the player is
   // age-eligible and the academy has room, independent of whether the active
@@ -148,6 +149,8 @@ export default function BidDialog({
   const belowFloor = Number.isNaN(amount) || amount < floor;
   const wouldTakeClause = clause != null && !Number.isNaN(amount) && amount >= clause;
   const overCommitted = committedTotal > budget;
+  // Held players (R7): a club holding a player can't sign anyone.
+  const holding = myRoster.some((r) => r.status === 'held');
 
   const submit = async () => {
     setBusy(true);
@@ -259,7 +262,9 @@ export default function BidDialog({
       footer={
         <>
           <span className={styles.summary}>
-            {wouldTakeClause && clause != null ? (
+            {holding ? (
+              <>Activate or drop your held player first.</>
+            ) : wouldTakeClause && clause != null ? (
               <>Pay <b>{money(amount)}</b> to sign him immediately and close the auction.</>
             ) : (
               <>Leaves you <b>{money(Math.max(0, budget - (Number.isNaN(amount) ? 0 : amount)))}</b> for the rest of the window.</>
@@ -272,7 +277,7 @@ export default function BidDialog({
             type="button"
             className={styles.go}
             onClick={submit}
-            disabled={busy || belowFloor || tooExpensive || settling || notOpenYet}
+            disabled={busy || belowFloor || tooExpensive || settling || notOpenYet || holding}
           >
             {busy ? 'Sending…' : wouldTakeClause ? `Pay ${money(amount)}` : `Bid ${money(amount)}`}
           </button>

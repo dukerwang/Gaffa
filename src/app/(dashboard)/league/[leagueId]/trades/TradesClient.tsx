@@ -385,7 +385,6 @@ export default function TradesClient({
       } else {
         let msg = `Loan recalled! Penalty paid: €${data.penalty}m.`;
         if (data.bonusPaid > 0) msg += ` Bonus paid: €${data.bonusPaid}m.`;
-        if (data.pendingActivation) msg += ` Player returning — roster full (pending drop).`;
         setProposeSuccess(msg);
         await refreshLoans();
       }
@@ -1677,9 +1676,9 @@ function ListingCard({
     return () => clearInterval(interval);
   }, [isLive, listing.auction_expires_at]);
 
-  const activeCount = localMyRoster.filter((r) => r.status !== 'ir' && r.status !== 'taxi').length;
+  const activeCount = localMyRoster.filter((r) => r.status !== 'ir' && r.status !== 'taxi' && r.status !== 'loan_in' && r.status !== 'held').length;
   const showDropSelect = activeCount >= rosterSize;
-  const eligibleDrops = localMyRoster.filter((r) => r.status !== 'ir' && r.status !== 'taxi');
+  const eligibleDrops = localMyRoster.filter((r) => r.status !== 'ir' && r.status !== 'taxi' && r.status !== 'held');
 
   async function handleBid(e: React.FormEvent) {
     e.preventDefault();

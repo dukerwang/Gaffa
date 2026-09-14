@@ -108,7 +108,7 @@ const LOAN_MIN_DURATION = 4;
 const LOAN_MAX_DURATION = 16;
 // Academy (taxi) is a stash, not a lock — those players can be loaned.
 // IR and players already on a loan cannot.
-const NOT_LOANABLE_STATUSES = new Set(['ir', 'loan_in', 'loan_out']);
+const NOT_LOANABLE_STATUSES = new Set(['ir', 'loan_in', 'loan_out', 'held']);
 
 export default function ProposeBuilder({
   open,
@@ -516,7 +516,7 @@ export default function ProposeBuilder({
           <span className={styles.pickName}>Unknown</span>
         )}
         <span className={styles.pickMeta}>
-          Retained rights{r.status === 'return_pending' ? ' · back in the PL' : ''}
+          {r.status === 'on_loan' ? 'On loan abroad' : 'Retained rights'}
         </span>
       </span>
       <span className={styles.pickValue}>{money(r.marketValueAtDeparture)}</span>
@@ -573,7 +573,7 @@ export default function ProposeBuilder({
           <span className={styles.pickName}>Unknown</span>
         )}
         <span className={styles.pickMeta}>
-          Retained rights{r.status === 'return_pending' ? ' · back in the PL' : ''}
+          {r.status === 'on_loan' ? 'On loan abroad' : 'Retained rights'}
         </span>
       </span>
       <span className={styles.pickValue}>{money(r.marketValueAtDeparture)}</span>

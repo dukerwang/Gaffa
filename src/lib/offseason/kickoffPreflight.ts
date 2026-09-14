@@ -153,6 +153,27 @@ export async function runKickoffPreflight(
     });
   }
 
+  // Held players (spec R21): a warning, not a blocker. The hold carries into
+  // the new season and the lineup lock applies from gameweek 1 (R12).
+  if (teamIds.length > 0) {
+    const { data: heldRows } = await admin
+      .from('roster_entries')
+      .select('team_id, player:players(name)')
+      .in('team_id', teamIds)
+      .eq('status', 'held');
+    if (heldRows && heldRows.length > 0) {
+      const nameByTeam = new Map((teams ?? []).map((t) => [t.id, (t as { team_name?: string }).team_name ?? t.id]));
+      issues.push({
+        severity: 'warning',
+        code: 'teams_holding_players',
+        message:
+          `${heldRows.length} player(s) are held off full squads. Kickoff can go ahead; ` +
+          'those clubs stay frozen for signings, and their lineups lock from gameweek 1 unless they activate or drop.',
+        detail: heldRows.map((r) => `${nameByTeam.get(r.team_id) ?? r.team_id} — ${(r.player as unknown as { name: string } | null)?.name ?? 'Unknown'}`),
+      });
+    }
+  }
+
   // ── Auction-side checks ───────────────────────────────────────────────────
   let auctionsToCreate = 0;
   let promotedClubs: string[] = [];

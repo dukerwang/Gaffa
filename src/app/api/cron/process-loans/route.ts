@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { notifyPlayerHeld, type WithdrawnBid } from '@/lib/roster/holdNotifications';
 
 export const maxDuration = 60; // 1 minute max for Vercel Hobby tier
 
@@ -141,8 +142,9 @@ export async function POST(req: NextRequest) {
       const resData = rpcRes as {
         success: boolean;
         error?: string;
-        pending_activation?: boolean;
+        held?: boolean;
         returned_to?: string;
+        withdrawn_bids?: WithdrawnBid[];
         bonus_paid?: number;
         bonus_forgiven?: number;
       };
@@ -177,14 +179,13 @@ export async function POST(req: NextRequest) {
 
       // Notify lender
       if (lender_user_id) {
-        if (resData.pending_activation) {
-          await createNotification(admin, {
-            kind: 'deals',
+        if (resData.held) {
+          await notifyPlayerHeld(admin, {
             leagueId: loan.league_id,
-            userId: lender_user_id,
-            title: 'Roster Full',
-            content: `**${player_name}** has returned from loan but your roster is full. Drop a player to activate them.`,
-            url: `/league/${loan.league_id}/team`
+            teamId: loan.lender_team_id,
+            playerName: player_name,
+            source: 'loan_return',
+            withdrawnBids: resData.withdrawn_bids,
           });
         } else {
           const spot = resData.returned_to === 'taxi' ? 'academy' : 'reserves';

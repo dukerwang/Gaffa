@@ -244,3 +244,56 @@ was inherited from the Google developer style guide rather than decided here.
 
 The rest of the Google style guidance in `CLAUDE.md` — active voice, no
 throat-clearing, no inanimate agency, prose over lists — is untouched by this.
+
+
+---
+
+## 2026-09-12 — Players who leave on loan
+
+**A loan out of the Premier League is not a departure.**
+> "i actually think it should just be similar to a retained right, but i guess it's
+> different since you know for sure he's coming back ... at least while the player is
+> gone he probably shouldn't count for another slot - you would also be able to drop
+> or trade the player"
+
+- A loanee abroad is held as an `on_loan` right: no Release/Retain choice, no
+  compensation, no retained slot, no squad place. Tradeable, and droppable for
+  nothing. (Migrations 159–160, `src/lib/departures/loanAbroad.ts`.)
+
+---
+
+## 2026-09-13 — Held players
+
+**An arrival that finds a full squad is held, not dropped and not over the limit.**
+Chosen in a design session; the spec is
+`docs/superpowers/specs/2026-09-13-held-players-design.md` (rules R1–R21).
+
+- **Manager activates.**
+  > "manager activates - it's a bit like sleeper, where it tells you, you're 2 players
+  > over the limit or something, and then after you free some space you can move
+  > players in manually. although i do feel like this needs a bit of downside so you
+  > can't just exploit it"
+- **Not mid-gameweek.**
+  > "i don't think you should be able to activate mid-gameweek."
+- **The downside:** squad additions freeze at once; if a player is still held at
+  the next gameweek's first kickoff, the lineup locks too (chosen over an immediate
+  Sleeper-style lineup lock and over additions only).
+- **Locked lineups** carry the last saved lineup forward, filling only slots that
+  broke, and the manager is told.
+  > "i think the user should still know that their lineup will be autoset, in fact,
+  > which will tell them, hey, my lineup's locked, i have to fix my roster before i can
+  > do things for next week."
+  > "if there's truly no way of invalidating a lineup then do last saved."
+  (A lineup can be invalidated, so gap-filling was chosen over regenerating it.)
+- **Auctions:** the highest bidder with room wins; a hold only happens when nobody
+  with room bid.
+  > "only uncontested bids can be held basically, although i guess if both players
+  > were over the limit the highest bidder would get the 'held'"
+- **Trades while holding:** allowed only if they don't grow the squad (chosen over
+  shrink-only and no trades).
+- **Dropping a held player** costs normal severance (chosen over free and reduced).
+- **Retained returns** use the hold instead of the 48-hour window, and keep a free
+  Decline.
+- Where Duke said "just do what's right" (live bids when a hold begins), bids are
+  withdrawn at once and recalls need room; those are agent decisions, recorded as
+  such in the spec.

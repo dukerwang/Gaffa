@@ -6,6 +6,7 @@ import { getPlayerDisplayName } from '@/lib/players/displayName';
 import GwRangeSlider from './GwRangeSlider';
 import styles from './trades.module.css';
 import { Icon } from '@/components/ui/Icon';
+import { ResponsiveModal, Button } from '@/components/ui';
 
 export interface LoanablePlayer {
   id: string;
@@ -87,7 +88,7 @@ export default function ProposeLoanModal({
   }, [selectedPlayer, duration]);
 
   const eligiblePlayers = myRoster.filter(
-    (p) => !['ir', 'loan_in', 'loan_out'].includes(p.status)
+    (p) => !['ir', 'loan_in', 'loan_out', 'held'].includes(p.status)
   );
 
   // ─── Loan Calculations ───────────────────────────────────────────────────
@@ -240,35 +241,29 @@ export default function ProposeLoanModal({
   };
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <div>
-            <span className={styles.modalLabel}>PLAYER LOANS</span>
-            <h2 className={styles.modalTitle}>
-              {selectedPlayer ? 'Set Loan Terms' : 'Select Player to Loan Out'}
-            </h2>
-            {isMocked && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(245,158,11,0.15)', color: '#d97706', padding: '2px 8px', borderRadius: '10px', fontSize: '9px', fontWeight: 600, marginTop: '4px' }}>
-                <Icon name="alert" size={10} /> preview mode: season at GW{currentGameweek} (mocked to GW10 for testing sliders)
-              </div>
-            )}
-            {loanSlotsRemaining !== undefined && !selectedPlayer && (
-              <p style={{ margin: '4px 0 0', fontSize: '11px', color: loanSlotsRemaining > 0 ? 'var(--color-text-muted)' : 'var(--color-accent-red)' }}>
-                {loanSlotsRemaining > 0
-                  ? `${loanSlotsRemaining} loan-out slot${loanSlotsRemaining !== 1 ? 's' : ''} remaining`
-                  : 'No loan-out slots remaining'}
-              </p>
-            )}
-          </div>
-          <button className={styles.modalClose} onClick={onClose} aria-label="Close">✕</button>
+    <ResponsiveModal
+      open={true}
+      onClose={onClose}
+      title={selectedPlayer ? 'Set Loan Terms' : 'Select Player to Loan Out'}
+    >
+      {isMocked && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(245,158,11,0.15)', color: '#d97706', padding: '4px 12px', margin: '8px 20px 0', borderRadius: '10px', fontSize: '11px', fontWeight: 600 }}>
+          <Icon name="alert" size={12} /> preview mode: season at GW{currentGameweek} (mocked to GW10 for testing sliders)
         </div>
+      )}
+      {loanSlotsRemaining !== undefined && !selectedPlayer && (
+        <p style={{ margin: '8px 20px 0', fontSize: '11px', color: loanSlotsRemaining > 0 ? 'var(--color-text-muted)' : 'var(--color-accent-red)' }}>
+          {loanSlotsRemaining > 0
+            ? `${loanSlotsRemaining} loan-out slot${loanSlotsRemaining !== 1 ? 's' : ''} remaining`
+            : 'No loan-out slots remaining'}
+        </p>
+      )}
 
-        {error && (
-          <div className={styles.modalHint} style={{ color: 'var(--color-accent-red)', borderBottom: 'none' }}>
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className={styles.modalHint} style={{ color: 'var(--color-accent-red)', borderBottom: 'none' }}>
+          {error}
+        </div>
+      )}
 
         {/* ── Step 1: Player selection ── */}
         {!selectedPlayer ? (
@@ -581,21 +576,24 @@ export default function ProposeLoanModal({
             </div>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '4px' }}>
-              <button type="button" className={styles.blockToggleBtn} onClick={() => setSelectedPlayer(null)} disabled={submitting}>
-                Back
-              </button>
-              <button
-                type="submit"
-                className={styles.blockToggleBtn}
-                style={{ background: 'var(--color-accent-green)', borderColor: 'var(--color-accent-green)', color: '#fff' }}
+              <Button
+                variant="secondary"
+                onClick={() => setSelectedPlayer(null)}
                 disabled={submitting}
               >
-                {submitting ? 'Proposing…' : 'Propose Loan'}
-              </button>
+                Back
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                loading={submitting}
+                disabled={submitting}
+              >
+                Propose Loan
+              </Button>
             </div>
           </form>
         )}
-      </div>
-    </div>
+    </ResponsiveModal>
   );
 }
