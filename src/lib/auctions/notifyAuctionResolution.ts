@@ -14,6 +14,7 @@ import { getAuctionWonEmail, getPlayerSoldEmail } from '@/lib/email/templates';
 import { createNotification } from '@/lib/notifications/createNotification';
 import { buildHereWeGo, pushTitleForEyebrow } from '@/lib/notifications/hereWeGo';
 import { auctionLostNotice } from '@/lib/notifications/copy';
+import { notifyPlayerHeld, type WithdrawnBid } from '@/lib/roster/holdNotifications';
 
 export interface AuctionResolutionResult {
   success: boolean;
@@ -27,6 +28,8 @@ export interface AuctionResolutionResult {
   winner_bid?: number;
   winner_severance?: number;
   winner_status?: string;
+  /** Held players (164): the winner's other live bids, withdrawn because the win was held. */
+  withdrawn_bids?: WithdrawnBid[];
   drop_player_name?: string;
   initiator_team_name?: string;
   scout_amount?: number;
@@ -59,6 +62,18 @@ export async function notifyAuctionResolution(
 ): Promise<void> {
   const { leagueId, playerId, playerName, playerMarketValue, bidderCount, resData } = params;
   if (!resData.won || !resData.winner_team_id) return;
+
+  // Nobody with room bid, so the top bidder won him held (migration 164). The
+  // usual win notices below still go out; this adds what the hold means.
+  if (resData.winner_status === 'held') {
+    await notifyPlayerHeld(admin, {
+      leagueId,
+      teamId: resData.winner_team_id,
+      playerName,
+      source: 'auction',
+      withdrawnBids: resData.withdrawn_bids,
+    });
+  }
 
   try {
     const { data: leagueTeams } = await admin
