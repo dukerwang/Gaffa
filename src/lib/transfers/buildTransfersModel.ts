@@ -25,7 +25,7 @@ import {
 } from './playerEnrichment';
 import { buildEffectivePpgMap } from './effectivePpg';
 import { getFplStatus } from '@/lib/fpl/api';
-import { RIGHTS_HELD_STATUSES } from '@/lib/departures/types';
+import { TRADEABLE_RIGHTS_STATUSES } from '@/lib/departures/types';
 import { UNCOUNTED_ROSTER_STATUSES } from '@/lib/roster/capacity';
 import type { Player, TradeProposal, Team } from '@/types';
 
@@ -106,7 +106,7 @@ export interface RosterPlayer extends EnrichedPlayer {
 
 /**
  * A retained claim as the hub reads it — a `departure_decisions` row still
- * held by a club (status `retained`, `return_pending` or `on_loan`), tradeable via
+ * held by a club (status `retained` or `on_loan`), tradeable via
  * `offered_rights`/`requested_rights` on `trade_proposals`.
  *
  * Not a roster player: `id` is the decision id, not the player id — the same
@@ -380,14 +380,14 @@ export async function buildTransfersModel(
       .gte('updated_at', new Date(Date.now() - 7 * 86400_000).toISOString())
       .order('updated_at', { ascending: false })
       .limit(12),
-    // Retained claims still live (status `retained` or `return_pending`) — the
+    // Tradeable claims (status `retained` or `on_loan`) — the
     // rights market. No roster row backs these, so they must be fetched
     // separately from everything above.
     admin
       .from('departure_decisions')
       .select('id, team_id, player_id, status, market_value_at_departure')
       .eq('league_id', leagueId)
-      .in('status', RIGHTS_HELD_STATUSES),
+      .in('status', TRADEABLE_RIGHTS_STATUSES),
     // "New transfers" candidates — players whose club changed (or who are
     // brand new) in the last 7 days. Filtered down to the unowned, unauctioned
     // subset below, once auctions/roster/rights sets exist to check against.
@@ -542,9 +542,9 @@ export async function buildTransfersModel(
   //   3. Only FREE-AGENT auctions are subtracted separately. A listing's player
   //      sits on the seller's roster and is already in the set above, so
   //      counting listing auctions here would remove him twice.
-  //   4. Retained rights: a player back in the Premier League under a live
-  //      `return_pending` claim is `is_active` but has no roster row, so he
-  //      must be subtracted here too or he double-counts as a free agent.
+  //   4. Retained rights: tradeable claims are on players outside the Premier
+  //      League, so this set is normally empty of active players. A returning
+  //      retained player now has a (held) roster row and is covered above.
   const rosteredActiveIds = new Set(
     (rosterRows ?? [])
       .map((e) => (e as unknown as RosterEntryRow).player)

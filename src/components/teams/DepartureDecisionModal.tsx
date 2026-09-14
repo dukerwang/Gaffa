@@ -27,7 +27,7 @@ export interface DepartureLike {
 }
 
 export interface DecisionRequest {
-  mode: 'decide' | 'reinstate' | 'relinquish';
+  mode: 'decide' | 'returned' | 'relinquish';
   dep: DepartureLike;
 }
 
@@ -65,7 +65,7 @@ export default function DepartureDecisionModal({ req, leagueId, slots, rosterCou
   const [err, setErr] = useState<string | null>(null);
   const roomAvail = rosterCount < rosterMax;
 
-  async function act(action: 'release' | 'retain' | 'reinstate' | 'relinquish' | 'decline') {
+  async function act(action: 'release' | 'retain' | 'relinquish' | 'decline') {
     setBusy(true); setErr(null);
     try {
       const res = await fetch(`/api/leagues/${leagueId}/departures/${dep.id}`, {
@@ -81,7 +81,7 @@ export default function DepartureDecisionModal({ req, leagueId, slots, rosterCou
   }
 
   const onLoan = dep.status === 'on_loan';
-  const sub = mode === 'reinstate'
+  const sub = mode === 'returned'
     ? `Back in the Premier League with ${dep.backClub ?? 'a PL club'}`
     : onLoan
       ? `On loan from ${dep.lastClub}`
@@ -101,19 +101,14 @@ export default function DepartureDecisionModal({ req, leagueId, slots, rosterCou
   );
 
   let footer: React.ReactNode = null;
-  if (mode === 'reinstate') {
+  if (mode === 'returned') {
     footer = (
       <>
-        <Button
-          variant="primary"
-          disabled={busy || !roomAvail}
-          loading={busy}
-          onClick={() => act('reinstate')}
-        >
-          Reinstate to Roster
+        <Button variant="secondary" disabled={busy} onClick={onClose}>
+          Keep Him
         </Button>
-        <Button variant="danger" disabled={busy} onClick={() => act('decline')}>
-          Decline
+        <Button variant="danger" fullWidth disabled={busy} loading={busy} onClick={() => act('decline')}>
+          Decline for Nothing
         </Button>
       </>
     );
@@ -183,20 +178,13 @@ export default function DepartureDecisionModal({ req, leagueId, slots, rosterCou
         </>
       )}
 
-      {mode === 'reinstate' && (
-        <>
-          <div className={styles.deadline}>
-            Reinstate within <b>{countdown(dep.reinstateBy) ?? 'the window'}</b> — unresolved, the claim lapses and he is auctioned.
-          </div>
-          <div className={styles.body}>
-            <p className={styles.lead}>He is back in the Premier League. Reinstate him to your roster free — no auction, no fee — and the retained slot frees.</p>
-            <div className={styles.room}>
-              {roomAvail
-                ? <span>Roster <b>{rosterCount} / {rosterMax}</b> — room available, no drop needed.</span>
-                : <span>Roster <b>full ({rosterCount}/{rosterMax})</b> — free a place first, then reinstate.</span>}
-            </div>
-          </div>
-        </>
+      {mode === 'returned' && (
+        <div className={styles.body}>
+          <p className={styles.lead}>
+            He’s back in the Premier League, but your squad was full, so he’s held off it. Make room and
+            activate him from your Held list, or decline him for nothing and he goes to auction.
+          </p>
+        </div>
       )}
 
       {mode === 'relinquish' && (

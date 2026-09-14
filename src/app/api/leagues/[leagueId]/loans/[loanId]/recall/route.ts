@@ -129,7 +129,7 @@ export async function POST(req: NextRequest, { params }: Props) {
   const resData = rpcRes as {
     success: boolean;
     error?: string;
-    pending_activation?: boolean;
+    code?: 'RECALL_NEEDS_ROOM' | 'LENDER_HOLDING';
     penalty?: number;
     bonus_paid?: number;
     bonus_forgiven?: number;
@@ -137,7 +137,10 @@ export async function POST(req: NextRequest, { params }: Props) {
   };
 
   if (!resData.success) {
-    return NextResponse.json({ error: resData.error || 'Failed to recall loan' }, { status: 400 });
+    // A recall needs room and a lender who isn't holding anyone (migration 163),
+    // so it can never create a hold.
+    const status = resData.code ? 409 : 400;
+    return NextResponse.json({ error: resData.error || 'Failed to recall loan', code: resData.code }, { status });
   }
 
   // 9. Send notifications
@@ -168,17 +171,7 @@ export async function POST(req: NextRequest, { params }: Props) {
         message: `[SYSTEM:ANNOUNCEMENT] Recall activated — **${myTeam.team_name}** have recalled **${player.name}** early from **${borrowerTeam.team_name}**. Lender pays €${resData.penalty}m penalty to borrower.`,
       });
 
-      // Notify lender about pending activation if applicable
-      if (resData.pending_activation) {
-        await createNotification(admin, {
-          kind: 'deals',
-          leagueId,
-          userId: user.id,
-          title: 'Roster Full',
-          content: `**${player.name}** has returned from loan but your roster is full. Drop a player to activate them.`,
-          url: `/league/${leagueId}/team`
-        });
-      } else if (resData.returned_to === 'taxi') {
+      if (resData.returned_to === 'taxi') {
         await createNotification(admin, {
           kind: 'deals',
           leagueId,
@@ -195,7 +188,6 @@ export async function POST(req: NextRequest, { params }: Props) {
 
   return NextResponse.json({ 
     ok: true, 
-    pendingActivation: resData.pending_activation, 
     penalty: resData.penalty,
     bonusPaid: resData.bonus_paid,
     bonusForgiven: resData.bonus_forgiven

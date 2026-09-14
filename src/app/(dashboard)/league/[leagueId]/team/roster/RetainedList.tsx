@@ -174,10 +174,10 @@ function HeldRow({
 
       {returning ? (
         <>
-          <span className={styles.retReturned}>Returned</span>
+          <span className={styles.retReturned}>Held</span>
           {viewerIsOwner && (
             <div className={styles.retActions}>
-              <button type="button" className={`${styles.retBtn} ${styles.retBtnPrimary}`} onClick={() => onDecision({ mode: 'reinstate', dep: d })}>Reinstate</button>
+              <button type="button" className={`${styles.retBtn} ${styles.retBtnDanger}`} onClick={() => onDecision({ mode: 'returned', dep: d })}>Decline</button>
             </div>
           )}
         </>

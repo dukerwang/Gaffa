@@ -228,66 +228,17 @@ export async function executeDrop(
         }
     }
 
-    // 5. Check and activate pending return loans
+    // 5. A held retained player dropped with severance is no longer returning.
+    // (Declining him instead is free; both end the claim.) Held players are
+    // never activated automatically: the manager does that (held players spec R5).
     try {
-        const { data: pendingLoan } = await admin
-            .from('player_loans')
-            .select(`
-                *,
-                player:players(id, name)
-            `)
-            .eq('lender_team_id', teamId)
-            .eq('status', 'pending_activation')
-            .order('created_at', { ascending: true }) // oldest first
-            .limit(1)
-            .maybeSingle();
-
-        if (pendingLoan) {
-            const { data: league } = await admin
-                .from('leagues')
-                .select('roster_size')
-                .eq('id', team.league_id)
-                .single();
-            const rosterSize = league?.roster_size ?? 20;
-
-            const { data: placeRes, error: placeError } = await admin.rpc('place_returning_loanee', {
-                p_lender_team_id: teamId,
-                p_player_id: pendingLoan.player_id,
-                p_league_id: team.league_id,
-                p_origin_status: pendingLoan.origin_status ?? null,
-                p_roster_size: rosterSize,
-            });
-
-            if (placeError) {
-                console.error('Failed to place returning loanee:', placeError);
-            } else {
-                const place = placeRes as { pending?: boolean; status?: string };
-                if (!place.pending) {
-                    const finalStatus = pendingLoan.recall_activated ? 'recalled' : 'expired';
-                    await admin
-                        .from('player_loans')
-                        .update({ status: finalStatus, updated_at: new Date().toISOString() })
-                        .eq('id', pendingLoan.id);
-
-                    const spot = place.status === 'taxi' ? 'academy' : 'reserves';
-                    const { createNotification } = await import('@/lib/notifications/createNotification');
-                    await createNotification(admin, {
-                        kind: 'club',
-                        leagueId: team.league_id,
-                        userId: team.user_id,
-                        title: 'Loan Activated',
-                        content: `Roster capacity restored. **${(pendingLoan.player as any)?.name}** has returned to your ${spot}.`,
-                        url: `/league/${team.league_id}/team`
-                    });
-
-                    await admin.from('chat_messages').insert({
-                        league_id: team.league_id,
-                        message: `📢 [SYSTEM:ANNOUNCEMENT] Returned loan activated! **${(pendingLoan.player as any)?.name}** has returned to the ${spot} of **${team.team_name}**.`,
-                    });
-                }
-            }
-        }
+        await admin
+            .from('departure_decisions')
+            .update({ status: 'lapsed', resolved_at: new Date().toISOString(), updated_at: new Date().toISOString(), notes: 'Dropped while held.' })
+            .eq('team_id', teamId)
+            .eq('player_id', playerId)
+            .eq('status', 'return_pending');
     } catch (err) {
-        console.error('Failed to auto-activate pending loan return:', err);
+        console.error('Failed to close a dropped held return:', err);
     }
 }

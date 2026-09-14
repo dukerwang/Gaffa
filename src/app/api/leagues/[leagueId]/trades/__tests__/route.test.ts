@@ -242,9 +242,21 @@ describe('retained rights', () => {
     expect((await propose(deal({ offeredRightIds: ['right-1'] }))).status).toBe(201);
   });
 
-  it('accepts a right that is pending return', async () => {
-    withRight(MY_TEAM_ID, 'return_pending');
+  it('accepts a player out on loan abroad as a right', async () => {
+    withRight(MY_TEAM_ID, 'on_loan');
     expect((await propose(deal({ offeredRightIds: ['right-1'] }))).status).toBe(201);
+  });
+
+  /**
+   * A returning retained player now waits as a held roster row (migration 163),
+   * so he's traded as a player. Trading the claim separately would split the
+   * decision from the row.
+   */
+  it('refuses a right that is pending return', async () => {
+    withRight(MY_TEAM_ID, 'return_pending');
+    const res = await propose(deal({ offeredRightIds: ['right-1'] }));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/offered retained rights are no longer held/);
   });
 
   it('refuses a right the proposer does not hold', async () => {

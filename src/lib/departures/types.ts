@@ -37,6 +37,14 @@ export const SLOT_CONSUMING_STATUSES: DepartureDecisionStatus[] = ['retained', '
  */
 export const RIGHTS_HELD_STATUSES: DepartureDecisionStatus[] = ['retained', 'return_pending', 'on_loan'];
 
+/**
+ * Claims that can be traded as a right. `return_pending` is absent: since the
+ * held players change (migration 163) a returning retained player waits as a
+ * held roster row, so he is traded as a player and his decision goes with him.
+ * Trading the claim separately would split the row from the decision.
+ */
+export const TRADEABLE_RIGHTS_STATUSES: DepartureDecisionStatus[] = ['retained', 'on_loan'];
+
 /** Statuses that can still change. Mirrors the partial unique index (migration 160). */
 export const OPEN_STATUSES: DepartureDecisionStatus[] = ['pending', 'retained', 'return_pending', 'on_loan'];
 
@@ -72,10 +80,3 @@ export interface DepartureDecision {
  * seeing the choice. A week gives a normal travel/busy-week gap real room.
  */
 export const MIDSEASON_DECISION_HOURS = 24 * 7;
-
-/**
- * How long a rights holder gets to make roster room once a retained player is
- * back in the Premier League. Matches the standard auction window so the two
- * read consistently to managers.
- */
-export const RETURN_WINDOW_HOURS = 48;

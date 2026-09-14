@@ -516,7 +516,7 @@ export default function ProposeBuilder({
           <span className={styles.pickName}>Unknown</span>
         )}
         <span className={styles.pickMeta}>
-          {r.status === 'on_loan' ? 'On loan abroad' : `Retained rights${r.status === 'return_pending' ? ' · back in the PL' : ''}`}
+          {r.status === 'on_loan' ? 'On loan abroad' : 'Retained rights'}
         </span>
       </span>
       <span className={styles.pickValue}>{money(r.marketValueAtDeparture)}</span>
@@ -573,7 +573,7 @@ export default function ProposeBuilder({
           <span className={styles.pickName}>Unknown</span>
         )}
         <span className={styles.pickMeta}>
-          {r.status === 'on_loan' ? 'On loan abroad' : `Retained rights${r.status === 'return_pending' ? ' · back in the PL' : ''}`}
+          {r.status === 'on_loan' ? 'On loan abroad' : 'Retained rights'}
         </span>
       </span>
       <span className={styles.pickValue}>{money(r.marketValueAtDeparture)}</span>

@@ -5,8 +5,9 @@
  *   release     — take the compensation, let the player go
  *   retain      — forfeit the compensation, keep his rights
  *   relinquish  — abandon held rights for nothing, freeing the slot
- *   reinstate   — claim a returned player back onto the roster
- *   decline     — give up a returned player; he goes to auction
+ *   decline     — give up a returned player who is held off a full squad;
+ *                 he goes to auction. (Activating him is a roster action:
+ *                 POST /api/teams/[teamId]/held/[entryId].)
  *
  * Ownership is checked against `team_id` (the current rights holder) so a
  * traded right is actionable by whoever holds it now.
@@ -21,8 +22,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import {
   DepartureError,
-  lapseReturn,
-  reinstateReturned,
+  declineHeldReturn,
   relinquishRights,
   releaseDeparture,
   retainDeparture,
@@ -32,9 +32,9 @@ interface Props {
   params: Promise<{ leagueId: string; decisionId: string }>;
 }
 
-type Action = 'release' | 'retain' | 'relinquish' | 'reinstate' | 'decline';
+type Action = 'release' | 'retain' | 'relinquish' | 'decline';
 
-const ACTIONS: Action[] = ['release', 'retain', 'relinquish', 'reinstate', 'decline'];
+const ACTIONS: Action[] = ['release', 'retain', 'relinquish', 'decline'];
 
 export async function POST(req: NextRequest, { params }: Props) {
   const { leagueId, decisionId } = await params;
@@ -86,7 +86,6 @@ export async function POST(req: NextRequest, { params }: Props) {
     release: ['pending'],
     retain: ['pending'],
     relinquish: ['retained', 'on_loan'],
-    reinstate: ['return_pending'],
     decline: ['return_pending'],
   };
 
@@ -111,18 +110,14 @@ export async function POST(req: NextRequest, { params }: Props) {
         await relinquishRights(admin, decisionId);
         return NextResponse.json({ ok: true });
       }
-      case 'reinstate': {
-        const result = await reinstateReturned(admin, decisionId);
-        return NextResponse.json({ ok: true, ...result });
-      }
       case 'decline': {
-        await lapseReturn(admin, decisionId, 'declined');
+        await declineHeldReturn(admin, decisionId);
         return NextResponse.json({ ok: true });
       }
     }
   } catch (err) {
     if (err instanceof DepartureError) {
-      const status = err.code === 'RETAINED_SLOTS_FULL' || err.code === 'ROSTER_FULL' ? 409 : 400;
+      const status = err.code === 'RETAINED_SLOTS_FULL' || err.code === 'NOT_RETURNING' ? 409 : 400;
       return NextResponse.json({ error: err.message, code: err.code }, { status });
     }
     const message = err instanceof Error ? err.message : 'Unknown error';

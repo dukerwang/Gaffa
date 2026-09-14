@@ -76,12 +76,6 @@ function buildTodos(serverNow: string, entries: SquadEntry[], departures: ClubPr
       when: countdown(serverNow, d.decideBy), act: 'Decide', decision: { mode: 'decide', dep: d },
     }),
   );
-  departures.held.filter((d) => d.status === 'return_pending').forEach((d) =>
-    out.push({
-      group: 'decision', subject: getPlayerDisplayName({ name: d.name, web_name: d.webName }, 'initial_last'), detail: 'is back in the Premier League',
-      when: countdown(serverNow, d.reinstateBy), act: 'Reinstate', decision: { mode: 'reinstate', dep: d },
-    }),
-  );
 
   const onRoster = new Set(['active', 'bench', 'loan_in']);
   entries.forEach((e) => {

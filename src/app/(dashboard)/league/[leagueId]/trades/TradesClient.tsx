@@ -385,7 +385,6 @@ export default function TradesClient({
       } else {
         let msg = `Loan recalled! Penalty paid: €${data.penalty}m.`;
         if (data.bonusPaid > 0) msg += ` Bonus paid: €${data.bonusPaid}m.`;
-        if (data.pendingActivation) msg += ` Player returning — roster full (pending drop).`;
         setProposeSuccess(msg);
         await refreshLoans();
       }
