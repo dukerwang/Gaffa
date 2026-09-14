@@ -1,7 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { MatchupLineup } from '@/types';
+import type { GranularPosition, MatchupLineup } from '@/types';
 import { normalizeMatchupLineup } from '@/lib/lineups/normalizeMatchupLineup';
 import { generateValidLineup } from '@/lib/lineups/generateValidLineup';
+import { fillLineupGaps, type GapFillCandidate } from '@/lib/lineups/fillLineupGaps';
+import { createNotification } from '@/lib/notifications/createNotification';
 
 /**
  * Checks if a stored lineup has 11 starters and at least 4 bench players,
@@ -89,6 +91,13 @@ export async function getEffectiveLineupForTeam(
     currentLineup?: MatchupLineup | null;
   },
 ): Promise<MatchupLineup | null> {
+  // Held players (R13): a locked team keeps its own lineup, repaired only where
+  // it broke. Everyone else keeps today's behaviour below.
+  if (await isLineupLocked(admin, teamId)) {
+    const repaired = await repairLockedLineup(admin, teamId, gameweek, currentLineup ?? null);
+    if (repaired) return repaired;
+  }
+
   if (currentLineup && isLineupComplete(currentLineup)) {
     return normalizeMatchupLineup(currentLineup);
   }
@@ -138,6 +147,93 @@ export async function getEffectiveLineupForTeam(
   return candidate;
 }
 
+async function isLineupLocked(admin: SupabaseClient, teamId: string): Promise<boolean> {
+  try {
+    const { data, error } = await admin.rpc('held_lineup_locked', { p_team_id: teamId });
+    return !error && data === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The locked team's own lineup — this gameweek's if complete, otherwise the most
+ * recent complete one — with only its broken slots filled (fillLineupGaps).
+ * Null when there's nothing to repair from, so the caller falls back.
+ */
+async function repairLockedLineup(
+  admin: SupabaseClient,
+  teamId: string,
+  gameweek: number,
+  currentLineup: MatchupLineup | null,
+): Promise<MatchupLineup | null> {
+  let base: MatchupLineup | null = currentLineup && isLineupComplete(currentLineup)
+    ? normalizeMatchupLineup(currentLineup)
+    : null;
+
+  if (!base) {
+    const { data: past } = await admin
+      .from('matchups')
+      .select('gameweek, team_a_id, team_b_id, lineup_a, lineup_b')
+      .or(`team_a_id.eq.${teamId},team_b_id.eq.${teamId}`)
+      .lt('gameweek', gameweek)
+      .order('gameweek', { ascending: false })
+      .limit(10);
+    for (const m of past ?? []) {
+      const raw = m.team_a_id === teamId ? m.lineup_a : m.lineup_b;
+      if (isLineupComplete(raw)) {
+        base = normalizeMatchupLineup(raw as MatchupLineup);
+        break;
+      }
+    }
+  }
+  if (!base) return null;
+
+  const { data: entries } = await admin
+    .from('roster_entries')
+    .select('player_id, status, player:players(id, primary_position, secondary_positions, ppg)')
+    .eq('team_id', teamId)
+    .not('status', 'in', '("ir","taxi","loan_out","held")');
+
+  const pool: GapFillCandidate[] = (entries ?? [])
+    .map((e) => e.player as unknown as { id: string; primary_position: GranularPosition | null; secondary_positions: GranularPosition[] | null; ppg: number | null } | null)
+    .filter((p): p is NonNullable<typeof p> => Boolean(p?.primary_position))
+    .map((p) => ({
+      id: p.id,
+      positions: [p.primary_position as GranularPosition, ...(p.secondary_positions ?? [])],
+      score: Number(p.ppg ?? 0),
+    }));
+
+  return fillLineupGaps(base, pool)?.lineup ?? null;
+}
+
+/** R13: tell a locked manager their lineup was set for them, once per gameweek. */
+async function notifyLineupSetIfLocked(
+  admin: SupabaseClient,
+  leagueId: string,
+  teamId: string,
+  gameweek: number,
+): Promise<void> {
+  if (!(await isLineupLocked(admin, teamId))) return;
+  try {
+    const { data: team } = await admin.from('teams').select('user_id').eq('id', teamId).single();
+    if (!team?.user_id) return;
+    await createNotification(admin, {
+      kind: 'club',
+      leagueId,
+      userId: team.user_id,
+      title: 'Lineup Set For You',
+      content:
+        `Your lineup for gameweek ${gameweek} is locked because you have a held player, so your last saved lineup was used. ` +
+        `Any player no longer available was replaced. Activate or drop your held player to pick your own lineup again.`,
+      url: `/league/${leagueId}/team/roster`,
+      tag: `lineup-locked-${teamId}-${gameweek}`,
+    });
+  } catch (err) {
+    console.error('[carryForward] locked lineup notification failed:', err);
+  }
+}
+
 /**
  * Carries forward lineups from previous gameweeks to the specified gameweek for any
  * matchup that is missing lineup_a or lineup_b.
@@ -181,6 +277,7 @@ export async function carryForwardLineupsForGameweek(
       if (effectiveA) {
         updates.lineup_a = effectiveA;
         details.push(`GW${gameweek} match ${m.id}: set lineup_a for team ${m.team_a_id}`);
+        await notifyLineupSetIfLocked(admin, m.league_id as string, m.team_a_id, gameweek);
       }
     }
 
@@ -193,6 +290,7 @@ export async function carryForwardLineupsForGameweek(
       if (effectiveB) {
         updates.lineup_b = effectiveB;
         details.push(`GW${gameweek} match ${m.id}: set lineup_b for team ${m.team_b_id}`);
+        await notifyLineupSetIfLocked(admin, m.league_id as string, m.team_b_id, gameweek);
       }
     }
 
