@@ -27,8 +27,27 @@ describe('deriveRosterCapacity', () => {
     expect(cap.loanedIn).toBe(2);
   });
 
-  it('excludes exactly the three uncounted statuses', () => {
-    expect([...UNCOUNTED_ROSTER_STATUSES].sort()).toEqual(['ir', 'loan_in', 'taxi']);
+  it('excludes exactly the four uncounted statuses', () => {
+    expect([...UNCOUNTED_ROSTER_STATUSES].sort()).toEqual(['held', 'ir', 'loan_in', 'taxi']);
+  });
+
+  it('does not charge a manager for a held player, and reports how many are held', () => {
+    const cap = deriveRosterCapacity({
+      statuses: statuses({ bench: 22, held: 1 }),
+      rosterSize: 22,
+    });
+    expect(cap.active).toBe(22);
+    expect(cap.isOver).toBe(false);
+    expect(cap.isFull).toBe(true);
+    expect(cap.held).toBe(1);
+  });
+
+  it('counts a loan_out placeholder toward the lender', () => {
+    const cap = deriveRosterCapacity({
+      statuses: statuses({ bench: 21, loan_out: 1 }),
+      rosterSize: 22,
+    });
+    expect(cap.active).toBe(22);
   });
 
   /**

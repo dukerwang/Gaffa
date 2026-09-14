@@ -29,10 +29,19 @@ import type { RosterStatus } from '@/types';
  * Injured reserve, the academy and loaned-in players are each capped
  * separately (`leagues.ir_size`, `leagues.taxi_size`, and the 2-in loan cap),
  * so counting them here would charge a manager twice for the same player.
- * `loan_out` never appears on the lender's roster — the entry moves to the
- * borrower — so it is absent by construction rather than excluded.
+ *
+ * A held player (migration 162) arrived with no room and is off the squad until
+ * the manager activates or drops him, so he takes no place either.
+ *
+ * `loan_out` IS counted. The lender keeps a `loan_out` placeholder row while
+ * the borrower holds a `loan_in` row (migrations 060/138; the one-club-per-league
+ * index in 109 excludes `loan_out` for exactly this reason), and the loaned
+ * player keeps his lender's place unless the buyback fee freed it (see
+ * `countBuybackSlots`).
+ *
+ * Must match `team_active_count` in supabase/migrations/162_held_players_core.sql.
  */
-export const UNCOUNTED_ROSTER_STATUSES: readonly RosterStatus[] = ['ir', 'taxi', 'loan_in'];
+export const UNCOUNTED_ROSTER_STATUSES: readonly RosterStatus[] = ['ir', 'taxi', 'loan_in', 'held'];
 
 /**
  * The smallest legal active roster. Enforced on trades, which are the only
@@ -44,7 +53,7 @@ export const MIN_ACTIVE_ROSTER = 15;
 export const DEFAULT_ROSTER_SIZE = 20;
 
 export interface RosterCapacity {
-  /** Players occupying a slot right now: everything but IR, academy and loan-ins. */
+  /** Players occupying a slot right now: everything but IR, academy, loan-ins and held players. */
   active: number;
   /** `leagues.roster_size` plus one slot per loan-out that paid the buyback fee. */
   limit: number;
@@ -56,7 +65,7 @@ export interface RosterCapacity {
   open: number;
   /** No slots left; a new arrival needs a drop in the same move. */
   isFull: boolean;
-  /** Over the limit, which a buyback expiring or a loan returning can cause. */
+  /** Over the limit. Arrivals are held rather than pushing a squad over, so this now needs a commissioner lowering roster_size. */
   isOver: boolean;
   /** Cannot give up another player in a trade. */
   atFloor: boolean;
@@ -67,6 +76,8 @@ export interface RosterCapacity {
   academy: number;
   academyLimit: number;
   loanedIn: number;
+  /** Players waiting off the squad for the manager to activate or drop them. */
+  held: number;
 }
 
 export interface RosterCapacityInput {
@@ -110,6 +121,7 @@ export function deriveRosterCapacity({
     academy: count('taxi'),
     academyLimit: taxiSize ?? 3,
     loanedIn: count('loan_in'),
+    held: count('held'),
   };
 }
 
