@@ -35,6 +35,8 @@ interface Props {
   loanSlotsRemaining?: number;
   bonusCapDefault?: number;
   totalGameweeks?: number;
+  /** Held players (R7): a club holding a player can't borrow. */
+  holding?: boolean;
   onClose: () => void;
   onRequested: (loan: any) => void;
 }
@@ -49,6 +51,7 @@ export default function RequestLoanModal({
   currentGameweek = 1,
   loanSlotsRemaining,
   totalGameweeks = 38,
+  holding = false,
   onClose,
   onRequested,
 }: Props) {
@@ -262,6 +265,12 @@ export default function RequestLoanModal({
             ? `${loanSlotsRemaining} loan-in slot${loanSlotsRemaining !== 1 ? 's' : ''} remaining`
             : 'No loan-in slots remaining'}
         </p>
+      )}
+
+      {holding && (
+        <div className={styles.modalHint} style={{ color: 'var(--color-accent-red)', borderBottom: 'none' }}>
+          Activate or drop your held player before borrowing.
+        </div>
       )}
 
       {error && (
@@ -604,7 +613,7 @@ export default function RequestLoanModal({
                 variant="primary"
                 type="submit"
                 loading={submitting}
-                disabled={submitting}
+                disabled={submitting || holding}
               >
                 Send Loan Request
               </Button>

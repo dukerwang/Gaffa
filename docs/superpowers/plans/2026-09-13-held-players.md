@@ -185,7 +185,7 @@ Read `DESIGN.md` and `docs/UI_RULES.md` first. Reuse existing roster panel and `
 - [x] Roster page: a Held group listing held players with source, Activate (only the targets the player qualifies for, disabled mid-gameweek with the reason) and Drop (existing severance confirm). A returning retained player also shows Decline.
 - [x] Club to-do (`buildTodos` in `ClubClient.tsx`): one item per held player, counting down to the lineup lock.
 - [x] Pitch page (`PitchUI.tsx` capacity notice): before the lock, "1 player held. Activate or drop him before {kickoff}, or your lineup locks."; after, the locked state and the carried-lineup explanation. Don't edit inside `.pitchContainer`.
-- [ ] Disabled controls with **Partly done: BidDialog and the Inspector disable with the reason; ProposeBuilder and the loan modals rely on the server refusal message instead.** "Activate or drop your held player first.": `BidDialog`, `ProposeBuilder` (only when the proposal would grow the squad), loan modals, academy and IR controls.
+- [x] Disabled controls with "Activate or drop your held player first." Done in #7: bid dialog, offer builder (trades and loans), loan request modal, Recall on Deals, the listing loan gate, Save Lineup while locked, academy and IR promotions on the team page and in the Inspector, plus a Home Needs You item.
 - [x] The `hold` state reaches these surfaces through the existing page models (`loadClubView.ts`, `buildTransfersModel.ts`, team `page.tsx`), not a new client fetch.
 - [x] Check both themes. `npm run check:ui`. Commit.
 

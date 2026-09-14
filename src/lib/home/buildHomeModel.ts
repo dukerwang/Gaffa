@@ -1120,6 +1120,26 @@ export async function buildHomeModel(
     });
   }
 
+  // Held players (spec 2026-09-13): the squad can't grow until they're
+  // activated or dropped, and a hold left past the next kickoff locks the lineup.
+  const heldPlayers = rosterPlayers.filter((r) => r.status === 'held');
+  if (heldPlayers.length > 0) {
+    const first = getPlayerDisplayName(heldPlayers[0].player, 'initial_last');
+    attention.push({
+      id: 'held',
+      tag: 'Squad',
+      tone: 'warn',
+      text: heldPlayers.length === 1
+        ? `${first} is held — activate or drop him before your lineup locks`
+        : `${heldPlayers.length} players are held — activate or drop them before your lineup locks`,
+      when: 'Now',
+      whenAt: null,
+      action: 'Manage',
+      href: `${base}/team/roster`,
+      order: 0,
+    });
+  }
+
   // Auctions where you have bid and are no longer top.
   for (const a of liveAuctions) {
     const bids = Array.isArray(a.bids) ? a.bids : [];

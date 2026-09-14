@@ -386,6 +386,7 @@ export default async function MyTeamPage({ params }: Props) {
         maxRosterSize={maxRosterSize}
         capacity={capacity}
         leagueId={leagueId}
+        lineupLocked={holdState.lineupLocked}
         masthead={{
           leagueName: league.name,
           crestConfig: (team as any).crest_config ?? null,

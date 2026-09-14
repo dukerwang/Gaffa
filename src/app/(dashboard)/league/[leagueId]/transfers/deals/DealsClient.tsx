@@ -60,6 +60,8 @@ export default function DealsClient({
   const model = useLiveTransfers(leagueId, initial);
   const { openPlayer, primePlayers } = usePlayerCard();
   const me = model.myTeam.id;
+  // Held players (R19): a recall needs a lender who isn't holding anyone.
+  const iHold = model.myRoster.some((p) => p.status === 'held');
 
   const [propose, setPropose] = useState<ProposeMode | null>(null);
   const [proposeTeamId, setProposeTeamId] = useState<string | null>(null);
@@ -388,7 +390,8 @@ export default function DealsClient({
                 <button
                   type="button"
                   className={styles.dealBtn}
-                  disabled={busyId === l.id}
+                  disabled={busyId === l.id || iHold}
+                  title={iHold ? 'Activate or drop your held player first.' : undefined}
                   onClick={() => {
                     if (window.confirm(
                       `Recall ${l.player ? getPlayerDisplayName(l.player, 'full') : 'this player'} early? You will pay a €25m penalty to the borrower.`,

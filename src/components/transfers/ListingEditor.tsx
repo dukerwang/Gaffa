@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { GranularPosition } from '@/types';
 import type { RosterPlayer, TransfersListing } from '@/lib/transfers/buildTransfersModel';
 import PositionBadge from '@/components/players/PositionBadge';
@@ -98,6 +98,12 @@ export default function ListingEditor({
   const selected = editing
     ? listing?.player
     : listable.find((p) => p.id === playerId);
+
+  // Held players (R9): a held player can be sold or traded, never loaned out.
+  const selectedHeld = (selected as { status?: string } | undefined)?.status === 'held';
+  useEffect(() => {
+    if (selectedHeld && gateLoan) setGateLoan(false);
+  }, [selectedHeld, gateLoan]);
 
   const marketValue = Number(selected?.market_value) || 0;
   // The 077 trigger is the real enforcement; this mirrors it so the seller sees
@@ -293,10 +299,10 @@ export default function ListingEditor({
             </span>
           </label>
           <label className={`${styles.gate} ${gateLoan ? styles.gateOn : ''}`}>
-            <input type="checkbox" checked={gateLoan} onChange={(e) => setGateLoan(e.target.checked)} />
+            <input type="checkbox" checked={gateLoan} disabled={selectedHeld} onChange={(e) => setGateLoan(e.target.checked)} />
             <span>
               <b>A loan</b>
-              <em>Happy to let him go out and come back.</em>
+              <em>{selectedHeld ? 'Activate him before offering him on loan.' : 'Happy to let him go out and come back.'}</em>
             </span>
           </label>
         </div>
