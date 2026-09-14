@@ -4,7 +4,12 @@ import { normalizeMatchupLineup } from '@/lib/lineups/normalizeMatchupLineup';
 import { resolveCurrentGw } from '@/lib/season/currentGameweek';
 import { FORMATION_SLOTS } from '@/types';
 import type { BenchSlot, MatchupLineup } from '@/types';
-import type { FutbolpediaClubContextResponse } from './futbolpediaContextTypes';
+import type {
+  FutbolpediaClubContextResponse,
+  FutbolpediaLeagueSettings,
+  FutbolpediaOpenAuction,
+  FutbolpediaOpenListing,
+} from './futbolpediaContextTypes';
 
 const LINEUP_VISIBILITY: 'last_saved' | 'locked' = 'last_saved';
 
@@ -19,7 +24,13 @@ export async function buildFutbolpediaClubContext(
   const admin = createAdminClient();
 
   const [{ data: league }, { data: team }] = await Promise.all([
-    admin.from('leagues').select('id, name').eq('id', leagueId).maybeSingle(),
+    admin
+      .from('leagues')
+      .select(
+        'id, name, roster_size, bench_size, ir_size, taxi_size, taxi_age_limit, max_teams, is_dynasty, faab_budget, free_agent_bid_floor, max_loan_outs, max_loan_ins, status',
+      )
+      .eq('id', leagueId)
+      .maybeSingle(),
     admin
       .from('teams')
       .select('id, team_name, faab_budget, league_id')
@@ -32,7 +43,14 @@ export async function buildFutbolpediaClubContext(
 
   const currentGw = await resolveCurrentGw();
 
-  const [{ data: rosterRaw }, { data: standings }, { data: matchupRows }, { data: currentMatchup }] =
+  const [
+    { data: rosterRaw },
+    { data: standings },
+    { data: matchupRows },
+    { data: currentMatchup },
+    { data: listingRows },
+    { data: auctionRows },
+  ] =
     await Promise.all([
       admin
         .from('roster_entries')
@@ -60,6 +78,25 @@ export async function buildFutbolpediaClubContext(
         .order('gameweek', { ascending: true })
         .limit(1)
         .maybeSingle(),
+      admin
+        .from('player_sale_listings')
+        .select(
+          `id, seller_team_id, player_id, min_bid, ask_price, buy_now_price,
+           open_to_trade, open_to_sale, open_to_loan, status, auction_expires_at,
+           seller_team:teams!seller_team_id(id, team_name),
+           player:players(id, name, web_name, primary_position)`,
+        )
+        .eq('league_id', leagueId)
+        .in('status', ['pending', 'active'])
+        .order('created_at', { ascending: false })
+        .limit(24),
+      admin
+        .from('auction_state')
+        .select('player_id, kind, highest_bid, expires_at')
+        .eq('league_id', leagueId)
+        .eq('status', 'live')
+        .order('expires_at', { ascending: true, nullsFirst: false })
+        .limit(16),
     ]);
 
   const roster: FutbolpediaClubContextResponse['roster'] = [];
@@ -157,6 +194,10 @@ export async function buildFutbolpediaClubContext(
     }
   }
 
+  const settings = settingsFromLeague(league as Record<string, unknown>);
+  const open_listings = mapListings(listingRows as any[] | null, team.id);
+  const open_auctions = await mapAuctions(admin, auctionRows as any[] | null);
+
   return {
     league_id: league.id,
     club_id: team.id,
@@ -175,6 +216,90 @@ export async function buildFutbolpediaClubContext(
     },
     matchup,
     lineup,
+    settings,
+    open_listings,
+    open_auctions,
     synced_at: new Date().toISOString(),
   };
+}
+
+function asOne<T>(v: T | T[] | null | undefined): T | null {
+  if (!v) return null;
+  return Array.isArray(v) ? (v[0] ?? null) : v;
+}
+
+function settingsFromLeague(league: Record<string, unknown>): FutbolpediaLeagueSettings {
+  const n = (key: string): number | null => {
+    const v = Number(league[key]);
+    return Number.isFinite(v) ? v : null;
+  };
+  return {
+    roster_size: n('roster_size') ?? 22,
+    bench_size: n('bench_size') ?? 4,
+    ir_size: n('ir_size') ?? 2,
+    taxi_size: n('taxi_size'),
+    taxi_age_limit: n('taxi_age_limit'),
+    max_teams: n('max_teams') ?? 0,
+    is_dynasty: Boolean(league.is_dynasty),
+    starting_faab_eur_m: n('faab_budget'),
+    free_agent_bid_floor: n('free_agent_bid_floor'),
+    max_loan_outs: n('max_loan_outs'),
+    max_loan_ins: n('max_loan_ins'),
+    league_status: typeof league.status === 'string' ? league.status : null,
+  };
+}
+
+function mapListings(rows: any[] | null, clubId: string): FutbolpediaOpenListing[] {
+  const out: FutbolpediaOpenListing[] = [];
+  for (const row of rows ?? []) {
+    const player = asOne(row.player) as {
+      id?: string;
+      name?: string;
+      web_name?: string | null;
+      primary_position?: string;
+    } | null;
+    const seller = asOne(row.seller_team) as { id?: string; team_name?: string } | null;
+    if (!player?.id) continue;
+    out.push({
+      player_id: player.id,
+      name: (player.web_name || player.name || 'Unknown').trim(),
+      position: player.primary_position || '?',
+      seller_club_id: seller?.id || row.seller_team_id,
+      seller_club_name: seller?.team_name || 'Unknown',
+      yours: (seller?.id || row.seller_team_id) === clubId,
+      status: row.status,
+      min_bid_eur_m: row.min_bid != null ? Number(row.min_bid) : null,
+      ask_eur_m: row.ask_price != null ? Number(row.ask_price) : null,
+      release_clause_eur_m: row.buy_now_price != null ? Number(row.buy_now_price) : null,
+      open_to_trade: Boolean(row.open_to_trade),
+      open_to_sale: Boolean(row.open_to_sale),
+      open_to_loan: Boolean(row.open_to_loan),
+      expires_at: row.auction_expires_at ?? null,
+    });
+  }
+  return out;
+}
+
+async function mapAuctions(
+  admin: ReturnType<typeof createAdminClient>,
+  rows: any[] | null,
+): Promise<FutbolpediaOpenAuction[]> {
+  const list = rows ?? [];
+  if (list.length === 0) return [];
+  const ids = [...new Set(list.map((r) => r.player_id).filter(Boolean))];
+  const { data: players } = ids.length
+    ? await admin.from('players').select('id, name, web_name, primary_position').in('id', ids)
+    : { data: [] as never[] };
+  const byId = new Map((players ?? []).map((p: any) => [p.id, p]));
+  return list.map((row) => {
+    const p = byId.get(row.player_id);
+    return {
+      player_id: row.player_id,
+      name: ((p?.web_name || p?.name || 'Unknown') as string).trim(),
+      position: (p?.primary_position as string) || '?',
+      kind: String(row.kind ?? 'auction'),
+      highest_bid_eur_m: row.highest_bid != null ? Number(row.highest_bid) : null,
+      expires_at: row.expires_at ?? null,
+    };
+  });
 }
