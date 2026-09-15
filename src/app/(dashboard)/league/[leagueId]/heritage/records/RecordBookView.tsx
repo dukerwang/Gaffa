@@ -93,7 +93,7 @@ export default function RecordBookView({ leagueId, records, clubs, titles, viewe
 
       {records.length === 0 && titles.length === 0 ? (
         <p className={styles.empty}>
-          Nothing is on record yet. The first completed gameweek sets every one of these.
+          No records yet. You’ll see them after the first completed gameweek.
         </p>
       ) : (
         <>

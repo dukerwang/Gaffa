@@ -37,7 +37,7 @@ export default function CabinetsView({ leagueId, clubs, totalTrophies, viewerTea
           <p className={styles.subtitle}>
             {totalTrophies
               ? `${totalTrophies} ${totalTrophies === 1 ? 'object' : 'objects'} across ${decorated.length} ${decorated.length === 1 ? 'club' : 'clubs'}`
-              : 'Nothing has been won yet'}
+              : 'No club has won a trophy yet'}
           </p>
         </div>
       </div>
@@ -77,7 +77,7 @@ export default function CabinetsView({ leagueId, clubs, totalTrophies, viewerTea
       {bare.length > 0 && (
         <div className={styles.block}>
           <div className={styles.sect}>
-            <h2 className={styles.sectT}>Still Waiting</h2>
+            <h2 className={styles.sectT}>Empty Cabinets</h2>
             <span className={styles.sectHint}>Clubs yet to win anything</span>
           </div>
           <div className={styles.box}>

@@ -75,7 +75,7 @@ export default function RivalriesView({ leagueId, pairings, clubs, viewerTeamId 
 
       {pairings.length === 0 ? (
         <p className={styles.empty}>
-          No club has met another yet. Records appear once the first gameweek is scored.
+          No club has played another yet. You’ll see records after the first completed gameweek.
         </p>
       ) : (
         <>
@@ -92,7 +92,7 @@ export default function RivalriesView({ leagueId, pairings, clubs, viewerTeamId 
           {rest.length > 0 && (
             <div className={styles.block}>
               <div className={styles.sect}>
-                <h2 className={styles.sectT}>Around the League</h2>
+                <h2 className={styles.sectT}>Other Rivalries</h2>
                 <span className={styles.sectHint}>Pairings you are not part of</span>
               </div>
               <div className={styles.box}>{rest.map((h) => <Row key={`${h.teamId}-${h.opponentId}`} h={h} />)}</div>

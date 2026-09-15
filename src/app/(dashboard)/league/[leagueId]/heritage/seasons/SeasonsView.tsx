@@ -95,7 +95,7 @@ export default function SeasonsView({
           <p className={styles.subtitle}>
             {seasons.length
               ? `${seasons.length} completed, newest first`
-              : `${currentSeason} in progress — nothing archived yet`}
+              : `${currentSeason} in progress. No completed seasons yet.`}
           </p>
         </div>
         {seasons.length > 1 && (
@@ -117,8 +117,8 @@ export default function SeasonsView({
 
       {!selected ? (
         <p className={styles.empty}>
-          No season has been archived yet. {currentSeason} is the league&rsquo;s first, and it lands
-          here when it ends.
+          No completed seasons yet. {currentSeason} is the league&rsquo;s first, and you&rsquo;ll see
+          it here once it ends.
         </p>
       ) : (
         <>
@@ -166,7 +166,7 @@ export default function SeasonsView({
                     <span />
                     <div className={styles.boardCount}>
                       <div className={styles.figV}>{pts(row.points)}</div>
-                      <div className={styles.figS}>points</div>
+                      <div className={styles.figS}>Points</div>
                     </div>
                   </div>
                 );
@@ -198,7 +198,7 @@ export default function SeasonsView({
                     </div>
                     <div className={styles.fig}>
                       <div className={styles.figV}>{xi.playersUsed}</div>
-                      <div className={styles.figS}>Players used</div>
+                      <div className={styles.figS}>Players Used</div>
                     </div>
                   </div>
                   <div className={styles.xiSquadHd}>
@@ -224,7 +224,7 @@ export default function SeasonsView({
               </div>
             ) : (
               <p className={styles.empty}>
-                No lineups were archived for {selected}, so the winning side cannot be reconstructed.
+                Gaffa has no saved lineups for {selected}, so it can’t show the winning side.
               </p>
             )}
           </div>

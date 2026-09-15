@@ -95,8 +95,8 @@ export default function HeritageOverview({
           </p>
         </div>
         <div className={styles.figs}>
-          <Figure value={String(seasonCount)} stake="Seasons completed" />
-          <Figure value={String(board.totalTrophies)} stake="Trophies awarded" />
+          <Figure value={String(seasonCount)} stake="Seasons Completed" />
+          <Figure value={String(board.totalTrophies)} stake="Trophies Awarded" />
           <Figure value={String(board.clubs.length)} stake="Clubs" />
         </div>
       </div>
@@ -125,9 +125,9 @@ export default function HeritageOverview({
             <div className={styles.heroFigs}>
               <Figure
                 value={String(champion.club.trophies.filter((t) => t.kind === 'league_title').length)}
-                stake="League titles"
+                stake="League Titles"
               />
-              <Figure value={String(champion.club.total)} stake="Trophies in total" />
+              <Figure value={String(champion.club.total)} stake="Total Trophies" />
             </div>
           </div>
           {/* The display is a studio sweep, not a cabinet — see
@@ -150,8 +150,7 @@ export default function HeritageOverview({
           <div className={styles.heroTx}>
             <div className={styles.heroName}>No champion yet</div>
             <p className={styles.heroSub}>
-              {leagueName} crowns its first champion at the end of {currentSeason}. Until then the
-              board below is a wall waiting to be filled.
+              {leagueName} crowns its first champion at the end of {currentSeason}.
             </p>
           </div>
         </div>
@@ -191,7 +190,7 @@ export default function HeritageOverview({
               </div>
               <div className={styles.boardCount}>
                 <div className={styles.figV}>{c.total}</div>
-                <div className={styles.figS}>{c.total === 1 ? 'trophy' : 'trophies'}</div>
+                <div className={styles.figS}>{c.total === 1 ? 'Trophy' : 'Trophies'}</div>
               </div>
             </div>
           ))}
@@ -245,8 +244,8 @@ export default function HeritageOverview({
           ) : (
             <p className={styles.empty}>
               {viewerTeamId
-                ? 'No completed fixtures yet. Your record fills in as the season is scored.'
-                : 'Head-to-head records are shown for managers with a club in this league.'}
+                ? 'No completed fixtures yet. You’ll see your record after your first one.'
+                : 'You need a club in this league to see head-to-head records.'}
             </p>
           )}
         </div>
@@ -279,10 +278,10 @@ export default function HeritageOverview({
                   </div>
                 )}
                 <div className={styles.railFigs}>
-                  <Figure value={String(record.played)} stake="Matches played" />
-                  <Figure value={`${Math.round(winRate * 1000) / 10}%`} stake="Win rate" />
-                  <Figure value={`${record.won}–${record.drawn}–${record.lost}`} stake="All-time record" />
-                  <Figure value={pts(record.pointsFor)} stake="Points scored" accent />
+                  <Figure value={String(record.played)} stake="Matches Played" />
+                  <Figure value={`${Math.round(winRate * 1000) / 10}%`} stake="Win Rate" />
+                  <Figure value={`${record.won}–${record.drawn}–${record.lost}`} stake="All-Time Record" />
+                  <Figure value={pts(record.pointsFor)} stake="Points Scored" accent />
                 </div>
               </div>
             </div>

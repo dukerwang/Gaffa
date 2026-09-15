@@ -133,12 +133,12 @@ export default function PairingView({ leagueId, h2h, subject, opponent, isViewer
           <div className={styles.fixtureFoot}>
             <div className={styles.fixtureFor}>
               <div className={styles.figV}>{pts(h2h.pointsFor)}</div>
-              <div className={styles.figS}>Points for</div>
+              <div className={styles.figS}>Points For</div>
             </div>
             <SplitBar t={h2h} />
             <div>
               <div className={styles.figV}>{pts(h2h.pointsAgainst)}</div>
-              <div className={styles.figS}>Points against</div>
+              <div className={styles.figS}>Points Against</div>
             </div>
           </div>
         )}
@@ -146,7 +146,7 @@ export default function PairingView({ leagueId, h2h, subject, opponent, isViewer
 
       {h2h.played === 0 ? (
         <p className={styles.empty}>
-          These two have not met in a completed fixture yet.
+          These two haven’t met in a completed fixture yet.
         </p>
       ) : (
         <>
