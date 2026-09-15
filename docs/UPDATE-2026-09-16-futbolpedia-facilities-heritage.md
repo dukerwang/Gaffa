@@ -135,6 +135,16 @@ place:
 
 It's early in the first season, so you'll see more here as the weeks go by.
 
+## Lineup Builder
+
+Build any XI from the whole Premier League, not only your squad. Open **Lineup
+Builder** from the top bar, choose one of the 12 formations, and fill each
+position with any player in the league. Give the lineup a name, then tap **Share
+XI** to send it as an image, or **Copy Link** to share a link that opens the same
+lineup.
+
+To start from your own side, tap **Share Lineup** on your lineup page.
+
 ## Projected Points
 
 Before kickoff, you'll see each player's projected points for the gameweek on
@@ -226,6 +236,8 @@ anyway.
    as the same kind of squad rule, but rarer.
 4. **Heritage** is the biggest new surface, but missing it costs nobody points,
    and both alpha leagues are four gameweeks old, so there isn't much in it yet.
+   **Lineup Builder** follows as the other new surface: fun to share, but
+   separate from how anyone's league plays out.
 5. **Projected Points** is valuable, but managers see it the next time they set
    a lineup. Only the outlined-versus-filled convention needs a sentence.
 6. **Home screen** and **Team of the Week** are visible on first load and need
@@ -254,6 +266,7 @@ its line.
 | Two-pass auction settlement | `af6d463f` |
 | On Loan Abroad | `0c413192`, migrations 159–160 |
 | Heritage | `894af998`, `d613f7ab` (PR #12), migration 156 |
+| Lineup Builder and Share Lineup | PR #14 (rescued from uncommitted files in the main folder, with layout, pagination and club-filter fixes) |
 | Projected points on lineup and game log | `e1c55b75`, `3e4368d7`, `ed63ade8`, `3e47437a`, `7ba5dc93`, `c1670d3a`, `63b88495`, `248fd773` |
 | Club page Pitch and Depth Chart | `99dcaab2`, `e14943ee`, `d468d1b0` |
 | Home screen | `50ae5bb4`, `28cbb55f`, `776a0841`, `afb318c4` (PR #11), migration `166_season_top_rated` |
@@ -284,7 +297,7 @@ its line.
 | `/ui-showcase` page | Internal tooling. |
 | Copy sweeps (`6ed11ae0`, `2e9c848d`) | Wording only; nothing to learn. |
 | Targets | Deferred to the next update. |
-| Lineup builder, mini game | Not built. |
+| Mini game | Not built. |
 
 ---
 
