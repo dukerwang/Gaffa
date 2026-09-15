@@ -31,7 +31,7 @@
       "x": 980,
       "y": 0,
       "w": 330,
-      "text": "Headers are no longer just type. Each one carries an instrument that belongs to its section:\n\n\u2022 Your Leagues sits on a green shelf that continues out of the topbar, with your club crests stacked beside it, status pills underneath, and the league cards rising out of its bottom edge.\n\u2022 Top Rated carries a Matchweek / Season switch, so the header does real work.\n\u2022 The fixtures head is a scoreboard: an MW tile, the date range, and a ten-segment strip showing finished, live and to come at a glance.\n\u2022 How Gaffa Works wears the baseline rule as its mark: a track, an ink bar and the median tick."
+      "text": "Headers are no longer just type. Each one carries an instrument that belongs to its section:\n\n\u2022 Your Leagues sits on a green shelf that continues out of the topbar, with your club crests stacked beside it, status pills underneath, and the league cards rising out of its bottom edge.\n\u2022 Top Rated carries a Matchweek / Season switch, which you use to change what the row shows.\n\u2022 The fixtures head is a scoreboard: an MW tile, the date range, and a ten-segment strip showing finished, live and to come at a glance.\n\u2022 About Gaffa carries the baseline rule as its mark: a track, an ink bar and the median tick."
     },
     {
       "id": "note-rules",
