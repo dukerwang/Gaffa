@@ -29,6 +29,7 @@ import FacilityPurchaseSheet from '@/components/facilities/FacilityPurchaseSheet
 import facilityStyles from '@/components/facilities/facilities.module.css';
 import type { FacilityView } from '@/lib/facilities/facilities';
 import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/academyEligibility';
+import { serializeLineup } from '@/lib/lineups/lineupSerializer';
 
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -579,6 +580,16 @@ export default function PitchUI({
     );
 
     // ── Derived state ──
+    const shareLineupHref = useMemo(() => {
+        const orderedStarters = slots.map((_, i) => assignments[i] ?? null);
+        const query = serializeLineup({
+            formation,
+            title: teamName ? `${teamName} XI` : 'Starting XI',
+            playerIds: orderedStarters,
+        });
+        return `/lineup-builder?${query}`;
+    }, [formation, teamName, assignments, slots]);
+
     const starterIds = useMemo(
         () => new Set(Object.values(assignments).filter(Boolean) as string[]),
         [assignments],
@@ -1947,6 +1958,10 @@ export default function PitchUI({
                             {lineupLocked && !saveError && (
                                 <span className={styles.errorText}>Lineup locked while a player is held.</span>
                             )}
+                            <NavigationLink href={shareLineupHref} className={styles.shareBtn}>
+                                <Icon name="share" size={13} strokeWidth={1.75} />
+                                Share Lineup
+                            </NavigationLink>
                             <button className={styles.saveBtn} onClick={handleSave} disabled={!canSave || lineupLocked}>
                                 {saving ? 'Saving…' : 'Save Lineup'}
                             </button>
