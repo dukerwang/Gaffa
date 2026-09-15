@@ -2619,7 +2619,7 @@ export default function PitchUI({
                                                 key={entry.id}
                                                 type="button"
                                                 className={[
-                                                    'g-row', 'g-namerow', styles.row, styles.rowBtn, styles.rowWithActions,
+                                                    'g-row', 'g-namerow', styles.row, styles.rowBtn,
                                                     isSelected ? styles.rowSelected : '',
                                                     isTarget ? styles.rowTarget : '',
                                                     isDimmed ? styles.rowDimmed : '',
@@ -2640,23 +2640,8 @@ export default function PitchUI({
                                                 <span className={styles.rowClub}>{entry.player.pl_team}</span>
                                                 <span className={styles.rowSpacer} />
                                                 {isAgedOut && <span className={styles.agedOutTag}>Aged Out</span>}
-                                                {isTarget && <span className={styles.eligibleTag}>SWAP</span>}
                                                 <RowScore cell={railCell(entry.player)} />
                                                 {isLocked && <span className={styles.lockIcon}><Icon name="lock" size={14} /></span>}
-                                                <div className={styles.rowActions}>
-                                                    <button
-                                                        type="button"
-                                                        className={styles.rowBtnPrimary}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleTaxiActivate(entry.player.id);
-                                                        }}
-                                                        disabled={sidebarLoading || holding || (capacity?.open ?? 0) <= 0}
-                                                        title={holding ? HOLD_MESSAGE : (capacity?.open ?? 0) <= 0 ? 'Active roster full' : 'Promote to active roster'}
-                                                    >
-                                                        {sidebarLoading ? '…' : 'Activate'}
-                                                    </button>
-                                                </div>
                                             </button>
                                         );
                                     })
@@ -2696,7 +2681,7 @@ export default function PitchUI({
                                             key={entry.id}
                                             type="button"
                                             className={[
-                                                'g-row', 'g-namerow', styles.row, styles.rowBtn, styles.rowWithActions,
+                                                'g-row', 'g-namerow', styles.row, styles.rowBtn,
                                                 isSelected ? styles.rowSelected : '',
                                                 isTarget ? styles.rowTarget : '',
                                                 isDimmed ? styles.rowDimmed : '',
@@ -2716,23 +2701,8 @@ export default function PitchUI({
                                             </span>
                                             <span className={styles.rowClub}>{entry.player.pl_team}</span>
                                             <span className={styles.rowSpacer} />
-                                            {isTarget && <span className={styles.eligibleTag}>SWAP</span>}
                                             <RowScore cell={railCell(entry.player)} />
                                             {irLocked && <span className={styles.lockIcon}><Icon name="lock" size={14} /></span>}
-                                            <div className={styles.rowActions}>
-                                                <button
-                                                    type="button"
-                                                    className={styles.rowBtnPrimary}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleIrActivate(entry.player.id);
-                                                    }}
-                                                    disabled={sidebarLoading || irLocked || holding || (capacity?.open ?? 0) <= 0}
-                                                    title={irLocked ? 'Match started — IR is locked until this week is settled' : holding ? HOLD_MESSAGE : (capacity?.open ?? 0) <= 0 ? 'Active roster full' : 'Activate from IR'}
-                                                >
-                                                    {sidebarLoading ? '…' : 'Activate'}
-                                                </button>
-                                            </div>
                                         </button>
                                     );
                                 })}

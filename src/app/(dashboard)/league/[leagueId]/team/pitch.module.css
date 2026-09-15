@@ -1047,81 +1047,6 @@
     margin: 0;
 }
 
-/* ── Row actions (academy / IR) ────────────────────────────
-   One accent fill plus an ink sibling, never two colours competing — the
-   listing card's "one primary action" rule, at row scale. */
-
-.rowActions {
-    display: flex;
-    align-items: center;
-    gap: var(--s1);
-    flex-shrink: 0;
-}
-
-.rowBtnGhost {
-    padding: 2px var(--s2);
-    border: 1px solid var(--color-border);
-    border-radius: var(--r-control);
-    background: transparent;
-    color: var(--color-text-secondary);
-    font-family: var(--font-condensed);
-    font-size: var(--t-11);
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    transition: border-color var(--dur-fast) var(--ease-standard),
-                color var(--dur-fast) var(--ease-standard);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .rowBtnGhost:hover {
-      border-color: var(--color-border-strong);
-      color: var(--color-text-primary);
-  }
-}
-
-/* Selected: the keyline and the tint are the state, so the label goes to ink.
-   An accent-ink control that gains an accent wash on its own active state is
-   the single most repeated defect the dialogs port found. */
-.rowBtnGhostOn {
-    border-color: var(--color-accent);
-    background: var(--color-tint-accent);
-    color: var(--color-text-primary);
-}
-@media (hover: hover) and (pointer: fine) {
-  .rowBtnGhostOn:hover {
-      border-color: var(--color-accent);
-      background: var(--color-tint-accent);
-      color: var(--color-text-primary);
-  }
-}
-
-.rowBtnPrimary {
-    padding: 2px var(--s2);
-    border: 1px solid var(--color-accent);
-    border-radius: var(--r-control);
-    background: var(--color-accent);
-    color: var(--color-on-accent);
-    font-family: var(--font-condensed);
-    font-size: var(--t-11);
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    transition: background var(--dur-fast) var(--ease-standard);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .rowBtnPrimary:hover {
-      background: var(--color-accent-hover);
-      border-color: var(--color-accent-hover);
-  }
-}
-
-.rowBtnGhost:disabled,
-.rowBtnPrimary:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
 
 /* ── Rail error banner ─────────────────────────────────────
    Tinted ground, primary ink (decision 4). */
@@ -2255,26 +2180,5 @@
        row — ragged down the whole list. It shrinks only, exactly as on
        desktop; the spacer does the pushing. */
     .rowName { flex: 0 1 auto; max-width: 58%; }
-
-    /* Academy and IR rows carry Swap and Activate. Wrapping them onto a second
-       line left the buttons stranded under a half-empty row. The identity
-       stacks instead — name over club — so the actions stay on the row they
-       belong to and nothing ellipses. */
-    .rowWithActions {
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto auto;
-        grid-template-areas:
-            "pos name score actions"
-            "pos club score actions";
-        align-items: center;
-        column-gap: var(--s2);
-        row-gap: 0;
-        padding: var(--s2) var(--s3);
-    }
-    .rowWithActions > :global(.g-poschip) { grid-area: pos; align-self: center; }
-    .rowWithActions .rowName { grid-area: name; max-width: none; align-self: end; }
-    .rowWithActions .rowClub { grid-area: club; margin-left: 0; align-self: start; }
-    .rowWithActions .rowScore { grid-area: score; }
-    .rowWithActions .rowActions { grid-area: actions; }
-    .rowWithActions .rowSpacer { display: none; }
 }
+
