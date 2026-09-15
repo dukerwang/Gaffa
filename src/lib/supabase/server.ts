@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import type { NextRequest } from 'next/server';
 
 // Minimal stub used when Supabase env vars aren't configured yet
 function createStubClient() {
@@ -15,6 +16,28 @@ function createStubClient() {
       upsert: () => ({ data: null, error: null }),
     }),
   } as unknown as ReturnType<typeof createServerClient>;
+}
+
+/** Auth client for Route Handlers. Uses the request cookie jar so we don't
+ *  depend on `cookies()` async context (Next 16 + webpack can lose it). */
+export function createClientFromRequest(request: NextRequest) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+
+  if (!supabaseUrl.startsWith('http') || !supabaseKey) {
+    return createStubClient();
+  }
+
+  return createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll() {
+        // Session refresh is handled in proxy.ts.
+      },
+    },
+  });
 }
 
 export async function createClient() {

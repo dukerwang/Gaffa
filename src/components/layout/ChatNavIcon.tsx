@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Icon } from '@/components/ui/Icon';
 import { useLeagueChat } from '@/components/chat/LeagueChatContext';
+import { isClubChatContext } from '@/lib/chat/isClubChatContext';
 import topBarStyles from './TopBar.module.css';
 import styles from './ChatNavIcon.module.css';
 
@@ -120,6 +121,10 @@ export default function ChatNavIcon({ leagueId, onNavigate }: ChatNavIconProps) 
   const hasUnread = effectiveSummary.lobbyUnread || effectiveSummary.dmUnreadPeerIds.length > 0;
   const isChatPage = pathname?.startsWith(`/league/${leagueId}/chat`);
   const isWidgetOpen = chatContext?.isOpen && !chatContext?.isMinimized;
+  const inClubContext = isClubChatContext(pathname, leagueId);
+  const chatHref = inClubContext
+    ? `/league/${leagueId}/chat?channel=futbolpedia`
+    : `/league/${leagueId}/chat`;
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     // If user holds cmd/ctrl/shift, allow default link behavior to open in new tab
@@ -136,6 +141,14 @@ export default function ChatNavIcon({ leagueId, onNavigate }: ChatNavIconProps) 
     // If chat context is available on-screen, toggle the widget without page transition!
     if (chatContext) {
       e.preventDefault();
+      if (chatContext.isOpen && !chatContext.isMinimized) {
+        chatContext.toggleChat();
+        return;
+      }
+      if (inClubContext) {
+        chatContext.openChat({ type: 'futbolpedia' });
+        return;
+      }
       chatContext.toggleChat();
     } else {
       onNavigate?.();
@@ -145,7 +158,7 @@ export default function ChatNavIcon({ leagueId, onNavigate }: ChatNavIconProps) 
   return (
     <div className={styles.container}>
       <Link
-        href={`/league/${leagueId}/chat`}
+        href={chatHref}
         className={`${topBarStyles.iconBtn} ${isChatPage || isWidgetOpen ? topBarStyles.iconBtnActive : ''}`}
         title={isChatPage ? 'League chat' : isWidgetOpen ? 'Close chat' : 'Open chat'}
         aria-label="League chat"

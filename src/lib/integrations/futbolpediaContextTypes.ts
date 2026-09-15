@@ -42,7 +42,11 @@ export interface FutbolpediaContextLineup {
   bench: FutbolpediaContextLineupSlot[];
 }
 
-/** Commissioner-tunable numbers that change Gaffa advice. No scoring-rule dump. */
+/**
+ * Commissioner-tunable numbers that change Gaffa advice. No scoring-rule dump.
+ * `taxi_size`, `ir_size` and `max_loan_outs` are this club's own caps, including
+ * any Club Facilities upgrades, not the league defaults.
+ */
 export interface FutbolpediaLeagueSettings {
   roster_size: number;
   bench_size: number;

@@ -7,6 +7,8 @@ import FormattedText from '@/components/ui/FormattedText';
 import CrestBadge from '@/components/crest/CrestBadge';
 import TradeOfferCard, { type TradeSummary } from '@/components/chat/TradeOfferCard';
 import LoanOfferCard, { type LoanSummary } from '@/components/chat/LoanOfferCard';
+import FutbolpediaChatPanel from '@/components/integrations/FutbolpediaChatPanel';
+import { FUTBOLPEDIA_ASSISTANT_CAPTION } from '@/lib/chat/isClubChatContext';
 import styles from './Chat.module.css';
 
 interface UserInfo {
@@ -42,10 +44,12 @@ interface ChatClientProps {
   currentUserId: string;
   currentUsername: string;
   currentTeamId: string | null;
+  initialChannel?: 'lobby' | 'futbolpedia';
 }
 
-type TabState = 
+type TabState =
   | { type: 'lobby' }
+  | { type: 'futbolpedia' }
   | { type: 'dm'; userId: string; username: string; teamName: string };
 
 export default function ChatClient({
@@ -53,18 +57,23 @@ export default function ChatClient({
   leagueName,
   currentUserId,
   currentUsername,
-  currentTeamId
+  currentTeamId,
+  initialChannel = 'lobby',
 }: ChatClientProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [teams, setTeams] = useState<TeamInfo[]>([]);
   const [trades, setTrades] = useState<Record<string, TradeSummary>>({});
   const [loans, setLoans] = useState<Record<string, LoanSummary>>({});
-  const [activeTab, setActiveTab] = useState<TabState>({ type: 'lobby' });
+  const [activeTab, setActiveTab] = useState<TabState>(
+    initialChannel === 'futbolpedia' ? { type: 'futbolpedia' } : { type: 'lobby' },
+  );
   const [inputValue, setInputValue] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [unreadDMs, setUnreadDMs] = useState<Set<string>>(new Set());
-  const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
+  const [mobileView, setMobileView] = useState<'list' | 'chat'>(
+    initialChannel === 'futbolpedia' ? 'chat' : 'list',
+  );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
@@ -253,13 +262,14 @@ export default function ChatClient({
         return next;
       });
       markRead(activeTab.userId);
-    } else {
+    } else if (activeTab.type === 'lobby') {
       markRead(null);
     }
   }, [activeTab, markRead]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (activeTab.type === 'futbolpedia') return;
     if (!inputValue.trim() || isSending) return;
 
     const messageText = inputValue.trim();
@@ -317,13 +327,14 @@ export default function ChatClient({
   const currentMessages = messages.filter((m) => {
     if (activeTab.type === 'lobby') {
       return m.recipient_id === null;
-    } else {
-      // DM: between current user and activeTab.userId
+    }
+    if (activeTab.type === 'dm') {
       return (
         (m.sender_id === currentUserId && m.recipient_id === activeTab.userId) ||
         (m.sender_id === activeTab.userId && m.recipient_id === currentUserId)
       );
     }
+    return false;
   });
 
   // Most recent message timestamp per DM peer (either direction), so the
@@ -356,6 +367,20 @@ export default function ChatClient({
     });
   }, [teams, dmLastActivity, currentUserId]);
 
+  const myTeam = useMemo(
+    () =>
+      (currentTeamId ? teams.find((t) => t.id === currentTeamId) : null) ??
+      teams.find((t) => t.user_id === currentUserId) ??
+      null,
+    [teams, currentTeamId, currentUserId],
+  );
+
+  const askClub = myTeam
+    ? { teamId: myTeam.id, name: myTeam.team_name }
+    : currentTeamId
+      ? { teamId: currentTeamId, name: 'your club' }
+      : null;
+
   return (
     <div className={`${styles.chatLayout} ${mobileView === 'chat' ? styles.mobileShowChat : styles.mobileShowList}`}>
       {/* Sidebar: Channels & Managers */}
@@ -365,9 +390,29 @@ export default function ChatClient({
         </div>
 
         <div className={styles.sidebarContent}>
-          {/* Public Channels Group */}
+          {askClub && (
+            <div className={styles.section}>
+              <div className={styles.sectionHeader}>Assistant</div>
+              <button
+                className={`${styles.sidebarBtn} ${activeTab.type === 'futbolpedia' ? styles.sidebarBtnActive : ''}`}
+                onClick={() => {
+                  setActiveTab({ type: 'futbolpedia' });
+                  setMobileView('chat');
+                }}
+              >
+                <span className={styles.assistantAvatar}>
+                  <Icon name="soccer" className={styles.icon} size={16} />
+                </span>
+                <span className={styles.managerInfo}>
+                  <span className={styles.managerName}>Futbolpedia</span>
+                  <span className={styles.assistantCaption}>{FUTBOLPEDIA_ASSISTANT_CAPTION}</span>
+                </span>
+              </button>
+            </div>
+          )}
+
           <div className={styles.section}>
-            <div className={styles.sectionHeader}>Channels</div>
+            <div className={styles.sectionHeader}>Public Channels</div>
             <button
               className={`${styles.sidebarBtn} ${activeTab.type === 'lobby' ? styles.sidebarBtnActive : ''}`}
               onClick={() => {
@@ -377,7 +422,7 @@ export default function ChatClient({
             >
               <Icon name="message-square" className={styles.icon} size={16} />
               <span style={{ flex: 1, fontWeight: activeTab.type === 'lobby' ? 'bold' : 'normal' }}>
-                League lobby
+                League Lobby
               </span>
             </button>
           </div>
@@ -456,6 +501,14 @@ export default function ChatClient({
                 <span>League lobby</span>
                 <span className={styles.panelSubtitle}>Public message board for everyone</span>
               </>
+            ) : activeTab.type === 'futbolpedia' ? (
+              <>
+                <Icon name="soccer" size={18} strokeWidth={2} />
+                <span>Futbolpedia</span>
+                <span className={styles.panelSubtitle}>
+                  {askClub ? `Ask about ${askClub.name}` : 'Ask about your club'}
+                </span>
+              </>
             ) : (
               <>
                 <span className={styles.managerAvatar}>
@@ -473,8 +526,23 @@ export default function ChatClient({
           </div>
         </header>
 
+        {askClub && (
+          <div className={activeTab.type === 'futbolpedia' ? styles.futbolpediaSlot : styles.threadParked}>
+            <FutbolpediaChatPanel
+              leagueId={leagueId}
+              teamId={askClub.teamId}
+              clubName={askClub.name}
+              variant="page"
+              active={activeTab.type === 'futbolpedia' && mobileView === 'chat'}
+            />
+          </div>
+        )}
+
         {/* Message Log */}
-        <div className={styles.messagesFeed} ref={feedRef}>
+        <div
+          className={`${styles.messagesFeed} ${activeTab.type === 'futbolpedia' ? styles.threadParked : ''}`}
+          ref={feedRef}
+        >
           {loading ? (
             <div className={styles.feedStatus}>
               Retrieving logs...
@@ -550,12 +618,18 @@ export default function ChatClient({
           ) : (
             <div className={styles.emptyState}>
               <div className={styles.emptyTitle}>
-                {activeTab.type === 'lobby' ? 'Start the conversation' : `Message ${activeTab.username}`}
+                {activeTab.type === 'lobby'
+                  ? 'Start the conversation'
+                  : activeTab.type === 'dm'
+                    ? `Message ${activeTab.username}`
+                    : 'Futbolpedia'}
               </div>
               <p className={styles.emptyDesc}>
                 {activeTab.type === 'lobby'
                   ? 'Welcome to the League lobby. Share draft strategies, make roster announcements, or engage in friendly banter.'
-                  : `Send a direct, private message to ${activeTab.username}. Private messages are highly encrypted and visible only to the two of you.`}
+                  : activeTab.type === 'dm'
+                    ? `Send a direct, private message to ${activeTab.username}. Private messages are highly encrypted and visible only to the two of you.`
+                    : 'Ask about your club.'}
               </p>
             </div>
           )}
@@ -563,7 +637,7 @@ export default function ChatClient({
         </div>
 
         {/* Text Input Area */}
-        <div className={styles.inputArea}>
+        <div className={`${styles.inputArea} ${activeTab.type === 'futbolpedia' ? styles.threadParked : ''}`}>
           <form className={styles.form} onSubmit={handleSubmit}>
             <div className={styles.textareaWrapper}>
               <textarea
@@ -571,7 +645,9 @@ export default function ChatClient({
                 placeholder={
                   activeTab.type === 'lobby'
                     ? 'Type a message to the League lobby…'
-                    : `Send a private message to ${activeTab.username}...`
+                    : activeTab.type === 'dm'
+                      ? `Send a private message to ${activeTab.username}...`
+                      : 'Ask about this club'
                 }
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}

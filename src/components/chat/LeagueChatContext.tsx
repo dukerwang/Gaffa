@@ -5,7 +5,10 @@ import { usePathname } from 'next/navigation';
 
 export type ChatTabState =
   | { type: 'lobby' }
+  | { type: 'futbolpedia' }
   | { type: 'dm'; userId: string; username: string; teamName: string };
+
+export type ViewerClub = { teamId: string; name: string };
 
 interface UnreadSummary {
   lobbyUnread: boolean;
@@ -17,6 +20,7 @@ interface LeagueChatContextType {
   isOpen: boolean;
   isMinimized: boolean;
   activeTab: ChatTabState;
+  viewerClub: ViewerClub | null;
   unreadSummary: UnreadSummary;
   openChat: (tab?: ChatTabState) => void;
   closeChat: () => void;
@@ -24,6 +28,7 @@ interface LeagueChatContextType {
   minimizeChat: () => void;
   restoreChat: () => void;
   setActiveTab: (tab: ChatTabState) => void;
+  setViewerClub: (club: ViewerClub | null) => void;
   setUnreadSummary: React.Dispatch<React.SetStateAction<UnreadSummary>>;
 }
 
@@ -53,6 +58,7 @@ export function LeagueChatProvider({
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [activeTab, setActiveTab] = useState<ChatTabState>({ type: 'lobby' });
+  const [viewerClub, setViewerClub] = useState<ViewerClub | null>(null);
   const [unreadSummary, setUnreadSummary] = useState<UnreadSummary>({
     lobbyUnread: false,
     dmUnreadPeerIds: [],
@@ -104,6 +110,7 @@ export function LeagueChatProvider({
       isOpen,
       isMinimized,
       activeTab,
+      viewerClub,
       unreadSummary,
       openChat,
       closeChat,
@@ -111,6 +118,7 @@ export function LeagueChatProvider({
       minimizeChat,
       restoreChat,
       setActiveTab,
+      setViewerClub,
       setUnreadSummary,
     }),
     [
@@ -118,14 +126,13 @@ export function LeagueChatProvider({
       isOpen,
       isMinimized,
       activeTab,
+      viewerClub,
       unreadSummary,
       openChat,
       closeChat,
       toggleChat,
       minimizeChat,
       restoreChat,
-      setActiveTab,
-      setUnreadSummary,
     ]
   );
 
