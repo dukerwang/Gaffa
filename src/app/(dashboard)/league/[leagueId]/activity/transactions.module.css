@@ -1,0 +1,449 @@
+/* Transactions — the register of squad movements.
+
+   GRAMMAR. Flat rows on hairlines, not cards. The page that stood here before
+   was white cards floating on the cream ground, which docs/UI_RULES.md rules
+   5–7 forbid, and its header was the `_home` masthead device: a 38px display
+   title restating the nav, with four read-only figures floated to the right.
+   Duke on that pattern, 2026-09-10: "it seems a ton of pages in gaffa have this
+   generic html header and then a bunch of numbers on the right. gaffa should
+   feel like a real app, not some html page."
+
+   So the header here is a WORKING BAR. The page names itself at control scale
+   inside it, the season's counts ride on the filters, and the totals sit in a
+   divided strip along the bar's foot. Every control in the bar is 34px tall, so
+   the name, the segments, the search field and the selects sit on one line.
+
+   The one bounded object on the page is that bar — border, never shadow
+   (rule 7). The register itself is flat. */
+
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--s6) var(--s6) var(--s12);
+}
+
+/* ── The bar ──────────────────────────────────────────── */
+.bar {
+  border: var(--line-strong);
+  border-radius: var(--r-shell);
+  background: var(--color-bg-card);
+  overflow: hidden;
+}
+
+.barTop {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) var(--s3);
+}
+
+/* A name at control scale, not a heading. */
+.barName {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: var(--font-bold);
+  font-size: var(--t-17);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--color-text-primary);
+}
+
+.barDiv {
+  flex: none;
+  width: 1px;
+  height: 20px;
+  background: var(--color-border-subtle);
+  margin: 0 2px;
+}
+
+/* The segmented control from team/roster (club.module.css .seg). */
+.segs {
+  display: inline-flex;
+  box-sizing: border-box;
+  height: 34px;
+  padding: 3px;
+  gap: 3px;
+  background: var(--color-bg-elevated);
+  border: var(--line);
+  border-radius: var(--r-control);
+}
+
+.seg,
+.segOn {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+  box-sizing: border-box;
+  height: 26px;
+  padding: 6px var(--s3);
+  line-height: 14px;
+  border: 1px solid transparent;
+  border-radius: var(--r-control);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  font-weight: var(--font-semibold);
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard);
+}
+
+.segOn {
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .seg:hover { color: var(--color-text-primary); }
+}
+
+.seg:focus-visible,
+.segOn:focus-visible {
+  outline: 2px solid var(--color-accent-ink);
+  outline-offset: 1px;
+}
+
+/* A count belongs to its filter, so it inherits the segment's ink. */
+.segN {
+  font-family: var(--font-condensed);
+  font-size: var(--t-11);
+  font-weight: var(--font-medium);
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums lining-nums;
+  opacity: 0.62;
+}
+
+.spacer { flex: 1; }
+
+.search {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  width: 190px;
+  box-sizing: border-box;
+  height: 34px;
+  padding: 0 var(--s3);
+  border: var(--line-strong);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  color: var(--color-text-muted);
+}
+
+.search:focus-within {
+  border-color: var(--color-border-strong);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  color: var(--color-text-primary);
+}
+.searchInput::placeholder { color: var(--color-text-muted); }
+.searchInput:focus { outline: none; }
+/* WebKit's own clear button is a second, unstyled affordance beside ours. */
+.searchInput::-webkit-search-cancel-button { appearance: none; }
+
+/* A native select keeps the OS picker on a phone; the caret is drawn over it. */
+.selWrap {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+
+.sel {
+  appearance: none;
+  box-sizing: border-box;
+  height: 34px;
+  padding: 0 26px 0 var(--s3);
+  max-width: 150px;
+  border: var(--line-strong);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.selStrong { color: var(--color-text-primary); font-weight: var(--font-semibold); }
+.sel:focus-visible { outline: 2px solid var(--color-accent-ink); outline-offset: 1px; }
+
+.caret {
+  position: absolute;
+  right: 9px;
+  pointer-events: none;
+  color: var(--color-text-muted);
+}
+
+/* One season and no menu: a label, not a dead control. */
+.seasonLabel {
+  flex: none;
+  font-family: var(--font-condensed);
+  font-size: var(--t-12);
+  font-weight: var(--font-medium);
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* The season's shape, divided off rather than floated in space. */
+.barRead {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  flex-wrap: wrap;
+  padding: var(--s2) 13px;
+  border-top: var(--line);
+  background: var(--color-bg-card-alt);
+  font-size: var(--t-12);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.readV {
+  font-family: var(--font-serif);
+  font-size: var(--t-13);
+  font-weight: var(--font-bold);
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.readDot { color: var(--color-border); }
+
+/* ── Day headings ─────────────────────────────────────── */
+.feed { margin-top: var(--s2); }
+
+.day {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin: var(--s6) 0 var(--s1);
+}
+.dayL {
+  font-family: var(--font-condensed);
+  font-size: var(--t-11);
+  font-weight: var(--font-medium);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.dayRule { flex: 1; height: 1px; background: var(--color-border-subtle); }
+.dayN {
+  font-family: var(--font-condensed);
+  font-size: var(--t-11);
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ── Rows ─────────────────────────────────────────────── */
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 62px;
+  align-items: baseline;
+  gap: var(--s4);
+  padding: 13px var(--s2);
+  border-bottom: var(--line);
+}
+
+/* The viewer's club. Tint plus accent ink on the name — a tint alone would
+   vanish for anyone who cannot separate it from the ground. */
+.rowMine { background: var(--color-tint-accent); }
+.rowMine .club { color: var(--color-accent-ink); }
+
+.body { min-width: 0; }
+
+.line {
+  font-family: var(--font-serif);
+  font-size: var(--t-17);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+.club { font-weight: var(--font-bold); }
+.verb {
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  font-weight: var(--font-normal);
+  color: var(--color-text-secondary);
+}
+
+/* The player's name carries the serif line; the button is only a target. */
+.player {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-weight: var(--font-semibold);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+@media (hover: hover) and (pointer: fine) {
+  .player:hover { text-decoration: underline; text-underline-offset: 3px; }
+}
+.player:focus-visible { outline: 2px solid var(--color-accent-ink); outline-offset: 2px; }
+
+/* The badge sits on the sentence's baseline, so the position reads as part of
+   the name. The inline case cannot use .g-namerow — that device is for a flex
+   row, and a flex line would stop the sentence wrapping. */
+.posMark {
+  display: inline-flex;
+  vertical-align: baseline;
+  position: relative;
+  top: -1px;
+  margin: 0 7px 0 3px;
+}
+
+.meta {
+  font-size: var(--t-12);
+  color: var(--color-text-muted);
+  margin-top: var(--s1);
+  line-height: 1.4;
+}
+
+/* A second player inside one event — the release that made room, each side of
+   a trade. Hairline on the left, so it reads as belonging to the row above. */
+.sub {
+  font-size: var(--t-12);
+  color: var(--color-text-muted);
+  margin-top: 7px;
+  padding-left: 11px;
+  border-left: var(--line);
+  line-height: 1.45;
+}
+.subPlayer {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  .subPlayer:hover { text-decoration: underline; text-underline-offset: 2px; }
+}
+.subPlayer:focus-visible { outline: 2px solid var(--color-accent-ink); outline-offset: 2px; }
+
+/* ── Money ────────────────────────────────────────────── */
+.fee { text-align: right; }
+.feeV {
+  font-family: var(--font-serif);
+  font-weight: var(--font-bold);
+  font-size: var(--t-20);
+  line-height: 1;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums lining-nums;
+  white-space: nowrap;
+  color: var(--color-text-primary);
+}
+.feeIn { color: var(--color-accent-ink); }
+.feeOut { color: var(--color-danger); }
+.feeS {
+  font-family: var(--font-condensed);
+  font-size: var(--t-10);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-top: 5px;
+}
+.feeNone {
+  font-size: var(--t-13);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.when {
+  font-family: var(--font-condensed);
+  font-size: var(--t-12);
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.empty {
+  padding: var(--s12) var(--s6);
+  text-align: center;
+  font-size: var(--t-13);
+  color: var(--color-text-muted);
+}
+
+/* ── Narrower ─────────────────────────────────────────── */
+@media (max-width: 1000px) {
+  .search { width: 150px; }
+  .sel { max-width: 118px; }
+}
+
+/* The bar stacks into tiers rather than wrapping into a ragged block: name and
+   selects, then the filters scrolling sideways, then the totals. */
+@media (max-width: 860px) {
+  .page { padding: var(--s4) var(--s4) var(--s10); }
+
+  .barTop { flex-wrap: wrap; gap: var(--s2); }
+  .barName { font-size: var(--t-20); min-height: 44px; height: auto; }
+  .barDiv { display: none; }
+
+  .segs {
+    order: 3;
+    width: 100%;
+    height: auto;
+    background: none;
+    border: 0;
+    padding: 0;
+    gap: var(--s2);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .segs::-webkit-scrollbar { display: none; }
+
+  .seg,
+  .segOn {
+    flex: none;
+    align-items: center;
+    height: 44px;
+    padding: 0 var(--s4);
+    border-radius: var(--r-pill);
+    border: var(--line);
+    background: var(--color-bg-card);
+    font-size: var(--t-13);
+  }
+  .segOn {
+    background: var(--color-text-primary);
+    border-color: var(--color-text-primary);
+    color: var(--color-bg-primary);
+  }
+  .segN { font-size: var(--t-12); }
+
+  .spacer { display: none; }
+
+  /* Search below the filters, full width — it is the widest target here. */
+  .search { order: 4; width: 100%; height: 44px; }
+
+  .selWrap { order: 2; flex: 1; }
+  .sel { width: 100%; max-width: none; height: 44px; font-size: var(--t-13); }
+  .seasonLabel { order: 2; min-height: 44px; display: inline-flex; align-items: center; }
+
+  .row { grid-template-columns: minmax(0, 1fr) 84px; gap: var(--s3); padding: var(--s4) 0; }
+  .rowMine { margin: 0 calc(var(--s4) * -1); padding-left: var(--s4); padding-right: var(--s4); }
+  .fee { grid-row: 1; grid-column: 2; }
+  .when { grid-row: 2; grid-column: 2; align-self: start; margin-top: var(--s2); }
+  .body { grid-row: 1 / span 2; grid-column: 1; }
+}

@@ -113,7 +113,7 @@ export const getTradeAcceptedEmail = (params: {
   const body = `
     ${eyebrow ? `<p style="margin: 0 0 4px; font-size: 0.75em; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: ${GOLD};">${eyebrow}</p>` : ''}
     <p>${lead}</p>
-    <a href="${leagueUrl}/activity" class="button">View League Activity</a>
+    <a href="${leagueUrl}/activity" class="button">View the transactions</a>
   `;
   return baseTemplate(title, body);
 };
@@ -224,7 +224,7 @@ export const getAuctionWonEmail = (
         <p style="margin: 0;">To make room, ${winnerClub} have released <strong>${droppedPlayerName}</strong> into the auction pool.</p>
       </div>
     ` : ''}
-    <a href="${leagueUrl}/activity" class="button">Read the Transaction Log</a>
+    <a href="${leagueUrl}/activity" class="button">View the transactions</a>
   `;
   return baseTemplate('Official: Auction Concluded', body);
 };

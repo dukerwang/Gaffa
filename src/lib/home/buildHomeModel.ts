@@ -36,6 +36,7 @@ import {
 } from '@/lib/economy/meritPayments';
 import { generateTransactionHeadline } from '@/lib/narrative/generators';
 import { OPEN_STATUSES, SLOT_CONSUMING_STATUSES } from '@/lib/departures/types';
+import { LEDGER_ONLY_TYPES } from '@/lib/transactions/buildRegister';
 import {
   calculateTeamScore,
   loadReferenceStats,
@@ -506,8 +507,10 @@ export async function buildHomeModel(
       .from('transactions')
       .select('id, type, faab_bid, compensation_amount, notes, processed_at, team:teams(id, team_name), player:players(id, web_name, name, full_name, sofifa_common_name, primary_position)')
       .eq('league_id', leagueId)
-      // Facility purchases are ledger-only, never league news (2026-09-15).
-      .neq('type', 'facility_upgrade')
+      // Money-only rows, facility purchases included, are Finance's ledger, not
+      // league news. Filtered here rather than after the limit: one merit payout
+      // writes a row per club and would otherwise fill the whole window.
+      .not('type', 'in', `(${LEDGER_ONLY_TYPES.join(',')})`)
       .order('processed_at', { ascending: false })
       .limit(20),
     admin
@@ -1968,18 +1971,15 @@ export async function buildHomeModel(
       : `${money(balance)} to spend · the most in the league`;
 
   // ── the wire ────────────────────────────────────────────────
-  // A single auction/drop can fan out one solidarity_payment row per recipient club, all
-  // with identical notes/timing — collapse those into one Wire entry so the feed doesn't
-  // read as spam.
-  const seenSolidarityNotes = new Set<string>();
-  const dedupedTransactions = transactions.filter((tx) => {
-    if (tx.type !== 'solidarity_payment') return true;
-    if (seenSolidarityNotes.has(tx.notes)) return false;
-    seenSolidarityNotes.add(tx.notes);
-    return true;
-  });
-
-  const wire: WireItem[] = dedupedTransactions.slice(0, 5).map((tx) => ({
+  // Money-only rows are Finance's ledger, not news. Left in, they dominated the
+  // rail: solidarity and prizes alone are half of every `transactions` row, so
+  // Dynasty Dragoon's rail opened on a scout's fee described as "refunded €16m
+  // for player release" (a scout's fee is not a refund) followed by a raw
+  // database note printed verbatim, because `solidarity_payment` has no case in
+  // the headline generator and falls through to `tx.notes`. Same cut the
+  // register makes (LEDGER_ONLY_TYPES in src/lib/transactions/buildRegister.ts),
+  // applied in the query so a payout day's rows can't crowd the 20-row window.
+  const wire: WireItem[] = transactions.slice(0, 5).map((tx) => ({
     id: tx.id,
     text: generateTransactionHeadline({
       type: tx.type,

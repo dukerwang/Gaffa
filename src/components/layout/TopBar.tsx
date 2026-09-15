@@ -320,8 +320,8 @@ export default function TopBar() {
     return pathname === `/league/${currentLeagueId}`;
   }
 
-  // Check if Activity is active
-  function isActivityActive(): boolean {
+  // Check if Transactions is active
+  function isTransactionsActive(): boolean {
     if (!currentLeagueId) return false;
     return pathname?.startsWith(`/league/${currentLeagueId}/activity`) ?? false;
   }
@@ -475,14 +475,14 @@ export default function TopBar() {
               </Link>
             </div>
 
-            {/* Activity (standalone) */}
+            {/* Transactions (standalone) */}
             <div className={styles.navItem}>
               <Link
                 href={`/league/${currentLeagueId}/activity`}
-                className={`${styles.navLink} ${isActivityActive() ? styles.navLinkActive : ''}`}
+                className={`${styles.navLink} ${isTransactionsActive() ? styles.navLinkActive : ''}`}
                 onClick={() => setIsNavigating(true)}
               >
-                Activity
+                Transactions
               </Link>
             </div>
 
@@ -784,7 +784,7 @@ export default function TopBar() {
         <div className={styles.mobileDrawer}>
           <div className={styles.mobileDrawerContent}>
             {/* Primary Hub Link — mirrors the desktop bar, where Home leads
-                alone and Transfers/Activity/Draft trail after Squad, League
+                alone and Transfers/Transactions/Draft trail after Squad, League
                 and Fixtures. They used to sit here instead, right under Home,
                 which put them ahead of every dropdown group on mobile only. */}
             <div className={styles.mobileDrawerGroup}>
@@ -851,13 +851,13 @@ export default function TopBar() {
                 </Link>
                 <Link
                   href={`/league/${currentLeagueId}/activity`}
-                  className={`${styles.mobileDrawerSubLink} ${isActivityActive() ? styles.mobileDrawerSubLinkActive : ''}`}
+                  className={`${styles.mobileDrawerSubLink} ${isTransactionsActive() ? styles.mobileDrawerSubLinkActive : ''}`}
                   onClick={() => {
                     setIsNavigating(true);
                     setMobileMenuOpen(false);
                   }}
                 >
-                  Activity
+                  Transactions
                 </Link>
                 {isDraftVisible && (
                   <Link
