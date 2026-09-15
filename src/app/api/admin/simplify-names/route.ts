@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import * as fs from 'fs';
 import * as path from 'path';
 import stringSimilarity from 'string-similarity';
+import { fetchAllPagesOrThrow } from '@/lib/supabase/pagination';
 
 export const maxDuration = 60;
 
@@ -24,11 +25,16 @@ export async function GET(req: NextRequest) {
     const rawData = fs.readFileSync(path.join(process.cwd(), 'players.json'), 'utf-8');
     const tmPlayers = JSON.parse(rawData);
 
-    const { data: dbPlayers, error } = await supabase
-        .from('players')
-        .select('id, name');
-
-    if (error) return NextResponse.json({ error });
+    // Every stored player, paged: the table keeps departed players and is
+    // already at the 1,000-row cap, past which an unpaged read drops rows.
+    let dbPlayers: { id: string; name: string }[];
+    try {
+        dbPlayers = await fetchAllPagesOrThrow<{ id: string; name: string }>((from, to) =>
+            supabase.from('players').select('id, name').order('id', { ascending: true }).range(from, to),
+        );
+    } catch (error) {
+        return NextResponse.json({ error: String(error) });
+    }
 
     const dbNames = dbPlayers.map(p => p.name);
     const updates = [];

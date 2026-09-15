@@ -161,7 +161,7 @@ All frontend UI copy, microcopy, error messages, documentation, and agent respon
   - `full-output-enforcement`: Prevents code truncation and placeholder comments.
   - `animate`: Targeted CSS and Framer Motion transitions calibrated to Gaffa's tokens.
 - **Banned skills (do not use in this repo)**:
-  - `industrial-brutalist-ui`: Conflicts with Gaffa's calm European broadsheet journal identity; enforces military/CRT terminal aesthetics and all-caps headings.
+  - `industrial-brutalist-ui`: Enforces military/CRT terminal aesthetics and all-caps headings, neither of which fits Gaffa.
   - `high-end-visual-design` (`soft-skill`): Mandates title eyebrows (banned by Duke), bans sticky topbars (violates the green topbar), and forces pill buttons.
   - `design-taste-frontend` (`taste-skill` v1/v2) & `gpt-taste`: Designed for marketing landing pages/portfolios, not dashboards or data tables; attempts to introduce Tailwind and GSAP marketing heroes.
   - `minimalist-ui`: Bans colored header sections (breaks green topbar) and forces monochrome `#111111` buttons with pastels, conflicting with the green ramp and 12 tactical position colors.
@@ -190,7 +190,7 @@ All AI agents and assistants working in this repo must actively design and execu
   - **Avoid unthrottled remote loops**: Do not repeatedly hammer remote Vercel API routes in loops if a direct database query or local script achieves the same result. Only invoke remote routes when testing them or when no local equivalent exists.
   - **No client-side polling**: Do not use `setInterval` to poll Next.js API routes from client components. Use Supabase Realtime WebSockets directly (0 Vercel invocations).
 - **Supabase (Postgres & Realtime)**: Free tier storage, 200 concurrent Realtime connections, 500 MB DB size.
-  - **Batching & pagination**: Avoid N+1 queries. PostgREST truncates queries at 1,000 rows, so paginate (`.range()`) whenever querying large tables (`player_stats`, `sofifa_position_reference`).
+  - **Batching & pagination**: Avoid N+1 queries. PostgREST truncates queries at 1,000 rows and reports success, so paginate any read that can pass that size. As of 2026-09 that means `player_stats` (17k), `sofifa_position_reference` (3.3k), `roster_entries` read across leagues (1.2k), `players` without an `is_active` filter (975 and only growing, since departed players are kept), and `player_season_clubs` per season (796). Use the helpers in `src/lib/supabase/pagination.ts`: `fetchAllPages` for page renders, `fetchAllPagesOrThrow` when the caller writes from the result (a failed page must not read as "no rows"), and `fetchAllPagesIn` for long `.in()` id lists, which also chunks the ids so they fit in the request URL. Order on a unique key so rows can't shift across a page boundary. The route-test fake (`src/test/supabaseFake.ts`) enforces the same 1,000-row cap, so a test that seeds more rows than that catches an unpaginated read.
   - **Use database RPCs**: Prefer Postgres RPCs and stored procedures for complex transactions (bids, trades, payouts) instead of multiple round trips from application code.
   - **Channel cleanup**: Always clean up Realtime subscriptions on component unmount (`supabase.removeChannel(channel)`).
 - **Google Gemini / AI Studio (Scouting reports & outlooks)**: Monthly spend cap on Google AI Studio project.

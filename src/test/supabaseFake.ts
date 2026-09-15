@@ -18,7 +18,8 @@
  *   filters      eq, neq, in, is, not, gt, gte, lt, lte, or, contains
  *   shaping      select, order, limit, range, single, maybeSingle
  *   counting     select(cols, { count: 'exact', head: true })
- *   embedding    to-one only: `player:players(name)`, `team_a:teams!team_a_id(user_id)`
+ *   embedding    to-one only: `player:players(name)`, `team_a:teams!team_a_id(user_id)`,
+ *                and `league:leagues!inner(status)` filtered as `.eq('league.status', ...)`
  *   writes       insert, update, upsert, delete, each with an optional .select()
  *   rpc          stubbed per test; an unstubbed name throws rather than returning null
  *
@@ -34,6 +35,11 @@
  * - Unknown tables read as empty rather than throwing, because a handler
  *   touching a table the test did not seed is usually testing something else.
  *   Writes to an unknown table create it, so assertions can still see them.
+ * - A read returns at most 1,000 rows, however wide its `.range()`, because
+ *   PostgREST does and says nothing when it truncates. Without the cap a
+ *   handler that forgot to paginate passes every test and drops rows in
+ *   production — which is how the matchup processor, the player sync and the
+ *   loans route all shipped unpaginated reads over tables past that size.
  */
 
 export type Row = Record<string, any>;
@@ -51,7 +57,11 @@ export interface FakeOptions {
    * the query itself does not spell it out with `!column`.
    */
   foreignKeys?: Record<string, string>;
+  /** Rows per read before silent truncation. Defaults to PostgREST's 1,000. */
+  maxRows?: number;
 }
+
+const POSTGREST_MAX_ROWS = 1000;
 
 interface Filter {
   kind: 'eq' | 'neq' | 'in' | 'is' | 'not' | 'gt' | 'gte' | 'lt' | 'lte' | 'or' | 'contains';
@@ -157,10 +167,15 @@ function parseSelect(select: string): { columns: string[]; embeds: Embed[] } {
       ? [tablePart.slice(0, tablePart.indexOf('!')), tablePart.slice(tablePart.indexOf('!') + 1)]
       : [tablePart, null];
 
+    // `!inner` and `!left` pick the join type, not the foreign key. Reading one
+    // as a column name would resolve every embed to null.
+    const hint = fk ? fk.trim() : null;
+    const isJoinHint = hint === 'inner' || hint === 'left';
+
     embeds.push({
       alias: aliasPart.trim(),
       table: table.trim(),
-      fk: fk ? fk.trim() : null,
+      fk: isJoinHint ? null : hint,
       columns: splitTopLevel(inner),
     });
   }
@@ -318,6 +333,24 @@ class QueryBuilder implements PromiseLike<{ data: any; error: any; count?: numbe
     return this.store[this.table] ?? [];
   }
 
+  /**
+   * A filter on `alias.column` reads the column off the embedded row, with
+   * `!inner` semantics: a parent whose embed does not match is dropped. That is
+   * the only way the handlers use it (`league:leagues!inner(status)` filtered
+   * by `league.status`), so non-inner embed filtering is not modelled.
+   */
+  private columnValue(row: Row, column: string): any {
+    const dot = column.indexOf('.');
+    if (dot === -1) return row[column];
+    const alias = column.slice(0, dot);
+    const embed = parseSelect(this.selectStr).embeds.find((e) => e.alias === alias || e.table === alias);
+    if (!embed) return undefined;
+    const foreignId = row[resolveForeignKey(this.table, embed, this.opts)];
+    if (foreignId == null) return undefined;
+    const related = (this.store[embed.table] ?? []).find((r) => String(r.id) === String(foreignId));
+    return related ? related[column.slice(dot + 1)] : undefined;
+  }
+
   private matching(): Row[] {
     let rows = this.rows().slice();
     for (const filter of this.filters) {
@@ -326,11 +359,11 @@ class QueryBuilder implements PromiseLike<{ data: any; error: any; count?: numbe
           case 'or':
             return matchesOr(row, filter.value);
           case 'not':
-            return !compare(filter.op!, row[filter.column!], filter.value);
+            return !compare(filter.op!, this.columnValue(row, filter.column!), filter.value);
           case 'contains':
-            return compare('cs', row[filter.column!], filter.value);
+            return compare('cs', this.columnValue(row, filter.column!), filter.value);
           default:
-            return compare(filter.kind, row[filter.column!], filter.value);
+            return compare(filter.kind, this.columnValue(row, filter.column!), filter.value);
         }
       });
     }
@@ -447,6 +480,7 @@ class QueryBuilder implements PromiseLike<{ data: any; error: any; count?: numbe
       rows = rows.slice(from, to + 1);
     }
     if (this.limitN !== null) rows = rows.slice(0, this.limitN);
+    rows = rows.slice(0, this.opts.maxRows ?? POSTGREST_MAX_ROWS);
 
     if (this.headOnly) {
       return { data: null, error: null, count: this.countMode ? total : null };

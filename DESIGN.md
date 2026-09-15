@@ -22,7 +22,26 @@
 
 ## 1. Atmosphere & Design Philosophy
 
-Gaffa is an editorial, high-density fantasy football platform for the Premier League. The atmosphere is **calm, tactile, and data-dense** — like a modern, beautifully typeset European broadsheet sports journal crossed with a high-performance trading platform. [inferred]
+Gaffa is a dynasty fantasy football platform for the Premier League. Duke, 2026-08-10:
+
+> "keep in mind this is gaffa, the dynasty fantasy football platform, not a newspaper.
+> the focus should be on elegant and impressive aesthetics but also ease of use."
+
+Read that as two requirements rather than a style: it has to look impressive, and it
+has to be easy to use. Where a visual move needs a reference, **football supplies one** —
+matchday, the crest, the score bug, the pitch, the twelve-position spine. Print
+references do not land, and "editorial" is not an argument for anything. [decided]
+
+The serif is Gaffa's voice, not its metaphor. Newsreader, warm cream and dense tabular
+figures are materials the app is built from; they do not make it a broadsheet. [inferred]
+
+> **This paragraph used to say the opposite.** Until 2026-09-12 it described Gaffa as
+> "a modern, beautifully typeset European broadsheet sports journal", tagged `[inferred]`
+> — agent-authored, never ratified, and directly contradicting the quote above, which
+> predated it by a month. Being the first substantive line in this file, it set the
+> frame for every session that read it, and at least two dashboard redesigns were built
+> as newspapers because of it. If you are an agent and a print metaphor feels natural
+> here, that is this sentence's ghost. It is not what Duke asked for.
 
 * **Ground & Tone**: Warm, bright cream field (`#F8F4EC`) on desktop/mobile paired with deep forest green chrome (`#185B37`). Not vintage/yellow beige, but fresh, readable, and sharp. [code] [decided]
 * **Sports Data Craft**: Visual weight is carried by typography (Newsreader serif display, Archivo Narrow condensed data labels, and Hanken Grotesk body) rather than decorative graphics or generic cards. [code]
@@ -112,7 +131,8 @@ These patterns are strictly forbidden across Gaffa: [decided] [inferred]
 | **Uncalibrated AI Neon Glows** | Oversaturated drop shadows (`box-shadow: 0 0 20px rgba(...)`). | Calibrated ambient resting shadows (`--shadow-card`) tinted to the background hue. |
 | **Heavy 1px Wireframe Borders** | Makes data tables feel caged in and cluttered. | `--color-border-subtle` at 1px plus explicit card fills (`--color-bg-card`). A subpixel `0.5px` hairline token was added and removed unused — treat it as a proposal, not a shipped rule. [inferred] |
 | **Screaming Uppercase Action Buttons** | Monotonous shouting labels (`SUBMIT PROPOSAL`) set by `text-transform`. | Title Case in the markup (`Save Lineup`, `Join League`) in condensed or sans typography. Sentence case was the rule here until 2026-09-09; Duke reversed it — see `docs/DECISIONS.md`. Labels uppercased in CSS (`.g-label`, column heads) are a separate device and stay. [decided] |
-| **Generic 3-Card Bento Formulas** | AI layout default that ignores real domain content. | Asymmetric editorial grids, dense data rows, and tactical pitch layouts. |
+| **Generic 3-Card Bento Formulas** | AI layout default that ignores real domain content. | Asymmetric grids, dense data rows, and tactical pitch layouts. |
+| **A page built from one repeated primitive** | Following §5's bans literally leaves "serif title → 2px rule → flat rows" as the only sanctioned block, and a page that stacks five of them is monotonous even though every rule passes. The bans are a fence, not a design. | Vary the object: a pitch, a score bug, a crest-led row, a portrait, a table, a chart. Rule compliance is the floor, not the goal. [inferred] |
 | **Blank Loading Pop-Ins** | Abrupt content flashing on route navigation. | Contextual skeleton shimmer blocks matching layout shape. `.g-skeleton` exists in `globals.css` but no surface uses it yet. [inferred] |
 
 ---

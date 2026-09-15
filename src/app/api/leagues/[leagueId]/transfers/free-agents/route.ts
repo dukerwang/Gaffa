@@ -40,6 +40,7 @@ import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import { fetchEnrichmentMaps, enrichPlayer } from '@/lib/transfers/playerEnrichment';
 import { getRightsHeldPlayerIds } from '@/lib/departures/decisions';
 import { fold } from '@/lib/text/fold';
+import { fetchAllPages } from '@/lib/supabase/pagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,11 +124,19 @@ export async function GET(req: NextRequest, { params }: Props) {
   // browse list has no reason to care whether a player is PL-established.
   let prevSeasonClubIds = new Set<string>();
   if (newOnly && league.previous_season) {
-    const { data: prevSeasonClubRows } = await admin
-      .from('player_season_clubs')
-      .select('player_id')
-      .eq('season', league.previous_season);
-    prevSeasonClubIds = new Set((prevSeasonClubRows ?? []).map((r) => r.player_id));
+    const prevSeason = league.previous_season;
+    // player_season_clubs holds one row per player per season, 796 of them for
+    // 2025-26. That is under PostgREST's 1,000-row cap, but not by much, and a
+    // truncated read here marks established players as new arrivals.
+    const prevSeasonClubRows = await fetchAllPages<{ player_id: string }>((from, to) =>
+      admin
+        .from('player_season_clubs')
+        .select('player_id')
+        .eq('season', prevSeason)
+        .order('player_id', { ascending: true })
+        .range(from, to),
+    );
+    prevSeasonClubIds = new Set(prevSeasonClubRows.map((r) => r.player_id));
   }
 
   // SQL narrows; the rest is done post-enrichment.

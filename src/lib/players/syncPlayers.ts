@@ -13,6 +13,7 @@ import { resolvePosition, FPL_POSITION_OVERRIDES } from '@/lib/fpl/positionMap';
 import type { GranularPosition } from '@/types';
 import { recordDepartures, midseasonDecideBy } from '@/lib/departures/detect';
 import { getCurrentFplSeason } from '@/lib/season/currentSeason';
+import { fetchAllPagesOrThrow } from '@/lib/supabase/pagination';
 
 const FPL_URL = 'https://fantasy.premierleague.com/api/bootstrap-static/';
 
@@ -151,12 +152,32 @@ export async function syncPlayersFromFpl(admin: SupabaseClient): Promise<SyncPla
     pl_team_changed_at: string | null;
   }
 
-  // Snapshot existing players to preserve manual overrides and detect transfer-outs
-  const { data: rawPlayers } = await admin
-    .from('players')
-    .select('id, fpl_id, is_active, primary_position, secondary_positions, market_value, name, web_name, full_name, pl_team, date_of_birth, photo_url, pl_team_changed_at');
-
-  const existingPlayers: DbPlayer[] = (rawPlayers as DbPlayer[]) ?? [];
+  // Snapshot existing players to preserve manual overrides and detect transfer-outs.
+  //
+  // Paged, and a failed page aborts the sync. The table holds every player the
+  // app has ever seen — departed and relegated rows stay, inactive — so it only
+  // grows: 975 rows in September 2026, against PostgREST's silent 1,000-row cap.
+  // A player missing from this snapshot matches nothing below and is queued as
+  // an insert, still holding his fpl_id, because only snapshot rows have their
+  // ids released. The insert then fails on players_fpl_id_key and aborts the
+  // run, and every run after it, until the snapshot is whole again.
+  let existingPlayers: DbPlayer[];
+  try {
+    existingPlayers = await fetchAllPagesOrThrow<DbPlayer>((from, to) =>
+      admin
+        .from('players')
+        .select('id, fpl_id, is_active, primary_position, secondary_positions, market_value, name, web_name, full_name, pl_team, date_of_birth, photo_url, pl_team_changed_at')
+        .order('id', { ascending: true })
+        .range(from, to),
+    );
+  } catch (err) {
+    return {
+      synced: 0,
+      systemBidsSeeded: 0,
+      autoTransferOuts: [],
+      error: `snapshot: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
 
   const activeByFplId = new Map<number, string>(
     existingPlayers

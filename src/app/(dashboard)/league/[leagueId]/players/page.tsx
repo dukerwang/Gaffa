@@ -34,15 +34,17 @@ export default async function PlayersPage({ params, searchParams }: Props) {
   const isSiteAdmin = isSiteAdminEmail(user.email);
   const admin = createAdminClient();
 
-  const { data: league } = await admin
-    .from('leagues')
-    .select('id, name, current_season, previous_season')
-    .eq('id', leagueId)
-    .single();
+  const [{ data: league }, currentFpl, kickedOff, { data: allTeams }] = await Promise.all([
+    admin
+      .from('leagues')
+      .select('id, name, current_season, previous_season')
+      .eq('id', leagueId)
+      .single(),
+    getCurrentFplSeason(),
+    isFplSeasonKickedOff(),
+    admin.from('teams').select('id').eq('league_id', leagueId),
+  ]);
   if (!league) notFound();
-
-  const currentFpl = await getCurrentFplSeason();
-  const kickedOff = await isFplSeasonKickedOff();
 
   // Same resolution the stats page has always used, with an explicit override.
   let season = (league as { current_season?: string }).current_season ?? currentFpl;
@@ -55,7 +57,6 @@ export default async function PlayersPage({ params, searchParams }: Props) {
     .reverse();
   if (requestedSeason && seasons.includes(requestedSeason)) season = requestedSeason;
 
-  const { data: allTeams } = await admin.from('teams').select('id').eq('league_id', leagueId);
   const teamIds = (allTeams ?? []).map((t: { id: string }) => t.id);
 
   const activeView = view === 'table' ? 'table' : view === 'explorer' ? 'explorer' : view === 'cards' ? 'cards' : undefined;
@@ -67,29 +68,39 @@ export default async function PlayersPage({ params, searchParams }: Props) {
   // One row per gameweek, from the database. Selecting `gameweek` for the whole
   // season and de-duplicating here read 14,521 rows for 2025-26 and got the
   // first 1,000 back -- ascending, so the picker offered gameweeks 1-3 of 38.
-  const { data: gwRows } = await admin.rpc('season_gameweeks', { p_season: season });
-  const gameweeks = ((gwRows ?? []) as { gameweek: number }[])
-    .map((r) => r.gameweek)
-    .filter((n): n is number => n != null);
+  const gameweeksRead = (async () => {
+    const { data: gwRows } = await admin.rpc('season_gameweeks', { p_season: season });
+    return ((gwRows ?? []) as { gameweek: number }[])
+      .map((r) => r.gameweek)
+      .filter((n): n is number => n != null);
+  })();
 
+  // Only the leaderboard waits on that list: a requested gameweek is honoured
+  // only if the season has rows for it. The scout layer, the explorer and the
+  // owner lookup need nothing from it, so they start now too.
   const requestedGw = gw ? Number(gw) : null;
-  const gameweek = requestedGw != null && gameweeks.includes(requestedGw) ? requestedGw : null;
+  const leaderboardRead = gameweeksRead.then(async (gameweeks) => {
+    const gameweek = requestedGw != null && gameweeks.includes(requestedGw) ? requestedGw : null;
+    return { gameweek, ...(await loadSeasonLeaderboard(admin, season, { gameweek })) };
+  });
 
-  const [{ players, shadowMaps }, scoutIndex, explorerRows] = await Promise.all([
-    loadSeasonLeaderboard(admin, season, { gameweek }),
+  const [gameweeks, { gameweek, players, shadowMaps }, scoutIndex, explorerRows, { data: rosterEntries }] = await Promise.all([
+    gameweeksRead,
+    leaderboardRead,
     activeView === 'explorer'
       ? Promise.resolve(new Map())
       : loadScoutIndex(admin),
     activeView === 'explorer' ? loadExplorerRows(admin, season) : Promise.resolve([]),
+    teamIds.length > 0
+      ? admin
+          .from('roster_entries')
+          .select('player_id, team:teams(id, team_name)')
+          .in('team_id', teamIds)
+      : Promise.resolve({ data: null }),
   ]);
 
   const ownerMap = new Map<string, { teamId: string; teamName: string }>();
   if (teamIds.length > 0) {
-    const { data: rosterEntries } = await admin
-      .from('roster_entries')
-      .select('player_id, team:teams(id, team_name)')
-      .in('team_id', teamIds);
-
     for (const entry of rosterEntries ?? []) {
       const team = entry.team as unknown as { id: string; team_name: string } | null;
       if (team) ownerMap.set(entry.player_id, { teamId: team.id, teamName: team.team_name });
