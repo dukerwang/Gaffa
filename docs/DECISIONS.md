@@ -245,7 +245,6 @@ was inherited from the Google developer style guide rather than decided here.
 The rest of the Google style guidance in `CLAUDE.md` — active voice, no
 throat-clearing, no inanimate agency, prose over lists — is untouched by this.
 
-
 ---
 
 ## 2026-09-12 — Players who leave on loan
@@ -297,3 +296,28 @@ Chosen in a design session; the spec is
 - Where Duke said "just do what's right" (live bids when a hold begins), bids are
   withdrawn at once and recalls need room; those are agent decisions, recorded as
   such in the spec.
+
+---
+
+## 2026-09-13 — Scout's Fee is paid win or lose, and ships with held players
+
+**The manager who opens an auction gets the Scout's Fee whether they win it or not.**
+Duke asked about rewarding the first bidder "beyond just the scout's fee, like a
+discount". The version he accepted keeps the fee at 10% and pays it on a win
+too, as a rebate after settlement, with the bid itself unchanged:
+> "ah okay i see. so it's not a discount, just the scout's fee going both ways."
+
+The reasoning he was shown: a fee paid only on losing makes a scout stop
+bidding at v / 1.1 of their valuation, and the same 10% on a win moves that
+back to v. A rebate above 10% was argued against because it would let the
+nominator outbid clubs that value the player more. [inferred] Duke accepted
+the 10% version but didn't rule on the rate separately.
+
+**It ships in the same update as the held-players work.**
+> "these econ changes, as well as the \"held\" work we're working on regarding
+> being able to keep players even if you're over the roster limit, i want them
+> to all ship at the same time in an update."
+
+Held players reached production first, on 2026-09-14 (#6, #7); Scout's Fee
+followed on 2026-09-15 after Duke said "let's just start pushing everything to
+production". No changelog had been published in between.
