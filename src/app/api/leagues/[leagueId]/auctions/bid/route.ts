@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { effectiveSlots } from '@/lib/facilities/facilities';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import {
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest, { params }: Props) {
   // Caller must have a team in this league
   const { data: myTeam } = await admin
     .from('teams')
-    .select('id, faab_budget, team_name, abbreviation')
+    .select('id, faab_budget, team_name, abbreviation, academy_slots')
     .eq('league_id', leagueId)
     .eq('user_id', user.id)
     .single();
@@ -302,7 +303,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       .eq('team_id', myTeam.id)
       .eq('status', 'taxi');
 
-    const academyMax = league.taxi_size ?? 3;
+    const academyMax = effectiveSlots(myTeam, league).academy;
     if ((academyCount ?? 0) >= academyMax) {
       return NextResponse.json(
         { error: `Roster is full and academy is full (${academyMax} slots). Select a player to drop.` },

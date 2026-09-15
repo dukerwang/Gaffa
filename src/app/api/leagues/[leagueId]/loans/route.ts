@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { loadLoanOutSlots } from '@/lib/facilities/server';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
 
@@ -240,7 +241,7 @@ export async function GET(req: NextRequest, { params }: Props) {
     leagueSettings: {
       loan_slot_buyback_fee: league?.loan_slot_buyback_fee ?? 25,
       loan_bonus_cap_default: league?.loan_bonus_cap_default ?? 0,
-      max_loan_outs: league?.max_loan_outs ?? 1,
+      max_loan_outs: await loadLoanOutSlots(admin, myTeam.id, league?.max_loan_outs),
       max_loan_ins: league?.max_loan_ins ?? 2,
       total_gameweeks: league?.total_gameweeks ?? 38,
       roster_locked: league?.roster_locked ?? false
@@ -442,7 +443,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     .eq('lender_team_id', effectiveLenderTeamId)
     .in('status', ACTIVE_LOAN_STATUSES);
 
-  const maxOuts = league.max_loan_outs ?? 1;
+  const maxOuts = await loadLoanOutSlots(admin, effectiveLenderTeamId, league.max_loan_outs);
   if ((lenderActiveLoans ?? 0) >= maxOuts) {
     return NextResponse.json({ error: `The lender has reached the maximum number of active loan-outs (${maxOuts})` }, { status: 400 });
   }

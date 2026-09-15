@@ -567,6 +567,16 @@ export default function TopBar() {
                   >
                     View Finance →
                   </Link>
+                  <Link
+                    href={`/league/${currentLeagueId}/team/roster#facilities`}
+                    className={styles.dropdownActionLink}
+                    onClick={() => {
+                      setBalanceDropdownOpen(false);
+                      setIsNavigating(true);
+                    }}
+                  >
+                    Club Facilities →
+                  </Link>
                 </div>
               )}
             </div>

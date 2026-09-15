@@ -31,6 +31,7 @@ import { getHoldState, isGameweekInProgress, type HeldEntry } from '@/lib/roster
 import { resolveCurrentGw } from '@/lib/season/currentGameweek';
 import { resolveLineupEditMatchup } from '@/lib/lineups/editTarget';
 import { normalizeMatchupLineup } from '@/lib/lineups/normalizeMatchupLineup';
+import { buildFacilityViews, effectiveSlots, type FacilityView, type TeamSlotOverrides } from '@/lib/facilities/facilities';
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -161,6 +162,8 @@ export interface ClubProps {
    * the one thing on this page nobody has a reason to hide.
    */
   honours: HonourGroup[];
+  /** Academy, Injured Reserve and Loans Out: slots owned, in use, and the next upgrade. */
+  facilities: FacilityView[];
 }
 
 // ── Loader ───────────────────────────────────────────────────────────────────
@@ -179,8 +182,9 @@ export async function loadClubView(
     .select(
       `
       id, user_id, team_name, faab_budget, crest_config, league_id,
+      academy_slots, ir_slots, loan_out_slots,
       league:leagues(id, name, season, current_season, previous_season, status,
-        roster_size, taxi_size, taxi_age_limit, retained_slots)
+        roster_size, taxi_size, taxi_age_limit, retained_slots, ir_size, max_loan_outs)
     `,
     )
     .eq('league_id', leagueId);
@@ -201,7 +205,11 @@ export async function loadClubView(
     taxi_size: number | null;
     taxi_age_limit: number | null;
     retained_slots: number | null;
+    ir_size: number | null;
+    max_loan_outs: number | null;
   };
+
+  const slots = effectiveSlots(team as TeamSlotOverrides, league);
 
   const currentFpl = await getCurrentFplSeason();
   const kickedOff = await isFplSeasonKickedOff();
@@ -238,6 +246,14 @@ export async function loadClubView(
   }[];
 
   const rosterIds = rosterEntries.map((e) => e.player_id);
+
+  // Loans Out counts every loan still holding one of the club's slots, the same
+  // set the loan routes check against the cap.
+  const { count: loansOutCount } = await admin
+    .from('player_loans')
+    .select('id', { count: 'exact', head: true })
+    .eq('lender_team_id', team.id)
+    .in('status', ['active', 'accepted_deferred', 'pending_activation']);
 
   // Rankings (a view — fetch separately, FILTERED to this roster) + archive overlay,
   // listings, pending drops, last-5 form, all in parallel.
@@ -536,7 +552,7 @@ export async function loadClubView(
       season: fmtSeason(season),
       balance: Number(team.faab_budget ?? 0),
       rosterMax: league.roster_size ?? 20,
-      academyMax: league.taxi_size ?? 3,
+      academyMax: slots.academy,
       retainedMax: league.retained_slots ?? 3,
       academyAgeLimit: league.taxi_age_limit ?? 21,
       gw: currentGw,
@@ -548,6 +564,11 @@ export async function loadClubView(
     savedLineup,
     departures,
     honours: groupHonours(honoursByTeam.get(team.id) ?? []),
+    facilities: buildFacilityViews(slots, {
+      academy: rosterEntries.filter((e) => e.status === 'taxi').length,
+      ir: rosterEntries.filter((e) => e.status === 'ir').length,
+      loansOut: loansOutCount ?? 0,
+    }),
   };
 }
 

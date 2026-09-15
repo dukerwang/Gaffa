@@ -46,6 +46,9 @@ export default async function ActivityPage({ params }: Props) {
          player:players(id, web_name, name, primary_position, photo_url, pl_team)`
       )
       .eq('league_id', leagueId)
+      // Facility purchases stay on the buyer's finance ledger, not the league
+      // feed (Duke, 2026-09-15).
+      .neq('type', 'facility_upgrade')
       .order('processed_at', { ascending: false })
       .limit(100),
     admin

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { effectiveSlots } from '@/lib/facilities/facilities';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { AuctionListing, Player } from '@/types';
@@ -21,7 +22,7 @@ export async function GET(_req: NextRequest, { params }: Props) {
   // Verify the caller has a team in this league
   const { data: myTeam } = await admin
     .from('teams')
-    .select('id, faab_budget, team_name')
+    .select('id, faab_budget, team_name, academy_slots, ir_slots')
     .eq('league_id', leagueId)
     .eq('user_id', user.id)
     .single();
@@ -177,11 +178,12 @@ export async function GET(_req: NextRequest, { params }: Props) {
   // agree. They did not: this counted loaned-in players toward the cap and
   // ignored the buyback allowance that bid/route.ts grants, so a manager with
   // a player out on loan was shown "roster full" on a lot they could bid on.
+  const mySlots = effectiveSlots(myTeam, league);
   const capacity = deriveRosterCapacity({
     statuses: (myRosterEntries ?? []).map((e) => e.status),
     rosterSize: league?.roster_size,
-    irSize: league?.ir_size,
-    taxiSize: league?.taxi_size,
+    irSize: mySlots.ir,
+    taxiSize: mySlots.academy,
     buybackSlots: await countBuybackSlots(admin, myTeam.id),
   });
   const activeRosterCount = capacity.active;
@@ -216,7 +218,7 @@ export async function GET(_req: NextRequest, { params }: Props) {
     capacity,
     academy: {
       current: myTaxiCount,
-      max: league?.taxi_size ?? 3,
+      max: mySlots.academy,
       age_limit: league?.taxi_age_limit ?? 21,
     },
     isMyTeamEligible,

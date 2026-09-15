@@ -321,3 +321,39 @@ the 10% version but didn't rule on the rate separately.
 Held players reached production first, on 2026-09-14 (#6, #7); Scout's Fee
 followed on 2026-09-15 after Duke said "let's just start pushing everything to
 production". No changelog had been published in between.
+
+---
+
+## 2026-09-15 — Club Facilities
+
+Spec: `docs/superpowers/specs/2026-09-15-club-facility-upgrades-design.md`.
+Design canvas: "Club Facilities" artifact.
+
+**Facilities use the names managers already see.** Asked whether the UI should
+say Academy / Injured Reserve / Loans Out or new facility names (Youth Academy,
+Medical Centre, Loan Office), Duke picked the existing names. Only the section
+is called Club Facilities.
+
+**Rivals can see a club's facilities, read-only.** Chosen over owner-only.
+
+**Purchases are ledger-only.** First answered yes to announcing purchases in
+the league activity feed, then:
+> "actually, no for the last question"
+
+**Facilities must not be buried.** Said while implementation was under way:
+> "these upgrade options shouldn't be obscure, by the way. i don't want it to
+> become buried in the clubs page because it's an important part of the economy
+> and decisions in gaffa"
+
+Asked where else they should appear, Duke chose the top of the club page (not
+the foot), a link in the topbar Club Balance menu, and a League Home reminder.
+Not chosen: a Transfers tab. On the menu link:
+> "not sure what the club balance menu would look like though so bit skeptical
+> on that one until i inspect it"
+
+On the reminder:
+> "league home reminder but don't make it super annoying, having to dismiss it
+> every single time"
+
+So the reminder shows only when the Academy or IR is full and the next slot is
+affordable, and a dismissal holds until the next slot is on offer.

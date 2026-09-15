@@ -25,6 +25,9 @@ import CrestBadge from '@/components/crest/CrestBadge';
 import type { RawStats } from '@/types';
 import styles from './pitch.module.css';
 import { Icon } from '@/components/ui/Icon';
+import FacilityPurchaseSheet from '@/components/facilities/FacilityPurchaseSheet';
+import facilityStyles from '@/components/facilities/facilities.module.css';
+import type { FacilityView } from '@/lib/facilities/facilities';
 
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -169,6 +172,11 @@ interface Props {
     maxRosterSize?: number;
     capacity?: RosterCapacity;
     leagueId?: string;
+    /**
+     * Club Facilities offers for the rail: when the Academy or IR is full and
+     * the next slot is affordable, its tier head carries an Expand link.
+     */
+    facilityOffers?: { balance: number; academy: FacilityView; ir: FacilityView };
     /** Held players (R11): the saved lineup stands until the hold is resolved. */
     lineupLocked?: boolean;
     /** playerId -> projected points, already filtered to this round. */
@@ -411,6 +419,7 @@ export default function PitchUI({
     maxRosterSize,
     capacity,
     leagueId,
+    facilityOffers,
     lineupLocked = false,
     masthead,
     projMap,
@@ -451,6 +460,20 @@ export default function PitchUI({
     const [sidebarSelection, setSidebarSelection] = useState<SidebarSelection>(null);
     const [sidebarLoading, setSidebarLoading] = useState(false);
     const [sidebarError, setSidebarError] = useState<string | null>(null);
+    // The route's refusal code, kept beside the message so a full Academy or IR
+    // can offer the slot that would have let the move through.
+    const [sidebarErrorCode, setSidebarErrorCode] = useState<string | null>(null);
+    useEffect(() => { if (!sidebarError) setSidebarErrorCode(null); }, [sidebarError]);
+    const [buyingFacility, setBuyingFacility] = useState<FacilityView | null>(null);
+    const failSidebar = (d: { error?: string; code?: string }, fallback: string) => {
+        setSidebarError(d.error ?? fallback);
+        setSidebarErrorCode(d.code ?? null);
+    };
+    // An upgrade worth offering: one exists and the club can pay for it now.
+    const affordable = (f: FacilityView | undefined) =>
+        f?.next && facilityOffers && facilityOffers.balance >= f.next.price ? f : null;
+    const academyOffer = affordable(facilityOffers?.academy);
+    const irOffer = affordable(facilityOffers?.ir);
 
     /* The squad sheet on phones: collapsed to its handle until opened, until a
        swap is armed, or until dragged. Desktop ignores all of it — the rail is
@@ -990,7 +1013,7 @@ export default function PitchUI({
             });
             if (!res.ok) {
                 const d = await res.json();
-                setSidebarError(d.error ?? 'Academy swap failed');
+                failSidebar(d, 'Academy swap failed');
                 return;
             }
 
@@ -1019,7 +1042,7 @@ export default function PitchUI({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ playerId, action: 'activate' }),
             });
-            if (!res.ok) { const d = await res.json(); setSidebarError(d.error ?? 'Failed to activate'); }
+            if (!res.ok) { const d = await res.json(); failSidebar(d, 'Failed to activate'); }
             else { router.refresh(); }
         } catch {
             setSidebarError('Could not reach the server. Try again.');
@@ -1045,7 +1068,7 @@ export default function PitchUI({
             });
             if (!res.ok) {
                 const d = await res.json();
-                setSidebarError(d.error ?? 'IR swap failed');
+                failSidebar(d, 'IR swap failed');
                 return;
             }
 
@@ -1069,7 +1092,7 @@ export default function PitchUI({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ playerId, action: 'activate' }),
             });
-            if (!res.ok) { const d = await res.json(); setSidebarError(d.error ?? 'Failed to activate from IR'); }
+            if (!res.ok) { const d = await res.json(); failSidebar(d, 'Failed to activate from IR'); }
             else { router.refresh(); }
         } catch {
             setSidebarError('Could not reach the server. Try again.');
@@ -1814,7 +1837,17 @@ export default function PitchUI({
 
                     {sidebarError && (
                         <div className={styles.sidebarError}>
-                            {sidebarError}
+                            <span>{sidebarError}</span>
+                            {sidebarErrorCode === 'ACADEMY_FULL' && academyOffer && (
+                                <button type="button" className={facilityStyles.railLink} onClick={() => setBuyingFacility(academyOffer)}>
+                                    Expand · €{academyOffer.next!.price}m
+                                </button>
+                            )}
+                            {sidebarErrorCode === 'IR_FULL' && irOffer && (
+                                <button type="button" className={facilityStyles.railLink} onClick={() => setBuyingFacility(irOffer)}>
+                                    Expand · €{irOffer.next!.price}m
+                                </button>
+                            )}
                             <button type="button" onClick={() => setSidebarError(null)} className={styles.sidebarErrorDismiss} aria-label="Dismiss">✕</button>
                         </div>
                     )}
@@ -1907,7 +1940,14 @@ export default function PitchUI({
                     <section className={styles.tier}>
                         <div className={styles.tierHead}>
                             <h3 className={styles.tierTitle}>Academy</h3>
-                            <span className="g-label">{taxiEntries.length} / {capacity?.academyLimit ?? 3} slots</span>
+                            <span className={styles.tierHeadRight}>
+                                <span className="g-label">{taxiEntries.length} / {capacity?.academyLimit ?? 3} slots</span>
+                                {academyOffer && taxiEntries.length >= (capacity?.academyLimit ?? 3) && (
+                                    <button type="button" className={facilityStyles.railLink} onClick={() => setBuyingFacility(academyOffer)}>
+                                        Expand · €{academyOffer.next!.price}m
+                                    </button>
+                                )}
+                            </span>
                         </div>
                         {taxiEntries.length === 0 ? (
                             <p className={styles.tierEmpty}>No players in academy.</p>
@@ -1965,7 +2005,14 @@ export default function PitchUI({
                         <section className={styles.tier}>
                             <div className={styles.tierHead}>
                                 <h3 className={styles.tierTitle}>Injured Reserve</h3>
-                                <span className="g-label">{irEntries.length} / {capacity?.irLimit ?? 2} slots</span>
+                                <span className={styles.tierHeadRight}>
+                                    <span className="g-label">{irEntries.length} / {capacity?.irLimit ?? 2} slots</span>
+                                    {irOffer && irEntries.length >= (capacity?.irLimit ?? 2) && (
+                                        <button type="button" className={facilityStyles.railLink} onClick={() => setBuyingFacility(irOffer)}>
+                                            Expand · €{irOffer.next!.price}m
+                                        </button>
+                                    )}
+                                </span>
                             </div>
                             {irEntries.map((entry) => {
                                 const isSelected = sidebarSelection?.type === 'ir' && sidebarSelection.playerId === entry.player.id;
@@ -2017,6 +2064,16 @@ export default function PitchUI({
                     )}
 
                     </div>{/* end squadScroll */}
+
+                    {leagueId && facilityOffers && (
+                        <FacilityPurchaseSheet
+                            leagueId={leagueId}
+                            facility={buyingFacility}
+                            balance={facilityOffers.balance}
+                            onClose={() => setBuyingFacility(null)}
+                            onPurchased={() => { setSidebarError(null); router.refresh(); }}
+                        />
+                    )}
                 </div>
                 </div>{/* end board */}
             </div>{/* end panel */}

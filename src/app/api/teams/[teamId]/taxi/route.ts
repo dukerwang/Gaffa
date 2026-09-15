@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { effectiveSlots } from '@/lib/facilities/facilities';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     // Verify ownership
     const { data: team } = await admin
         .from('teams')
-        .select('id, user_id, league_id, faab_budget')
+        .select('id, user_id, league_id, faab_budget, academy_slots')
         .eq('id', teamId)
         .eq('user_id', user.id)
         .single();
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
     if (!league) return NextResponse.json({ error: 'League not found' }, { status: 404 });
 
-    const taxiSize: number = league.taxi_size ?? 3;
+    const taxiSize: number = effectiveSlots(team, league).academy;
     const taxiAgeLimit: number = league.taxi_age_limit ?? 21;
     const maxActive: number =
         (league.roster_size ?? DEFAULT_ROSTER_SIZE) + (await countBuybackSlots(admin, teamId));
@@ -269,7 +270,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
         if ((currentTaxi?.length ?? 0) >= taxiSize) {
             return NextResponse.json(
-                { error: `Academy is full (${taxiSize} slots). Promote or drop an academy player first.` },
+                { error: `Academy is full (${taxiSize} slots). Promote or drop an academy player first.`, code: 'ACADEMY_FULL' },
                 { status: 400 }
             );
         }

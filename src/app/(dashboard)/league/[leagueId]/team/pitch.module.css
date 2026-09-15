@@ -1097,6 +1097,16 @@
     color: var(--color-text-primary);
 }
 
+/* The message takes the row; an Expand link and the dismiss sit after it. */
+.sidebarError > span:first-child { flex: 1 1 auto; line-height: 1.45; }
+
+/* Slot count plus, when the tier is full, the Club Facilities Expand link. */
+.tierHeadRight {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
 .sidebarErrorDismiss {
     background: none;
     border: none;
