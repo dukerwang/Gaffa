@@ -15,13 +15,24 @@
 }
 
 /* ---------- masthead: your club is the subject ---------- */
+/* Name left, figures right, on one row. The row used to be a wrapping flex
+   line with the figures pushed right by margin-left:auto, so once a stake grew
+   (the first Match Revenue payout added "GW1–4 so far · €2.5m riding on this
+   one") the figures dropped to a second line and still hugged the right edge,
+   leaving a hole under the name at ordinary laptop widths. Now the name column
+   gives way and wraps first; below 840px of masthead the figures stack under
+   the name on purpose, spread across the full width. Measured at 600–1216px in
+   scratch/masthead-probe.html. */
 .mast {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--s5);
-  flex-wrap: wrap;
+  container: mast / inline-size;
   padding-bottom: var(--s4);
   border-bottom: 2px solid var(--color-text-primary);
+}
+.mastRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--s5) var(--s8);
 }
 .mastId { display: flex; align-items: center; gap: var(--s4); min-width: 0; }
 .mastTx { min-width: 0; }
@@ -35,8 +46,12 @@
 }
 .mastSub { font-size: var(--t-13); color: var(--color-text-secondary); margin-top: 3px; }
 
-.figs { display: flex; gap: var(--s8); margin-left: auto; flex-wrap: wrap; }
+.figs { display: flex; gap: var(--s6); }
 .fig { min-width: 76px; }
+@container mast (max-width: 840px) {
+  .mastRow { grid-template-columns: minmax(0, 1fr); }
+  .figs { justify-content: space-between; }
+}
 .figV {
   font-family: var(--font-serif);
   font-weight: 700;
@@ -52,6 +67,8 @@
   color: var(--color-text-muted);
   margin-top: 5px;
   line-height: 1.35;
+  max-width: 20ch;
+  text-wrap: balance;
 }
 
 /* ---------- attention ----------
@@ -1132,10 +1149,10 @@
 @media (max-width: 640px) {
   .page { padding: var(--s5) var(--s4) var(--s10); }
   .rail { grid-template-columns: 1fr; }
-  .mast { align-items: flex-start; }
   .mastName { font-size: 28px; }
-  .figs { margin-left: 0; gap: var(--s5); width: 100%; }
+  .figs { gap: var(--s5); flex-wrap: wrap; }
   .fig { min-width: 0; flex: 1 1 40%; }
+  .figS { max-width: none; }
   /* tag + clock on the first line, the message in full on the second,
      the action pinned right across both. Nothing truncates. */
   .attnItem { grid-template-columns: auto minmax(0, 1fr) auto auto; gap: var(--s2) var(--s3); padding: var(--s3); }

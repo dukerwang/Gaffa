@@ -18,27 +18,30 @@ import styles from './home.module.css';
 export function Masthead({ model }: { model: HomeModel }) {
   return (
     <header className={styles.mast}>
-      <div className={styles.mastId}>
-        <CrestBadge
-          config={model.club.crest as CrestConfig | null}
-          size={46}
-          teamName={model.club.name}
-          teamId={model.club.id}
-        />
-        <div className={styles.mastTx}>
-          <h1 className={styles.mastName}>{model.club.name}</h1>
-          <div className={styles.mastSub}>{model.subtitle}</div>
-        </div>
-      </div>
-      <div className={styles.figs}>
-        {model.figures.map((f, i) => (
-          <div key={i} className={styles.fig}>
-            <div className={f.accent ? `${styles.figV} ${styles.figVAccent}` : styles.figV}>
-              {f.value}
-            </div>
-            <div className={styles.figS}>{f.stake}</div>
+      {/* The container query lives on the header, so the grid sits one level in. */}
+      <div className={styles.mastRow}>
+        <div className={styles.mastId}>
+          <CrestBadge
+            config={model.club.crest as CrestConfig | null}
+            size={46}
+            teamName={model.club.name}
+            teamId={model.club.id}
+          />
+          <div className={styles.mastTx}>
+            <h1 className={styles.mastName}>{model.club.name}</h1>
+            <div className={styles.mastSub}>{model.subtitle}</div>
           </div>
-        ))}
+        </div>
+        <div className={styles.figs}>
+          {model.figures.map((f, i) => (
+            <div key={i} className={styles.fig}>
+              <div className={f.accent ? `${styles.figV} ${styles.figVAccent}` : styles.figV}>
+                {f.value}
+              </div>
+              <div className={styles.figS}>{f.stake}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </header>
   );
