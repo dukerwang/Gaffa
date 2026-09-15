@@ -19,6 +19,8 @@ const state = vi.hoisted(() => ({
   user: null as { id: string } | null,
   admin: null as any,
   lockedPlTeamIds: new Set<number>(),
+  lockedByGw: null as Map<number, Set<number>> | null,
+  lastKickoffPassed: new Set<number>(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -28,7 +30,12 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => state.admin,
 }));
 vi.mock('@/lib/fixtures/lockout', () => ({
-  getLockedPlTeamIds: async () => state.lockedPlTeamIds,
+  getLockedPlTeamIds: async (_admin: unknown, gw: number) =>
+    state.lockedByGw ? (state.lockedByGw.get(gw) ?? new Set<number>()) : state.lockedPlTeamIds,
+  hasGameweekLastKickoffPassed: async (_admin: unknown, gw: number) => state.lastKickoffPassed.has(gw),
+}));
+vi.mock('@/lib/season/currentGameweek', () => ({
+  resolveCurrentGw: async () => 4,
 }));
 
 import { POST } from '../route';
@@ -84,6 +91,8 @@ function fillActiveRoster(tables: Tables) {
 beforeEach(() => {
   state.user = { id: USER_ID };
   state.lockedPlTeamIds = new Set<number>();
+  state.lockedByGw = null;
+  state.lastKickoffPassed = new Set<number>();
   setup();
 });
 
@@ -187,6 +196,50 @@ describe('the kickoff lock', () => {
     const res = await ir({ playerId: INJURED, action: 'move_to_ir' });
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/match has already kicked off/);
+  });
+
+  /**
+   * GW4 still scores (live, awaiting the 09:00 review) but its last kickoff
+   * has passed, so the squad editor is on GW5, where nothing has kicked off.
+   */
+  function afterLastKickoff(mutate: (tables: Tables) => void = () => {}) {
+    const tables = setup((t) => {
+      t.players.find((p) => p.id === 'squad-3')!.fpl_status = 'i';
+      entryFor(t, 'squad-3').status = 'ir';
+      t.matchups.push(
+        { id: 'm-4', team_a_id: MY_TEAM_ID, team_b_id: RIVAL_TEAM_ID, status: 'live', gameweek: 4,
+          lineup_a: { formation: '4-3-3', starters: [{ player_id: HEALTHY, slot: 'CB' }], bench: [] } },
+        { id: 'm-5', team_a_id: MY_TEAM_ID, team_b_id: RIVAL_TEAM_ID, status: 'scheduled', gameweek: 5 },
+      );
+      mutate(t);
+    });
+    state.lockedByGw = new Map([[4, new Set([11])], [5, new Set()]]);
+    state.lastKickoffPassed = new Set([4]);
+    return tables;
+  }
+
+  it('activates a player outside the scoring lineup once the last kickoff has passed', async () => {
+    const tables = afterLastKickoff();
+    const res = await ir({ playerId: 'squad-3', action: 'activate' });
+    expect(res.status).toBe(200);
+    expect(entryFor(tables, 'squad-3').status).toBe('bench');
+  });
+
+  it('keeps a player the scoring lineup names locked until the week settles', async () => {
+    afterLastKickoff((t) => {
+      t.players.find((p) => p.id === HEALTHY)!.fpl_status = 'i';
+    });
+    const res = await ir({ playerId: HEALTHY, action: 'move_to_ir' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/match has already kicked off/);
+  });
+
+  it('refuses a swap that would put a scoring-lineup player on IR after the last kickoff', async () => {
+    afterLastKickoff((t) => {
+      t.players.find((p) => p.id === HEALTHY)!.fpl_status = 'i';
+    });
+    const res = await ir({ playerId: HEALTHY, action: 'swap', swapWithPlayerId: 'squad-3' });
+    expect(res.status).toBe(400);
   });
 
   it('allows the move when a different club has kicked off', async () => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { isIrChangeLocked } from '@/lib/lineups/irLock';
 import { motion, type PanInfo } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
@@ -155,8 +156,12 @@ interface Props {
     refStats?: RefStatsMap;
     gameweek?: number;
     lockedTeamIds?: Set<number>;
-    /** Scoring-week locks (this GW until it completes). IR uses this; lineup/academy use lockedTeamIds. */
+    /** Scoring-week locks (this GW until it completes). Drives played/pending badges and the IR lock; lineup/academy use lockedTeamIds. */
     scoringLockedTeamIds?: Set<number>;
+    /** Players this week's saved lineup names. Only they keep the scoring-week IR lock once the editor moves ahead. */
+    scoringLineupPlayerIds?: string[];
+    /** The pitch is next week's lineup while this week still scores. */
+    editingAhead?: boolean;
     /** When the pitch is next week while this week is still live. */
     lineupWeekLabel?: string;
     /** Active Roster count / cap, shown on the pitch header strip */
@@ -399,6 +404,8 @@ export default function PitchUI({
     gameweek,
     lockedTeamIds,
     scoringLockedTeamIds,
+    scoringLineupPlayerIds,
+    editingAhead = false,
     lineupWeekLabel,
     activeRosterCount,
     maxRosterSize,
@@ -410,7 +417,16 @@ export default function PitchUI({
     projectionGameweek,
 }: Props) {
     const router = useRouter();
-    const irLockedTeamIds = scoringLockedTeamIds ?? lockedTeamIds;
+    const scoringStartedTeamIds = scoringLockedTeamIds ?? lockedTeamIds;
+    const scoringLineupSet = useMemo(() => new Set(scoringLineupPlayerIds ?? []), [scoringLineupPlayerIds]);
+    const isIrLocked = useCallback((player: Player | undefined) => !!player && isIrChangeLocked({
+        playerId: player.id,
+        plTeamId: player.pl_team_id,
+        scoringLockedTeamIds: scoringStartedTeamIds ?? new Set<number>(),
+        scoringLineupPlayerIds: scoringLineupSet,
+        editingAhead,
+        editLockedTeamIds: lockedTeamIds ?? new Set<number>(),
+    }), [scoringStartedTeamIds, scoringLineupSet, editingAhead, lockedTeamIds]);
 
     // ── Lineup state ──
     const [formation, setFormation] = useState<Formation>(initialFormation);
@@ -637,12 +653,12 @@ export default function PitchUI({
         }
         if (sidebarSelection.type === 'ir') {
             for (const e of poolEntries) {
-                if (isPlMatchLocked(e.player, irLockedTeamIds)) continue;
+                if (isIrLocked(e.player)) continue;
                 if (isIrEligible(e.player)) targets.add(`pool-${e.player.id}`);
             }
         }
         return targets;
-    }, [sidebarSelection, poolEntries, academyAgeLimit, lockedTeamIds, irLockedTeamIds]);
+    }, [sidebarSelection, poolEntries, academyAgeLimit, lockedTeamIds, isIrLocked]);
 
     // ── Selection helpers ──
     function clearAll() {
@@ -894,7 +910,7 @@ export default function PitchUI({
                 }
 
                 if (sidebarSelection.type === 'ir') {
-                    if (isPlMatchLocked(targetEntry.player, irLockedTeamIds)) {
+                    if (isIrLocked(targetEntry.player)) {
                         setSidebarError('Match started — this player is locked.');
                         setSidebarSelection(null);
                         return;
@@ -954,7 +970,7 @@ export default function PitchUI({
                 setSaveError(null); setSaveSuccess(false); setLineupSelection(null); return;
             }
         },
-        [lineupSelection, sidebarSelection, slots, playerMap, poolEntries, academyAgeLimit, lockedTeamIds, irLockedTeamIds],
+        [lineupSelection, sidebarSelection, slots, playerMap, poolEntries, academyAgeLimit, lockedTeamIds, isIrLocked],
     );
 
     // ── Taxi swap: swap an active U21 reserve with an academy player ──
@@ -1161,10 +1177,10 @@ export default function PitchUI({
      */
     const cellFor = useCallback((player: Player | undefined) => {
         if (!player) return scoreCell(undefined, undefined, undefined);
-        const hasStarted = isPlMatchLocked(player, irLockedTeamIds);
+        const hasStarted = isPlMatchLocked(player, scoringStartedTeamIds);
         const status = minutesMap ? playStatus(minutesMap[player.id], hasStarted) : undefined;
         return scoreCell(status, scoreMap?.[player.id], projMap?.[player.id]);
-    }, [minutesMap, irLockedTeamIds, scoreMap, projMap]);
+    }, [minutesMap, scoringStartedTeamIds, scoreMap, projMap]);
 
     const railCell = cellFor;
 
@@ -1519,7 +1535,7 @@ export default function PitchUI({
                                                 const isValidTarget = validLineupTargets.has(`starter-${slotIndex}`);
                                                 const isInvalid = !!playerId && !!entry && !canPlaySlot(entry.player, pos);
                                                 const isLocked = !!playerId && !!entry && entry.player.pl_team_id !== null && lockedTeamIds?.has(entry.player.pl_team_id);
-                                                const hasStarted = !!entry && isPlMatchLocked(entry.player, irLockedTeamIds);
+                                                const hasStarted = !!entry && isPlMatchLocked(entry.player, scoringStartedTeamIds);
                                                 const status = playerId && minutesMap ? playStatus(minutesMap[playerId], hasStarted) : undefined;
                                                 const starterPoints = (() => {
                                                     if (!playerId) return undefined;
@@ -1580,7 +1596,7 @@ export default function PitchUI({
                                 const isValidTarget = validLineupTargets.has(`bench-${slot}`);
                                 const isLocked = !!pid && !!entry && entry.player.pl_team_id !== null && lockedTeamIds?.has(entry.player.pl_team_id);
                                 const pts = scoreMap && pid ? scoreMap[pid] : undefined;
-                                const benchHasStarted = !!entry && isPlMatchLocked(entry.player, irLockedTeamIds);
+                                const benchHasStarted = !!entry && isPlMatchLocked(entry.player, scoringStartedTeamIds);
                                 const benchStatus = pid && minutesMap ? playStatus(minutesMap[pid], benchHasStarted) : undefined;
                                 return (
                                     <button
@@ -1953,7 +1969,7 @@ export default function PitchUI({
                             </div>
                             {irEntries.map((entry) => {
                                 const isSelected = sidebarSelection?.type === 'ir' && sidebarSelection.playerId === entry.player.id;
-                                const irLocked = isPlMatchLocked(entry.player, irLockedTeamIds);
+                                const irLocked = isIrLocked(entry.player);
                                 return (
                                     <div
                                         key={entry.id}

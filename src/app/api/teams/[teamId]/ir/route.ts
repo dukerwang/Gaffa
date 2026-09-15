@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { countBuybackSlots, DEFAULT_ROSTER_SIZE } from '@/lib/roster/capacity';
 import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
+import { loadIrLockChecker } from '@/lib/lineups/irLockServer';
 
 interface Props {
     params: Promise<{ teamId: string }>;
@@ -78,31 +79,19 @@ export async function POST(req: NextRequest, { params }: Props) {
         const incomingPlayer = incomingEntry.player as unknown as { id: string; name: string; fpl_status: string | null; pl_team_id: number | null; web_name: string | null };
         const outgoingPlayer = outgoingEntry.player as unknown as { id: string; name: string; fpl_status: string | null; pl_team_id: number | null; web_name: string | null };
 
-        // Kickoff lock check for both players
-        const { data: matchup } = await admin
-            .from('matchups')
-            .select('gameweek')
-            .or(`team_a_id.eq.${teamId},team_b_id.eq.${teamId}`)
-            .in('status', ['scheduled', 'live'])
-            .order('gameweek', { ascending: true })
-            .limit(1)
-            .maybeSingle();
-
-        if (matchup) {
-            const { getLockedPlTeamIds } = await import('@/lib/fixtures/lockout');
-            const lockedTeamIds = await getLockedPlTeamIds(admin, matchup.gameweek);
-            if (incomingPlayer?.pl_team_id && lockedTeamIds.has(incomingPlayer.pl_team_id)) {
-                return NextResponse.json(
-                    { error: `Cannot change IR status for ${getPlayerDisplayName(incomingPlayer, 'full')} — their match has already kicked off.` },
-                    { status: 400 },
-                );
-            }
-            if (outgoingPlayer?.pl_team_id && lockedTeamIds.has(outgoingPlayer.pl_team_id)) {
-                return NextResponse.json(
-                    { error: `Cannot change IR status for ${getPlayerDisplayName(outgoingPlayer, 'full')} — their match has already kicked off.` },
-                    { status: 400 },
-                );
-            }
+        // Kickoff lock check for both players (see isIrChangeLocked)
+        const irLocked = await loadIrLockChecker(admin, teamId);
+        if (incomingPlayer && irLocked(incomingPlayer)) {
+            return NextResponse.json(
+                { error: `Cannot change IR status for ${getPlayerDisplayName(incomingPlayer, 'full')} — their match has already kicked off.` },
+                { status: 400 },
+            );
+        }
+        if (outgoingPlayer && irLocked(outgoingPlayer)) {
+            return NextResponse.json(
+                { error: `Cannot change IR status for ${getPlayerDisplayName(outgoingPlayer, 'full')} — their match has already kicked off.` },
+                { status: 400 },
+            );
         }
 
         // IR eligibility check for incoming player
@@ -142,28 +131,17 @@ export async function POST(req: NextRequest, { params }: Props) {
     const player = entry.player as unknown as { id: string; name: string; fpl_status: string | null; pl_team_id: number | null; web_name: string | null };
     const fplStatus = player?.fpl_status;
 
-    // Kickoff lock against the *scoring* week, not the squad-editor week.
-    // Final sanitize strips IR from the saved XI, so an IR move after a player
-    // has played would zero his points when the matchup locks in.
+    // Kickoff lock against the *scoring* week for a player this week's lineup
+    // names: final sanitize strips IR from the saved XI, so an IR move after
+    // he has played would change his points. Anyone else follows the squad
+    // editor's week (see isIrChangeLocked).
     if (player?.pl_team_id) {
-        const { data: matchup } = await admin
-            .from('matchups')
-            .select('gameweek')
-            .or(`team_a_id.eq.${teamId},team_b_id.eq.${teamId}`)
-            .in('status', ['scheduled', 'live'])
-            .order('gameweek', { ascending: true })
-            .limit(1)
-            .maybeSingle();
-
-        if (matchup) {
-            const { getLockedPlTeamIds } = await import('@/lib/fixtures/lockout');
-            const lockedTeamIds = await getLockedPlTeamIds(admin, matchup.gameweek);
-            if (lockedTeamIds.has(player.pl_team_id)) {
-                return NextResponse.json(
-                    { error: `Cannot change IR status for ${getPlayerDisplayName(player, 'full')} — their match has already kicked off.` },
-                    { status: 400 },
-                );
-            }
+        const irLocked = await loadIrLockChecker(admin, teamId);
+        if (irLocked(player)) {
+            return NextResponse.json(
+                { error: `Cannot change IR status for ${getPlayerDisplayName(player, 'full')} — their match has already kicked off.` },
+                { status: 400 },
+            );
         }
     }
 
