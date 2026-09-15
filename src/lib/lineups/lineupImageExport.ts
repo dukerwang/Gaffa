@@ -32,12 +32,16 @@ function getZone(pos: GranularPosition, formation?: Formation): PitchZone {
 }
 
 /**
- * Loads an image with a timeout and CORS support. Resolves to null on failure.
+ * Loads an image with a timeout. Resolves to null on failure.
+ *
+ * PL's photo CDN sends no CORS headers, so drawing its images straight onto
+ * the export canvas taints it and canvas.toBlob() below silently returns
+ * null — this routes through /api/players/photo-proxy, which re-serves the
+ * same bytes same-origin, so no crossOrigin mode is needed here at all.
  */
 function loadImage(url: string, timeoutMs = 1500): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
 
     const timer = setTimeout(() => {
       resolve(null);
@@ -53,7 +57,7 @@ function loadImage(url: string, timeoutMs = 1500): Promise<HTMLImageElement | nu
       resolve(null);
     };
 
-    img.src = url;
+    img.src = `/api/players/photo-proxy?url=${encodeURIComponent(url)}`;
   });
 }
 
