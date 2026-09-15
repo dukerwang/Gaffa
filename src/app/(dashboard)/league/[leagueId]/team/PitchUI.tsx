@@ -2540,26 +2540,6 @@ export default function PitchUI({
                                                 <span className={styles.rowClub}>{entry.player.pl_team}</span>
                                                 {entry.status === 'loan_in' && <span className={styles.loanTag}>Loan</span>}
                                                 <span className={styles.rowSpacer} />
-                                                {isTarget && (
-                                                    <>
-                                                        {lineupSelection?.type === 'bench-slot' && (
-                                                            lineupSelection.slot === 'FLEX' ? (
-                                                                <span className={styles.flexTag}>FLEX</span>
-                                                            ) : (
-                                                                <span className={styles.slotTag}>{lineupSelection.slot}</span>
-                                                            )
-                                                        )}
-                                                        {lineupSelection?.type === 'starter' && (
-                                                            <span className={styles.slotTag}>{slots[lineupSelection.slotIndex]}</span>
-                                                        )}
-                                                        {lineupSelection?.type === 'taxi' && (
-                                                            <span className={styles.eligibleTag}>U21</span>
-                                                        )}
-                                                        {lineupSelection?.type === 'ir' && (
-                                                            <span className={styles.eligibleTag}>{entry.player.fpl_status?.toUpperCase() ?? 'IR'}</span>
-                                                        )}
-                                                    </>
-                                                )}
                                                 {entry.player.fpl_status && entry.player.fpl_status !== 'a' && !lineupSelection && (
                                                     <span className={styles.statusDot} data-status={entry.player.fpl_status} />
                                                 )}
