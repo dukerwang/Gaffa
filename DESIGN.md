@@ -22,7 +22,26 @@
 
 ## 1. Atmosphere & Design Philosophy
 
-Gaffa is an editorial, high-density fantasy football platform for the Premier League. The atmosphere is **calm, tactile, and data-dense** — like a modern, beautifully typeset European broadsheet sports journal crossed with a high-performance trading platform. [inferred]
+Gaffa is a dynasty fantasy football platform for the Premier League. Duke, 2026-08-10:
+
+> "keep in mind this is gaffa, the dynasty fantasy football platform, not a newspaper.
+> the focus should be on elegant and impressive aesthetics but also ease of use."
+
+Read that as two requirements rather than a style: it has to look impressive, and it
+has to be easy to use. Where a visual move needs a reference, **football supplies one** —
+matchday, the crest, the score bug, the pitch, the twelve-position spine. Print
+references do not land, and "editorial" is not an argument for anything. [decided]
+
+The serif is Gaffa's voice, not its metaphor. Newsreader, warm cream and dense tabular
+figures are materials the app is built from; they do not make it a broadsheet. [inferred]
+
+> **This paragraph used to say the opposite.** Until 2026-09-12 it described Gaffa as
+> "a modern, beautifully typeset European broadsheet sports journal", tagged `[inferred]`
+> — agent-authored, never ratified, and directly contradicting the quote above, which
+> predated it by a month. Being the first substantive line in this file, it set the
+> frame for every session that read it, and at least two dashboard redesigns were built
+> as newspapers because of it. If you are an agent and a print metaphor feels natural
+> here, that is this sentence's ghost. It is not what Duke asked for.
 
 * **Ground & Tone**: Warm, bright cream field (`#F8F4EC`) on desktop/mobile paired with deep forest green chrome (`#185B37`). Not vintage/yellow beige, but fresh, readable, and sharp. [code] [decided]
 * **Sports Data Craft**: Visual weight is carried by typography (Newsreader serif display, Archivo Narrow condensed data labels, and Hanken Grotesk body) rather than decorative graphics or generic cards. [code]
@@ -72,9 +91,44 @@ Full quotes and dates in **`docs/DECISIONS.md`**. Summary: [decided]
 * **Gaffa is not a themed costume.** Sophisticated, accessible product UI for real football fans. [decided]
 * **"One job per colour" is not binding.** Green carries topbar chrome, primary buttons, and positive status safely via the green ramp. [decided]
 * **Mobile is a first-class target, not a reflow.** Must look and feel native, tactile, and ergonomic. [decided]
-* **No white panels floating on the cream ground.** A section is a serif title over a 2px ink rule with flat content beneath it; only a genuinely bounded object (hero, board, table) gets a 1px border box — border, not shadow. `.g-panel` is not the default for a new page. See `_home/home.module.css`. [decided]
+* **No white panels floating on the cream ground.** The objection is to loose white tiles on a blank cream field (2026-09-04). Cards that belong to a composition are fine: the dashboard is the reference (2026-09-15). The "serif title over a 2px rule, border not shadow" fix once recorded here was an agent's reading, not Duke's rule. [decided]
+* **Section heads should be more than text.** "Generic html headers, like just letters" is a pattern to move away from. (2026-09-15) [decided]
+* **Imagery belongs on the page**, player portraits in particular. (2026-09-15) [decided]
+* **A card that leads somewhere looks clickable as a whole**; secondary destinations are shortcuts, not big buttons. (2026-09-15) [decided]
 * **Headings, section titles, buttons, and short labels are Title Case.** Running prose stays sentence case. (2026-09-09) [decided]
 * **A heading names the thing beneath it**, it does not caption it. "Title-Winning XI", not "The XI That Won It". [decided]
+
+---
+
+## 3b. Composing a Page — the dashboard as reference
+
+Duke on 2026-09-15: the dashboard "looks like a sophisticated design that's worthy of a real app, and i want to get results like this when i prototype consistently." [decided]
+
+Everything below this line is **[inferred]**: a description of what the dashboard (`src/app/(dashboard)/dashboard/`, PR #11) does, written so a new page can start from it. It is not a set of rules. Where a page needs something different, do that and say why.
+
+**1. Give the page one anchor field, and attach things to it.** The green shelf (`.shelf`) runs edge to edge under the topbar, and the league cards overlap its bottom edge (`.leagueRow` with a negative top margin). The difference from "white tiles on cream" is that the containers visibly belong to something. The bleed uses an outset `border-image`, which paints to the viewport edge without widening the page. [code]
+
+**2. Lift only the objects that sit on the anchor.** Cards on the shelf use a shadow and no border (`.card`: `--shadow-sm` plus `--shadow-lg`), because a hairline disappears against green, and they lift 2px on hover. That is still one elevation per object. [code]
+
+**3. Put real imagery on the page.** Player cut-outs on a ground mixed from their position colour (`.plinth`, `color-mix` on `--color-pos-*`), club crests enlarged and faded behind each card (`.watermark`), and club badges in every fixture row. A page of only type and figures reads flat, however well it is set. [code]
+
+**4. Give each section head an instrument, not just a title.** The shelf carries a crest stack and status pills. Top Rated carries a Matchweek / Season switch. The fixtures head is an MW number tile with a finished / live / to-come strip. About Gaffa carries a small baseline rule. The heading itself is still a Title Case noun. [code]
+
+**5. Vary the object from section to section.** The page runs cards, then a portrait row, then fixture rows, then a dark block, then door tiles. Stacking the same title-and-rows block five times is what made earlier prototypes look flat. [inferred]
+
+**6. Use scale contrast.** Scores and ratings sit at 29–40px serif next to 11–13px meta. [code]
+
+**7. Make the whole object the link.** The card bar's link stretches over the card (`.cardBar::after`), with secondary routes as quiet shortcuts above it (`.quick`). [code]
+
+**8. Compose mobile and desktop separately.** Mobile is one column, with a scroll-snapped portrait row and doors at the foot. Desktop puts cards in a grid beside a rail, portraits six across, and fixtures in two columns. The same data, laid out twice. Touch targets are 44px. [code]
+
+**When prototyping a page**
+
+- Build it with real data and real assets: badges from `public/team-logos`, portraits from the PL photo CDN, and live values from the database. Placeholder text and empty boxes hide whether a design works.
+- Name the anchor field, or say why the page doesn't need one.
+- Check every section head for an instrument.
+- Check that at least two kinds of object appear on the page.
+- Before handing it over, render it at 390px and 1440px, in both themes, and look for overlap, clipping and loose tiles.
 
 ---
 
@@ -112,7 +166,8 @@ These patterns are strictly forbidden across Gaffa: [decided] [inferred]
 | **Uncalibrated AI Neon Glows** | Oversaturated drop shadows (`box-shadow: 0 0 20px rgba(...)`). | Calibrated ambient resting shadows (`--shadow-card`) tinted to the background hue. |
 | **Heavy 1px Wireframe Borders** | Makes data tables feel caged in and cluttered. | `--color-border-subtle` at 1px plus explicit card fills (`--color-bg-card`). A subpixel `0.5px` hairline token was added and removed unused — treat it as a proposal, not a shipped rule. [inferred] |
 | **Screaming Uppercase Action Buttons** | Monotonous shouting labels (`SUBMIT PROPOSAL`) set by `text-transform`. | Title Case in the markup (`Save Lineup`, `Join League`) in condensed or sans typography. Sentence case was the rule here until 2026-09-09; Duke reversed it — see `docs/DECISIONS.md`. Labels uppercased in CSS (`.g-label`, column heads) are a separate device and stay. [decided] |
-| **Generic 3-Card Bento Formulas** | AI layout default that ignores real domain content. | Asymmetric editorial grids, dense data rows, and tactical pitch layouts. |
+| **Generic 3-Card Bento Formulas** | AI layout default that ignores real domain content. | Asymmetric grids, dense data rows, and tactical pitch layouts. |
+| **A page built from one repeated primitive** | Following §5's bans literally leaves "serif title → 2px rule → flat rows" as the only sanctioned block, and a page that stacks five of them is monotonous even though every rule passes. The bans are a fence, not a design. | Vary the object: a pitch, a score bug, a crest-led row, a portrait, a table, a chart. Rule compliance is the floor, not the goal. [inferred] |
 | **Blank Loading Pop-Ins** | Abrupt content flashing on route navigation. | Contextual skeleton shimmer blocks matching layout shape. `.g-skeleton` exists in `globals.css` but no surface uses it yet. [inferred] |
 
 ---
