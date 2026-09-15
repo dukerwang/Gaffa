@@ -19,13 +19,13 @@ what needs deciding before it goes out.
 ```
 slug:       ask-futbolpedia-club-facilities-heritage
 title:      Ask Futbolpedia, Club Facilities, and Heritage
-summary:    Ask Futbolpedia about your club from league chat, spend Club Balance on permanent squad upgrades, and relive your league's history in Heritage.
+summary:    Ask Futbolpedia about your club in league chat, spend Club Balance on permanent squad upgrades, and look back on your league in Heritage.
 is_major:   true
 highlights: [
-  "Ask Futbolpedia about your club, right in league chat",
-  "Club Facilities: buy extra Academy, IR and loan slots",
-  "Auction changes: a 60% bid floor and a Scout's Fee win or lose",
-  "Held players: what happens when a player arrives at a full squad"
+  "Ask Futbolpedia about your club in league chat",
+  "Club Facilities: buy extra Academy, IR, and loan slots",
+  "A 60% bid floor, and a Scout's Fee whether you win or lose",
+  "Held players: what happens when a player joins a full squad"
 ]
 ```
 
@@ -33,99 +33,99 @@ highlights: [
 
 ## Ask Futbolpedia
 
-Futbolpedia is the football scout behind the scouting report on every player
-page. It now sits in your league chat, pinned at the top under **Assistant**,
-and when you ask it something it's looking at your club.
+Futbolpedia, the scout who writes the report on every player page, is in your
+league chat. Open chat from the top bar and choose **Futbolpedia** under
+**Assistant**, or open chat from your club page to go straight to it.
 
-**What it knows.** Your squad, including your XI, bench, Academy, IR and loans.
-Your Club Balance, your place in the table, and this week's matchup. Your
-league's settings, and every listing and live auction in your league. When you
-name a player, it looks him up: his current club, role, minutes, fitness and
-transfer talk. It never treats fantasy points as proof of how good a player is.
+Ask about your club and you get answers based on your actual squad (XI, bench,
+Academy, IR, and loans), your Club Balance, your place in the table, this
+week's matchup, your league's settings, and every listing and live auction in
+your league. Name a player and you get his current club, role, minutes,
+fitness, and transfer news. Fantasy points never count as evidence of how good
+a player is.
 
-**What to ask it.**
+Try asking about:
 
 - **Your squad.** "Where's my squad weakest?" or "Who covers left-back if my
   starter's out?"
-- **Trades.** "Should I trade my striker for theirs and €20m?" A trade question
-  gets a verdict from **Hold** to **Take**, how confident it is, and a score out
-  of 5 for each of the four things behind it: how good the player coming back
-  is, whether your squad can cover the one leaving, whether you have a real use
-  for the cash, and how much the player leaving matters to your XI.
+- **Trades.** "Should I trade my striker for theirs and €20m?" You get a
+  verdict from **Hold** to **Take**, a confidence level, and a score out of 5 on
+  four factors: the quality of the player you'd get, whether your squad can
+  cover the one you'd lose, whether you have a use for the cash, and how much
+  your outgoing player matters to your XI.
 - **The market.** "Is anything on the board worth bidding on for my midfield?"
 - **The rules.** "Can a CB cover an LB slot?" or "When does my formation lock?"
 
-**What it doesn't do.** It advises, but it can't set your lineup, bid, or send an
-offer. It's connected to your club and nobody else's, and nobody else in the
-league sees what you ask. Conversations aren't saved yet, so each visit starts fresh.
-
-Open chat from the top bar and choose **Futbolpedia**. From your club page, chat
-opens straight on it.
-
 ## Club Facilities
 
-Club Balance can now buy capacity as well as players. Each upgrade adds a slot
-for your club, permanently:
+You can spend Club Balance on capacity as well as players. Every club starts
+with 3 Academy slots, 2 IR slots, and 1 player out on loan. Each upgrade is one
+more slot for your club, for good:
 
-| Facility | Standard | Upgrades |
-|---|---|---|
-| Academy | 3 slots | Slot 4 for €60m, then slot 5 for €90m |
-| Injured Reserve | 2 slots | Slot 3 for €60m |
-| Loans Out | 1 player | Slot 2 for €30m |
+| Upgrade | Price |
+|---|---|
+| Academy slot 4 | €60m |
+| Academy slot 5 | €90m |
+| Injured Reserve slot 3 | €60m |
+| Loans Out slot 2 | €30m |
 
-Buy them from **Club Facilities** at the top of your club page. Each is a
-one-time payment with no upkeep, and it stays with your club every season.
-Every manager can see how far your facilities are built. The money leaves the
-league rather than going to another club.
+Buy upgrades from **Club Facilities** at the top of your club page. You pay
+once, there's no upkeep, and you keep the slot every season. Every manager can
+see your facilities. The money doesn't go to another club; it leaves the league.
 
-When your Academy or IR is full, you'll see an **Expand** link beside it on your
+When your Academy or IR is full, look for the **Expand** link beside it on your
 lineup page.
 
 ## Auction Changes
 
-**The free-agent bid floor is now 60% of market value**, up from 50%. It rounds
-down, so a €2m player still opens at €1m.
+**Free-agent bids start at 60% of market value**, up from 50%. Floors round
+down, so you can still open a €2m player at €1m.
 
-**The Scout's Fee now pays whether you win or lose.** Nominate a player and you
-get 10% of the winning bid either way. If you win, it comes back to you as a
-rebate on your own bid. Before, it only paid when you lost, which gave the scout
-a reason to stop bidding short of what the player was worth to them.
+**You get the Scout's Fee whether you win or lose.** Nominate a player and you
+earn 10% of the winning bid either way. If you win, you get it back as a rebate
+on your own bid. Before, the fee paid out only when you lost, so a scout had a
+reason to stop bidding short of what the player was worth to them.
 
-**Only auctions a manager opens pay a Scout's Fee.** When Gaffa opens an auction
-itself (a new arrival, a re-auction after a drop, a player returning to the
-Premier League), being first to bid is luck rather than scouting, so the whole
-20% goes to the other clubs as solidarity.
+**You earn a Scout's Fee only on an auction you open.** Auctions that open
+automatically, for a new arrival, a re-auction after a drop, or a player
+returning to the Premier League, pay no Scout's Fee, because being first to bid
+there is luck rather than scouting. The other clubs share the full 20% as
+solidarity instead.
 
 ## Held Players
 
-A player can arrive when your squad is already full: a loan ends, a player you
-retained comes back to the Premier League, or you win an auction nobody with
-room bid on. He's no longer dropped for you, and he doesn't push you over the
-limit. He's **held**: still yours, off the squad, and not counted.
+Sometimes a player joins your club when your squad is already full: a loan
+ends, a player you retained returns to the Premier League, or you win an
+auction that nobody with room bid on. You don't lose anyone to make space, and
+you don't go over the limit. He's **held**: still yours, but off the squad and
+not counted.
 
-- **Activate him yourself** once you've made room, into your reserves, or your
-  academy or IR if he qualifies. You can't activate mid-gameweek.
-- **While a player is held, your squad can't grow.** No bids, no loans in, no
-  recalls, no promotions from the academy or IR, and no trades that bring in
-  more players than they send out. Your live bids are withdrawn when he's held.
-- **Don't leave him there.** If he's still held when the next gameweek kicks
-  off, your lineup locks. Your last saved lineup is used, and only a slot whose
-  player is no longer available gets filled.
-- **Auctions now go to the highest bidder with room.** If the top bidder has no
-  room by the time the auction ends, the next bidder who does wins at their own
-  bid. Only if nobody who bid has room does the top bidder win, and his new
-  signing is held.
+- **Activate him yourself** once you've made room, into your reserves, or into
+  your Academy or IR if he qualifies. You can't activate a player
+  mid-gameweek.
+- **While you're holding a player, your squad can't grow.** You can't bid,
+  borrow, recall a loan, promote from the Academy or IR, or accept a trade that
+  brings in more players than it sends out. Any bids you have live are
+  withdrawn when he's held.
+- **Resolve him before the next gameweek.** If he's still held at the next
+  gameweek's first kickoff, you can't change your lineup until you resolve him.
+  You keep your last saved lineup, with only unavailable players replaced.
+- **Auctions go to the highest bidder with room.** If the top bidder has no
+  room when the auction ends, the next bidder with room wins at their own bid.
+  Only if nobody who bid has room does the top bidder win, and that player is
+  held.
 
 ## Players Who Leave on Loan
 
-A player who leaves the Premier League on loan no longer gets a Release or
-Retain decision. He goes on your Retained List as **On Loan Abroad**, uses no
-squad place and no retained slot, and rejoins your squad when he's back. You can
-still trade him, or drop him for nothing.
+When one of your players leaves the Premier League on loan, you don't make a
+Release or Retain decision. You'll find him on your Retained List as **On Loan
+Abroad**. He uses no squad place and no retained slot, and he rejoins your squad
+when he's back. You can still trade him, or drop him for nothing.
 
 ## Heritage
 
-**History** is now **Heritage**, and it holds everything your league has done:
+**History** is now **Heritage**, with everything your league has done in one
+place:
 
 - **Seasons**, with every champion's **Title-Winning XI**.
 - **Head-to-Head**, with a page for every pairing. Cup ties count too.
@@ -133,111 +133,109 @@ still trade him, or drop him for nothing.
   runs with and without a win.
 - **Trophy Cabinets** for every club, side by side.
 
-It's early in the first season, so most of it fills in as the weeks go.
+It's early in the first season, so you'll see more here as the weeks go by.
 
 ## Projected Points
 
-Before kickoff, every player on your lineup now shows his projected points for
-the gameweek. An outlined figure is a projection, and it fills in when he's
-scored. Projections are built from his starts, minutes, fitness, and the
+Before kickoff, you'll see each player's projected points for the gameweek on
+your lineup. An outlined figure is a projection, and a filled one is points
+he's scored. Projections come from his starts, minutes, fitness, and the
 fixture.
 
-A player's game log shows his next opponent, the kickoff in your own time zone,
-and his projection.
+In a player's game log, you'll find his next opponent, the kickoff in your time
+zone, and his projection.
 
-Your club page opens on **Pitch**, your best XI by projection, with a **Depth
-Chart** beside it. Turn off **Include Academy & IR** to see only the players you
-can field this week.
+On your club page, **Pitch** is your best XI by projection, with **Depth
+Chart** beside it. Turn off **Include Academy & IR** to see only the players
+you can field this week.
 
 ## A New Home Screen
 
-Gaffa opens on a new home screen. Your leagues sit at the top as cards: tap one
-for League Home, or jump straight to your squad or matchup. Below them are the
-**Top Rated** players for the matchweek or the season, and the Premier League
-matchweek as it plays out.
+You'll start on a new home screen. Your leagues are at the top as cards: tap
+one for League Home, or go straight to your squad or matchup. Below them are
+the **Top Rated** players for the matchweek or the season, and the Premier
+League matchweek as it plays out.
 
 ## Team of the Week
 
 **Top Performers** on League Home is now **Team of the Week**: the best XI from
-the last gameweek, in formation, with a bench, a total, and who owns each
-player.
+the last gameweek, in formation, with a bench, a total, and each player's owner.
 
 ## Also New
 
-- **New Transfers** on the market and the Free Agents tab shows players who
-  joined the Premier League in the last 7 days and have no auction yet.
-- IR moves open once the gameweek's last match kicks off, instead of the next
-  morning. Players in this week's lineup, starting or on the bench, still wait
-  until the week settles.
-- A lot that isn't open yet reads **Opens 12:00** on the board, with bidding
-  disabled until then.
-- Players: filter by Gaffa club, and Cards now has every filter Table has. Your
-  filters carry between the two.
-- On mobile, your squad and reserves open as a sheet from the bottom of the
-  lineup page, and tapping a player on your club page opens his details as a
+- Under **New Transfers** on the market and the Free Agents tab, find players
+  who joined the Premier League in the last 7 days and have no auction yet.
+- You can make IR moves once the gameweek's last match kicks off, instead of the
+  next morning. Players in this week's lineup, starting or on the bench, stay
+  locked until the week settles.
+- On the board, a lot that isn't open yet is marked **Opens 12:00**, and you
+  can't bid on it until then.
+- On Players, filter by Gaffa club, and use every Table filter in Cards too.
+  Your filters stay set when you switch views.
+- On mobile, open your squad and reserves from a sheet at the bottom of the
+  lineup page, and tap a player on your club page to see his details in a
   sheet.
-- The **Devastating** attacking verdict is kept for hat-tricks and games like a
-  goal and three assists. A brace rates **Ruthless** or **Rampant**.
-- Fixtures in progress on League Home read **Live**, not **Draw**.
+- A player earns the **Devastating** attacking verdict for a hat-trick or a
+  game like a goal and three assists. A brace earns **Ruthless** or
+  **Rampant**.
+- Fixtures in progress on League Home are marked **Live**, not **Draw**.
 
 ## Notifications
 
 - Two hours before an auction closes, everyone who's bid on it gets a final
-  call. For a player worth €50m or more, the whole league does, and the whole
-  league hears who signed him.
-- Trade offers name the players and cash involved.
-- Push titles and emails name the league, and the bell on the home screen
-  labels each notice with its league.
-- New arrivals are announced by name and club, with how long you have to bid.
-- After you bid, Gaffa offers to turn on push alerts so you hear when you're
-  outbid.
-- If your phone stopped getting alerts because its subscription expired, it
-  reconnects without asking.
+  call. For a player worth €50m or more, the whole league gets the call, and
+  the whole league hears who signed him.
+- Trade offer alerts include the players and cash involved.
+- Push titles and email subjects include the league name, and on the home
+  screen, each notification is marked with its league.
+- New arrivals are announced by name and club, with the time you have left to
+  bid.
+- After you bid, you can turn on push alerts to hear when you're outbid.
+- If your phone stopped receiving alerts because its subscription expired,
+  you'll receive them again without doing anything.
 
 ## Fixed
 
-- On phones, an auction result replaced the live-auction alert, so some
-  managers never saw who won.
-- An auction announcement said bidding was open hours before it opened.
-- Kickoff times showed in UTC rather than your own time zone.
-- The Players table's gameweek filter offered only gameweeks 1 to 3.
-- Mobile: the matchup scoreline ran off the edge of its panel, club names on
-  fixture rows shrank to a single letter, squad pitch rows overlapped, and
-  table columns overlapped on the Players page.
-- The mobile menu listed pages in a different order from the desktop bar.
-- Closed a gap on the old trades page that let a bid skip the IR and academy
-  checks.
+- On phones, some managers never saw who won an auction.
+- An auction was announced as open hours before you could bid on it.
+- Kickoff times appeared in UTC instead of your time zone.
+- You could filter the Players table only to gameweeks 1 to 3.
+- On mobile: matchup scorelines running off their panel, club names on fixture
+  rows cut to a single letter, overlapping squad pitch rows, and overlapping
+  columns on the Players table.
+- Pages in the mobile menu were in a different order from the desktop bar.
+- Bids placed from the old trades page skipped the IR and Academy checks.
 
 ---
 
 # Part 2: Why This Order
 
-The order runs from what changes how you play to what you'll notice anyway.
+The order runs from what changes how managers play to what they'll notice
+anyway.
 
-1. **Ask Futbolpedia** leads because it's the flagship and it's new
-   behaviour nobody will find on their own. It's a chat channel, not a
-   page, so without the post most managers never open it. It gets the longest
-   section because an assistant is only useful once you know what it can see
-   and what to ask: its knowledge, four kinds of question with examples, and
-   its limits.
+1. **Ask Futbolpedia** leads because it's the flagship and nobody finds it on
+   their own. It's a chat channel, not a page, so without the post most
+   managers never open it. It gets the longest section because an assistant is
+   only useful once you know what it can see and what to ask.
 2. **Club Facilities** and **Auction Changes** come next because they change
-   money. A manager who misses them bids at the wrong floor tomorrow, or
-   doesn't know that €60m can buy an IR slot. Money decisions stay prominent.
-3. **Held Players** sits right after the auction section because "the highest
-   bidder with room wins" changes who wins auctions, and a held player can lock
-   a lineup. It's a rule to learn before it bites, not a feature to enjoy.
-   **Loans abroad** follows as the same kind of squad rule, but rarer.
-4. **Heritage** is the biggest new surface, but it costs nobody points if they
-   miss it, and both alpha leagues are four gameweeks old, so it's thin today.
-5. **Projected Points** is high value, but managers will see it the next time
-   they set a lineup. Only the outline-versus-filled convention needs a sentence.
-6. **Home screen** and **Team of the Week** are visible on first load and
-   explain themselves, so they get the shortest sections.
-7. **Also New**, **Notifications** and **Fixed** are quiet lists, in that order.
+   money. A manager who misses them bids at the wrong floor tomorrow, or never
+   learns that €60m buys an IR slot. Money decisions stay prominent.
+3. **Held Players** follows the auction section because "the highest bidder
+   with room wins" changes who wins auctions, and a held player can freeze a
+   lineup. It's a rule to learn before it matters. **Loans abroad** comes next
+   as the same kind of squad rule, but rarer.
+4. **Heritage** is the biggest new surface, but missing it costs nobody points,
+   and both alpha leagues are four gameweeks old, so there isn't much in it yet.
+5. **Projected Points** is valuable, but managers see it the next time they set
+   a lineup. Only the outlined-versus-filled convention needs a sentence.
+6. **Home screen** and **Team of the Week** are visible on first load and need
+   little explanation, so they get the shortest sections.
+7. **Also New**, **Notifications**, and **Fixed** are short lists, in that
+   order.
 
-The four highlights follow the first four sections. Heritage is left out of the
-highlights but kept in the title, because the title can carry a name while a
-highlight has to earn its line.
+The four highlights follow the first four sections. Heritage is in the title
+but not the highlights: a title can carry a name, while a highlight has to earn
+its line.
 
 ---
 
@@ -280,7 +278,7 @@ highlight has to earn its line.
 |---|---|
 | Page performance (`ea2a664f`, `43372596`) | No measurement to back a "faster" claim. |
 | Shared UI component kit, modal moves (`7e33c3a5`) | Committed from an unreviewed working tree; no visible change worth naming. |
-| Lineup carry-forward rewrite (`4fa71652`) | Consolidates existing behaviour. |
+| Lineup carry-forward rewrite (`4fa71652`) | Consolidates existing behavior. |
 | Reference-stats script and GK save cap (`99217b9a`, `56683a5b`) | No stored rating changed. |
 | Economy test harness, scripts, agent docs, UI rules tooling | Internal. |
 | `/ui-showcase` page | Internal tooling. |
@@ -290,21 +288,56 @@ highlight has to earn its line.
 
 ---
 
-# Part 4: Before Publishing
+# Part 4: Publishing
 
-1. **Futbolpedia's rules brief predates this update.** Its snapshot in
-   `~/Futbolpedia/constants/gaffaRules.ts` is version `2026-09-06`. It still
-   says the free-agent floor is 50% and IR is capped at 2, and it has no held
-   players, Club Facilities, or Scout's Fee on a win. League settings reach it
-   live, so it gets your league's 60% floor right when connected. A rules
-   question about anything else in this update gets the old answer. Refresh the
-   snapshot from `docs/USER_GUIDE.md` and bump the version before publishing.
-   The post's example rules questions avoid those topics until then.
-2. **PR #13 also removes the trophy row from the club page header.** The
-   original commit did this on purpose, and Heritage's Trophy Cabinets replaces
-   it.
-3. **You haven't seen the held-player screens.** The section above describes
-   rules from the user guide, not screens, so it holds either way. No league
-   has a held player right now.
-4. **No screenshots yet.** The last two posts carried images. Club Facilities,
-   Heritage and the home screen are the obvious three.
+## The Pop-Up
+
+The announcement uses the pop-up that shipped with the last update
+(`UpdateAnnouncementModal`). Publishing sends every account one
+`kind: 'product'` notification. The next time a manager loads Gaffa, the
+pop-up opens once with the title, the summary, the four highlights, and a
+**See what's new** button to the full entry at
+`/updates#ask-futbolpedia-club-facilities-heritage`. Dismissing the pop-up
+also clears the bell, and the reverse.
+
+Preview both screens, in both themes, in
+`scratch/gaffa-update-preview-2026-09-16.html`. Rebuild it after any copy
+change:
+
+```bash
+node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.json scratch/build_update_preview_2026_09_16.tsx
+```
+
+## Publish
+
+Check the post exactly as it will be stored:
+
+```bash
+node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.json scratch/publish_update_2026_09_16.ts --dry-run
+```
+
+Then publish and send the pop-up:
+
+```bash
+node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.json scratch/publish_update_2026_09_16.ts
+```
+
+The script reads the body from this file and stops if the slug, title,
+summary, or highlights here differ from its own copy. Running it twice is
+safe: the entry updates in place, and nobody gets a second pop-up.
+
+## Before You Publish
+
+1. **Redeploy Futbolpedia.** Its rules snapshot is now version `2026-09-15`
+   (dukerwang/Futbolpedia#4, merged to `main`), covering held players, Club
+   Facilities, the 60% floor, the Scout's Fee on a win, loans abroad, and IR
+   after the last kickoff. `futbolpedia.ai.studio` serves the old snapshot
+   until you redeploy it.
+2. **You haven't seen the held-player screens.** The Held Players section
+   describes rules from the user guide, not screens, so it's accurate either
+   way. No league has a held player right now.
+3. **No screenshots yet.** The last two posts carried images. Club Facilities,
+   Heritage, and the home screen are the obvious three.
+
+PR #13 removed the trophy row from the club page header, as its original commit
+intended. Trophy Cabinets in Heritage replaces it.

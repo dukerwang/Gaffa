@@ -1,0 +1,710 @@
+<title>Mid-September Update Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+
+<style>
+/* ============================================================
+   Page chrome. Deliberately quiet — the Gaffa surfaces below are
+   the subject, so the frame around them stays out of the way.
+   ============================================================ */
+:root {
+  --page-bg:      #EFEDE9;
+  --page-surface: #E4E1DC;
+  --page-ink:     #23211D;
+  --page-ink-dim: #5D584F;
+  --page-rule:    #CFCAC2;
+  --page-accent:  #0C6D3E;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page-bg:      #15181E;
+    --page-surface: #1E222A;
+    --page-ink:     #E6E3DD;
+    --page-ink-dim: #9B968D;
+    --page-rule:    #2E333C;
+    --page-accent:  #43C07A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page-bg:      #15181E;
+  --page-surface: #1E222A;
+  --page-ink:     #E6E3DD;
+  --page-ink-dim: #9B968D;
+  --page-rule:    #2E333C;
+  --page-accent:  #43C07A;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background: var(--page-bg);
+  color: var(--page-ink);
+  font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 20px 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.pageHead { display: flex; flex-direction: column; gap: 10px; }
+.eyebrow {
+  font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+  font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--page-ink-dim);
+}
+.pageHead h1 {
+  margin: 0;
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  color: var(--page-ink);
+}
+.pageHead p {
+  margin: 0; max-width: 62ch; font-size: 15px; line-height: 1.6; color: var(--page-ink-dim);
+}
+
+/* --- controls --- */
+.controls {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  padding-bottom: 20px; border-bottom: 1px solid var(--page-rule);
+}
+.seg {
+  display: inline-flex; padding: 3px; gap: 3px;
+  background: var(--page-surface); border: 1px solid var(--page-rule); border-radius: 8px;
+}
+.seg button {
+  appearance: none; border: 0; cursor: pointer;
+  background: transparent; color: var(--page-ink-dim);
+  font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+  font-size: 13px; font-weight: 600; letter-spacing: .04em;
+  padding: 7px 15px; border-radius: 6px;
+  transition: background .14s ease, color .14s ease;
+}
+.seg button:hover { color: var(--page-ink); }
+.seg button[aria-pressed="true"] { background: var(--page-accent); color: #fff; }
+.seg button:focus-visible { outline: 2px solid var(--page-accent); outline-offset: 2px; }
+.ctlLabel {
+  font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+  font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--page-ink-dim); margin-right: 2px;
+}
+.spacer { flex: 1 1 auto; }
+
+/* --- phone frame --- */
+.stage { display: flex; justify-content: center; }
+.phone {
+  width: 390px; max-width: 100%;
+  height: 780px; max-height: 82vh;
+  border-radius: 34px;
+  border: 1px solid var(--page-rule);
+  box-shadow: 0 22px 60px -28px rgba(0,0,0,.45), 0 2px 8px -3px rgba(0,0,0,.18);
+  overflow: hidden;
+  position: relative;
+  background: #000;
+  padding: 5px;
+}
+.screen {
+  width: 100%; height: 100%;
+  border-radius: 29px;
+  overflow: hidden;
+  position: relative;
+  background: var(--g-bg);
+}
+
+/* ============================================================
+   Gaffa surfaces. Tokens copied verbatim from src/app/globals.css
+   so this previews the shipped system rather than an approximation.
+   ============================================================ */
+.gaffa {
+  --g-bg:        #F8F4EC;
+  --g-bg-2:      #EBE8E2;
+  --g-card:      #FCFAF7;
+  --g-card-alt:  #F9F6F1;
+  --g-inset:     #E2DFDA;
+  --g-border:    #C2BDB5;
+  --g-border-sub:#D9D5CF;
+  --g-text:      #1B1915;
+  --g-text-2:    #49443B;
+  --g-muted:     #635D51;
+  --g-accent:    #0C6D3E;
+  --g-accent-dim:rgba(12,109,62,.10);
+  --g-topbar:    #185B37;
+  --g-gold:      #805D00;
+  --g-gold-dim:  rgba(128,93,0,.12);
+  --g-scrim:     rgba(27,25,21,.52);
+}
+.gaffa[data-g="dark"] {
+  --g-bg:        #1B1F29;
+  --g-bg-2:      #242934;
+  --g-card:      #272D39;
+  --g-card-alt:  #202530;
+  --g-inset:     #202530;
+  --g-border:    #3F4552;
+  --g-border-sub:#2D333E;
+  --g-text:      #EBE7E1;
+  --g-text-2:    #B5B0A7;
+  --g-muted:     #989389;
+  --g-accent:    #28A564;
+  --g-accent-dim:rgba(40,165,100,.14);
+  --g-topbar:    #185B37;
+  --g-gold:      #B38E3B;
+  --g-gold-dim:  rgba(179,142,59,.16);
+  --g-scrim:     rgba(9,11,15,.66);
+}
+
+.screen { background: var(--g-bg); color: var(--g-text); }
+
+/* Top bar — the green strip that is constant across both themes */
+.topbar {
+  height: 52px; flex: 0 0 52px;
+  background: var(--g-topbar);
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 14px;
+  color: #F2EFE8;
+}
+.topbar .mark {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 19px; font-weight: 600; letter-spacing: -.01em;
+}
+.topbar .bell {
+  margin-left: auto; position: relative;
+  width: 26px; height: 26px; display: grid; place-items: center;
+}
+.topbar .bell svg { width: 17px; height: 17px; }
+.dot {
+  position: absolute; top: 1px; right: 1px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #F0A726; border: 1.5px solid var(--g-topbar);
+}
+.pill {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px; font-weight: 500;
+  padding: 4px 9px; border-radius: 999px;
+  background: rgba(255,255,255,.13);
+}
+
+.view { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.view[hidden] { display: none !important; }
+
+.body {
+  flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---------- the pop-up ---------- */
+.scrim {
+  position: absolute; inset: 0; z-index: 5;
+  background: var(--g-scrim);
+  display: flex; align-items: flex-end;
+  padding: 14px;
+  animation: fade .28s ease both;
+}
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes rise { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
+
+.modal {
+  width: 100%;
+  background: var(--g-card);
+  border: 1px solid var(--g-border);
+  border-radius: 14px;
+  overflow: hidden;
+  animation: rise .34s cubic-bezier(.22,.9,.3,1) both;
+  box-shadow: 0 18px 44px -20px rgba(0,0,0,.5);
+}
+@media (prefers-reduced-motion: reduce) {
+  .scrim, .modal { animation: none; }
+}
+.modalTop {
+  padding: 16px 18px 0;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.tag {
+  align-self: flex-start;
+  font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--g-gold);
+  background: var(--g-gold-dim);
+  padding: 4px 8px; border-radius: 4px;
+}
+.modal h2 {
+  margin: 0;
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 25px; line-height: 1.14; font-weight: 600; letter-spacing: -.015em;
+  text-wrap: balance; color: var(--g-text);
+}
+.modal .lede {
+  margin: 0; font-size: 14px; line-height: 1.55; color: var(--g-text-2);
+}
+.highlights {
+  list-style: none; margin: 14px 0 0; padding: 0;
+  display: flex; flex-direction: column;
+}
+.highlights li {
+  display: flex; gap: 11px; align-items: baseline;
+  padding: 9px 18px;
+  border-top: 1px solid var(--g-border-sub);
+  font-size: 13.5px; line-height: 1.45; color: var(--g-text-2);
+}
+.highlights li:first-child { border-top-color: var(--g-border); }
+.highlights b { color: var(--g-text); font-weight: 600; }
+.hIdx {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px; color: var(--g-accent); flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+.modalActions {
+  display: flex; gap: 9px; padding: 14px 18px 16px;
+  border-top: 1px solid var(--g-border-sub);
+  background: var(--g-card-alt);
+}
+.btn {
+  appearance: none; cursor: pointer; border-radius: 8px;
+  font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+  font-size: 14px; font-weight: 600; letter-spacing: .03em;
+  padding: 11px 16px; min-height: 44px;
+  transition: background .14s ease, border-color .14s ease;
+}
+.btnPrimary { flex: 1 1 auto; background: var(--g-accent); color: #fff; border: 1px solid var(--g-accent); }
+.btnPrimary:hover { filter: brightness(1.07); }
+.btnGhost { background: transparent; color: var(--g-text-2); border: 1px solid var(--g-border); }
+.btnGhost:hover { background: var(--g-inset); }
+.btn:focus-visible { outline: 2px solid var(--g-accent); outline-offset: 2px; }
+
+/* ---------- the changelog ---------- */
+.logHead {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--g-border-sub);
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--g-card-alt);
+}
+.dateline {
+  font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+  font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--g-muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.logHead h1 {
+  margin: 0;
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 27px; line-height: 1.12; font-weight: 600; letter-spacing: -.018em;
+  text-wrap: balance; color: var(--g-text);
+}
+.logHead p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--g-text-2); }
+
+.log { padding: 4px 18px 40px; }
+.log section { padding: 20px 0; border-bottom: 1px solid var(--g-border-sub); }
+.log section:last-child { border-bottom: 0; }
+.log h2 {
+  margin: 0 0 9px;
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 20px; line-height: 1.2; font-weight: 600; letter-spacing: -.012em;
+  color: var(--g-text); text-wrap: balance;
+}
+.log h3 {
+  margin: 18px 0 8px;
+  font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--g-muted);
+}
+.log p { margin: 0 0 11px; font-size: 14.5px; line-height: 1.62; color: var(--g-text-2); }
+.log p:last-child { margin-bottom: 0; }
+.log strong { color: var(--g-text); font-weight: 600; }
+.log em { font-style: italic; }
+
+.log ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.log ul li {
+  font-size: 14px; line-height: 1.55; color: var(--g-text-2);
+  padding-left: 15px; position: relative;
+}
+.log ul li::before {
+  content: ""; position: absolute; left: 0; top: .62em;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--g-accent); opacity: .55;
+}
+
+.tableWrap { overflow-x: auto; margin: 4px 0 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+caption {
+  caption-side: top; text-align: left;
+  font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--g-muted); padding-bottom: 7px;
+}
+th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid var(--g-border-sub); }
+th {
+  font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--g-muted); border-bottom-color: var(--g-border);
+}
+td { color: var(--g-text-2); }
+td:last-child, th:last-child {
+  text-align: right;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums; color: var(--g-text); white-space: nowrap;
+}
+tr:last-child td { border-bottom: 0; }
+
+.note {
+  margin-top: 12px; padding: 12px 14px;
+  background: var(--g-accent-dim);
+  border-left: 2px solid var(--g-accent);
+  border-radius: 0 7px 7px 0;
+  font-size: 13.5px; line-height: 1.55; color: var(--g-text-2);
+}
+.note strong { color: var(--g-text); }
+
+.fixList { display: flex; flex-direction: column; }
+.fixList div {
+  padding: 10px 0; border-top: 1px solid var(--g-border-sub);
+  font-size: 13.5px; line-height: 1.5; color: var(--g-text-2);
+}
+.fixList div:first-child { border-top: 0; padding-top: 4px; }
+
+.endMark {
+  margin: 26px auto 0; width: 22px; height: 2px;
+  background: var(--g-accent); opacity: .45; border-radius: 2px;
+}
+
+/* --- notes column beside the phone on wide screens --- */
+.layout { display: grid; grid-template-columns: 1fr; gap: 28px; align-items: start; }
+@media (min-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr) 400px; }
+  .stage { justify-content: flex-start; position: sticky; top: 24px; }
+}
+.aside { display: flex; flex-direction: column; gap: 18px; }
+.card {
+  background: var(--page-surface);
+  border: 1px solid var(--page-rule);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.card h3 {
+  margin: 0 0 9px;
+  font-family: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--page-ink-dim);
+}
+.card p { margin: 0 0 9px; font-size: 13.5px; line-height: 1.6; color: var(--page-ink-dim); }
+.card p:last-child { margin-bottom: 0; }
+.card strong { color: var(--page-ink); font-weight: 600; }
+.card code {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px; background: var(--page-bg); padding: 1px 5px; border-radius: 4px;
+  border: 1px solid var(--page-rule); color: var(--page-ink);
+}
+.meta { display: flex; flex-direction: column; gap: 7px; }
+.metaRow {
+  display: flex; justify-content: space-between; gap: 12px; align-items: baseline;
+  font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--page-rule);
+}
+.metaRow:last-child { border-bottom: 0; }
+.metaRow span:first-child { color: var(--page-ink-dim); }
+.metaRow span:last-child {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  color: var(--page-ink); font-variant-numeric: tabular-nums; text-align: right;
+}
+</style>
+
+<div class="wrap">
+  <header class="pageHead">
+    <span class="eyebrow">Gaffa · Preview</span>
+    <h1>Mid-September Update</h1>
+    <p>How the announcement pop-up and the full changelog will look on a phone, built from the tokens in <code style="font-family:'JetBrains Mono',monospace;font-size:.9em">globals.css</code> rather than an approximation. Both Gaffa themes are here — check the one you ship in.</p>
+  </header>
+
+  <div class="controls">
+    <span class="ctlLabel">Screen</span>
+    <div class="seg" role="group" aria-label="Which screen to preview">
+      <button type="button" data-view="modal" aria-pressed="true">Pop-up</button>
+      <button type="button" data-view="log" aria-pressed="false">Changelog</button>
+    </div>
+    <span class="spacer"></span>
+    <span class="ctlLabel">Theme</span>
+    <div class="seg" role="group" aria-label="Gaffa theme">
+      <button type="button" data-theme-btn="light" aria-pressed="true">Cream</button>
+      <button type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="stage">
+      <div class="phone">
+        <div class="screen gaffa" id="screen" data-g="light">
+
+          <!-- ============ POP-UP ============ -->
+          <div class="view" id="view-modal">
+            <div class="topbar">
+              <span class="mark">Gaffa</span>
+              <span class="pill">€277m</span>
+              <span class="bell" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+                <span class="dot"></span>
+              </span>
+            </div>
+            <div class="body" aria-hidden="true">
+              <div class="logHead">
+                <span class="dateline">Matchday Militia</span>
+                <h1>League Home</h1>
+              </div>
+            </div>
+            <div class="scrim">
+              <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+                <div class="modalTop">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--g-accent);color:#fff;flex-shrink:0"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg></span></span>
+                    <h2 id="modalTitle" style="margin:0">Ask Futbolpedia, Club Facilities, and Heritage</h2>
+                  </div>
+                  <p class="lede">Ask Futbolpedia about your club in league chat, spend Club Balance on permanent squad upgrades, and look back on your league in Heritage.</p>
+                </div>
+                <ul class="highlights">
+                  <li><span class="hIdx">01</span><span>Ask Futbolpedia about your club in league chat</span></li>
+                  <li><span class="hIdx">02</span><span>Club Facilities: buy extra Academy, IR, and loan slots</span></li>
+                  <li><span class="hIdx">03</span><span>A 60% bid floor, and a Scout's Fee whether you win or lose</span></li>
+                  <li><span class="hIdx">04</span><span>Held players: what happens when a player joins a full squad</span></li>
+                </ul>
+                <div class="modalActions">
+                  <button class="btn btnPrimary" type="button" data-view="log">See what's new</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ CHANGELOG ============ -->
+          <div class="view" id="view-log" hidden>
+            <div class="topbar">
+              <span class="mark">Gaffa</span>
+              <span class="pill">€277m</span>
+              <span class="bell" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+              </span>
+            </div>
+            <div class="body">
+              <div class="logHead">
+                <span class="dateline">What's New · 16 September 2026</span>
+                <h1>Ask Futbolpedia, Club Facilities, and Heritage</h1>
+                <p>Ask Futbolpedia about your club in league chat, spend Club Balance on permanent squad upgrades, and look back on your league in Heritage.</p>
+              </div>
+
+              <div class="log">
+<section><h2>Ask Futbolpedia</h2>
+<p>Futbolpedia, the scout who writes the report on every player page, is in your
+league chat. Open chat from the top bar and choose <strong>Futbolpedia</strong> under
+<strong>Assistant</strong>, or open chat from your club page to go straight to it.</p>
+<p>Ask about your club and you get answers based on your actual squad (XI, bench,
+Academy, IR, and loans), your Club Balance, your place in the table, this
+week&#x27;s matchup, your league&#x27;s settings, and every listing and live auction in
+your league. Name a player and you get his current club, role, minutes,
+fitness, and transfer news. Fantasy points never count as evidence of how good
+a player is.</p>
+<p>Try asking about:</p>
+<ul>
+<li><strong>Your squad.</strong> &quot;Where&#x27;s my squad weakest?&quot; or &quot;Who covers left-back if my
+starter&#x27;s out?&quot;</li>
+<li><strong>Trades.</strong> &quot;Should I trade my striker for theirs and €20m?&quot; You get a
+verdict from <strong>Hold</strong> to <strong>Take</strong>, a confidence level, and a score out of 5 on
+four factors: the quality of the player you&#x27;d get, whether your squad can
+cover the one you&#x27;d lose, whether you have a use for the cash, and how much
+your outgoing player matters to your XI.</li>
+<li><strong>The market.</strong> &quot;Is anything on the board worth bidding on for my midfield?&quot;</li>
+<li><strong>The rules.</strong> &quot;Can a CB cover an LB slot?&quot; or &quot;When does my formation lock?&quot;</li>
+</ul>
+</section>
+<section><h2>Club Facilities</h2>
+<p>You can spend Club Balance on capacity as well as players. Every club starts
+with 3 Academy slots, 2 IR slots, and 1 player out on loan. Each upgrade is one
+more slot for your club, for good:</p>
+<div class="tableWrap"><table><thead><tr><th>Upgrade</th><th>Price</th></tr></thead><tbody><tr><td>Academy slot 4</td><td>€60m</td></tr><tr><td>Academy slot 5</td><td>€90m</td></tr><tr><td>Injured Reserve slot 3</td><td>€60m</td></tr><tr><td>Loans Out slot 2</td><td>€30m</td></tr></tbody></table></div>
+<p>Buy upgrades from <strong>Club Facilities</strong> at the top of your club page. You pay
+once, there&#x27;s no upkeep, and you keep the slot every season. Every manager can
+see your facilities. The money doesn&#x27;t go to another club; it leaves the league.</p>
+<p>When your Academy or IR is full, look for the <strong>Expand</strong> link beside it on your
+lineup page.</p>
+</section>
+<section><h2>Auction Changes</h2>
+<p><strong>Free-agent bids start at 60% of market value</strong>, up from 50%. Floors round
+down, so you can still open a €2m player at €1m.</p>
+<p><strong>You get the Scout&#x27;s Fee whether you win or lose.</strong> Nominate a player and you
+earn 10% of the winning bid either way. If you win, you get it back as a rebate
+on your own bid. Before, the fee paid out only when you lost, so a scout had a
+reason to stop bidding short of what the player was worth to them.</p>
+<p><strong>You earn a Scout&#x27;s Fee only on an auction you open.</strong> Auctions that open
+automatically, for a new arrival, a re-auction after a drop, or a player
+returning to the Premier League, pay no Scout&#x27;s Fee, because being first to bid
+there is luck rather than scouting. The other clubs share the full 20% as
+solidarity instead.</p>
+</section>
+<section><h2>Held Players</h2>
+<p>Sometimes a player joins your club when your squad is already full: a loan
+ends, a player you retained returns to the Premier League, or you win an
+auction that nobody with room bid on. You don&#x27;t lose anyone to make space, and
+you don&#x27;t go over the limit. He&#x27;s <strong>held</strong>: still yours, but off the squad and
+not counted.</p>
+<ul>
+<li><strong>Activate him yourself</strong> once you&#x27;ve made room, into your reserves, or into
+your Academy or IR if he qualifies. You can&#x27;t activate a player
+mid-gameweek.</li>
+<li><strong>While you&#x27;re holding a player, your squad can&#x27;t grow.</strong> You can&#x27;t bid,
+borrow, recall a loan, promote from the Academy or IR, or accept a trade that
+brings in more players than it sends out. Any bids you have live are
+withdrawn when he&#x27;s held.</li>
+<li><strong>Resolve him before the next gameweek.</strong> If he&#x27;s still held at the next
+gameweek&#x27;s first kickoff, you can&#x27;t change your lineup until you resolve him.
+You keep your last saved lineup, with only unavailable players replaced.</li>
+<li><strong>Auctions go to the highest bidder with room.</strong> If the top bidder has no
+room when the auction ends, the next bidder with room wins at their own bid.
+Only if nobody who bid has room does the top bidder win, and that player is
+held.</li>
+</ul>
+</section>
+<section><h2>Players Who Leave on Loan</h2>
+<p>When one of your players leaves the Premier League on loan, you don&#x27;t make a
+Release or Retain decision. You&#x27;ll find him on your Retained List as <strong>On Loan
+Abroad</strong>. He uses no squad place and no retained slot, and he rejoins your squad
+when he&#x27;s back. You can still trade him, or drop him for nothing.</p>
+</section>
+<section><h2>Heritage</h2>
+<p><strong>History</strong> is now <strong>Heritage</strong>, with everything your league has done in one
+place:</p>
+<ul>
+<li><strong>Seasons</strong>, with every champion&#x27;s <strong>Title-Winning XI</strong>.</li>
+<li><strong>Head-to-Head</strong>, with a page for every pairing. Cup ties count too.</li>
+<li><strong>Record Book</strong>: highest scores, biggest winning margins, and the longest
+runs with and without a win.</li>
+<li><strong>Trophy Cabinets</strong> for every club, side by side.</li>
+</ul>
+<p>It&#x27;s early in the first season, so you&#x27;ll see more here as the weeks go by.</p>
+</section>
+<section><h2>Projected Points</h2>
+<p>Before kickoff, you&#x27;ll see each player&#x27;s projected points for the gameweek on
+your lineup. An outlined figure is a projection, and a filled one is points
+he&#x27;s scored. Projections come from his starts, minutes, fitness, and the
+fixture.</p>
+<p>In a player&#x27;s game log, you&#x27;ll find his next opponent, the kickoff in your time
+zone, and his projection.</p>
+<p>On your club page, <strong>Pitch</strong> is your best XI by projection, with <strong>Depth
+Chart</strong> beside it. Turn off <strong>Include Academy &amp; IR</strong> to see only the players
+you can field this week.</p>
+</section>
+<section><h2>A New Home Screen</h2>
+<p>You&#x27;ll start on a new home screen. Your leagues are at the top as cards: tap
+one for League Home, or go straight to your squad or matchup. Below them are
+the <strong>Top Rated</strong> players for the matchweek or the season, and the Premier
+League matchweek as it plays out.</p>
+</section>
+<section><h2>Team of the Week</h2>
+<p><strong>Top Performers</strong> on League Home is now <strong>Team of the Week</strong>: the best XI from
+the last gameweek, in formation, with a bench, a total, and each player&#x27;s owner.</p>
+</section>
+<section><h2>Also New</h2>
+<ul>
+<li>Under <strong>New Transfers</strong> on the market and the Free Agents tab, find players
+who joined the Premier League in the last 7 days and have no auction yet.</li>
+<li>You can make IR moves once the gameweek&#x27;s last match kicks off, instead of the
+next morning. Players in this week&#x27;s lineup, starting or on the bench, stay
+locked until the week settles.</li>
+<li>On the board, a lot that isn&#x27;t open yet is marked <strong>Opens 12:00</strong>, and you
+can&#x27;t bid on it until then.</li>
+<li>On Players, filter by Gaffa club, and use every Table filter in Cards too.
+Your filters stay set when you switch views.</li>
+<li>On mobile, open your squad and reserves from a sheet at the bottom of the
+lineup page, and tap a player on your club page to see his details in a
+sheet.</li>
+<li>A player earns the <strong>Devastating</strong> attacking verdict for a hat-trick or a
+game like a goal and three assists. A brace earns <strong>Ruthless</strong> or
+<strong>Rampant</strong>.</li>
+<li>Fixtures in progress on League Home are marked <strong>Live</strong>, not <strong>Draw</strong>.</li>
+</ul>
+</section>
+<section><h2>Notifications</h2>
+<ul>
+<li>Two hours before an auction closes, everyone who&#x27;s bid on it gets a final
+call. For a player worth €50m or more, the whole league gets the call, and
+the whole league hears who signed him.</li>
+<li>Trade offer alerts include the players and cash involved.</li>
+<li>Push titles and email subjects include the league name, and on the home
+screen, each notification is marked with its league.</li>
+<li>New arrivals are announced by name and club, with the time you have left to
+bid.</li>
+<li>After you bid, you can turn on push alerts to hear when you&#x27;re outbid.</li>
+<li>If your phone stopped receiving alerts because its subscription expired,
+you&#x27;ll receive them again without doing anything.</li>
+</ul>
+</section>
+<section><h2>Fixed</h2>
+<ul>
+<li>On phones, some managers never saw who won an auction.</li>
+<li>An auction was announced as open hours before you could bid on it.</li>
+<li>Kickoff times appeared in UTC instead of your time zone.</li>
+<li>You could filter the Players table only to gameweeks 1 to 3.</li>
+<li>On mobile: matchup scorelines running off their panel, club names on fixture
+rows cut to a single letter, overlapping squad pitch rows, and overlapping
+columns on the Players table.</li>
+<li>Pages in the mobile menu were in a different order from the desktop bar.</li>
+<li>Bids placed from the old trades page skipped the IR and Academy checks.</li>
+</ul></section>
+<div class="endMark"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <aside class="aside">
+      <div class="card">
+        <h3>About This Preview</h3>
+        <p>The <strong>pop-up</strong> opens once for every manager, the next time they load Gaffa after publishing. It's the same notification that lights the bell, so dismissing either clears both. <strong>See what's new</strong> opens the full entry at <code>/updates#ask-futbolpedia-club-facilities-heritage</code>.</p>
+        <p>The changelog body here is rendered with react-markdown and remark-gfm, the renderer the updates page uses.</p>
+      </div>
+      <div class="card">
+        <h3>Release</h3>
+        <div class="meta">
+          <div class="metaRow"><span>Sections</span><span>12</span></div>
+          <div class="metaRow"><span>Words</span><span>1461</span></div>
+          <div class="metaRow"><span>Commits since last post</span><span>94</span></div>
+          <div class="metaRow"><span>Notifications</span><span>One per account</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  var screen = document.getElementById('screen');
+  var views = { modal: document.getElementById('view-modal'), log: document.getElementById('view-log') };
+
+  function show(name) {
+    Object.keys(views).forEach(function (k) { views[k].hidden = (k !== name); });
+    document.querySelectorAll('.seg button[data-view]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.view === name));
+    });
+    if (name === 'log') views.log.querySelector('.body').scrollTop = 0;
+  }
+
+  document.querySelectorAll('[data-view]').forEach(function (b) {
+    b.addEventListener('click', function () { show(b.dataset.view); });
+  });
+
+  document.querySelectorAll('[data-theme-btn]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      screen.dataset.g = b.dataset.themeBtn;
+      document.querySelectorAll('[data-theme-btn]').forEach(function (o) {
+        o.setAttribute('aria-pressed', String(o === b));
+      });
+    });
+  });
+})();
+</script>
