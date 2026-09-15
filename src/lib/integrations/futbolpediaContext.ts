@@ -3,6 +3,7 @@ import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import { normalizeMatchupLineup } from '@/lib/lineups/normalizeMatchupLineup';
 import { resolveCurrentGw } from '@/lib/season/currentGameweek';
 import { FORMATION_SLOTS } from '@/types';
+import { effectiveSlots } from '@/lib/facilities/facilities';
 import type { BenchSlot, MatchupLineup } from '@/types';
 import type {
   FutbolpediaClubContextResponse,
@@ -33,7 +34,7 @@ export async function buildFutbolpediaClubContext(
       .maybeSingle(),
     admin
       .from('teams')
-      .select('id, team_name, faab_budget, league_id')
+      .select('id, team_name, faab_budget, league_id, academy_slots, ir_slots, loan_out_slots')
       .eq('id', teamId)
       .eq('league_id', leagueId)
       .maybeSingle(),
@@ -194,7 +195,15 @@ export async function buildFutbolpediaClubContext(
     }
   }
 
-  const settings = settingsFromLeague(league as Record<string, unknown>);
+  // Club Facilities upgrades raise these three caps for one club, so the
+  // league defaults alone would understate what this club can hold.
+  const slots = effectiveSlots(team, league);
+  const settings = {
+    ...settingsFromLeague(league as Record<string, unknown>),
+    taxi_size: slots.academy,
+    ir_size: slots.ir,
+    max_loan_outs: slots.loansOut,
+  };
   const open_listings = mapListings(listingRows as any[] | null, team.id);
   const open_auctions = await mapAuctions(admin, auctionRows as any[] | null);
 
