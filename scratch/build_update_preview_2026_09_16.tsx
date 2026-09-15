@@ -56,19 +56,22 @@ function main() {
 
   // Pop-up, drawn to match UpdateAnnouncementModal: bell badge and title, the
   // summary, numbered highlights, and one "See what's new" button.
+  // The pop-up as UpdateAnnouncementModal draws it since the full-notes change:
+  // bell badge and title, the whole post in a scrolling body, then View All
+  // Updates and Done.
   const modal = `
-                <div class="modalTop">
-                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                <div class="modalTop" style="padding-bottom:12px;border-bottom:1px solid var(--g-border)">
+                  <div style="display:flex;align-items:center;gap:10px">
                     <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--g-accent);color:#fff;flex-shrink:0"><span style="width:16px;height:16px;display:inline-flex">${BELL}</span></span>
                     <h2 id="modalTitle" style="margin:0">${esc(TITLE)}</h2>
                   </div>
-                  <p class="lede">${esc(SUMMARY)}</p>
                 </div>
-                <ul class="highlights">
-                  ${HIGHLIGHTS.map((h, i) => `<li><span class="hIdx">${String(i + 1).padStart(2, '0')}</span><span>${esc(h)}</span></li>`).join('\n                  ')}
-                </ul>
-                <div class="modalActions">
-                  <button class="btn btnPrimary" type="button" data-view="log">See what's new</button>
+                <div class="log" style="max-height:430px;overflow-y:auto;padding:14px 18px 6px">
+${renderLog()}
+                </div>
+                <div class="modalActions" style="border-top:1px solid var(--g-border);padding-top:12px">
+                  <button class="btn btnGhost" type="button" data-view="log">View All Updates</button>
+                  <button class="btn btnPrimary" type="button">Done</button>
                 </div>
               `;
   const [mA, mB] = sliceBetween(html, '<div class="modalTop">', '</div>\n            </div>\n          </div>\n\n          <!-- ============ CHANGELOG');
@@ -91,7 +94,7 @@ function main() {
     `<aside class="aside">
       <div class="card">
         <h3>About This Preview</h3>
-        <p>The <strong>pop-up</strong> opens once for every manager, the next time they load Gaffa after publishing. It's the same notification that lights the bell, so dismissing either clears both. <strong>See what's new</strong> opens the full entry at <code>/updates#${SLUG}</code>.</p>
+        <p>The <strong>pop-up</strong> opens once for every manager, the next time they load Gaffa after publishing. It's the same notification that lights the bell, so dismissing either clears both. It carries the full patch notes; scroll inside it to read the rest. <strong>View All Updates</strong> goes to <code>/updates</code>, where this post sits with every earlier one.</p>
         <p>The changelog body here is rendered with react-markdown and remark-gfm, the renderer the updates page uses.</p>
       </div>
       <div class="card">

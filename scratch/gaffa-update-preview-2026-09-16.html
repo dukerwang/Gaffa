@@ -460,21 +460,181 @@ tr:last-child td { border-bottom: 0; }
             </div>
             <div class="scrim">
               <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-                <div class="modalTop">
-                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                <div class="modalTop" style="padding-bottom:12px;border-bottom:1px solid var(--g-border)">
+                  <div style="display:flex;align-items:center;gap:10px">
                     <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--g-accent);color:#fff;flex-shrink:0"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg></span></span>
                     <h2 id="modalTitle" style="margin:0">Ask Futbolpedia, Club Facilities, and Heritage</h2>
                   </div>
-                  <p class="lede">Ask Futbolpedia about your club in league chat, spend Club Balance on permanent squad upgrades, and look back on your league in Heritage.</p>
                 </div>
-                <ul class="highlights">
-                  <li><span class="hIdx">01</span><span>Ask Futbolpedia about your club in league chat</span></li>
-                  <li><span class="hIdx">02</span><span>Club Facilities: buy extra Academy, IR, and loan slots</span></li>
-                  <li><span class="hIdx">03</span><span>A 60% bid floor, and a Scout's Fee whether you win or lose</span></li>
-                  <li><span class="hIdx">04</span><span>Held players: what happens when a player joins a full squad</span></li>
-                </ul>
-                <div class="modalActions">
-                  <button class="btn btnPrimary" type="button" data-view="log">See what's new</button>
+                <div class="log" style="max-height:430px;overflow-y:auto;padding:14px 18px 6px">
+<section><h2>Ask Futbolpedia</h2>
+<p>Futbolpedia, the scout who writes the report on every player page, is in your
+league chat. Open chat from the top bar and choose <strong>Futbolpedia</strong> under
+<strong>Assistant</strong>, or open chat from your club page to go straight to it.</p>
+<p>Ask about your club and you get answers based on your actual squad (XI, bench,
+Academy, IR, and loans), your Club Balance, your place in the table, this
+week&#x27;s matchup, your league&#x27;s settings, and every listing and live auction in
+your league. Name a player and you get his current club, role, minutes,
+fitness, and transfer news. Fantasy points never count as evidence of how good
+a player is.</p>
+<p>Try asking about:</p>
+<ul>
+<li><strong>Your squad.</strong> &quot;Where&#x27;s my squad weakest?&quot; or &quot;Who covers left-back if my
+starter&#x27;s out?&quot;</li>
+<li><strong>Trades.</strong> &quot;Should I trade my striker for theirs and €20m?&quot; You get a
+verdict from <strong>Hold</strong> to <strong>Take</strong>, a confidence level, and a score out of 5 on
+four factors: the quality of the player you&#x27;d get, whether your squad can
+cover the one you&#x27;d lose, whether you have a use for the cash, and how much
+your outgoing player matters to your XI.</li>
+<li><strong>The market.</strong> &quot;Is anything on the board worth bidding on for my midfield?&quot;</li>
+<li><strong>The rules.</strong> &quot;Can a CB cover an LB slot?&quot; or &quot;When does my formation lock?&quot;</li>
+</ul>
+</section>
+<section><h2>Club Facilities</h2>
+<p>You can spend Club Balance on capacity as well as players. Every club starts
+with 3 Academy slots, 2 IR slots, and 1 player out on loan. Each upgrade is one
+more slot for your club, for good:</p>
+<div class="tableWrap"><table><thead><tr><th>Upgrade</th><th>Price</th></tr></thead><tbody><tr><td>Academy slot 4</td><td>€60m</td></tr><tr><td>Academy slot 5</td><td>€90m</td></tr><tr><td>Injured Reserve slot 3</td><td>€60m</td></tr><tr><td>Loans Out slot 2</td><td>€30m</td></tr></tbody></table></div>
+<p>Buy upgrades from <strong>Club Facilities</strong> at the top of your club page. You pay
+once, there&#x27;s no upkeep, and you keep the slot every season. Every manager can
+see your facilities. The money doesn&#x27;t go to another club; it leaves the league.</p>
+<p>When your Academy or IR is full, look for the <strong>Expand</strong> link beside it on your
+lineup page.</p>
+</section>
+<section><h2>Auction Changes</h2>
+<p><strong>Free-agent bids start at 60% of market value</strong>, up from 50%. Floors round
+down, so you can still open a €2m player at €1m.</p>
+<p><strong>You get the Scout&#x27;s Fee whether you win or lose.</strong> Nominate a player and you
+earn 10% of the winning bid either way. If you win, you get it back as a rebate
+on your own bid. Before, the fee paid out only when you lost, so a scout had a
+reason to stop bidding short of what the player was worth to them.</p>
+<p><strong>You earn a Scout&#x27;s Fee only on an auction you open.</strong> Auctions that open
+automatically, for a new arrival, a re-auction after a drop, or a player
+returning to the Premier League, pay no Scout&#x27;s Fee, because being first to bid
+there is luck rather than scouting. The other clubs share the full 20% as
+solidarity instead.</p>
+</section>
+<section><h2>Held Players</h2>
+<p>Sometimes a player joins your club when your squad is already full: a loan
+ends, a player you retained returns to the Premier League, or you win an
+auction that nobody with room bid on. You don&#x27;t lose anyone to make space, and
+you don&#x27;t go over the limit. He&#x27;s <strong>held</strong>: still yours, but off the squad and
+not counted.</p>
+<ul>
+<li><strong>Activate him yourself</strong> once you&#x27;ve made room, into your reserves, or into
+your Academy or IR if he qualifies. You can&#x27;t activate a player
+mid-gameweek.</li>
+<li><strong>While you&#x27;re holding a player, your squad can&#x27;t grow.</strong> You can&#x27;t bid,
+borrow, recall a loan, promote from the Academy or IR, or accept a trade that
+brings in more players than it sends out. Any bids you have live are
+withdrawn when he&#x27;s held.</li>
+<li><strong>Resolve him before the next gameweek.</strong> If he&#x27;s still held at the next
+gameweek&#x27;s first kickoff, you can&#x27;t change your lineup until you resolve him.
+You keep your last saved lineup, with only unavailable players replaced.</li>
+<li><strong>Auctions go to the highest bidder with room.</strong> If the top bidder has no
+room when the auction ends, the next bidder with room wins at their own bid.
+Only if nobody who bid has room does the top bidder win, and that player is
+held.</li>
+</ul>
+</section>
+<section><h2>Players Who Leave on Loan</h2>
+<p>When one of your players leaves the Premier League on loan, you don&#x27;t make a
+Release or Retain decision. You&#x27;ll find him on your Retained List as <strong>On Loan
+Abroad</strong>. He uses no squad place and no retained slot, and he rejoins your squad
+when he&#x27;s back. You can still trade him, or drop him for nothing.</p>
+</section>
+<section><h2>Heritage</h2>
+<p><strong>History</strong> is now <strong>Heritage</strong>, with everything your league has done in one
+place:</p>
+<ul>
+<li><strong>Seasons</strong>, with every champion&#x27;s <strong>Title-Winning XI</strong>.</li>
+<li><strong>Head-to-Head</strong>, with a page for every pairing. Cup ties count too.</li>
+<li><strong>Record Book</strong>: highest scores, biggest winning margins, and the longest
+runs with and without a win.</li>
+<li><strong>Trophy Cabinets</strong> for every club, side by side.</li>
+</ul>
+<p>It&#x27;s early in the first season, so you&#x27;ll see more here as the weeks go by.</p>
+</section>
+<section><h2>Transactions</h2>
+<p><strong>Activity</strong> is now <strong>Transactions</strong>: every completed signing, departure,
+trade, and loan in your league, grouped by day. Filter by kind or club, search
+for a player, or switch seasons. Bids stay on Transfers, and payments like Match
+Revenue and solidarity stay on your finance page.</p>
+<p>On League Home, <strong>The Wire</strong> is now <strong>Transactions</strong> too. The Wire on Transfers
+still shows live bids, offers, and listings.</p>
+</section>
+<section><h2>Projected Points</h2>
+<p>Before kickoff, you&#x27;ll see each player&#x27;s projected points for the gameweek on
+your lineup. An outlined figure is a projection, and a filled one is points
+he&#x27;s scored. Projections come from his starts, minutes, fitness, and the
+fixture.</p>
+<p>In a player&#x27;s game log, you&#x27;ll find his next opponent, the kickoff in your time
+zone, and his projection.</p>
+<p>On your club page, <strong>Pitch</strong> is your best XI by projection, with <strong>Depth
+Chart</strong> beside it. Turn off <strong>Include Academy &amp; IR</strong> to see only the players
+you can field this week.</p>
+</section>
+<section><h2>A New Home Screen</h2>
+<p>You&#x27;ll start on a new home screen. Your leagues are at the top as cards: tap
+one for League Home, or go straight to your squad or matchup. Below them are
+the <strong>Top Rated</strong> players for the matchweek or the season, and the Premier
+League matchweek as it plays out.</p>
+</section>
+<section><h2>Team of the Week</h2>
+<p><strong>Top Performers</strong> on League Home is now <strong>Team of the Week</strong>: the best XI from
+the last gameweek, in formation, with a bench, a total, and each player&#x27;s owner.</p>
+</section>
+<section><h2>Also New</h2>
+<ul>
+<li>Under <strong>New Transfers</strong> on the market and the Free Agents tab, find players
+who joined the Premier League in the last 7 days and have no auction yet.</li>
+<li>You can make IR moves once the gameweek&#x27;s last match kicks off, instead of the
+next morning. Players in this week&#x27;s lineup, starting or on the bench, stay
+locked until the week settles.</li>
+<li>On the board, a lot that isn&#x27;t open yet is marked <strong>Opens 12:00</strong>, and you
+can&#x27;t bid on it until then.</li>
+<li>On Players, filter by Gaffa club, and use every Table filter in Cards too.
+Your filters stay set when you switch views.</li>
+<li>On mobile, open your squad and reserves from a sheet at the bottom of the
+lineup page, and tap a player on your club page to see his details in a
+sheet.</li>
+<li>A player earns the <strong>Devastating</strong> attacking verdict for a hat-trick or a
+game like a goal and three assists. A brace earns <strong>Ruthless</strong> or
+<strong>Rampant</strong>.</li>
+<li>Fixtures in progress on League Home are marked <strong>Live</strong>, not <strong>Draw</strong>.</li>
+</ul>
+</section>
+<section><h2>Notifications</h2>
+<ul>
+<li>Two hours before an auction closes, everyone who&#x27;s bid on it gets a final
+call. For a player worth €50m or more, the whole league gets the call, and
+the whole league hears who signed him.</li>
+<li>Trade offer alerts include the players and cash involved.</li>
+<li>Push titles and email subjects include the league name, and on the home
+screen, each notification is marked with its league.</li>
+<li>New arrivals are announced by name and club, with the time you have left to
+bid.</li>
+<li>After you bid, you can turn on push alerts to hear when you&#x27;re outbid.</li>
+<li>If your phone stopped receiving alerts because its subscription expired,
+you&#x27;ll receive them again without doing anything.</li>
+</ul>
+</section>
+<section><h2>Fixed</h2>
+<ul>
+<li>On phones, some managers never saw who won an auction.</li>
+<li>An auction was announced as open hours before you could bid on it.</li>
+<li>Kickoff times appeared in UTC instead of your time zone.</li>
+<li>You could filter the Players table only to gameweeks 1 to 3.</li>
+<li>On mobile: matchup scorelines running off their panel, club names on fixture
+rows cut to a single letter, overlapping squad pitch rows, and overlapping
+columns on the Players table.</li>
+<li>Pages in the mobile menu were in a different order from the desktop bar.</li>
+<li>Bids placed from the old trades page skipped the IR and Academy checks.</li>
+</ul></section>
+                </div>
+                <div class="modalActions" style="border-top:1px solid var(--g-border);padding-top:12px">
+                  <button class="btn btnGhost" type="button" data-view="log">View All Updates</button>
+                  <button class="btn btnPrimary" type="button">Done</button>
                 </div>
               </div>
             </div>
@@ -673,7 +833,7 @@ columns on the Players table.</li>
     <aside class="aside">
       <div class="card">
         <h3>About This Preview</h3>
-        <p>The <strong>pop-up</strong> opens once for every manager, the next time they load Gaffa after publishing. It's the same notification that lights the bell, so dismissing either clears both. <strong>See what's new</strong> opens the full entry at <code>/updates#ask-futbolpedia-club-facilities-heritage</code>.</p>
+        <p>The <strong>pop-up</strong> opens once for every manager, the next time they load Gaffa after publishing. It's the same notification that lights the bell, so dismissing either clears both. It carries the full patch notes; scroll inside it to read the rest. <strong>View All Updates</strong> goes to <code>/updates</code>, where this post sits with every earlier one.</p>
         <p>The changelog body here is rendered with react-markdown and remark-gfm, the renderer the updates page uses.</p>
       </div>
       <div class="card">
