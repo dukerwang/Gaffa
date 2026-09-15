@@ -70,7 +70,7 @@ There are **two** locks, and they're different:
 
 So the gameweek does **not** shut in one go. Until a player's club kicks off you can still move him, which means you can react to Saturday lunchtime results before the late games. What you can't do is reshape the side after your first player is already out there.
 
-Once **this gameweek's last match kicks off**, you can set **next week's** lineup and move players to academy — same moment for everyone. This week's matchup, scores, and live XI stay up until the week actually settles (the morning review). A postponed match with no kickoff time is ignored, so one abandoned fixture cannot hold the league on this week's editor.
+Once **this gameweek's last match kicks off**, you can set **next week's** lineup and move players to academy — same moment for everyone. IR moves open then too, except for a player in this week's lineup, starting or on the bench: he stays locked until the week settles, because moving him on or off IR would change the points he already scored. This week's matchup, scores, and live XI stay up until the week actually settles (the morning review). A postponed match with no kickoff time is ignored, so one abandoned fixture cannot hold the league on this week's editor.
 
 ---
 

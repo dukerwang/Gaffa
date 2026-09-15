@@ -11,6 +11,7 @@ import { getCurrentFplSeason, getLatestReferenceStatsSeason, isFplSeasonKickedOf
 import { resolveLineupEditMatchup } from '@/lib/lineups/editTarget';
 import { getEffectiveLineupForTeam } from '@/lib/lineups/carryForward';
 import { getLockedPlTeamIds } from '@/lib/fixtures/lockout';
+import { lineupPlayerIds } from '@/lib/lineups/irLock';
 import { loadReferenceStats, type RefStatsMap } from '@/lib/scoring/matchups';
 import { countBuybackSlots, deriveRosterCapacity } from '@/lib/roster/capacity';
 import { getHoldState } from '@/lib/roster/holds';
@@ -256,7 +257,7 @@ export default async function MyTeamPage({ params }: Props) {
 
   const { data: scoringMatchup } = await admin
     .from('matchups')
-    .select('id, team_a_id, team_b_id, gameweek, status')
+    .select('id, team_a_id, team_b_id, gameweek, status, lineup_a, lineup_b')
     .or(`team_a_id.eq.${team.id},team_b_id.eq.${team.id}`)
     .in('status', ['scheduled', 'live'])
     .order('gameweek', { ascending: true })
@@ -272,6 +273,11 @@ export default async function MyTeamPage({ params }: Props) {
   const editingAhead = !!(
     matchup && scoringMatchup && matchup.gameweek !== scoringMatchup.gameweek
   );
+  const scoringLineupPlayerIds = scoringMatchup
+    ? lineupPlayerIds(
+        (scoringMatchup.team_a_id === team.id ? scoringMatchup.lineup_a : scoringMatchup.lineup_b) as MatchupLineup | null,
+      )
+    : [];
   const displayMatchup = scoringMatchup ?? matchup;
 
   let opponentTeamName: string | null = null;
@@ -381,6 +387,8 @@ export default async function MyTeamPage({ params }: Props) {
         projectionGameweek={projectionGameweek}
         lockedTeamIds={lockedTeamIds}
         scoringLockedTeamIds={scoringLockedTeamIds}
+        scoringLineupPlayerIds={scoringLineupPlayerIds}
+        editingAhead={editingAhead}
         lineupWeekLabel={editingAhead && matchup ? `GW${matchup.gameweek} lineup` : undefined}
         activeRosterCount={activeRosterCount}
         maxRosterSize={maxRosterSize}
