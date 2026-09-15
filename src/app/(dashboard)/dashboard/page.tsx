@@ -1,237 +1,80 @@
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { redirect } from 'next/navigation';
-import NavigationLink from '@/components/ui/NavigationLink';
-import { Icon } from '@/components/ui/Icon';
 import { getFplStatus } from '@/lib/fpl/api';
 import { getGameweekFixtures, type GwFixture } from '@/lib/fpl/fixtures';
-import { getCrestColor, getInitials } from './crest';
-import LeagueGrid, { type LeagueCardData } from './LeagueGrid';
-import Countdown from './Countdown';
-import GwFixtureStrip from './GwFixtureStrip';
+import { getCurrentFplSeason } from '@/lib/season/currentSeason';
+import { buildDashboardModel } from '@/lib/dashboard/buildDashboardModel';
+import LeagueCard from './LeagueCard';
+import TopRated from './TopRated';
+import FirstRun from './FirstRun';
+import { AboutGaffa, Doors, Matchweek, Shelf } from './Sections';
 import styles from './dashboard.module.css';
 
-function snakeDraftOrder(pickNumber: number, numTeams: number): number {
-  const round = Math.floor((pickNumber - 1) / numTeams);
-  const posInRound = (pickNumber - 1) % numTeams;
-  return round % 2 === 0 ? posInRound + 1 : numTeams - posInRound;
-}
+export const dynamic = 'force-dynamic';
 
-function formatDeadline(iso: string): string {
-  const d = new Date(iso);
-  const datePart = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/London' });
-  const timePart = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
-  return `${datePart} · ${timePart}`;
-}
-
+/**
+ * The home screen. A thin renderer over `buildDashboardModel`: your leagues
+ * first, then this week's Premier League, then the ways in.
+ */
 export default async function DashboardPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
   if (!user) redirect('/login');
 
   const admin = createAdminClient();
+  const [fpl, season] = await Promise.all([getFplStatus(), getCurrentFplSeason()]);
+  const fixtures: GwFixture[] = fpl.displayGw ? await getGameweekFixtures(fpl.displayGw) : [];
+  const model = await buildDashboardModel(admin, user.id, fpl, fixtures, season);
 
-  const [{ data: profile }, { data: teams }, fplStatus] = await Promise.all([
-    admin.from('users').select('username').eq('id', user.id).single(),
-    admin
-      .from('teams')
-      .select(`
-        id, team_name, faab_budget, draft_order,
-        league:leagues(id, name, status, season, max_teams, roster_size, commissioner_id)
-      `)
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false }),
-    getFplStatus(),
-  ]);
-
-  const allTeams = (teams ?? []) as any[];
-  const teamIds = allTeams.map((t) => t.id);
-  const leagueIds = Array.from(new Set(allTeams.map((t) => t.league.id)));
-  const draftingLeagueIds = Array.from(
-    new Set(allTeams.filter((t) => t.league.status === 'drafting').map((t) => t.league.id))
-  );
-
-  const [{ data: standings }, { data: memberRows }, { data: draftTeamRows }, { data: draftPickRows }, fixtures] = await Promise.all([
-    teamIds.length > 0
-      ? admin.from('league_standings').select('team_id, rank').in('team_id', teamIds)
-      : Promise.resolve({ data: [] as any[] }),
-    leagueIds.length > 0
-      ? admin.from('league_members').select('league_id').in('league_id', leagueIds)
-      : Promise.resolve({ data: [] as any[] }),
-    draftingLeagueIds.length > 0
-      ? admin.from('teams').select('id, league_id').in('league_id', draftingLeagueIds)
-      : Promise.resolve({ data: [] as any[] }),
-    draftingLeagueIds.length > 0
-      ? admin.from('draft_picks').select('league_id').in('league_id', draftingLeagueIds)
-      : Promise.resolve({ data: [] as any[] }),
-    fplStatus.displayGw ? getGameweekFixtures(fplStatus.displayGw) : Promise.resolve([] as GwFixture[]),
-  ]);
-
-  const liveMatches = fixtures.filter((f) => f.started && !f.finished);
-  const finishedMatches = fixtures.filter((f) => f.finished);
-  const upcomingFixtures = fixtures.filter((f) => !f.started && f.kickoff);
-  const nextKickoffFixture = upcomingFixtures[0];
-
-  const rankMap = new Map((standings ?? []).map((s: any) => [s.team_id, s.rank]));
-
-  const memberCountByLeague = new Map<string, number>();
-  for (const row of memberRows ?? []) {
-    memberCountByLeague.set(row.league_id, (memberCountByLeague.get(row.league_id) ?? 0) + 1);
+  if (model.cards.length === 0) {
+    return (
+      <div className={styles.page}>
+        <FirstRun model={model} />
+      </div>
+    );
   }
 
-  const teamCountByLeague = new Map<string, number>();
-  for (const row of draftTeamRows ?? []) {
-    teamCountByLeague.set(row.league_id, (teamCountByLeague.get(row.league_id) ?? 0) + 1);
-  }
-
-  const pickCountByLeague = new Map<string, number>();
-  for (const row of draftPickRows ?? []) {
-    pickCountByLeague.set(row.league_id, (pickCountByLeague.get(row.league_id) ?? 0) + 1);
-  }
-
-  const leagueCards: LeagueCardData[] = allTeams.map((t) => {
-    const league = t.league;
-    const managerCount = memberCountByLeague.get(league.id) ?? 0;
-
-    let yourPickSlot: number | null = null;
-    let currentPickNumber: number | null = null;
-    let currentRound: number | null = null;
-    let totalRounds: number | null = null;
-    let isMyTurn = false;
-
-    if (league.status === 'drafting') {
-      const numTeams = teamCountByLeague.get(league.id) ?? managerCount;
-      const picksMade = pickCountByLeague.get(league.id) ?? 0;
-      totalRounds = league.roster_size;
-      yourPickSlot = t.draft_order ?? null;
-      if (numTeams > 0) {
-        currentPickNumber = picksMade + 1;
-        currentRound = Math.ceil(currentPickNumber / numTeams);
-        isMyTurn = t.draft_order === snakeDraftOrder(currentPickNumber, numTeams);
-      }
-    }
-
-    return {
-      id: league.id,
-      name: league.name,
-      status: league.status,
-      season: league.season,
-      teamName: t.team_name,
-      crestColor: getCrestColor(league.id),
-      crestInitials: getInitials(league.name),
-      isCommissioner: league.commissioner_id === user.id,
-      rank: rankMap.get(t.id) ?? null,
-      faabBudget: t.faab_budget,
-      managerCount,
-      maxTeams: league.max_teams,
-      yourPickSlot,
-      currentPickNumber,
-      currentRound,
-      totalRounds,
-      isMyTurn,
-    };
-  });
-
-  const clubCount = leagueCards.length;
-  const leader = leagueCards.find((c) => c.rank === 1);
-  const heroSubtitle =
-    clubCount === 0
-      ? 'Create a league or join one with an invite code to get started.'
-      : leader
-        ? `${clubCount} ${clubCount === 1 ? 'club' : 'clubs'} across the pyramid — ${leader.name} sits top of the table.`
-        : `${clubCount} ${clubCount === 1 ? 'club' : 'clubs'} across the pyramid.`;
+  const matchCards = model.cards.filter((c) => c.kind === 'match');
+  const otherCards = model.cards.filter((c) => c.kind !== 'match');
+  const mainCards = matchCards.length ? matchCards : otherCards;
+  const railCards = matchCards.length ? otherCards : [];
+  const firstActive = matchCards[0]?.leagueId ?? null;
 
   return (
     <div className={styles.page}>
-      <header className={styles.hero}>
-        <div>
-          <h1 className={styles.greeting}>
-            Welcome back, <span className={styles.username}>{profile?.username ?? 'Manager'}</span>.
-          </h1>
-          <p className={styles.heroSub}>{heroSubtitle}</p>
-        </div>
-        <div className={styles.heroActions}>
-          <NavigationLink href="/league/join" className={styles.btnSecondary}>
-            <Icon name="unlock" size={14} strokeWidth={1.8} />
-            Join League
-          </NavigationLink>
-          <NavigationLink href="/league/create" className={styles.btnPrimary}>
-            <Icon name="plus" size={14} strokeWidth={2.2} />
-            Create League
-          </NavigationLink>
-        </div>
-      </header>
+      <Shelf model={model} />
 
-      {(fplStatus.isLive || fplStatus.nextDeadline) && (
-        <section className={styles.gwBanner} aria-label="Premier League gameweek status">
-          <div className={styles.gwMain}>
-            <span className={styles.gwLabel}>
-              Gameweek {fplStatus.displayGw} · {fplStatus.isLive ? <span className={styles.gwLive}>In Progress</span> : 'First Kickoff'}
-            </span>
-            <div className={styles.gwCount}>
-              {fplStatus.isLive ? (
-                liveMatches.length > 0 ? (
-                  <span className={styles.gwCountStat}>
-                    {liveMatches.length} {liveMatches.length === 1 ? 'match' : 'matches'} in play
-                  </span>
-                ) : nextKickoffFixture?.kickoff ? (
-                  <Countdown deadline={nextKickoffFixture.kickoff} className={styles.gwCountStat} />
-                ) : (
-                  <span className={styles.gwCountStat}>
-                    {finishedMatches.length > 0 && finishedMatches.length === fixtures.length
-                      ? 'Matches completed'
-                      : 'Gameweek in play'}
-                  </span>
-                )
-              ) : (
-                fplStatus.nextDeadline && (
-                  <Countdown deadline={fplStatus.nextDeadline} className={styles.gwCountStat} />
-                )
-              )}
-            </div>
-            <p className={styles.gwDeadline}>
-              {fplStatus.isLive
-                ? liveMatches.length > 0
-                  ? `${finishedMatches.length} of ${fixtures.length} matches finished — each player locks individually when their club kicks off`
-                  : nextKickoffFixture?.kickoff
-                    ? `Next kickoff ${formatDeadline(nextKickoffFixture.kickoff)} UK time — each player locks individually when their club kicks off`
-                    : 'Each player locks individually when their club kicks off'
-                : fplStatus.nextDeadline
-                  ? `${formatDeadline(fplStatus.nextDeadline)} UK time — each player locks individually when their club kicks off`
-                  : 'Each player locks individually when their club kicks off'}
-            </p>
-          </div>
-          {fixtures.length > 0 && (
-            <>
-              <div className={styles.gwFixturesDivider} />
-              <GwFixtureStrip fixtures={fixtures} />
-            </>
-          )}
-        </section>
-      )}
-
-      {leagueCards.length > 0 ? (
-        <LeagueGrid leagues={leagueCards} />
-      ) : (
-        <div className={styles.empty}>
-          <p className={styles.emptyIcon}><Icon name="trophy" size={48} strokeWidth={1} /></p>
-          <h2 className={styles.emptyTitle}>No leagues yet</h2>
-          <p className={styles.emptyText}>Create a league and invite your friends to get started.</p>
-          <div className={styles.emptyActions}>
-            <NavigationLink href="/league/create" className={styles.btnPrimary}>
-              <Icon name="plus" size={14} strokeWidth={2.2} />
-              Create a League
-            </NavigationLink>
-            <NavigationLink href="/league/join" className={styles.btnSecondary}>
-              <Icon name="unlock" size={14} strokeWidth={1.8} />
-              Join with Invite Code
-            </NavigationLink>
-          </div>
+      <div className={styles.leagueRow}>
+        <div className={styles.cardGrid}>
+          {mainCards.map((c) => (
+            <LeagueCard key={c.leagueId} card={c} />
+          ))}
         </div>
-      )}
+        <div className={styles.rail}>
+          {railCards.map((c) => (
+            <LeagueCard key={c.leagueId} card={c} />
+          ))}
+          <Doors />
+        </div>
+      </div>
+
+      <TopRated
+        matchweek={model.topRated.matchweek}
+        season={model.topRated.season}
+        ratingsHref={firstActive ? `/league/${firstActive}/stats` : null}
+      />
+
+      <div className={`${styles.section} ${styles.bottomRow}`}>
+        <Matchweek model={model} fixturesHref={firstActive ? `/league/${firstActive}/fixtures` : null} />
+        <AboutGaffa />
+      </div>
+
+      <div className={styles.doorsMobile}>
+        <Doors />
+      </div>
     </div>
   );
 }
