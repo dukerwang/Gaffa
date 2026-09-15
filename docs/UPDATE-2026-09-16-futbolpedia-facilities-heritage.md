@@ -4,8 +4,9 @@
 **Covers:** everything since the last published update,
 `scouting-reports-player-profiles-deadline-day` (2026-09-02 15:46 UTC).
 **Assembled from:** 94 non-merge commits on `main` from `a466be32` (2026-09-02
-11:47 ET) to `d613f7ab` (2026-09-15), plus draft PR #13 (Ask Futbolpedia in
-league chat), which is not merged yet.
+11:47 ET) to `d613f7ab` (2026-09-15), plus PR #13 (Ask Futbolpedia in league
+chat) and Futbolpedia's own Gaffa-mode code (`~/Futbolpedia/services/gaffaChatService.ts`,
+`constants/gaffaRules.ts`), which defines what the chat can do.
 
 Part 1 is the post, ready for `product_updates`. Part 2 explains the order.
 Part 3 is the inventory: what's in, and what's left out on purpose. Part 4 lists
@@ -28,21 +29,38 @@ highlights: [
 ]
 ```
 
-If PR #13 doesn't ship with this post, use the alternate header in Part 4 and
-delete the first section below.
-
 ---
 
 ## Ask Futbolpedia
 
-Futbolpedia now lives in league chat, pinned at the top under **Assistant**.
-Ask it about your club and it answers with your league in front of it: your
-squad and lineup, your Club Balance, the table, this week's matchup, and every
-listing and auction open in your league. It gives advice. It doesn't make moves
-for you.
+Futbolpedia is the football scout behind the scouting report on every player
+page. It now sits in your league chat, pinned at the top under **Assistant**,
+and when you ask it something it's looking at your club.
 
-Open chat from the top bar. From your club page, chat opens straight on
-Futbolpedia.
+**What it knows.** Your squad, including your XI, bench, Academy, IR and loans.
+Your Club Balance, your place in the table, and this week's matchup. Your
+league's settings, and every listing and live auction in your league. When you
+name a player, it looks him up: his current club, role, minutes, fitness and
+transfer talk. It never treats fantasy points as proof of how good a player is.
+
+**What to ask it.**
+
+- **Your squad.** "Where's my squad weakest?" or "Who covers left-back if my
+  starter's out?"
+- **Trades.** "Should I trade my striker for theirs and €20m?" A trade question
+  gets a verdict from **Hold** to **Take**, how confident it is, and a score out
+  of 5 for each of the four things behind it: how good the player coming back
+  is, whether your squad can cover the one leaving, whether you have a real use
+  for the cash, and how much the player leaving matters to your XI.
+- **The market.** "Is anything on the board worth bidding on for my midfield?"
+- **The rules.** "Can a CB cover an LB slot?" or "When does my formation lock?"
+
+**What it doesn't do.** It advises, but it can't set your lineup, bid, or send an
+offer. It's connected to your club and nobody else's, and nobody else in the
+league sees what you ask. Conversations aren't saved yet, so each visit starts fresh.
+
+Open chat from the top bar and choose **Futbolpedia**. From your club page, chat
+opens straight on it.
 
 ## Club Facilities
 
@@ -198,7 +216,10 @@ The order runs from what changes how you play to what you'll notice anyway.
 
 1. **Ask Futbolpedia** leads because it's the flagship and it's new
    behaviour nobody will find on their own. It's a chat channel, not a
-   page, so without the post most managers never open it.
+   page, so without the post most managers never open it. It gets the longest
+   section because an assistant is only useful once you know what it can see
+   and what to ask: its knowledge, four kinds of question with examples, and
+   its limits.
 2. **Club Facilities** and **Auction Changes** come next because they change
    money. A manager who misses them bids at the wrong floor tomorrow, or
    doesn't know that €60m can buy an IR slot. Money decisions stay prominent.
@@ -226,7 +247,7 @@ highlight has to earn its line.
 
 | Feature | Commits / PR |
 |---|---|
-| Ask Futbolpedia in chat | PR #13 (draft); context API #2, `f72c6c80` (listings and league settings added to the context Futbolpedia reads), `0fe553e0` |
+| Ask Futbolpedia in chat | PR #13 (includes a fix so the context sends each club's upgraded caps); context API #2, `f72c6c80` (listings and league settings added to the context Futbolpedia reads), `0fe553e0` |
 | Club Facilities | `c2346269` (PR #10), migration `166_club_facility_upgrades` |
 | Bid floor 50% → 60% | `c2346269` (same migration) |
 | Scout's Fee win or lose | `c4dd4bcd` (PR #9), migration 165 |
@@ -271,33 +292,19 @@ highlight has to earn its line.
 
 # Part 4: Before Publishing
 
-1. **Ask Futbolpedia isn't live.** PR #13 is rebased, builds, and passes, but
-   `https://futbolpedia.ai.studio/api/gaffa/chat` answers `Cannot POST`.
-   Futbolpedia has to deploy that route, or production's
-   `NEXT_PUBLIC_FUTBOLPEDIA_URL` has to point at a host that serves it. Merge
-   and test one real question before publishing. If it slips, use:
-
-   ```
-   slug:       club-facilities-held-players-heritage
-   title:      Club Facilities, Held Players, and Heritage
-   summary:    Spend Club Balance on permanent squad upgrades, a 60% bid floor and a Scout's Fee win or lose, and your league's history in Heritage.
-   highlights: [
-     "Club Facilities: buy extra Academy, IR and loan slots",
-     "Auction changes: a 60% bid floor and a Scout's Fee win or lose",
-     "Held players: what happens when a player arrives at a full squad",
-     "Heritage, and projected points on your lineup"
-   ]
-   ```
-
+1. **Futbolpedia's rules brief predates this update.** Its snapshot in
+   `~/Futbolpedia/constants/gaffaRules.ts` is version `2026-09-06`. It still
+   says the free-agent floor is 50% and IR is capped at 2, and it has no held
+   players, Club Facilities, or Scout's Fee on a win. League settings reach it
+   live, so it gets your league's 60% floor right when connected. A rules
+   question about anything else in this update gets the old answer. Refresh the
+   snapshot from `docs/USER_GUIDE.md` and bump the version before publishing.
+   The post's example rules questions avoid those topics until then.
 2. **PR #13 also removes the trophy row from the club page header.** The
-   original commit did this on purpose. Heritage's Trophy Cabinets replaces it,
-   but confirm you want it gone.
-3. **Futbolpedia reads league-wide caps, not a club's upgrades.** Its context
-   sends `max_loan_outs`, `ir_size` and `taxi_size` from the league, so after a
-   Club Facilities purchase it will quote the old limits for that club. Worth
-   fixing before the post tells managers to ask it about their club.
-4. **You haven't seen the held-player screens.** The section above describes
+   original commit did this on purpose, and Heritage's Trophy Cabinets replaces
+   it.
+3. **You haven't seen the held-player screens.** The section above describes
    rules from the user guide, not screens, so it holds either way. No league
    has a held player right now.
-5. **No screenshots yet.** The last two posts carried images. Club Facilities,
+4. **No screenshots yet.** The last two posts carried images. Club Facilities,
    Heritage and the home screen are the obvious three.
