@@ -3,6 +3,7 @@ import { clubByFplCode } from '@/lib/clubs/registry';
 interface FplTeamRaw {
   id: number;
   code: number;
+  name: string;
   short_name: string;
 }
 
@@ -23,6 +24,9 @@ export interface GwFixture {
   id: number;
   homeShort: string;
   awayShort: string;
+  /** FPL's own display name ("Nott'm Forest", "Spurs"), short enough for a row. */
+  homeName: string;
+  awayName: string;
   homeBadge: string | null;
   awayBadge: string | null;
   homeScore: number | null;
@@ -64,6 +68,8 @@ export async function getGameweekFixtures(gameweek: number, limit?: number): Pro
       id: f.id,
       homeShort: teamsById.get(f.team_h)?.short_name ?? '???',
       awayShort: teamsById.get(f.team_a)?.short_name ?? '???',
+      homeName: teamsById.get(f.team_h)?.name ?? teamsById.get(f.team_h)?.short_name ?? '???',
+      awayName: teamsById.get(f.team_a)?.name ?? teamsById.get(f.team_a)?.short_name ?? '???',
       homeBadge: badgeFor(f.team_h),
       awayBadge: badgeFor(f.team_a),
       homeScore: f.team_h_score,
