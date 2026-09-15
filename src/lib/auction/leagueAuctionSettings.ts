@@ -10,8 +10,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { DEFAULT_QUIET_HOURS } from './timer';
 import type { QuietHours } from './timer';
 
-/** Matches leagues.free_agent_bid_floor's default in migration 095. */
-export const DEFAULT_BID_FLOOR = 0.5;
+/** Matches leagues.free_agent_bid_floor's default (60% since migration 166). */
+export const DEFAULT_BID_FLOOR = 0.6;
 
 export interface LeagueAuctionSettings {
     /** null disables the guard entirely — only when a league sets a zero-length window. */

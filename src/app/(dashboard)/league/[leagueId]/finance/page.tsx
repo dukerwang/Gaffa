@@ -91,6 +91,7 @@ export default async function FinancePage({ params }: Props) {
     loan_bonus:            'out',
     loan_recall_penalty:   'out',
     loan_slot_buyback:     'out',
+    facility_upgrade:      'out',
   };
 
   // Whether a movement changes the league's TOTAL money supply, as opposed to
@@ -110,6 +111,8 @@ export default async function FinancePage({ params }: Props) {
     waiver_claim:          'destroyed',
     drop:                  'destroyed',
     loan_slot_buyback:     'destroyed',
+    // Paid to nobody: a facility purchase takes the money out of the league.
+    facility_upgrade:      'destroyed',
   };
 
   let netCreated = 0;

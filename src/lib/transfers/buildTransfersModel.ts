@@ -15,6 +15,7 @@
  * `GET /api/leagues/[leagueId]/transfers/free-agents`.
  */
 
+import { effectiveSlots } from '@/lib/facilities/facilities';
 import type { createAdminClient } from '@/lib/supabase/admin';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import {
@@ -306,11 +307,16 @@ export async function buildTransfersModel(
 
   const { data: myTeam } = await admin
     .from('teams')
-    .select('id, team_name, faab_budget, abbreviation, crest_config')
+    .select('id, team_name, faab_budget, abbreviation, crest_config, academy_slots, loan_out_slots')
     .eq('league_id', leagueId)
     .eq('user_id', userId)
     .single();
   if (!myTeam) return null;
+
+  // Club Facilities raise the viewer's own Academy and Loans Out capacity above
+  // the league setting. Every consumer of this model reads those two figures as
+  // "my limit", so the league row carries the viewer's effective values.
+  const mySlots = effectiveSlots(myTeam, league);
 
   const { data: allTeams } = await admin
     .from('teams')
@@ -595,7 +601,7 @@ export async function buildTransfersModel(
   return {
     serverNow: new Date().toISOString(),
     currentGameweek: fplStatus.currentGw,
-    league,
+    league: { ...league, taxi_size: mySlots.academy, max_loan_outs: mySlots.loansOut },
     myTeam,
     allTeams: allTeams ?? [],
     myRoster,
@@ -628,7 +634,7 @@ export async function buildTransfersModel(
     rosterFull: activeRosterCount >= (league.roster_size ?? 20),
     academy: {
       current: myRoster.filter((r) => r.status === 'taxi').length,
-      max: league.taxi_size ?? 3,
+      max: mySlots.academy,
       age_limit: league.taxi_age_limit ?? 21,
     },
     counts: {

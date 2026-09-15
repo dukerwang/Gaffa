@@ -11,6 +11,7 @@ import { ClubPitch, DepthChart, SquadTable } from './SquadViews';
 import Inspector from './Inspector';
 import Intel from './Intel';
 import RetainedList from './RetainedList';
+import ClubFacilities from '@/components/facilities/ClubFacilities';
 import HeldList from './HeldList';
 import DepartureDecisionModal, { type DecisionRequest } from '@/components/teams/DepartureDecisionModal';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
@@ -221,7 +222,7 @@ function CommandPicker({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ClubClient({
-  leagueId, teamId, serverNow, clubs, viewerIsOwner, club, standing, entries, hold, savedLineup, departures, honours,
+  leagueId, teamId, serverNow, clubs, viewerIsOwner, club, standing, entries, hold, savedLineup, departures, honours, facilities,
 }: ClubProps) {
   const router = useRouter();
   const [view, setView] = useState('pitch');
@@ -459,6 +460,18 @@ export default function ClubClient({
           />
         </div>
       </header>
+
+      {/* ── Club Facilities ──
+          Directly under the masthead, not below the squad: buying Academy, IR
+          and Loans Out capacity is a main use of Club Balance and should not
+          have to be scrolled to (DECISIONS 2026-09-15). */}
+      <ClubFacilities
+        leagueId={leagueId}
+        facilities={facilities}
+        balance={club.balance}
+        viewerIsOwner={viewerIsOwner}
+        onPurchased={() => router.refresh()}
+      />
 
       {/* ── Toolbar ── */}
       <div className={styles.toolbar}>

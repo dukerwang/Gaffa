@@ -79,7 +79,7 @@ Once **this gameweek's last match kicks off**, you can set **next week's** lineu
 Every club's roster is split by status:
 
 - **Active / Bench** — in play this week.
-- **IR (Injured Reserve)** — a parking spot for injured players that doesn't count against your active roster limit, capped at 2 players.
+- **IR (Injured Reserve)** — a parking spot for injured players that doesn't count against your active roster limit, capped at 2 players (3 with a Club Facilities upgrade, §11).
 - **Academy** — a prospect stash for U21 players (§12).
 - **Loaned out / Loaned in** — players temporarily at another club, or borrowed from one (§10).
 - **Held** — a player who arrived when your squad was full, waiting off it until you activate or drop him (below).
@@ -99,7 +99,7 @@ Sometimes a player arrives when your squad is already full: a loan comes to an e
 
 **Why a hold rather than an auto-drop or going over the limit?** Arrivals you didn't choose shouldn't cost you a player you did, and a squad over the limit breaks lineups and trades. The freeze is the price: the only thing a held player can do for you is wait, so there's nothing to gain from keeping him there. The lineup lock stops the one thing that would pay, keeping him as spare cover you activate when someone gets injured. It starts at the next gameweek rather than immediately, so a return you only just heard about never costs you a lineup.
 
-**IR isn't a free extra slot.** IR is capped at **2 players** (a league setting), and on top of that the game polices it at the point it matters: **you cannot place an auction bid while a healthy player is sitting on IR.** You have to activate him first. Rather than auditing injuries continuously, Gaffa blocks the benefit you'd be stashing him for, in addition to bounding how many you can stash at once.
+**IR isn't a free extra slot.** IR is capped at **2 players** (a league setting, or 3 if your club has bought the upgrade), and on top of that the game polices it at the point it matters: **you cannot place an auction bid while a healthy player is sitting on IR.** You have to activate him first. Rather than auditing injuries continuously, Gaffa blocks the benefit you'd be stashing him for, in addition to bounding how many you can stash at once.
 
 ### Setting up your club
 
@@ -342,7 +342,7 @@ It also keeps the skill in the right place. In a sealed format the winner is usu
 - If you're at your roster limit you nominate a player to **drop** as part of your bid. Dropping charges a **severance fee** of 20% of his market value, minimum **€2m**, on top of your winning bid — so churn isn't free.
 - If you win but your active roster is full and the player is U21, he can be routed to your **Academy** rather than blocking the transfer.
 - **When an auction ends, the highest bidder with room wins.** If the top bidder has no room left by then (they won something else in the meantime, say), the next bidder who does have room wins at their own bid. Only if **nobody** who bid has room does the highest bidder win him, and he's **held** (§2). You can't bid while holding a player, and any bids you have live when a player is held are withdrawn.
-- Free agent bids must reach at least the league's **minimum bid floor** (default **50% of market value**).
+- Free agent bids must reach at least the league's **minimum bid floor** (default **60% of market value**, rounded down, so a €2m player still opens at €1m).
 - **A brand-new Premier League arrival can't be bid on until Transfermarkt has priced them** — usually within a day of them appearing in the app. There's no floor to enforce before that, so bidding is blocked outright rather than left open at zero.
 - **The league seeds auctions automatically at season kickoff** for any player worth **€50m or more**, *or* who plays for a **newly-promoted club**. Everyone is emailed. Promoted-club players are seeded regardless of price, because at kickoff nobody owns them and a cheap newly-promoted starter is exactly the kind of asset a dynasty league should compete for rather than claim first. To keep managers focused on the same marquee targets, elite-tier auctions (€50m+) are **released in staggered waves** (roughly half the league size per wave, spaced 3 days apart).
 
@@ -433,7 +433,7 @@ Send a rostered player to another club **temporarily** — for **4 to 16 gamewee
 - A **recall clause** lets the lender pull him back early for a flat penalty. The lender can instead pay a **slot buyback fee** (commonly **25**) to reclaim the roster spot without recalling the player.
 - While he's away he keeps his place in the **lender's** squad count, and doesn't count against the borrower's (the loan-in cap limits those instead). A slot buyback frees the lender's place for the length of the loan.
 - **Recalling needs room.** You can't recall a player into a full squad, or while you're holding a player (§2).
-- **There are hard caps:** by default you may have only **1 player out on loan** and **2 in** at any time.
+- **There are hard caps:** by default you may have only **1 player out on loan** and **2 in** at any time. A club can raise its own loan-out cap to 2 with a Club Facilities upgrade (§11); the loan-in cap never changes.
 - At expiry everything settles automatically: bonus paid, player returns to the **spot they left** — academy back to academy if they still qualify and a slot is free, otherwise **Reserves**. A returning player is never written into this week's XI or a matchday bench slot. If the lender's squad is full and he can't go back to the academy, he's **held** (§2) until the lender activates or drops him. Nothing is dropped automatically.
 
 **Why cap loans so tightly?** Without a cap, loans become a way to warehouse a squad you can't field — stash your surplus with a friend, reclaim it when useful. One out and two in keeps a loan what it should be: a specific deal about a specific player, not a second roster.
@@ -468,11 +468,29 @@ Ten payments a season — after gameweeks 4, 8, 12, 16, 20, 24, 28, 32 and 36, p
 
 Note that a win and a loss together pay exactly the same as two draws, so the league's total outlay is identical however the results fall. Nobody is paid out of anybody else's pocket.
 
+### Club Facilities
+
+Club Balance can buy capacity as well as players. Each upgrade adds one slot for your club, permanently:
+
+| Facility | Standard | Upgrades |
+|---|---|---|
+| **Academy** | 3 slots | Slot 4 **€60m**, then slot 5 **€90m** |
+| **Injured Reserve** | 2 slots | Slot 3 **€60m** |
+| **Loans Out** | 1 player out on loan | Slot 2 **€30m** |
+
+Buy them from **Club Facilities** at the top of your club page. Slot 5 of the Academy needs slot 4 first. Every upgrade is a one-time payment: there's no upkeep, it stays with your club every season, and it can't be sold back. Other managers can see how far your facilities are built, and the purchase appears on your finance ledger, not the league's activity feed. The money goes to nobody, so it counts as money destroyed.
+
+**Why buy slots rather than players?** Cash doesn't score points, and with 22-man squads already full there's often nothing worth spending it on. Facilities give a well-run club somewhere lasting to put a surplus, and the money leaves the league instead of inflating the next auction.
+
+**Why not sell extra squad places?** Your active roster stays at the league's size for everyone. Buying extra starters' places would let the richest clubs hoard players the rest of the league needs from the free-agent pool. Academy, IR and loan-out slots add depth and flexibility without taking players out of circulation for good.
+
+**Why the same price for the third IR slot and the fourth Academy slot?** So the choice is about how you run your club, not which is the bargain: cover for an injury crisis, or room for another prospect. The fifth Academy slot costs half as much again because it's a luxury.
+
 ---
 
 ## 12. The Academy
 
-A stash — commonly **3 slots** — for **U21** players that you want to hold long-term without using an active roster spot. They can still be listed, traded, or loaned. A loan takes them off the academy for the spell; they come back there if they are still U21 and a slot is free.
+A stash — commonly **3 slots**, expandable to 5 with Club Facilities upgrades (§11) — for **U21** players that you want to hold long-term without using an active roster spot. They can still be listed, traded, or loaned. A loan takes them off the academy for the spell; they come back there if they are still U21 and a slot is free.
 
 The catch: once an Academy player **turns 21** he no longer qualifies. Gaffa checks automatically and promotes him to your active bench if there's room. If your roster is full he stays parked until you make space — nothing is auto-dropped for you.
 
@@ -564,7 +582,8 @@ The permanent record book: final standings and podium for every past season, eac
 | **Flex boost** | Extra weighting given to a player's strongest role-relevant component that match. |
 | **OOP penalty** | The 20% rating/points penalty when a player whose primary position is a midfield or attacking role is fielded in a defensive slot. |
 | **Academy** | A stash for U21 players that doesn't count against your active roster. |
-| **IR** | Injured Reserve. Doesn't count against your roster, capped at 2 — and you can't bid while a healthy player occupies it. |
+| **IR** | Injured Reserve. Doesn't count against your roster, capped at 2 (3 with the upgrade) — and you can't bid while a healthy player occupies it. |
+| **Club Facilities** | Permanent, one-time upgrades bought with Club Balance that add Academy, IR or loan-out slots for your club only. |
 | **Release / Retain** | The choice when a player leaves the Premier League: take his market value and forfeit the buy-back, or keep his rights and take nothing. |
 | **Retained rights** | A tradeable claim on a departed player that matures if he returns to the Premier League. |
 | **Held** | A player who arrived when your squad was full. Off the squad and uncounted until you activate or drop him; while anyone is held your squad can't grow, and if he's still held at the next gameweek's kickoff your lineup locks. |

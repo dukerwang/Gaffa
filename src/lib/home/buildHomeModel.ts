@@ -16,6 +16,7 @@
  * persisted through all four of those market days. `market` is that phase.
  */
 
+import { effectiveSlots, nextStep, type TeamSlotOverrides } from '@/lib/facilities/facilities';
 import type { createAdminClient } from '@/lib/supabase/admin';
 import { fetchAllPages } from '@/lib/supabase/pagination';
 import type { BenchSlot, GranularPosition } from '@/types';
@@ -421,7 +422,7 @@ export async function buildHomeModel(
     .from('leagues')
     .select(
       `id, name, status, season, current_season, previous_season, total_gameweeks,
-       roster_size, taxi_size, taxi_age_limit, retained_slots, prize_config,
+       roster_size, taxi_size, taxi_age_limit, retained_slots, prize_config, ir_size, max_loan_outs,
        merit_win, merit_draw, merit_loss, merit_bye, free_agent_bid_floor`,
     )
     .eq('id', leagueId)
@@ -430,7 +431,7 @@ export async function buildHomeModel(
 
   const { data: myTeamRow } = await admin
     .from('teams')
-    .select('id, team_name, abbreviation, crest_config, faab_budget, user_id')
+    .select('id, team_name, abbreviation, crest_config, faab_budget, user_id, academy_slots, ir_slots, loan_out_slots')
     .eq('league_id', leagueId)
     .eq('user_id', userId)
     .single();
@@ -505,6 +506,8 @@ export async function buildHomeModel(
       .from('transactions')
       .select('id, type, faab_bid, compensation_amount, notes, processed_at, team:teams(id, team_name), player:players(id, web_name, name, full_name, sofifa_common_name, primary_position)')
       .eq('league_id', leagueId)
+      // Facility purchases are ledger-only, never league news (2026-09-15).
+      .neq('type', 'facility_upgrade')
       .order('processed_at', { ascending: false })
       .limit(20),
     admin
@@ -1222,6 +1225,35 @@ export async function buildHomeModel(
         action: 'Review',
         href: `${base}/team/roster`,
         order: FAR - 3,
+      });
+    }
+  }
+
+  // Club Facilities: a full Academy or IR the club can afford to expand. Only
+  // those two, only when full AND affordable, and the text names the slot, so a
+  // dismissal holds until the next tier is on offer (Attention keys on id+text).
+  // Duke, 2026-09-15: a reminder, "but don't make it super annoying".
+  {
+    const slots = effectiveSlots(myTeamRow as TeamSlotOverrides, league);
+    const balance = Number(myTeamRow.faab_budget ?? 0);
+    const count = (s: string) => rosterPlayers.filter((x) => x.status === s).length;
+    const full: { key: 'academy' | 'ir'; name: string; used: number; slots: number }[] = [
+      { key: 'academy', name: 'Academy', used: count('taxi'), slots: slots.academy },
+      { key: 'ir', name: 'Injured Reserve', used: count('ir'), slots: slots.ir },
+    ];
+    for (const f of full) {
+      const step = nextStep(f.key, f.slots);
+      if (f.used < f.slots || !step || balance < step.price) continue;
+      attention.push({
+        id: `facility-${f.key}`,
+        tag: 'Facilities',
+        tone: 'plain',
+        text: `Your ${f.name} is full. Slot ${step.slots} costs €${step.price}m`,
+        when: 'Permanent',
+        whenAt: null,
+        action: 'Expand',
+        href: `${base}/team/roster#facilities`,
+        order: FAR - 2,
       });
     }
   }

@@ -56,6 +56,7 @@ const TX_META: Record<string, { direction: 'in' | 'out' | 'none'; label: string;
   loan_bonus:           { direction: 'out', label: 'LOAN BONUS',       category: 'Loans'       },
   loan_recall_penalty:  { direction: 'out', label: 'RECALL PENALTY',   category: 'Loans'       },
   loan_slot_buyback:    { direction: 'out', label: 'SLOT BUYBACK',     category: 'Loans'       },
+  facility_upgrade:     { direction: 'out', label: 'FACILITY',         category: 'Facilities'  },
 };
 
 type FilterKey = 'all' | 'out' | 'in';

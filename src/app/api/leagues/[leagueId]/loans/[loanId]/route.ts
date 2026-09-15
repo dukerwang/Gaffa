@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { loadLoanOutSlots } from '@/lib/facilities/server';
 import { sendEmailToUsers } from '@/lib/email/sendEmailToUsers';
 import { getLoanAcceptedEmail } from '@/lib/email/templates';
 import { buildHereWeGo } from '@/lib/notifications/hereWeGo';
@@ -144,7 +145,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       .eq('lender_team_id', loan.lender_team_id)
       .in('status', ACTIVE_LOAN_STATUSES);
 
-    const maxOuts = league.max_loan_outs ?? 1;
+    const maxOuts = await loadLoanOutSlots(admin, loan.lender_team_id, league.max_loan_outs);
     if ((lenderActiveLoans ?? 0) >= maxOuts) {
       return NextResponse.json({ error: `Lender has reached the maximum number of active loan-outs (${maxOuts})` }, { status: 400 });
     }

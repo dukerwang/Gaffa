@@ -1,3 +1,4 @@
+import { effectiveSlots } from '@/lib/facilities/facilities';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { notFound, redirect } from 'next/navigation';
@@ -42,7 +43,7 @@ export default async function TradesPage({ params, searchParams }: Props) {
       .single(),
     admin
       .from('teams')
-      .select('id, team_name, faab_budget')
+      .select('id, team_name, faab_budget, loan_out_slots')
       .eq('league_id', leagueId)
       .eq('user_id', user.id)
       .maybeSingle(),
@@ -294,7 +295,7 @@ export default async function TradesPage({ params, searchParams }: Props) {
       leagueSettings={{
         loan_slot_buyback_fee: league.loan_slot_buyback_fee ?? 25,
         loan_bonus_cap_default: league.loan_bonus_cap_default ?? 0,
-        max_loan_outs: league.max_loan_outs ?? 1,
+        max_loan_outs: effectiveSlots(myTeam, league).loansOut,
         max_loan_ins: league.max_loan_ins ?? 2,
         total_gameweeks: league.total_gameweeks ?? 38,
         roster_locked: league.roster_locked ?? false

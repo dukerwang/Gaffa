@@ -14,6 +14,7 @@ import { getLockedPlTeamIds } from '@/lib/fixtures/lockout';
 import { lineupPlayerIds } from '@/lib/lineups/irLock';
 import { loadReferenceStats, type RefStatsMap } from '@/lib/scoring/matchups';
 import { countBuybackSlots, deriveRosterCapacity } from '@/lib/roster/capacity';
+import { buildFacilityViews, effectiveSlots } from '@/lib/facilities/facilities';
 import { getHoldState } from '@/lib/roster/holds';
 import { buildProjectionMap } from '@/lib/projections/currentProjection';
 import type { RawStats } from '@/types';
@@ -41,8 +42,8 @@ export default async function MyTeamPage({ params }: Props) {
     const { data: team } = await admin
     .from('teams')
     .select(`
-      id, team_name, league_id, crest_config,
-      league:leagues(id, name, season, current_season, previous_season, status, scoring_rules, bench_size, ir_size, taxi_size, taxi_age_limit, roster_size)
+      id, team_name, league_id, crest_config, faab_budget, academy_slots, ir_slots, loan_out_slots,
+      league:leagues(id, name, season, current_season, previous_season, status, scoring_rules, bench_size, ir_size, taxi_size, taxi_age_limit, roster_size, max_loan_outs)
     `)
     .eq('league_id', leagueId)
     .eq('user_id', user.id)
@@ -139,11 +140,12 @@ export default async function MyTeamPage({ params }: Props) {
   // One derivation for every count on this page and inside the rail. The cap
   // is not simply `roster_size`: a loan-out that paid its buyback fee holds a
   // slot open, which is why this needs the loans table too.
+  const slots = effectiveSlots(team, team.league as any);
   const capacity = deriveRosterCapacity({
     statuses: rosterEntries.map((e) => e.status),
     rosterSize: (team.league as any)?.roster_size,
-    irSize: (team.league as any)?.ir_size,
-    taxiSize: (team.league as any)?.taxi_size,
+    irSize: slots.ir,
+    taxiSize: slots.academy,
     buybackSlots: await countBuybackSlots(admin, team.id),
   });
   const maxRosterSize = capacity.limit;
@@ -394,6 +396,10 @@ export default async function MyTeamPage({ params }: Props) {
         maxRosterSize={maxRosterSize}
         capacity={capacity}
         leagueId={leagueId}
+        facilityOffers={(() => {
+          const [academy, irView] = buildFacilityViews(slots, { academy: capacity.academy, ir: capacity.ir, loansOut: 0 });
+          return { balance: Number((team as any).faab_budget ?? 0), academy, ir: irView };
+        })()}
         lineupLocked={holdState.lineupLocked}
         masthead={{
           leagueName: league.name,

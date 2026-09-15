@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { effectiveSlots } from '@/lib/facilities/facilities';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
@@ -171,7 +172,7 @@ export async function POST(req: NextRequest, { params }: Props) {
             .eq('id', team.league_id)
             .single();
 
-        const irSize = league?.ir_size ?? 2;
+        const irSize = effectiveSlots(team, league).ir;
 
         const { data: currentIr, error: irCountErr } = await admin
             .from('roster_entries')
@@ -183,7 +184,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
         if ((currentIr?.length ?? 0) >= irSize) {
             return NextResponse.json(
-                { error: `IR is full (${irSize} slots). Activate or drop an IR player first.` },
+                { error: `IR is full (${irSize} slots). Activate or drop an IR player first.`, code: 'IR_FULL' },
                 { status: 400 },
             );
         }
