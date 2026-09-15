@@ -101,7 +101,7 @@ export async function payMeritPeriod(
             p_season: season,
             p_period_index: periodIndex,
             p_amount: amount,
-            p_notes: `TV & Matchday Revenue — ${label} (${record.wins}W ${record.draws}D ${record.losses}L${record.byes > 0 ? ` ${record.byes}B` : ''})`,
+            p_notes: `Match Revenue — ${label} (${record.wins}W ${record.draws}D ${record.losses}L${record.byes > 0 ? ` ${record.byes}B` : ''})`,
             p_wins: record.wins,
             p_draws: record.draws,
             p_losses: record.losses,
