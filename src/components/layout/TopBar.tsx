@@ -268,7 +268,6 @@ export default function TopBar() {
           // but the page it opens is the way into every squad in the league,
           // and the item has to stay lit while you're reading a rival's.
           { label: 'Clubs', href: `${base}/team/roster`, alsoMatches: [`${base}/clubs/`] },
-          { label: 'Lineup Builder', href: '/lineup-builder' },
         ],
       },
       {
@@ -722,17 +721,6 @@ export default function TopBar() {
                     </div>
 
                     <div className={styles.dropdownDivider} />
-
-                    <Link
-                      href="/lineup-builder"
-                      className={styles.dropdownActionLink}
-                      onClick={() => { setUserDropdownOpen(false); setIsNavigating(true); }}
-                    >
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                        <Icon name="layout" size={14} strokeWidth={1.75} />
-                        Lineup Builder
-                      </span>
-                    </Link>
 
                     <Link
                       href={currentLeagueId ? `/league/${currentLeagueId}/settings` : '/settings'}

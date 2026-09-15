@@ -804,37 +804,6 @@
   }
 }
 
-.shareBtn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s2);
-    justify-content: center;
-    min-height: 34px;
-    padding: var(--s1) var(--s3);
-    background: transparent;
-    color: var(--color-text-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--r-control);
-    font-family: var(--font-condensed);
-    font-size: var(--t-13);
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    white-space: nowrap;
-    text-decoration: none;
-    transition: background var(--dur-fast) var(--ease-standard),
-                color var(--dur-fast) var(--ease-standard),
-                border-color var(--dur-fast) var(--ease-standard);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .shareBtn:hover {
-      background: var(--color-surface-hover);
-      color: var(--color-text-primary);
-      border-color: var(--color-border-hover);
-  }
-}
-
 /* ── The squad rail ────────────────────────────────────────
    Four tiers as sections of one column, divided by hairlines. They were four
    independent cards, which is four elevation declarations inside a
@@ -1753,8 +1722,7 @@
         justify-content: stretch;
         padding-top: var(--s2);
     }
-    .boardActions .saveBtn,
-    .boardActions .shareBtn { flex: 1; min-height: 44px; }
+    .boardActions .saveBtn { flex: 1; min-height: 44px; }
 }
 
 /* ── The projection badge ──────────────────────────────────
