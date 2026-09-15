@@ -131,7 +131,6 @@
 }
 
 .cardBar {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -141,6 +140,20 @@
   color: inherit;
   text-decoration: none;
 }
+/* The bar's link stretches over the whole card, so a tap anywhere opens
+   League Home. The shortcuts in .quick sit above it and keep their own
+   destinations. */
+.cardBar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+.cardBar:focus-visible { outline: none; }
+.card:has(.cardBar:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+.card:has(.cardBar:active) { transform: scale(0.99); }
+
 .leagueTile {
   display: grid;
   place-items: center;
@@ -230,8 +243,51 @@
 .toneBehind { --tone: var(--color-defeat); }
 .toneLevel { --tone: var(--color-text-secondary); }
 
-.cardActions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: var(--s4); }
-.cardActionsOne { composes: cardActions; grid-template-columns: 1fr; }
+/* Shortcuts past League Home: quiet text links, with the card's own
+   destination named on the right so the whole card reads as a link. */
+.quick {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 8px 5px 6px;
+  border-top: var(--line);
+  background: var(--color-bg-card-alt);
+}
+.quickLink {
+  position: relative;
+  z-index: 2;
+  display: inline-grid;
+  place-items: center;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: var(--r-control);
+  font-size: var(--t-13);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+}
+.quickLinkAccent { composes: quickLink; color: var(--color-accent-ink); }
+@media (hover: hover) and (pointer: fine) {
+  .quickLink:hover { background: var(--color-bg-inset); color: var(--color-text-primary); }
+}
+.quickOpen {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding-right: 4px;
+  font-size: var(--t-13);
+  font-weight: 600;
+  color: var(--color-accent-ink);
+  white-space: nowrap;
+  transition: gap var(--dur-fast) var(--ease-standard);
+}
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .quickOpen { gap: 6px; }
+}
 
 .stateRow { display: flex; align-items: center; gap: var(--s3); }
 .stateLabel { font-size: var(--t-15); font-weight: 600; color: var(--color-text-primary); }
@@ -507,8 +563,9 @@
   .score { font-size: 32px; letter-spacing: -0.024em; }
   .side + .side { margin-top: 12px; }
   .share { margin-top: 14px; }
-  .cardActions { gap: 9px; margin-top: 14px; }
-  .cardBtn { min-height: 44px; font-size: var(--t-15); }
+  .quick { padding: 2px 6px 2px 4px; }
+  .quickLink { min-height: 44px; padding: 0 12px; font-size: var(--t-14, 14px); }
+  .quickOpen { font-size: var(--t-14, 14px); }
 
   .section { margin-top: 34px; }
   .lockT { font-size: 25px; letter-spacing: -0.028em; }

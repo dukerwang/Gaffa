@@ -2,7 +2,6 @@ import type { CSSProperties } from 'react';
 import CrestBadge from '@/components/crest/CrestBadge';
 import type { CrestConfig } from '@/components/crest/types';
 import NavigationLink from '@/components/ui/NavigationLink';
-import { Button } from '@/components/ui/Button';
 import type { CardSide, LeagueCardModel, MatchCardModel } from '@/lib/dashboard/buildDashboardModel';
 import LocalTime from './LocalTime';
 import styles from './dashboard.module.css';
@@ -41,10 +40,39 @@ function StatusLabel({ card }: { card: LeagueCardModel }) {
   return <span className={styles.status}>Offseason</span>;
 }
 
+
+function Chevron() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+/**
+ * The card opens League Home; this row holds shortcuts past it. The shortcuts
+ * sit above the card's stretched link, so each keeps its own destination.
+ */
+function Quick({ links }: { links: { href: string; label: string; accent?: boolean }[] }) {
+  return (
+    <div className={styles.quick}>
+      {links.map((l) => (
+        <NavigationLink key={l.href} href={l.href} className={l.accent ? styles.quickLinkAccent : styles.quickLink}>
+          {l.label}
+        </NavigationLink>
+      ))}
+      <span className={styles.quickOpen} aria-hidden="true">
+        League Home
+        <Chevron />
+      </span>
+    </div>
+  );
+}
+
 function Side({ side, score, trailing }: { side: CardSide; score: number | null; trailing: boolean }) {
   return (
     <div className={styles.side}>
-      <CrestBadge config={side.crest as CrestConfig | null} size={32} teamName={side.name} teamId={side.teamId} />
+      <CrestBadge config={side.crest as CrestConfig | null} size={32} teamName={side.name} interactive={false} />
       <div className={styles.sideTx}>
         <div className={styles.sideName}>{side.name}</div>
         <div className={styles.sideMeta}>{sideMeta(side)}</div>
@@ -54,12 +82,11 @@ function Side({ side, score, trailing }: { side: CardSide; score: number | null;
   );
 }
 
-function MatchBody({ leagueId, m }: { leagueId: string; m: MatchCardModel }) {
+function MatchBody({ m }: { m: MatchCardModel }) {
   const toneClass =
     m.tone === 'ahead' ? styles.toneAhead : m.tone === 'behind' ? styles.toneBehind : styles.toneLevel;
   const mineTrails = m.mineScore !== null && m.theirScore !== null && m.mineScore < m.theirScore;
   const theirsTrail = m.mineScore !== null && m.theirScore !== null && m.theirScore < m.mineScore;
-  const matchupHref = `/league/${leagueId}/matchups/${m.matchupId}`;
 
   return (
     <div className={`${styles.cardBody} ${toneClass}`}>
@@ -94,19 +121,6 @@ function MatchBody({ leagueId, m }: { leagueId: string; m: MatchCardModel }) {
         )}
       </div>
 
-      <div className={styles.cardActions}>
-        {m.state === 'upcoming' ? (
-          <>
-            <Button href={matchupHref} variant="secondary" className={styles.cardBtn}>Matchup</Button>
-            <Button href={`/league/${leagueId}/team`} variant="primary" className={styles.cardBtn}>Set Lineup</Button>
-          </>
-        ) : (
-          <>
-            <Button href={`/league/${leagueId}/team`} variant="secondary" className={styles.cardBtn}>My Squad</Button>
-            <Button href={matchupHref} variant="primary" className={styles.cardBtn}>Matchup</Button>
-          </>
-        )}
-      </div>
     </div>
   );
 }
@@ -123,7 +137,7 @@ export default function LeagueCard({ card }: { card: LeagueCardModel }) {
         </div>
       )}
 
-      <NavigationLink href={leagueHref} className={styles.cardBar}>
+      <NavigationLink href={leagueHref} className={styles.cardBar} aria-label={`Open ${card.leagueName}`}>
         <span className={styles.leagueTile} style={{ '--tile': card.leagueColor } as CSSProperties} aria-hidden="true">
           {card.leagueInitials}
         </span>
@@ -131,9 +145,25 @@ export default function LeagueCard({ card }: { card: LeagueCardModel }) {
         <StatusLabel card={card} />
       </NavigationLink>
 
-      {m && <MatchBody leagueId={card.leagueId} m={m} />}
+      {m && <MatchBody m={m} />}
+      {m && (
+        <Quick
+          links={
+            m.state === 'upcoming'
+              ? [
+                  { href: `/league/${card.leagueId}/team`, label: 'Set Lineup', accent: true },
+                  { href: `/league/${card.leagueId}/matchups/${m.matchupId}`, label: 'Matchup' },
+                ]
+              : [
+                  { href: `/league/${card.leagueId}/matchups/${m.matchupId}`, label: 'Matchup' },
+                  { href: `/league/${card.leagueId}/team`, label: 'My Squad' },
+                ]
+          }
+        />
+      )}
 
       {card.drafting && (
+        <>
         <div className={styles.cardBody}>
           <div className={styles.stateRow}>
             <div>
@@ -148,15 +178,13 @@ export default function LeagueCard({ card }: { card: LeagueCardModel }) {
               )}
             </div>
           </div>
-          <div className={styles.cardActionsOne}>
-            <Button href={`/league/${card.leagueId}/draft`} variant="primary" className={styles.cardBtn}>
-              Enter Draft Room
-            </Button>
-          </div>
         </div>
+        <Quick links={[{ href: `/league/${card.leagueId}/draft`, label: 'Draft Room', accent: card.drafting.isMyTurn }]} />
+        </>
       )}
 
       {card.setup && (
+        <>
         <div className={styles.cardBody}>
           <div className={styles.stateRow}>
             <div>
@@ -175,24 +203,21 @@ export default function LeagueCard({ card }: { card: LeagueCardModel }) {
               style={{ width: `${card.setup.max ? Math.min(100, (card.setup.joined / card.setup.max) * 100) : 0}%` }}
             />
           </div>
-          <div className={styles.cardActionsOne}>
-            <Button href={leagueHref} variant="secondary" className={styles.cardBtn}>
-              {card.setup.isCommissioner ? 'Invite Managers' : 'View League'}
-            </Button>
-          </div>
         </div>
+        <Quick links={[]} />
+        </>
       )}
 
       {card.offseason && (
+        <>
         <div className={styles.cardBody}>
           <div className={styles.stateRow}>
             <div className={styles.stateLabel}>Final Position</div>
             <span className={styles.stateFig}>{card.offseason.rank ? ordinal(card.offseason.rank) : '—'}</span>
           </div>
-          <div className={styles.cardActionsOne}>
-            <Button href={leagueHref} variant="secondary" className={styles.cardBtn}>View League</Button>
-          </div>
         </div>
+        <Quick links={[]} />
+        </>
       )}
     </article>
   );
