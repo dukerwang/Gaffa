@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { createClient } from '@/lib/supabase/client';
-import Modal from '@/components/transfers/Modal';
+import ResponsiveModal from '@/components/ui/ResponsiveModal';
+import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import styles from './UpdateAnnouncementModal.module.css';
 
@@ -21,10 +24,16 @@ interface Notification {
  * Pops once, at most, for the newest unread major product update — same
  * notification row the bell already shows, so dismissing either one clears
  * both. Mounted once in the dashboard shell rather than per-page.
+ *
+ * The pop-up carries the patch notes themselves, not a teaser: Duke found the
+ * summary and highlights too thin (2026-09-15), and most managers never open
+ * /updates. The body is read from the update row, which every authenticated
+ * user may already read (the SELECT policy in migration 144), so the
+ * notification payload stays title-and-summary for the bell.
  */
 export default function UpdateAnnouncementModal() {
   const [notice, setNotice] = useState<Notification | null>(null);
-  const [highlights, setHighlights] = useState<string[]>([]);
+  const [body, setBody] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -43,23 +52,18 @@ export default function UpdateAnnouncementModal() {
     };
   }, []);
 
-  // The notification row carries only title and summary. Highlights live on
-  // the update itself, which every authenticated user may already read — see
-  // the SELECT policy in migration 144 — so this is one extra read rather than
-  // a widening of the notification payload for a field the bell never shows.
   useEffect(() => {
     const slug = notice?.url?.split('#')[1];
     if (!slug) return;
     let cancelled = false;
     createClient()
       .from('product_updates')
-      .select('highlights')
+      .select('body')
       .eq('slug', slug)
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
-        const rows = (data?.highlights ?? []) as string[];
-        setHighlights(rows.filter((h) => typeof h === 'string' && h.trim().length > 0));
+        setBody(typeof data?.body === 'string' && data.body.trim() ? data.body : '');
       });
     return () => {
       cancelled = true;
@@ -78,7 +82,7 @@ export default function UpdateAnnouncementModal() {
   };
 
   return (
-    <Modal
+    <ResponsiveModal
       open
       title={notice.title}
       lead={
@@ -87,32 +91,35 @@ export default function UpdateAnnouncementModal() {
         </span>
       }
       onClose={dismiss}
+      className={styles.panel}
+      footer={
+        <div className={styles.actions}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              dismiss();
+              router.push('/updates');
+            }}
+          >
+            View All Updates
+          </Button>
+          <Button variant="primary" onClick={dismiss}>
+            Done
+          </Button>
+        </div>
+      }
     >
       <div className={styles.body}>
-        <p className={styles.summary}>{notice.content}</p>
-        {highlights.length > 0 && (
-          <ul className={styles.highlights}>
-            {highlights.map((h, i) => (
-              <li key={h} className={styles.highlight}>
-                <span className={styles.index} aria-hidden="true">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span>{h}</span>
-              </li>
-            ))}
-          </ul>
+        {body === null ? (
+          <p className={styles.loading}>Loading the update…</p>
+        ) : body ? (
+          <div className={styles.prose}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{body}</ReactMarkdown>
+          </div>
+        ) : (
+          <p className={styles.summary}>{notice.content}</p>
         )}
-        <button
-          type="button"
-          className={styles.cta}
-          onClick={() => {
-            dismiss();
-            router.push(notice.url ?? '/updates');
-          }}
-        >
-          See what&rsquo;s new
-        </button>
       </div>
-    </Modal>
+    </ResponsiveModal>
   );
 }
