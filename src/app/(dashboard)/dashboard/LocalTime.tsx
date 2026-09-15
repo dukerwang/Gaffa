@@ -33,8 +33,12 @@ export default function LocalTime({
     text = `${day} ${time}`;
   } else {
     const end = endIso ? new Date(endIso) : d;
-    const startDay = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
-    const endDay = end.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
+    // Weekday and day number are joined by hand: some locales put the number
+    // first ("12 Sat") when the two are formatted together.
+    const dayLabel = (x: Date) =>
+      `${x.toLocaleDateString(undefined, { weekday: 'short' })} ${x.getDate()}`;
+    const startDay = dayLabel(d);
+    const endDay = dayLabel(end);
     const month = end.toLocaleDateString(undefined, { month: 'long' });
     text = startDay === endDay ? `${startDay} ${month}` : `${startDay} – ${endDay} ${month}`;
   }

@@ -45,7 +45,6 @@ export default function RatedPortrait({
       src={src}
       alt=""
       className={styles.face}
-      loading="lazy"
       decoding="async"
       onError={() => setTried({ key, n: n + 1 })}
       onLoad={(e) => {

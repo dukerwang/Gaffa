@@ -296,6 +296,12 @@ export async function buildDashboardModel(
 
   const allMatchups = (matchupsRes.data ?? []) as any[];
 
+  // FPL only marks a gameweek finished after the post-match review, but once
+  // every fixture is over nobody is still playing: the score is provisional,
+  // not live.
+  const allFixturesDone =
+    fpl.displayGw === fpl.currentGw && fixtures.length > 0 && fixtures.every((f) => f.finished);
+
   // Pick the one matchup each card is about.
   type Chosen = { matchup: any; state: MatchState; myTeamId: string; leagueId: string };
   const chosen: Chosen[] = [];
@@ -311,7 +317,7 @@ export async function buildDashboardModel(
         ? { matchup: next, state: 'upcoming', myTeamId: t.id, leagueId: t.league.id }
         : { matchup: cur, state: 'final', myTeamId: t.id, leagueId: t.league.id };
     } else if (cur && (cur.status === 'live' || fpl.isLive || fpl.isFinished)) {
-      pick = { matchup: cur, state: fpl.isFinished ? 'provisional' : 'live', myTeamId: t.id, leagueId: t.league.id };
+      pick = { matchup: cur, state: fpl.isFinished || allFixturesDone ? 'provisional' : 'live', myTeamId: t.id, leagueId: t.league.id };
     } else if (next ?? cur) {
       pick = { matchup: next ?? cur, state: 'upcoming', myTeamId: t.id, leagueId: t.league.id };
     }
@@ -432,7 +438,7 @@ export async function buildDashboardModel(
       verdict,
       tone,
       playersLeft:
-        c.state === 'live' || c.state === 'provisional'
+        c.state === 'live'
           ? {
               mine: countLeft(lineups.get(`${m.id}:${c.myTeamId}`)),
               theirs: countLeft(lineups.get(`${m.id}:${oppId}`)),
@@ -492,7 +498,7 @@ export async function buildDashboardModel(
   cards.sort((a, b) => rankKind[a.kind] - rankKind[b.kind]);
 
   const counts = {
-    live: cards.filter((c) => c.match && (c.match.state === 'live' || c.match.state === 'provisional')).length,
+    live: cards.filter((c) => c.match?.state === 'live').length,
     drafting: cards.filter((c) => c.kind === 'drafting').length,
     setup: cards.filter((c) => c.kind === 'setup').length,
     offseason: cards.filter((c) => c.kind === 'offseason').length,
