@@ -49,7 +49,7 @@ const TX_META: Record<string, { direction: 'in' | 'out' | 'none'; label: string;
   rebate:               { direction: 'in',  label: "SCOUT'S FEE",      category: 'Recirculation' },
   draft_pick:           { direction: 'none', label: 'DRAFT PICK',      category: 'Draft'       },
   prize_payout:         { direction: 'in',  label: 'PRIZE',            category: 'Prizes'      },
-  merit_payment:        { direction: 'in',  label: 'TV & MATCHDAY',    category: 'Revenue'     },
+  merit_payment:        { direction: 'in',  label: 'MATCH REVENUE',    category: 'Revenue'     },
   solidarity_payment:   { direction: 'in',  label: 'SOLIDARITY',       category: 'Recirculation' },
   sale_proceeds:        { direction: 'in',  label: 'SALE PROCEEDS',    category: 'Sales'       },
   loan_fee:             { direction: 'in',  label: 'LOAN FEE',         category: 'Loans'       },
