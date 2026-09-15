@@ -3,13 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 export const maxDuration = 60;
 
-function calculateAgeInYears(dobIso: string, referenceDate = new Date()): number {
-  const dob = new Date(dobIso);
-  let age = referenceDate.getFullYear() - dob.getFullYear();
-  const monthDiff = referenceDate.getMonth() - dob.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && referenceDate.getDate() < dob.getDate())) age--;
-  return age;
-}
+import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/academyEligibility';
 
 /**
  * Resolves aged-out academy entries:
@@ -43,7 +37,7 @@ export async function POST(req: NextRequest) {
   const leagueIds = Array.from(new Set(academyRows.map((r: any) => r.league_id)));
   const { data: leagues } = await admin
     .from('leagues')
-    .select('id, roster_size, taxi_age_limit')
+    .select('id, roster_size, taxi_age_limit, season, current_season')
     .in('id', leagueIds);
   const leagueMap = new Map((leagues ?? []).map((l: any) => [l.id, l]));
 
@@ -52,7 +46,8 @@ export async function POST(req: NextRequest) {
     const ageLimit = league?.taxi_age_limit ?? 21;
     const dob = r.player?.date_of_birth as string | null | undefined;
     if (!dob) return false;
-    return calculateAgeInYears(dob, new Date()) > ageLimit;
+    const refDate = getSeasonReferenceDate(league?.season ?? league?.current_season);
+    return calculateAgeInYears(dob, refDate) > ageLimit;
   });
 
   const unresolved: Array<{ team_id: string; player_id: string; player_name: string; reason: string }> = [];

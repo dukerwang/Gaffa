@@ -377,6 +377,7 @@ export default async function MyTeamPage({ params }: Props) {
         irEntries={ir}
         taxiEntries={taxi}
         taxiAgeLimit={taxiAgeLimit}
+        season={league?.season ?? null}
         initialFormation={initialFormation}
         initialAssignments={initialAssignments}
         initialBench={initialBench as Record<BenchSlot, string | null>}

@@ -8,18 +8,10 @@ import { resolveCurrentGw } from '@/lib/season/currentGameweek';
 import { countBuybackSlots, DEFAULT_ROSTER_SIZE } from '@/lib/roster/capacity';
 import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
 
+import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/academyEligibility';
+
 interface Props {
     params: Promise<{ teamId: string }>;
-}
-
-function calculateAgeInYears(dobIso: string, referenceDate = new Date()): number {
-    const dob = new Date(dobIso);
-    let age = referenceDate.getFullYear() - dob.getFullYear();
-    const monthDiff = referenceDate.getMonth() - dob.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && referenceDate.getDate() < dob.getDate())) {
-        age--;
-    }
-    return age;
 }
 
 export async function POST(req: NextRequest, { params }: Props) {
@@ -133,7 +125,8 @@ export async function POST(req: NextRequest, { params }: Props) {
         if (!incomingPlayer.date_of_birth) {
             return NextResponse.json({ error: 'Player has no date of birth on record - cannot verify academy eligibility.' }, { status: 400 });
         }
-        const age = calculateAgeInYears(incomingPlayer.date_of_birth, new Date());
+        const refDate = getSeasonReferenceDate(league.season);
+        const age = calculateAgeInYears(incomingPlayer.date_of_birth, refDate);
         if (age > taxiAgeLimit) {
             return NextResponse.json(
                 { error: `${incomingPlayer.name} is age ${age} and not U${taxiAgeLimit} eligible for academy placement.` },
@@ -153,7 +146,7 @@ export async function POST(req: NextRequest, { params }: Props) {
             if (r.id === outgoingEntry.id || r.player_id === outgoingEntry.player_id) return false;
             const dob = r.player?.date_of_birth;
             if (!dob) return false;
-            return calculateAgeInYears(dob, new Date()) > taxiAgeLimit;
+            return calculateAgeInYears(dob, refDate) > taxiAgeLimit;
         });
         if (agedOut) {
             const agedOutName = agedOut.player?.name ?? 'an academy player';
@@ -229,7 +222,8 @@ export async function POST(req: NextRequest, { params }: Props) {
         if (!player.date_of_birth) {
             return NextResponse.json({ error: 'Player has no date of birth on record - cannot verify academy eligibility.' }, { status: 400 });
         }
-        const age = calculateAgeInYears(player.date_of_birth, new Date());
+        const refDate = getSeasonReferenceDate(league.season);
+        const age = calculateAgeInYears(player.date_of_birth, refDate);
         if (age > taxiAgeLimit) {
             return NextResponse.json(
                 { error: `${player.name} is age ${age} and not U${taxiAgeLimit} eligible for academy placement.` },
@@ -249,7 +243,7 @@ export async function POST(req: NextRequest, { params }: Props) {
         const agedOut = (academyRows as unknown as { player: { name: string; date_of_birth: string | null } | null }[] ?? []).find((r) => {
             const dob = r.player?.date_of_birth;
             if (!dob) return false;
-            return calculateAgeInYears(dob, new Date()) > taxiAgeLimit;
+            return calculateAgeInYears(dob, refDate) > taxiAgeLimit;
         });
         if (agedOut) {
             const agedOutName = agedOut.player?.name ?? 'an academy player';

@@ -28,6 +28,7 @@ import { Icon } from '@/components/ui/Icon';
 import FacilityPurchaseSheet from '@/components/facilities/FacilityPurchaseSheet';
 import facilityStyles from '@/components/facilities/facilities.module.css';
 import type { FacilityView } from '@/lib/facilities/facilities';
+import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/academyEligibility';
 
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -119,14 +120,10 @@ function pitchFullName(player: Player): string {
     return getPlayerDisplayName(player, 'full');
 }
 
-function isU21Eligible(player: Player, academyAgeLimit: number): boolean {
+function isU21Eligible(player: Player, academyAgeLimit: number, season?: string | null): boolean {
     if (!player.date_of_birth) return false;
-    const dob = new Date(player.date_of_birth);
-    const now = new Date();
-    let age = now.getFullYear() - dob.getFullYear();
-    const monthDiff = now.getMonth() - dob.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) age--;
-    return age <= academyAgeLimit;
+    const refDate = getSeasonReferenceDate(season);
+    return calculateAgeInYears(player.date_of_birth, refDate) <= academyAgeLimit;
 }
 
 function isIrEligible(player: Player): boolean {
@@ -149,6 +146,7 @@ interface Props {
     irEntries: (RosterEntry & { player: Player })[];
     taxiEntries: (RosterEntry & { player: Player })[];
     taxiAgeLimit?: number;
+    season?: string | null;
     initialFormation: Formation;
     initialAssignments: Record<number, string>;
     initialBench: Record<BenchSlot, string | null>;
@@ -197,15 +195,11 @@ type LineupSelection =
     | { type: 'starter'; slotIndex: number }
     | { type: 'bench-slot'; slot: BenchSlot }
     | { type: 'pool'; playerId: string }
-    | null;
-
-type SidebarSelection =
     | { type: 'taxi'; playerId: string }
     | { type: 'ir'; playerId: string }
     | null;
 
 
-/** The portrait badge. Chrome for a decided `ScoreCell`; see scoreCell(). */
 /** The portrait badge. Chrome for a decided `ScoreCell`; see scoreCell(). */
 function NodeBadge({ cell }: { cell: ScoreCell }) {
     switch (cell.kind) {
@@ -236,6 +230,7 @@ interface PitchNodeProps {
     player: Player | undefined;
     isSelected: boolean;
     isValidTarget: boolean;
+    isDimmed?: boolean;
     isEmpty: boolean;
     isInvalid?: boolean;
     isLocked?: boolean;
@@ -248,12 +243,13 @@ interface PitchNodeProps {
     projected?: number;
 }
 
-function PitchNode({ slotPos, player, isSelected, isValidTarget, isEmpty, isInvalid, isLocked, onClick, onViewDetails, points, status, projected }: PitchNodeProps) {
+function PitchNode({ slotPos, player, isSelected, isValidTarget, isDimmed, isEmpty, isInvalid, isLocked, onClick, onViewDetails, points, status, projected }: PitchNodeProps) {
     const { prefetchPlayer } = usePlayerCard();
     const wrapCls = [
         styles.pitchNodeWrap,
         isSelected ? styles.nodeWrapSelected : '',
         isValidTarget ? styles.nodeWrapValidTarget : '',
+        isDimmed ? styles.nodeWrapDimmed : '',
         isEmpty ? styles.nodeWrapEmpty : '',
         isInvalid ? styles.nodeWrapInvalid : '',
     ].filter(Boolean).join(' ');
@@ -402,6 +398,7 @@ export default function PitchUI({
     irEntries,
     taxiEntries,
     taxiAgeLimit = DEFAULT_TAXI_AGE_LIMIT,
+    season,
     initialFormation,
     initialAssignments,
     initialBench,
@@ -456,8 +453,7 @@ export default function PitchUI({
     const [saveError, setSaveError] = useState<string | null>(null);
     const [saveSuccess, setSaveSuccess] = useState(false);
 
-    // ── Sidebar (taxi/IR swap) state ──
-    const [sidebarSelection, setSidebarSelection] = useState<SidebarSelection>(null);
+    // ── Sidebar (taxi/IR swap & activate) state ──
     const [sidebarLoading, setSidebarLoading] = useState(false);
     const [sidebarError, setSidebarError] = useState<string | null>(null);
     // The route's refusal code, kept beside the message so a full Academy or IR
@@ -474,6 +470,31 @@ export default function PitchUI({
         f?.next && facilityOffers && facilityOffers.balance >= f.next.price ? f : null;
     const academyOffer = affordable(facilityOffers?.academy);
     const irOffer = affordable(facilityOffers?.ir);
+
+    // Held players (R7): moving a player up from the academy or IR is an
+    // addition, frozen while anyone is held. The route refuses too.
+    const holding = (capacity?.held ?? 0) > 0;
+    const HOLD_MESSAGE = 'Activate or drop your held player before moving anyone up.';
+
+    // Helper to unassign an active player from pitch or bench if moved to taxi/IR
+    const unassignPlayer = useCallback((pid: string) => {
+        setAssignments((prev) => {
+            let changed = false;
+            const next = { ...prev };
+            for (const [k, v] of Object.entries(next)) {
+                if (v === pid) { next[Number(k)] = null; changed = true; }
+            }
+            return changed ? next : prev;
+        });
+        setBenchAssignments((prev) => {
+            let changed = false;
+            const next = { ...prev };
+            for (const [k, v] of Object.entries(next)) {
+                if (v === pid) { next[k as BenchSlot] = null; changed = true; }
+            }
+            return changed ? next : prev;
+        });
+    }, []);
 
     /* The squad sheet on phones: collapsed to its handle until opened, until a
        swap is armed, or until dragged. Desktop ignores all of it — the rail is
@@ -552,6 +573,10 @@ export default function PitchUI({
 
     const slots = FORMATION_SLOTS[formation];
     const academyAgeLimit = taxiAgeLimit;
+    const isU21 = useCallback(
+        (player: Player) => isU21Eligible(player, taxiAgeLimit, season),
+        [taxiAgeLimit, season],
+    );
 
     // ── Derived state ──
     const starterIds = useMemo(
@@ -562,11 +587,18 @@ export default function PitchUI({
         () => new Set(Object.values(benchAssignments).filter(Boolean) as string[]),
         [benchAssignments],
     );
+    const hasAgedOutTaxiPlayer = useMemo(
+        () => taxiEntries.some((t) => !isU21(t.player)),
+        [taxiEntries, isU21],
+    );
+
     const playerMap = useMemo(() => {
         const map = new Map<string, RosterEntry & { player: Player }>();
         for (const e of allEntries) map.set(e.player.id, e);
+        for (const e of taxiEntries) if (!map.has(e.player.id)) map.set(e.player.id, e);
+        for (const e of irEntries) if (!map.has(e.player.id)) map.set(e.player.id, e);
         return map;
-    }, [allEntries]);
+    }, [allEntries, taxiEntries, irEntries]);
 
     // Pool = unassigned players (the "Reserves" in the sidebar)
     const poolEntries = useMemo(
@@ -588,14 +620,16 @@ export default function PitchUI({
         };
     }, [slots, formation]);
 
-    // Valid swap/assign targets for lineup selection highlighting
+    // Valid swap/assign targets for unified selection highlighting
     const validLineupTargets = useMemo(() => {
         const targets = new Set<string>();
         if (!lineupSelection) return targets;
 
+        // 1. STARTER SELECTED
         if (lineupSelection.type === 'starter') {
             const currentPlayerId = assignments[lineupSelection.slotIndex];
             const currentEntry = currentPlayerId ? playerMap.get(currentPlayerId) : null;
+            // Other starters
             for (let i = 0; i < slots.length; i++) {
                 if (i === lineupSelection.slotIndex) continue;
                 const otherId = assignments[i];
@@ -605,10 +639,7 @@ export default function PitchUI({
                 const otherCanComeHere = !otherEntry || canPlaySlot(otherEntry.player, slots[lineupSelection.slotIndex]);
                 if (curCanGoThere && otherCanComeHere) targets.add(`starter-${i}`);
             }
-            for (const e of poolEntries) {
-                if (isPlMatchLocked(e.player, lockedTeamIds)) continue;
-                if (canPlaySlot(e.player, slots[lineupSelection.slotIndex])) targets.add(`pool-${e.player.id}`);
-            }
+            // Bench slots
             if (currentEntry) {
                 for (const slot of BENCH_SLOT_NAMES) {
                     const benchPid = benchAssignments[slot];
@@ -617,18 +648,50 @@ export default function PitchUI({
                     if (canPlayBenchSlot(currentEntry.player, slot)) targets.add(`bench-${slot}`);
                 }
             }
+            // Reserves
+            for (const e of poolEntries) {
+                if (isPlMatchLocked(e.player, lockedTeamIds)) continue;
+                if (canPlaySlot(e.player, slots[lineupSelection.slotIndex])) targets.add(`pool-${e.player.id}`);
+            }
+            // Dropping starter to reserves
+            if (currentEntry) targets.add('tier-pool');
+
+            // Academy swap / move
+            if (currentEntry && !isPlMatchLocked(currentEntry.player, lockedTeamIds) && currentEntry.status !== 'loan_in' && currentEntry.status !== 'loan_out' && currentEntry.status !== 'held' && isU21(currentEntry.player)) {
+                const agedOutEntries = taxiEntries.filter((t) => !isU21(t.player));
+                if (agedOutEntries.length === 1) {
+                    const agedOut = agedOutEntries[0];
+                    if (!isPlMatchLocked(agedOut.player, lockedTeamIds)) targets.add(`taxi-${agedOut.player.id}`);
+                } else if (agedOutEntries.length === 0) {
+                    for (const t of taxiEntries) {
+                        if (!isPlMatchLocked(t.player, lockedTeamIds)) targets.add(`taxi-${t.player.id}`);
+                    }
+                    if ((capacity?.academy ?? 0) < (capacity?.academyLimit ?? 3)) targets.add('tier-taxi');
+                }
+            }
+
+            // IR swap / move
+            if (currentEntry && !isIrLocked(currentEntry.player) && currentEntry.status !== 'loan_in' && currentEntry.status !== 'loan_out' && currentEntry.status !== 'held' && isIrEligible(currentEntry.player)) {
+                for (const ir of irEntries) {
+                    if (!isIrLocked(ir.player)) targets.add(`ir-${ir.player.id}`);
+                }
+                if ((capacity?.ir ?? 0) < (capacity?.irLimit ?? 2)) targets.add('tier-ir');
+            }
         }
 
+        // 2. BENCH SLOT SELECTED
         if (lineupSelection.type === 'bench-slot') {
             const benchPlayerId = benchAssignments[lineupSelection.slot];
             const benchEntry = benchPlayerId ? playerMap.get(benchPlayerId) : null;
             if (benchEntry) {
+                // Starters
                 for (let i = 0; i < slots.length; i++) {
                     const starterPid = assignments[i];
                     const starterEntry = starterPid ? playerMap.get(starterPid) : null;
                     if (starterEntry && isPlMatchLocked(starterEntry.player, lockedTeamIds)) continue;
                     if (canPlaySlot(benchEntry.player, slots[i])) targets.add(`starter-${i}`);
                 }
+                // Other bench slots
                 for (const slot of BENCH_SLOT_NAMES) {
                     if (slot === lineupSelection.slot) continue;
                     const otherBenchPid = benchAssignments[slot];
@@ -636,61 +699,163 @@ export default function PitchUI({
                     if (otherBenchEntry && isPlMatchLocked(otherBenchEntry.player, lockedTeamIds)) continue;
                     if (canPlayBenchSlot(benchEntry.player, slot)) targets.add(`bench-${slot}`);
                 }
+                // Drop bench player to reserves
+                targets.add('tier-pool');
+
+                // Academy swap / move
+                if (!isPlMatchLocked(benchEntry.player, lockedTeamIds) && benchEntry.status !== 'loan_in' && benchEntry.status !== 'loan_out' && benchEntry.status !== 'held' && isU21(benchEntry.player)) {
+                    const agedOutEntries = taxiEntries.filter((t) => !isU21(t.player));
+                    if (agedOutEntries.length === 1) {
+                        const agedOut = agedOutEntries[0];
+                        if (!isPlMatchLocked(agedOut.player, lockedTeamIds)) targets.add(`taxi-${agedOut.player.id}`);
+                    } else if (agedOutEntries.length === 0) {
+                        for (const t of taxiEntries) {
+                            if (!isPlMatchLocked(t.player, lockedTeamIds)) targets.add(`taxi-${t.player.id}`);
+                        }
+                        if ((capacity?.academy ?? 0) < (capacity?.academyLimit ?? 3)) targets.add('tier-taxi');
+                    }
+                }
+
+                // IR swap / move
+                if (!isIrLocked(benchEntry.player) && benchEntry.status !== 'loan_in' && benchEntry.status !== 'loan_out' && benchEntry.status !== 'held' && isIrEligible(benchEntry.player)) {
+                    for (const ir of irEntries) {
+                        if (!isIrLocked(ir.player)) targets.add(`ir-${ir.player.id}`);
+                    }
+                    if ((capacity?.ir ?? 0) < (capacity?.irLimit ?? 2)) targets.add('tier-ir');
+                }
             }
+            // Reserves to fill this bench slot
             for (const e of poolEntries) {
                 if (isPlMatchLocked(e.player, lockedTeamIds)) continue;
                 if (canPlayBenchSlot(e.player, lineupSelection.slot)) targets.add(`pool-${e.player.id}`);
             }
         }
 
+        // 3. RESERVE SELECTED
         if (lineupSelection.type === 'pool') {
             const entry = playerMap.get(lineupSelection.playerId);
             if (entry && !isPlMatchLocked(entry.player, lockedTeamIds)) {
+                // Starters
                 for (let i = 0; i < slots.length; i++) {
                     const starterPid = assignments[i];
                     const starterEntry = starterPid ? playerMap.get(starterPid) : null;
                     if (starterEntry && isPlMatchLocked(starterEntry.player, lockedTeamIds)) continue;
                     if (canPlaySlot(entry.player, slots[i])) targets.add(`starter-${i}`);
                 }
+                // Bench
                 for (const slot of BENCH_SLOT_NAMES) {
                     const benchPid = benchAssignments[slot];
                     const benchEntry = benchPid ? playerMap.get(benchPid) : null;
                     if (benchEntry && isPlMatchLocked(benchEntry.player, lockedTeamIds)) continue;
                     if (canPlayBenchSlot(entry.player, slot)) targets.add(`bench-${slot}`);
                 }
+                // Academy swap / move
+                if (entry.status !== 'loan_in' && entry.status !== 'loan_out' && entry.status !== 'held' && isU21(entry.player)) {
+                    const agedOutEntries = taxiEntries.filter((t) => !isU21(t.player));
+                    if (agedOutEntries.length === 1) {
+                        const agedOut = agedOutEntries[0];
+                        if (!isPlMatchLocked(agedOut.player, lockedTeamIds)) targets.add(`taxi-${agedOut.player.id}`);
+                    } else if (agedOutEntries.length === 0) {
+                        for (const t of taxiEntries) {
+                            if (!isPlMatchLocked(t.player, lockedTeamIds)) targets.add(`taxi-${t.player.id}`);
+                        }
+                        if ((capacity?.academy ?? 0) < (capacity?.academyLimit ?? 3)) targets.add('tier-taxi');
+                    }
+                }
+                // IR swap / move
+                if (entry.status !== 'loan_in' && entry.status !== 'loan_out' && entry.status !== 'held' && !isIrLocked(entry.player) && isIrEligible(entry.player)) {
+                    for (const ir of irEntries) {
+                        if (!isIrLocked(ir.player)) targets.add(`ir-${ir.player.id}`);
+                    }
+                    if ((capacity?.ir ?? 0) < (capacity?.irLimit ?? 2)) targets.add('tier-ir');
+                }
+            }
+        }
+
+        // 4. ACADEMY (TAXI) SELECTED
+        if (lineupSelection.type === 'taxi') {
+            const taxiPlayer = taxiEntries.find((t) => t.player.id === lineupSelection.playerId);
+            if (taxiPlayer && !isPlMatchLocked(taxiPlayer.player, lockedTeamIds)) {
+                // Starters
+                for (let i = 0; i < slots.length; i++) {
+                    const pid = assignments[i];
+                    const e = pid ? playerMap.get(pid) : null;
+                    if (e && !isPlMatchLocked(e.player, lockedTeamIds) && e.status !== 'loan_in' && e.status !== 'loan_out' && e.status !== 'held' && isU21(e.player)) {
+                        targets.add(`starter-${i}`);
+                    }
+                    if (!e && (capacity?.open ?? 0) > 0 && !holding && canPlaySlot(taxiPlayer.player, slots[i])) {
+                        targets.add(`starter-${i}`);
+                    }
+                }
+                // Bench
+                for (const slot of BENCH_SLOT_NAMES) {
+                    const pid = benchAssignments[slot];
+                    const e = pid ? playerMap.get(pid) : null;
+                    if (e && !isPlMatchLocked(e.player, lockedTeamIds) && e.status !== 'loan_in' && e.status !== 'loan_out' && e.status !== 'held' && isU21(e.player)) {
+                        targets.add(`bench-${slot}`);
+                    }
+                    if (!e && (capacity?.open ?? 0) > 0 && !holding && canPlayBenchSlot(taxiPlayer.player, slot)) {
+                        targets.add(`bench-${slot}`);
+                    }
+                }
+                // Reserves for swap
+                for (const e of poolEntries) {
+                    if (isPlMatchLocked(e.player, lockedTeamIds)) continue;
+                    if (e.status !== 'loan_in' && e.status !== 'loan_out' && e.status !== 'held' && isU21(e.player)) targets.add(`pool-${e.player.id}`);
+                }
+                // Activate to squad (reserves) if open space and not holding
+                if ((capacity?.open ?? 0) > 0 && !holding) targets.add('tier-pool');
+            }
+        }
+
+        // 5. IR SELECTED
+        if (lineupSelection.type === 'ir') {
+            const irPlayer = irEntries.find((ir) => ir.player.id === lineupSelection.playerId);
+            if (irPlayer && !isIrLocked(irPlayer.player)) {
+                // Starters
+                for (let i = 0; i < slots.length; i++) {
+                    const pid = assignments[i];
+                    const e = pid ? playerMap.get(pid) : null;
+                    if (e && !isPlMatchLocked(e.player, lockedTeamIds) && !isIrLocked(e.player) && e.status !== 'loan_in' && e.status !== 'loan_out' && e.status !== 'held' && isIrEligible(e.player)) {
+                        targets.add(`starter-${i}`);
+                    }
+                    if (!e && (capacity?.open ?? 0) > 0 && !holding && canPlaySlot(irPlayer.player, slots[i])) {
+                        targets.add(`starter-${i}`);
+                    }
+                }
+                // Bench
+                for (const slot of BENCH_SLOT_NAMES) {
+                    const pid = benchAssignments[slot];
+                    const e = pid ? playerMap.get(pid) : null;
+                    if (e && !isPlMatchLocked(e.player, lockedTeamIds) && !isIrLocked(e.player) && e.status !== 'loan_in' && e.status !== 'loan_out' && e.status !== 'held' && isIrEligible(e.player)) {
+                        targets.add(`bench-${slot}`);
+                    }
+                    if (!e && (capacity?.open ?? 0) > 0 && !holding && canPlayBenchSlot(irPlayer.player, slot)) {
+                        targets.add(`bench-${slot}`);
+                    }
+                }
+                // Reserves for swap
+                for (const e of poolEntries) {
+                    if (isPlMatchLocked(e.player, lockedTeamIds)) continue;
+                    if (isIrLocked(e.player)) continue;
+                    if (e.status !== 'loan_in' && e.status !== 'loan_out' && e.status !== 'held' && isIrEligible(e.player)) targets.add(`pool-${e.player.id}`);
+                }
+                // Activate to squad (reserves) if open space and not holding
+                if ((capacity?.open ?? 0) > 0 && !holding) targets.add('tier-pool');
             }
         }
 
         return targets;
-    }, [lineupSelection, assignments, benchAssignments, slots, playerMap, poolEntries, lockedTeamIds]);
-
-    // Valid targets for sidebar (taxi/IR) selection
-    const validSidebarTargets = useMemo(() => {
-        const targets = new Set<string>();
-        if (!sidebarSelection) return targets;
-        if (sidebarSelection.type === 'taxi') {
-            for (const e of poolEntries) {
-                if (isPlMatchLocked(e.player, lockedTeamIds)) continue;
-                if (isU21Eligible(e.player, academyAgeLimit)) targets.add(`pool-${e.player.id}`);
-            }
-        }
-        if (sidebarSelection.type === 'ir') {
-            for (const e of poolEntries) {
-                if (isIrLocked(e.player)) continue;
-                if (isIrEligible(e.player)) targets.add(`pool-${e.player.id}`);
-            }
-        }
-        return targets;
-    }, [sidebarSelection, poolEntries, academyAgeLimit, lockedTeamIds, isIrLocked]);
+    }, [lineupSelection, assignments, benchAssignments, slots, playerMap, poolEntries, taxiEntries, irEntries, capacity, isU21, lockedTeamIds, isIrLocked, holding]);
 
     // ── Selection helpers ──
     function clearAll() {
         setLineupSelection(null);
-        setSidebarSelection(null);
         setSaveError(null);
+        setSidebarError(null);
     }
 
-    function activateLineupSelection(sel: LineupSelection | null) {
+    function activateLineupSelection(sel: LineupSelection) {
         if (!sel) {
             setLineupSelection(null);
             return;
@@ -709,17 +874,28 @@ export default function PitchUI({
                 setSaveError(`${displayName(entry.player)} is locked — match started.`);
                 return;
             }
+        } else if (sel.type === 'pool') {
+            const entry = playerMap.get(sel.playerId);
+            if (entry && isPlMatchLocked(entry.player, lockedTeamIds)) {
+                setSaveError(`${displayName(entry.player)} is locked — match started.`);
+                return;
+            }
+        } else if (sel.type === 'taxi') {
+            const entry = taxiEntries.find((t) => t.player.id === sel.playerId);
+            if (entry && isPlMatchLocked(entry.player, lockedTeamIds)) {
+                setSidebarError(`${displayName(entry.player)} is locked — match started.`);
+                return;
+            }
+        } else if (sel.type === 'ir') {
+            const entry = irEntries.find((ir) => ir.player.id === sel.playerId);
+            if (entry && isIrLocked(entry.player)) {
+                setSidebarError(`${displayName(entry.player)} is locked — IR is locked.`);
+                return;
+            }
         }
-        setSidebarSelection(null);
+        setSaveError(null);
         setSidebarError(null);
         setLineupSelection(sel);
-    }
-
-    function activateSidebarSelection(sel: SidebarSelection) {
-        setLineupSelection(null);
-        setSaveError(null);
-        setSidebarSelection(sel);
-        setSidebarError(null);
     }
 
     // ── Drop to reserves (unassign from any slot) ──
@@ -755,13 +931,254 @@ export default function PitchUI({
         setSaveSuccess(false);
     }
 
+    // ── Move active player directly to Academy ──
+    const handleMoveToTaxi = useCallback(async (playerId: string) => {
+        setSidebarLoading(true);
+        setSidebarError(null);
+        try {
+            const res = await fetch(`/api/teams/${teamId}/taxi`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ playerId, action: 'move_to_taxi' }),
+            });
+            if (!res.ok) {
+                const d = await res.json();
+                failSidebar(d, 'Failed to move to academy');
+                return;
+            }
+            unassignPlayer(playerId);
+            setLineupSelection(null);
+            router.refresh();
+        } catch {
+            setSidebarError('Could not reach the server. Try again.');
+        } finally {
+            setSidebarLoading(false);
+        }
+    }, [teamId, unassignPlayer, router]);
+
+    // ── Move active player directly to IR ──
+    const handleMoveToIr = useCallback(async (playerId: string) => {
+        setSidebarLoading(true);
+        setSidebarError(null);
+        try {
+            const res = await fetch(`/api/teams/${teamId}/ir`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ playerId, action: 'move_to_ir' }),
+            });
+            if (!res.ok) {
+                const d = await res.json();
+                failSidebar(d, 'Failed to move to IR');
+                return;
+            }
+            unassignPlayer(playerId);
+            setLineupSelection(null);
+            router.refresh();
+        } catch {
+            setSidebarError('Could not reach the server. Try again.');
+        } finally {
+            setSidebarLoading(false);
+        }
+    }, [teamId, unassignPlayer, router]);
+
+    // ── Taxi swap: swap an active player with an academy player ──
+    const handleTaxiSwap = useCallback(async (outgoingTaxiId: string, incomingActiveId: string) => {
+        setSidebarLoading(true);
+        setSidebarError(null);
+        setLineupSelection(null);
+        try {
+            const res = await fetch(`/api/teams/${teamId}/taxi`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'swap',
+                    playerId: incomingActiveId,
+                    swapWithPlayerId: outgoingTaxiId,
+                }),
+            });
+            if (!res.ok) {
+                const d = await res.json();
+                failSidebar(d, 'Academy swap failed');
+                return;
+            }
+            unassignPlayer(incomingActiveId);
+            router.refresh();
+        } catch {
+            setSidebarError('Could not reach the server. Try again.');
+        } finally {
+            setSidebarLoading(false);
+        }
+    }, [teamId, unassignPlayer, router]);
+
+    type DirectPlacement = { type: 'starter'; slotIndex: number } | { type: 'bench'; slot: BenchSlot };
+
+    // ── Taxi standalone activate ──
+    const handleTaxiActivate = useCallback(async (playerId: string, placement?: DirectPlacement) => {
+        if (holding) { setSidebarError(HOLD_MESSAGE); setLineupSelection(null); return; }
+        setSidebarLoading(true);
+        setSidebarError(null);
+        setLineupSelection(null);
+        try {
+            const res = await fetch(`/api/teams/${teamId}/taxi`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ playerId, action: 'activate' }),
+            });
+            if (!res.ok) {
+                const d = await res.json();
+                failSidebar(d, 'Failed to activate');
+            } else {
+                if (placement?.type === 'starter') {
+                    setAssignments((prev) => ({ ...prev, [placement.slotIndex]: playerId }));
+                    setSaveError(null);
+                    setSaveSuccess(false);
+                } else if (placement?.type === 'bench') {
+                    setBenchAssignments((prev) => ({ ...prev, [placement.slot]: playerId }));
+                    setSaveError(null);
+                    setSaveSuccess(false);
+                }
+                router.refresh();
+            }
+        } catch {
+            setSidebarError('Could not reach the server. Try again.');
+        } finally {
+            setSidebarLoading(false);
+        }
+    }, [holding, teamId, router]);
+
+    // ── IR swap: swap an active player with an IR player ──
+    const handleIrSwap = useCallback(async (outgoingIrId: string, incomingActiveId: string) => {
+        setSidebarLoading(true);
+        setSidebarError(null);
+        setLineupSelection(null);
+        try {
+            const res = await fetch(`/api/teams/${teamId}/ir`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'swap',
+                    playerId: incomingActiveId,
+                    swapWithPlayerId: outgoingIrId,
+                }),
+            });
+            if (!res.ok) {
+                const d = await res.json();
+                failSidebar(d, 'IR swap failed');
+                return;
+            }
+            unassignPlayer(incomingActiveId);
+            router.refresh();
+        } catch {
+            setSidebarError('Could not reach the server. Try again.');
+        } finally {
+            setSidebarLoading(false);
+        }
+    }, [teamId, unassignPlayer, router]);
+
+    // ── IR standalone activate ──
+    const handleIrActivate = useCallback(async (playerId: string, placement?: DirectPlacement) => {
+        if (holding) { setSidebarError(HOLD_MESSAGE); setLineupSelection(null); return; }
+        setSidebarLoading(true);
+        setSidebarError(null);
+        setLineupSelection(null);
+        try {
+            const res = await fetch(`/api/teams/${teamId}/ir`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ playerId, action: 'activate' }),
+            });
+            if (!res.ok) {
+                const d = await res.json();
+                failSidebar(d, 'Failed to activate from IR');
+            } else {
+                if (placement?.type === 'starter') {
+                    setAssignments((prev) => ({ ...prev, [placement.slotIndex]: playerId }));
+                    setSaveError(null);
+                    setSaveSuccess(false);
+                } else if (placement?.type === 'bench') {
+                    setBenchAssignments((prev) => ({ ...prev, [placement.slot]: playerId }));
+                    setSaveError(null);
+                    setSaveSuccess(false);
+                }
+                router.refresh();
+            }
+        } catch {
+            setSidebarError('Could not reach the server. Try again.');
+        } finally {
+            setSidebarLoading(false);
+        }
+    }, [holding, teamId, router]);
+
     // ── Starter node click ──
     const handleStarterClick = useCallback(
         (slotIndex: number) => {
-            setSidebarSelection(null);
             setSidebarError(null);
             if (!lineupSelection) {
+                if (isPhone) setSquadOpen(true);
                 activateLineupSelection({ type: 'starter', slotIndex });
+                return;
+            }
+            if (lineupSelection.type === 'taxi') {
+                const pid = assignments[slotIndex];
+                if (!pid) {
+                    const taxiEntry = taxiEntries.find((t) => t.player.id === lineupSelection.playerId);
+                    if (!taxiEntry || !canPlaySlot(taxiEntry.player, slots[slotIndex])) {
+                        setSidebarError('Position mismatch for this slot.');
+                        setLineupSelection(null);
+                        return;
+                    }
+                    if ((capacity?.open ?? 0) <= 0 || holding) {
+                        setSidebarError(holding ? HOLD_MESSAGE : 'Active roster full.');
+                        setLineupSelection(null);
+                        return;
+                    }
+                    handleTaxiActivate(lineupSelection.playerId, { type: 'starter', slotIndex });
+                    return;
+                }
+                const agedOutEntries = taxiEntries.filter((t) => !isU21(t.player));
+                if (agedOutEntries.length > 0 && !agedOutEntries.some((t) => t.player.id === lineupSelection.playerId)) {
+                    setSidebarError('Cannot swap into academy while an aged-out player remains unresolved.');
+                    return;
+                }
+                const e = playerMap.get(pid);
+                if (!e || !isU21(e.player) || e.status === 'loan_in' || e.status === 'loan_out' || e.status === 'held') {
+                    setSidebarError('Player is not U21 eligible for the academy.');
+                    return;
+                }
+                if (isPlMatchLocked(e.player, lockedTeamIds)) {
+                    setSidebarError('Match started — this player is locked.');
+                    return;
+                }
+                handleTaxiSwap(lineupSelection.playerId, pid);
+                return;
+            }
+            if (lineupSelection.type === 'ir') {
+                const pid = assignments[slotIndex];
+                if (!pid) {
+                    const irEntry = irEntries.find((ir) => ir.player.id === lineupSelection.playerId);
+                    if (!irEntry || !canPlaySlot(irEntry.player, slots[slotIndex])) {
+                        setSidebarError('Position mismatch for this slot.');
+                        setLineupSelection(null);
+                        return;
+                    }
+                    if ((capacity?.open ?? 0) <= 0 || holding) {
+                        setSidebarError(holding ? HOLD_MESSAGE : 'Active roster full.');
+                        setLineupSelection(null);
+                        return;
+                    }
+                    handleIrActivate(lineupSelection.playerId, { type: 'starter', slotIndex });
+                    return;
+                }
+                const e = playerMap.get(pid);
+                if (!e || !isIrEligible(e.player) || e.status === 'loan_in' || e.status === 'loan_out' || e.status === 'held') {
+                    setSidebarError('This player must be injured or unavailable to be moved to IR.');
+                    return;
+                }
+                if (isIrLocked(e.player)) {
+                    setSidebarError('Match started — this player is locked.');
+                    return;
+                }
+                handleIrSwap(lineupSelection.playerId, pid);
                 return;
             }
             if (lineupSelection.type === 'starter') {
@@ -831,15 +1248,81 @@ export default function PitchUI({
                 setSaveError(null); setSaveSuccess(false); setLineupSelection(null); return;
             }
         },
-        [lineupSelection, assignments, slots, playerMap, benchAssignments, lockedTeamIds],
+        [lineupSelection, assignments, slots, playerMap, benchAssignments, lockedTeamIds, isU21, isIrLocked, taxiEntries, irEntries, capacity, holding, isPhone, handleTaxiSwap, handleIrSwap, handleTaxiActivate, handleIrActivate],
     );
 
     // ── Bench slot click ──
     const handleBenchSlotClick = useCallback(
         (slot: BenchSlot) => {
-            setSidebarSelection(null);
             setSidebarError(null);
-            if (!lineupSelection) { activateLineupSelection({ type: 'bench-slot', slot }); return; }
+            if (!lineupSelection) {
+                if (isPhone) setSquadOpen(true);
+                activateLineupSelection({ type: 'bench-slot', slot });
+                return;
+            }
+            if (lineupSelection.type === 'taxi') {
+                const benchPid = benchAssignments[slot];
+                if (!benchPid) {
+                    const taxiEntry = taxiEntries.find((t) => t.player.id === lineupSelection.playerId);
+                    if (!taxiEntry || !canPlayBenchSlot(taxiEntry.player, slot)) {
+                        setSidebarError(`Position mismatch for the ${slot} bench slot.`);
+                        setLineupSelection(null);
+                        return;
+                    }
+                    if ((capacity?.open ?? 0) <= 0 || holding) {
+                        setSidebarError(holding ? HOLD_MESSAGE : 'Active roster full.');
+                        setLineupSelection(null);
+                        return;
+                    }
+                    handleTaxiActivate(lineupSelection.playerId, { type: 'bench', slot });
+                    return;
+                }
+                const agedOutEntries = taxiEntries.filter((t) => !isU21(t.player));
+                if (agedOutEntries.length > 0 && !agedOutEntries.some((t) => t.player.id === lineupSelection.playerId)) {
+                    setSidebarError('Cannot swap into academy while an aged-out player remains unresolved.');
+                    return;
+                }
+                const e = playerMap.get(benchPid);
+                if (!e || !isU21(e.player) || e.status === 'loan_in' || e.status === 'loan_out' || e.status === 'held') {
+                    setSidebarError('Player is not U21 eligible for the academy.');
+                    return;
+                }
+                if (isPlMatchLocked(e.player, lockedTeamIds)) {
+                    setSidebarError('Match started — this player is locked.');
+                    return;
+                }
+                handleTaxiSwap(lineupSelection.playerId, benchPid);
+                return;
+            }
+            if (lineupSelection.type === 'ir') {
+                const benchPid = benchAssignments[slot];
+                if (!benchPid) {
+                    const irEntry = irEntries.find((ir) => ir.player.id === lineupSelection.playerId);
+                    if (!irEntry || !canPlayBenchSlot(irEntry.player, slot)) {
+                        setSidebarError(`Position mismatch for the ${slot} bench slot.`);
+                        setLineupSelection(null);
+                        return;
+                    }
+                    if ((capacity?.open ?? 0) <= 0 || holding) {
+                        setSidebarError(holding ? HOLD_MESSAGE : 'Active roster full.');
+                        setLineupSelection(null);
+                        return;
+                    }
+                    handleIrActivate(lineupSelection.playerId, { type: 'bench', slot });
+                    return;
+                }
+                const e = playerMap.get(benchPid);
+                if (!e || !isIrEligible(e.player) || e.status === 'loan_in' || e.status === 'loan_out' || e.status === 'held') {
+                    setSidebarError('This player must be injured or unavailable to be moved to IR.');
+                    return;
+                }
+                if (isIrLocked(e.player)) {
+                    setSidebarError('Match started — this player is locked.');
+                    return;
+                }
+                handleIrSwap(lineupSelection.playerId, benchPid);
+                return;
+            }
             if (lineupSelection.type === 'bench-slot') {
                 if (lineupSelection.slot === slot) { setLineupSelection(null); return; }
                 const pidA = benchAssignments[lineupSelection.slot];
@@ -906,49 +1389,51 @@ export default function PitchUI({
                 setSaveError(null); setSaveSuccess(false); setLineupSelection(null); return;
             }
         },
-        [lineupSelection, assignments, benchAssignments, slots, playerMap, lockedTeamIds],
+        [lineupSelection, assignments, benchAssignments, slots, playerMap, lockedTeamIds, isU21, isIrLocked, taxiEntries, irEntries, capacity, holding, isPhone, handleTaxiSwap, handleIrSwap, handleTaxiActivate, handleIrActivate],
     );
 
     // ── Pool (Reserve) player click ──
     const handlePoolClick = useCallback(
         (playerId: string) => {
-            // If a sidebar (taxi/ir) selection is active, handle it
-            if (sidebarSelection) {
+            if (lineupSelection?.type === 'taxi') {
                 const targetEntry = poolEntries.find((e) => e.player.id === playerId);
                 if (!targetEntry) return;
 
                 if (isPlMatchLocked(targetEntry.player, lockedTeamIds)) {
                     setSidebarError('Match started — this player is locked.');
-                    setSidebarSelection(null);
                     return;
                 }
 
-                if (sidebarSelection.type === 'taxi') {
-                    if (!isU21Eligible(targetEntry.player, academyAgeLimit)) {
-                        setSidebarError('This player is not U21 eligible for the academy.');
-                        setSidebarSelection(null); return;
-                    }
-                    handleTaxiSwap(sidebarSelection.playerId, playerId);
+                const agedOutEntries = taxiEntries.filter((t) => !isU21(t.player));
+                if (agedOutEntries.length > 0 && !agedOutEntries.some((t) => t.player.id === lineupSelection.playerId)) {
+                    setSidebarError('Cannot swap into academy while an aged-out player remains unresolved.');
                     return;
                 }
 
-                if (sidebarSelection.type === 'ir') {
-                    if (isIrLocked(targetEntry.player)) {
-                        setSidebarError('Match started — this player is locked.');
-                        setSidebarSelection(null);
-                        return;
-                    }
-                    if (!isIrEligible(targetEntry.player)) {
-                        setSidebarError('This player must be injured or unavailable to be moved to IR.');
-                        setSidebarSelection(null); return;
-                    }
-                    handleIrSwap(sidebarSelection.playerId, playerId);
+                if (!isU21(targetEntry.player) || targetEntry.status === 'loan_in' || targetEntry.status === 'loan_out' || targetEntry.status === 'held') {
+                    setSidebarError('This player is not U21 eligible for the academy.');
                     return;
                 }
+                handleTaxiSwap(lineupSelection.playerId, playerId);
                 return;
             }
 
-            // Otherwise handle as lineup pool selection
+            if (lineupSelection?.type === 'ir') {
+                const targetEntry = poolEntries.find((e) => e.player.id === playerId);
+                if (!targetEntry) return;
+
+                if (isIrLocked(targetEntry.player)) {
+                    setSidebarError('Match started — this player is locked.');
+                    return;
+                }
+                if (!isIrEligible(targetEntry.player) || targetEntry.status === 'loan_in' || targetEntry.status === 'loan_out' || targetEntry.status === 'held') {
+                    setSidebarError('This player must be injured or unavailable to be moved to IR.');
+                    return;
+                }
+                handleIrSwap(lineupSelection.playerId, playerId);
+                return;
+            }
+
             if (!lineupSelection) {
                 const entry = playerMap.get(playerId);
                 if (isPlMatchLocked(entry?.player, lockedTeamIds)) {
@@ -993,113 +1478,210 @@ export default function PitchUI({
                 setSaveError(null); setSaveSuccess(false); setLineupSelection(null); return;
             }
         },
-        [lineupSelection, sidebarSelection, slots, playerMap, poolEntries, academyAgeLimit, lockedTeamIds, isIrLocked],
+        [lineupSelection, slots, playerMap, poolEntries, taxiEntries, isU21, lockedTeamIds, isIrLocked, handleTaxiSwap, handleIrSwap, setViewingPlayer],
     );
 
-    // ── Taxi swap: swap an active U21 reserve with an academy player ──
-    async function handleTaxiSwap(outgoingTaxiId: string, incomingReserveId: string) {
-        setSidebarLoading(true);
-        setSidebarError(null);
-        setSidebarSelection(null);
-        try {
-            const res = await fetch(`/api/teams/${teamId}/taxi`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'swap',
-                    playerId: incomingReserveId,
-                    swapWithPlayerId: outgoingTaxiId,
-                }),
-            });
-            if (!res.ok) {
-                const d = await res.json();
-                failSidebar(d, 'Academy swap failed');
+    // ── Academy (Taxi) player click ──
+    const handleTaxiClick = useCallback(
+        (playerId: string) => {
+            if (lineupSelection?.type === 'taxi' && lineupSelection.playerId === playerId) {
+                setLineupSelection(null);
                 return;
             }
 
-            router.refresh();
-        } catch {
-            setSidebarError('Could not reach the server. Try again.');
-        } finally {
-            setSidebarLoading(false);
-        }
-    }
-
-    // Held players (R7): moving a player up from the academy or IR is an
-    // addition, frozen while anyone is held. The route refuses too.
-    const holding = (capacity?.held ?? 0) > 0;
-    const HOLD_MESSAGE = 'Activate or drop your held player before moving anyone up.';
-
-    // ── Taxi standalone activate ──
-    async function handleTaxiActivate(playerId: string) {
-        if (holding) { setSidebarError(HOLD_MESSAGE); setSidebarSelection(null); return; }
-        setSidebarLoading(true);
-        setSidebarError(null);
-        setSidebarSelection(null);
-        try {
-            const res = await fetch(`/api/teams/${teamId}/taxi`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId, action: 'activate' }),
-            });
-            if (!res.ok) { const d = await res.json(); failSidebar(d, 'Failed to activate'); }
-            else { router.refresh(); }
-        } catch {
-            setSidebarError('Could not reach the server. Try again.');
-        } finally {
-            setSidebarLoading(false);
-        }
-    }
-
-    // ── IR swap: swap an active injured reserve with an IR player ──
-    async function handleIrSwap(outgoingIrId: string, incomingReserveId: string) {
-        setSidebarLoading(true);
-        setSidebarError(null);
-        setSidebarSelection(null);
-        try {
-            const res = await fetch(`/api/teams/${teamId}/ir`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'swap',
-                    playerId: incomingReserveId,
-                    swapWithPlayerId: outgoingIrId,
-                }),
-            });
-            if (!res.ok) {
-                const d = await res.json();
-                failSidebar(d, 'IR swap failed');
+            if (lineupSelection?.type === 'starter') {
+                const starterPid = assignments[lineupSelection.slotIndex];
+                if (!starterPid) return;
+                const entry = playerMap.get(starterPid);
+                const agedOutEntries = taxiEntries.filter((t) => !isU21(t.player));
+                if (agedOutEntries.length > 0 && !agedOutEntries.some((t) => t.player.id === playerId)) {
+                    setSidebarError('Cannot swap into academy while an aged-out player remains unresolved.');
+                    return;
+                }
+                if (!entry || !isU21(entry.player) || entry.status === 'loan_in' || entry.status === 'loan_out' || entry.status === 'held') {
+                    setSidebarError('Player is not U21 eligible for the academy.');
+                    return;
+                }
+                if (isPlMatchLocked(entry.player, lockedTeamIds)) {
+                    setSidebarError('Match started — this player is locked.');
+                    return;
+                }
+                handleTaxiSwap(playerId, starterPid);
                 return;
             }
 
-            router.refresh();
-        } catch {
-            setSidebarError('Could not reach the server. Try again.');
-        } finally {
-            setSidebarLoading(false);
-        }
-    }
+            if (lineupSelection?.type === 'bench-slot') {
+                const benchPid = benchAssignments[lineupSelection.slot];
+                if (!benchPid) return;
+                const entry = playerMap.get(benchPid);
+                const agedOutEntries = taxiEntries.filter((t) => !isU21(t.player));
+                if (agedOutEntries.length > 0 && !agedOutEntries.some((t) => t.player.id === playerId)) {
+                    setSidebarError('Cannot swap into academy while an aged-out player remains unresolved.');
+                    return;
+                }
+                if (!entry || !isU21(entry.player) || entry.status === 'loan_in' || entry.status === 'loan_out' || entry.status === 'held') {
+                    setSidebarError('Player is not U21 eligible for the academy.');
+                    return;
+                }
+                if (isPlMatchLocked(entry.player, lockedTeamIds)) {
+                    setSidebarError('Match started — this player is locked.');
+                    return;
+                }
+                handleTaxiSwap(playerId, benchPid);
+                return;
+            }
 
-    // ── IR standalone activate ──
-    async function handleIrActivate(playerId: string) {
-        if (holding) { setSidebarError(HOLD_MESSAGE); setSidebarSelection(null); return; }
-        setSidebarLoading(true);
-        setSidebarError(null);
-        setSidebarSelection(null);
-        try {
-            const res = await fetch(`/api/teams/${teamId}/ir`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId, action: 'activate' }),
-            });
-            if (!res.ok) { const d = await res.json(); failSidebar(d, 'Failed to activate from IR'); }
-            else { router.refresh(); }
-        } catch {
-            setSidebarError('Could not reach the server. Try again.');
-        } finally {
-            setSidebarLoading(false);
+            if (lineupSelection?.type === 'pool') {
+                const entry = playerMap.get(lineupSelection.playerId);
+                const agedOutEntries = taxiEntries.filter((t) => !isU21(t.player));
+                if (agedOutEntries.length > 0 && !agedOutEntries.some((t) => t.player.id === playerId)) {
+                    setSidebarError('Cannot swap into academy while an aged-out player remains unresolved.');
+                    return;
+                }
+                if (!entry || !isU21(entry.player) || entry.status === 'loan_in' || entry.status === 'loan_out' || entry.status === 'held') {
+                    setSidebarError('Player is not U21 eligible for the academy.');
+                    return;
+                }
+                if (isPlMatchLocked(entry.player, lockedTeamIds)) {
+                    setSidebarError('Match started — this player is locked.');
+                    return;
+                }
+                handleTaxiSwap(playerId, lineupSelection.playerId);
+                return;
+            }
+
+            const taxiEntry = taxiEntries.find((t) => t.player.id === playerId);
+            if (taxiEntry && isPlMatchLocked(taxiEntry.player, lockedTeamIds)) {
+                setSidebarError(`${displayName(taxiEntry.player)} is locked — match started.`);
+                return;
+            }
+            activateLineupSelection({ type: 'taxi', playerId });
+        },
+        [lineupSelection, assignments, benchAssignments, playerMap, isU21, lockedTeamIds, taxiEntries, handleTaxiSwap],
+    );
+
+    // ── IR player click ──
+    const handleIrClick = useCallback(
+        (playerId: string) => {
+            if (lineupSelection?.type === 'ir' && lineupSelection.playerId === playerId) {
+                setLineupSelection(null);
+                return;
+            }
+
+            if (lineupSelection?.type === 'starter') {
+                const starterPid = assignments[lineupSelection.slotIndex];
+                if (!starterPid) return;
+                const entry = playerMap.get(starterPid);
+                if (!entry || !isIrEligible(entry.player) || entry.status === 'loan_in' || entry.status === 'loan_out' || entry.status === 'held') {
+                    setSidebarError('This player must be injured or unavailable to be moved to IR.');
+                    return;
+                }
+                if (isIrLocked(entry.player)) {
+                    setSidebarError('Match started — this player is locked.');
+                    return;
+                }
+                handleIrSwap(playerId, starterPid);
+                return;
+            }
+
+            if (lineupSelection?.type === 'bench-slot') {
+                const benchPid = benchAssignments[lineupSelection.slot];
+                if (!benchPid) return;
+                const entry = playerMap.get(benchPid);
+                if (!entry || !isIrEligible(entry.player) || entry.status === 'loan_in' || entry.status === 'loan_out' || entry.status === 'held') {
+                    setSidebarError('This player must be injured or unavailable to be moved to IR.');
+                    return;
+                }
+                if (isIrLocked(entry.player)) {
+                    setSidebarError('Match started — this player is locked.');
+                    return;
+                }
+                handleIrSwap(playerId, benchPid);
+                return;
+            }
+
+            if (lineupSelection?.type === 'pool') {
+                const entry = playerMap.get(lineupSelection.playerId);
+                if (!entry || !isIrEligible(entry.player) || entry.status === 'loan_in' || entry.status === 'loan_out' || entry.status === 'held') {
+                    setSidebarError('This player must be injured or unavailable to be moved to IR.');
+                    return;
+                }
+                if (isIrLocked(entry.player)) {
+                    setSidebarError('Match started — this player is locked.');
+                    return;
+                }
+                handleIrSwap(playerId, lineupSelection.playerId);
+                return;
+            }
+
+            const irEntry = irEntries.find((ir) => ir.player.id === playerId);
+            if (irEntry && isIrLocked(irEntry.player)) {
+                setSidebarError(`${displayName(irEntry.player)} is locked — IR is locked.`);
+                return;
+            }
+            activateLineupSelection({ type: 'ir', playerId });
+        },
+        [lineupSelection, assignments, benchAssignments, playerMap, isIrLocked, irEntries, handleIrSwap],
+    );
+
+    // ── Reserves Tier Header click ──
+    const handleReservesTierClick = useCallback(() => {
+        if (!lineupSelection) return;
+        if (lineupSelection.type === 'starter' || lineupSelection.type === 'bench-slot') {
+            dropToReserves();
+            return;
         }
-    }
+        if (lineupSelection.type === 'taxi') {
+            if (validLineupTargets.has('tier-pool')) {
+                handleTaxiActivate(lineupSelection.playerId);
+            } else if (holding) {
+                setSidebarError(HOLD_MESSAGE);
+            } else {
+                setSidebarError('Active roster is full. Swap with an active player or drop someone first.');
+            }
+            return;
+        }
+        if (lineupSelection.type === 'ir') {
+            if (validLineupTargets.has('tier-pool')) {
+                handleIrActivate(lineupSelection.playerId);
+            } else if (holding) {
+                setSidebarError(HOLD_MESSAGE);
+            } else {
+                setSidebarError('Active roster is full. Swap with an active player or drop someone first.');
+            }
+            return;
+        }
+    }, [lineupSelection, validLineupTargets, dropToReserves, handleTaxiActivate, handleIrActivate, holding]);
+
+    // ── Academy Tier Header click ──
+    const handleAcademyTierClick = useCallback(() => {
+        if (!lineupSelection) return;
+        if (!validLineupTargets.has('tier-taxi')) return;
+        if (lineupSelection.type === 'starter') {
+            const pid = assignments[lineupSelection.slotIndex];
+            if (pid) handleMoveToTaxi(pid);
+        } else if (lineupSelection.type === 'bench-slot') {
+            const pid = benchAssignments[lineupSelection.slot];
+            if (pid) handleMoveToTaxi(pid);
+        } else if (lineupSelection.type === 'pool') {
+            handleMoveToTaxi(lineupSelection.playerId);
+        }
+    }, [lineupSelection, validLineupTargets, assignments, benchAssignments, handleMoveToTaxi]);
+
+    // ── IR Tier Header click ──
+    const handleIrTierClick = useCallback(() => {
+        if (!lineupSelection) return;
+        if (!validLineupTargets.has('tier-ir')) return;
+        if (lineupSelection.type === 'starter') {
+            const pid = assignments[lineupSelection.slotIndex];
+            if (pid) handleMoveToIr(pid);
+        } else if (lineupSelection.type === 'bench-slot') {
+            const pid = benchAssignments[lineupSelection.slot];
+            if (pid) handleMoveToIr(pid);
+        } else if (lineupSelection.type === 'pool') {
+            handleMoveToIr(lineupSelection.playerId);
+        }
+    }, [lineupSelection, validLineupTargets, assignments, benchAssignments, handleMoveToIr]);
 
     // ── Save lineup ──
     async function handleSave() {
@@ -1168,30 +1750,67 @@ export default function PitchUI({
     }, [lockedStarters, playerMap]);
 
     // Hint text for current selection state (shown as a tooltip on the compact indicator)
-    const selectionHint = lineupSelection
-        ? lineupSelection.type === 'starter'
-            ? 'Starter selected — click a reserve, another slot, or a bench slot to swap. Click the Reserves header to drop to reserves.'
-            : lineupSelection.type === 'bench-slot'
-            ? `Bench slot ${lineupSelection.slot} selected — click a reserve to assign, another bench slot to swap, or the Reserves header to clear.`
-            : 'Reserve selected — click a starter slot or bench slot to place.'
-        : sidebarSelection
-        ? sidebarSelection.type === 'taxi'
-            ? 'Academy player selected - click an eligible U21 reserve to swap in.'
-            : 'IR player selected — click an injured/unavailable reserve to swap in.'
-        : null;
+    const selectionHint = useMemo(() => {
+        if (!lineupSelection) return null;
+        if (lineupSelection.type === 'starter') {
+            const slotPos = slots[lineupSelection.slotIndex];
+            const pid = assignments[lineupSelection.slotIndex];
+            const player = pid ? playerMap.get(pid)?.player : null;
+            const name = player ? displayName(player) : slotPos;
+            return `${name} (${slotPos}) selected — click a matching starter, bench, or reserve to swap. Click Reserves header to drop, or Academy/IR header if eligible.`;
+        }
+        if (lineupSelection.type === 'bench-slot') {
+            const pid = benchAssignments[lineupSelection.slot];
+            const player = pid ? playerMap.get(pid)?.player : null;
+            const name = player ? displayName(player) : lineupSelection.slot;
+            const flexNote = lineupSelection.slot === 'FLEX' ? ' (accepts any outfield player or GK)' : '';
+            return `Bench ${name} selected${flexNote} — click an eligible starter, bench slot, or reserve to swap. Click Reserves header to clear, or Academy/IR header if eligible.`;
+        }
+        if (lineupSelection.type === 'pool') {
+            const entry = playerMap.get(lineupSelection.playerId);
+            const name = entry ? displayName(entry.player) : 'Player';
+            return `${name} selected — click a valid starter or bench slot to place, or an Academy/IR slot if eligible.`;
+        }
+        if (lineupSelection.type === 'taxi') {
+            const entry = taxiEntries.find((t) => t.player.id === lineupSelection.playerId);
+            const name = entry ? displayName(entry.player) : 'Academy player';
+            return `${name} selected — click an eligible U21 player to swap, or Reserves header to activate if roster space is available.`;
+        }
+        if (lineupSelection.type === 'ir') {
+            const entry = irEntries.find((ir) => ir.player.id === lineupSelection.playerId);
+            const name = entry ? displayName(entry.player) : 'IR player';
+            return `${name} selected — click an eligible injured player to swap, or Reserves header to activate if roster space is available.`;
+        }
+        return null;
+    }, [lineupSelection, slots, assignments, benchAssignments, playerMap, taxiEntries, irEntries]);
 
     // Short label for the compact indicator itself
-    const selectionLabel = lineupSelection
-        ? lineupSelection.type === 'starter'
-            ? 'Starter selected'
-            : lineupSelection.type === 'bench-slot'
-            ? `Bench (${lineupSelection.slot}) selected`
-            : 'Reserve selected'
-        : sidebarSelection
-        ? sidebarSelection.type === 'taxi'
-            ? 'Academy player selected'
-            : 'IR player selected'
-        : null;
+    const selectionLabel = useMemo(() => {
+        if (!lineupSelection) return null;
+        if (lineupSelection.type === 'starter') {
+            const pid = assignments[lineupSelection.slotIndex];
+            const player = pid ? playerMap.get(pid)?.player : null;
+            return player ? `${displayName(player)} (${slots[lineupSelection.slotIndex]})` : slots[lineupSelection.slotIndex];
+        }
+        if (lineupSelection.type === 'bench-slot') {
+            const pid = benchAssignments[lineupSelection.slot];
+            const player = pid ? playerMap.get(pid)?.player : null;
+            return player ? `${displayName(player)} (${lineupSelection.slot})` : `Bench (${lineupSelection.slot})`;
+        }
+        if (lineupSelection.type === 'pool') {
+            const entry = playerMap.get(lineupSelection.playerId);
+            return entry ? displayName(entry.player) : 'Reserve';
+        }
+        if (lineupSelection.type === 'taxi') {
+            const entry = taxiEntries.find((t) => t.player.id === lineupSelection.playerId);
+            return entry ? `${displayName(entry.player)} (Academy)` : 'Academy player';
+        }
+        if (lineupSelection.type === 'ir') {
+            const entry = irEntries.find((ir) => ir.player.id === lineupSelection.playerId);
+            return entry ? `${displayName(entry.player)} (IR)` : 'IR player';
+        }
+        return null;
+    }, [lineupSelection, assignments, benchAssignments, slots, playerMap, taxiEntries, irEntries]);
 
     /**
      * One player's figure, for any surface on this page. `status` comes from the
@@ -1556,6 +2175,7 @@ export default function PitchUI({
                                                 const entry = playerId ? playerMap.get(playerId) : undefined;
                                                 const isSelected = lineupSelection?.type === 'starter' && lineupSelection.slotIndex === slotIndex;
                                                 const isValidTarget = validLineupTargets.has(`starter-${slotIndex}`);
+                                                const isDimmed = !!lineupSelection && !isSelected && !isValidTarget;
                                                 const isInvalid = !!playerId && !!entry && !canPlaySlot(entry.player, pos);
                                                 const isLocked = !!playerId && !!entry && entry.player.pl_team_id !== null && lockedTeamIds?.has(entry.player.pl_team_id);
                                                 const hasStarted = !!entry && isPlMatchLocked(entry.player, scoringStartedTeamIds);
@@ -1577,6 +2197,7 @@ export default function PitchUI({
                                                         player={entry?.player}
                                                         isSelected={isSelected}
                                                         isValidTarget={isValidTarget}
+                                                        isDimmed={isDimmed}
                                                         isEmpty={!playerId}
                                                         isInvalid={isInvalid}
                                                         isLocked={isLocked}
@@ -1617,6 +2238,7 @@ export default function PitchUI({
                                 const entry = pid ? playerMap.get(pid) : undefined;
                                 const isSelected = lineupSelection?.type === 'bench-slot' && lineupSelection.slot === slot;
                                 const isValidTarget = validLineupTargets.has(`bench-${slot}`);
+                                const isDimmed = !!lineupSelection && !isSelected && !isValidTarget;
                                 const isLocked = !!pid && !!entry && entry.player.pl_team_id !== null && lockedTeamIds?.has(entry.player.pl_team_id);
                                 const pts = scoreMap && pid ? scoreMap[pid] : undefined;
                                 const benchHasStarted = !!entry && isPlMatchLocked(entry.player, scoringStartedTeamIds);
@@ -1629,6 +2251,7 @@ export default function PitchUI({
                                             styles.benchCard,
                                             isSelected ? styles.benchCardSelected : '',
                                             isValidTarget ? styles.benchCardTarget : '',
+                                            isDimmed ? styles.benchCardDimmed : '',
                                             !pid ? styles.benchCardEmpty : '',
                                             isLocked ? styles.benchCardLocked : '',
                                         ].filter(Boolean).join(' ')}
@@ -1683,6 +2306,15 @@ export default function PitchUI({
                     </div>
                 </div>
 
+
+                {/* ── Mobile backdrop for squad sheet ── */}
+                {isPhone && squadOpen && (
+                    <div
+                        className={styles.squadBackdrop}
+                        onClick={() => setSquadOpen(false)}
+                        aria-hidden="true"
+                    />
+                )}
 
                 {/* ── RIGHT: the squad rail ──
                     Four tiers as sections of one column, divided by hairlines.
@@ -1853,215 +2485,260 @@ export default function PitchUI({
                     )}
 
                     {/* ── RESERVES ── */}
-                    <section
-                        className={`${styles.tier} ${lineupSelection && lineupSelection.type !== 'pool' ? styles.tierDropTarget : ''}`}
-                        onClick={(e) => {
-                            // Drop-to-reserves only when the click lands on the section
-                            // itself, never on a player row.
-                            if (e.target === e.currentTarget && (lineupSelection?.type === 'starter' || lineupSelection?.type === 'bench-slot')) {
-                                dropToReserves();
-                            }
-                        }}
-                    >
-                        <div
-                            className={styles.tierHead}
-                            style={{ cursor: (lineupSelection?.type === 'starter' || lineupSelection?.type === 'bench-slot') ? 'pointer' : undefined }}
-                            onClick={() => {
-                                if (lineupSelection?.type === 'starter' || lineupSelection?.type === 'bench-slot') dropToReserves();
-                            }}
-                            title={(lineupSelection?.type === 'starter' || lineupSelection?.type === 'bench-slot') ? 'Click to drop selected player to reserves' : undefined}
-                        >
-                            <h3 className={styles.tierTitle}>Reserves</h3>
-                            <span className="g-label">{poolEntries.length} available</span>
-                        </div>
+                    {(() => {
+                        const isReservesDropTarget = validLineupTargets.has('tier-pool');
+                        return (
+                            <section
+                                className={`${styles.tier} ${isReservesDropTarget ? styles.tierDropTarget : ''}`}
+                                onClick={(e) => {
+                                    if (e.target === e.currentTarget && isReservesDropTarget) {
+                                        handleReservesTierClick();
+                                    }
+                                }}
+                            >
+                                <div
+                                    className={styles.tierHead}
+                                    style={{ cursor: isReservesDropTarget ? 'pointer' : undefined }}
+                                    onClick={isReservesDropTarget ? handleReservesTierClick : undefined}
+                                    title={isReservesDropTarget ? (lineupSelection?.type === 'taxi' || lineupSelection?.type === 'ir' ? 'Click to activate selected player to squad' : 'Click to drop selected player to reserves') : undefined}
+                                >
+                                    <h3 className={styles.tierTitle}>Reserves</h3>
+                                    <span className="g-label">{poolEntries.length} available</span>
+                                </div>
 
-                        {poolEntries.length === 0 ? (
-                            <p className={styles.tierEmpty}>All players assigned to XI or bench.</p>
-                        ) : (
-                            poolEntries.map((entry) => {
-                                const isLocked = isPlMatchLocked(entry.player, lockedTeamIds);
-                                const isLineupTarget = validLineupTargets.has(`pool-${entry.player.id}`);
-                                const isSidebarTarget = validSidebarTargets.has(`pool-${entry.player.id}`);
-                                const isHighlighted = isLineupTarget || isSidebarTarget;
-                                const isSelected = lineupSelection?.type === 'pool' && lineupSelection.playerId === entry.player.id;
-                                const isU21 = isU21Eligible(entry.player, academyAgeLimit);
-                                const isInjured = isIrEligible(entry.player);
-                                // Grey out non-eligible players while an academy/IR swap is armed.
-                                const isDimmed = sidebarSelection
-                                    ? (sidebarSelection.type === 'taxi' ? !isU21 : !isInjured)
-                                    : false;
-                                return (
-                                    <button
-                                        key={entry.id}
-                                        type="button"
-                                        className={[
-                                            'g-row', 'g-namerow', styles.row, styles.rowBtn,
-                                            isLocked ? styles.rowLocked : '',
-                                            isHighlighted ? styles.rowTarget : '',
-                                            isSelected ? styles.rowSelected : '',
-                                            isDimmed ? styles.rowDimmed : '',
-                                        ].filter(Boolean).join(' ')}
-                                        style={{ ['--pf' as string]: entry.player.primary_position ? POS_COLOR[entry.player.primary_position] : 'var(--color-border-subtle)' }}
-                                        onClick={isLocked ? () => setViewingPlayer(entry.player) : () => handlePoolClick(entry.player.id)}
-                                        title={isLocked ? 'Match started (Locked)' : undefined}
-                                    >
-                                        <PositionBadge position={entry.player.primary_position} size="sm" />
-                                        <span
-                                            className={styles.rowName}
-                                            onClick={(e) => { e.stopPropagation(); setViewingPlayer(entry.player); }}
-                                            {...playerHoverProps(prefetchPlayer, entry.player)}
-                                        >
-                                            {displayName(entry.player)}
-                                        </span>
-                                        {/* Club sits with the name, not with the number. Behind the
-                                            spacer it read as part of the numeric column; the row now has
-                                            two zones — who he is on the left, what he scores on the right. */}
-                                        <span className={styles.rowClub}>{entry.player.pl_team}</span>
-                                        {entry.status === 'loan_in' && <span className={styles.loanTag}>Loan</span>}
-                                        <span className={styles.rowSpacer} />
-                                        {isU21 && sidebarSelection?.type === 'taxi' && (
-                                            <span className={styles.eligibleTag}>U21</span>
-                                        )}
-                                        {isInjured && sidebarSelection?.type === 'ir' && (
-                                            <span className={styles.eligibleTag}>{entry.player.fpl_status?.toUpperCase()}</span>
-                                        )}
-                                        {entry.player.fpl_status && entry.player.fpl_status !== 'a' && !sidebarSelection && (
-                                            <span className={styles.statusDot} data-status={entry.player.fpl_status} />
-                                        )}
-                                        <RowScore cell={railCell(entry.player)} />
-                                        {isLocked && <span className={styles.lockIcon}><Icon name="lock" size={14} /></span>}
-                                    </button>
-                                );
-                            })
-                        )}
-                    </section>
+                                {poolEntries.length === 0 ? (
+                                    <p className={styles.tierEmpty}>All players assigned to XI or bench.</p>
+                                ) : (
+                                    poolEntries.map((entry) => {
+                                        const isLocked = isPlMatchLocked(entry.player, lockedTeamIds);
+                                        const isTarget = validLineupTargets.has(`pool-${entry.player.id}`);
+                                        const isSelected = lineupSelection?.type === 'pool' && lineupSelection.playerId === entry.player.id;
+                                        const isDimmed = !!lineupSelection && !isSelected && !isTarget;
+                                        return (
+                                            <button
+                                                key={entry.id}
+                                                type="button"
+                                                className={[
+                                                    'g-row', 'g-namerow', styles.row, styles.rowBtn,
+                                                    isLocked ? styles.rowLocked : '',
+                                                    isTarget ? styles.rowTarget : '',
+                                                    isSelected ? styles.rowSelected : '',
+                                                    isDimmed ? styles.rowDimmed : '',
+                                                ].filter(Boolean).join(' ')}
+                                                style={{ ['--pf' as string]: entry.player.primary_position ? POS_COLOR[entry.player.primary_position] : 'var(--color-border-subtle)' }}
+                                                onClick={isLocked ? () => setViewingPlayer(entry.player) : () => handlePoolClick(entry.player.id)}
+                                                title={isLocked ? 'Match started (Locked)' : isTarget ? 'Click to swap or assign' : undefined}
+                                            >
+                                                <PositionBadge position={entry.player.primary_position} size="sm" />
+                                                <span
+                                                    className={styles.rowName}
+                                                    onClick={(e) => { e.stopPropagation(); setViewingPlayer(entry.player); }}
+                                                    {...playerHoverProps(prefetchPlayer, entry.player)}
+                                                >
+                                                    {displayName(entry.player)}
+                                                </span>
+                                                <span className={styles.rowClub}>{entry.player.pl_team}</span>
+                                                {entry.status === 'loan_in' && <span className={styles.loanTag}>Loan</span>}
+                                                <span className={styles.rowSpacer} />
+                                                {isTarget && (
+                                                    <>
+                                                        {lineupSelection?.type === 'bench-slot' && (
+                                                            lineupSelection.slot === 'FLEX' ? (
+                                                                <span className={styles.flexTag}>FLEX</span>
+                                                            ) : (
+                                                                <span className={styles.slotTag}>{lineupSelection.slot}</span>
+                                                            )
+                                                        )}
+                                                        {lineupSelection?.type === 'starter' && (
+                                                            <span className={styles.slotTag}>{slots[lineupSelection.slotIndex]}</span>
+                                                        )}
+                                                        {lineupSelection?.type === 'taxi' && (
+                                                            <span className={styles.eligibleTag}>U21</span>
+                                                        )}
+                                                        {lineupSelection?.type === 'ir' && (
+                                                            <span className={styles.eligibleTag}>{entry.player.fpl_status?.toUpperCase() ?? 'IR'}</span>
+                                                        )}
+                                                    </>
+                                                )}
+                                                {entry.player.fpl_status && entry.player.fpl_status !== 'a' && !lineupSelection && (
+                                                    <span className={styles.statusDot} data-status={entry.player.fpl_status} />
+                                                )}
+                                                <RowScore cell={railCell(entry.player)} />
+                                                {isLocked && <span className={styles.lockIcon}><Icon name="lock" size={14} /></span>}
+                                            </button>
+                                        );
+                                    })
+                                )}
+                            </section>
+                        );
+                    })()}
 
                     {/* ── ACADEMY ── */}
-                    <section className={styles.tier}>
-                        <div className={styles.tierHead}>
-                            <h3 className={styles.tierTitle}>Academy</h3>
-                            <span className={styles.tierHeadRight}>
-                                <span className="g-label">{taxiEntries.length} / {capacity?.academyLimit ?? 3} slots</span>
-                                {academyOffer && taxiEntries.length >= (capacity?.academyLimit ?? 3) && (
-                                    <button type="button" className={facilityStyles.railLink} onClick={() => setBuyingFacility(academyOffer)}>
-                                        Expand · €{academyOffer.next!.price}m
-                                    </button>
+                    {(() => {
+                        const isAcademyDropTarget = validLineupTargets.has('tier-taxi');
+                        return (
+                            <section className={`${styles.tier} ${isAcademyDropTarget ? styles.tierDropTarget : ''}`}>
+                                <div
+                                    className={styles.tierHead}
+                                    style={{ cursor: isAcademyDropTarget ? 'pointer' : undefined }}
+                                    onClick={isAcademyDropTarget ? handleAcademyTierClick : undefined}
+                                    title={
+                                        isAcademyDropTarget
+                                            ? 'Click to move selected player to academy'
+                                            : hasAgedOutTaxiPlayer
+                                                ? 'Additions are paused until aged-out players are promoted or released.'
+                                                : undefined
+                                    }
+                                >
+                                    <h3 className={styles.tierTitle}>Academy</h3>
+                                    <span className={styles.tierHeadRight}>
+                                        <span className="g-label">{taxiEntries.length} / {capacity?.academyLimit ?? 3} slots</span>
+                                        {hasAgedOutTaxiPlayer && (
+                                            <span className={styles.agedOutTag} title="Additions are paused until aged-out players are promoted or released.">
+                                                Additions Paused
+                                            </span>
+                                        )}
+                                        {academyOffer && taxiEntries.length >= (capacity?.academyLimit ?? 3) && (
+                                            <button type="button" className={facilityStyles.railLink} onClick={(e) => { e.stopPropagation(); setBuyingFacility(academyOffer); }}>
+                                                Expand · €{academyOffer.next!.price}m
+                                            </button>
+                                        )}
+                                    </span>
+                                </div>
+                                {taxiEntries.length === 0 ? (
+                                    <p className={styles.tierEmpty}>No players in academy.</p>
+                                ) : (
+                                    taxiEntries.map((entry) => {
+                                        const isSelected = lineupSelection?.type === 'taxi' && lineupSelection.playerId === entry.player.id;
+                                        const isTarget = validLineupTargets.has(`taxi-${entry.player.id}`);
+                                        const isLocked = isPlMatchLocked(entry.player, lockedTeamIds);
+                                        const isDimmed = !!lineupSelection && !isSelected && !isTarget;
+                                        const isAgedOut = !isU21(entry.player);
+                                        return (
+                                            <button
+                                                key={entry.id}
+                                                type="button"
+                                                className={[
+                                                    'g-row', 'g-namerow', styles.row, styles.rowBtn, styles.rowWithActions,
+                                                    isSelected ? styles.rowSelected : '',
+                                                    isTarget ? styles.rowTarget : '',
+                                                    isDimmed ? styles.rowDimmed : '',
+                                                    isLocked ? styles.rowLocked : '',
+                                                ].filter(Boolean).join(' ')}
+                                                style={{ ['--pf' as string]: entry.player.primary_position ? POS_COLOR[entry.player.primary_position] : 'var(--color-border-subtle)' }}
+                                                onClick={isLocked ? () => setViewingPlayer(entry.player) : () => handleTaxiClick(entry.player.id)}
+                                                title={isLocked ? 'Match started (Locked)' : isTarget ? 'Click to swap with selected player' : isSelected ? 'Selected' : 'Click to select'}
+                                            >
+                                                <PositionBadge position={entry.player.primary_position} size="sm" />
+                                                <span
+                                                    className={styles.rowName}
+                                                    onClick={(e) => { e.stopPropagation(); setViewingPlayer(entry.player); }}
+                                                    {...playerHoverProps(prefetchPlayer, entry.player)}
+                                                >
+                                                    {displayName(entry.player)}
+                                                </span>
+                                                <span className={styles.rowClub}>{entry.player.pl_team}</span>
+                                                <span className={styles.rowSpacer} />
+                                                {isAgedOut && <span className={styles.agedOutTag}>Aged Out</span>}
+                                                {isTarget && <span className={styles.eligibleTag}>SWAP</span>}
+                                                <RowScore cell={railCell(entry.player)} />
+                                                {isLocked && <span className={styles.lockIcon}><Icon name="lock" size={14} /></span>}
+                                                <div className={styles.rowActions}>
+                                                    <button
+                                                        type="button"
+                                                        className={styles.rowBtnPrimary}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleTaxiActivate(entry.player.id);
+                                                        }}
+                                                        disabled={sidebarLoading || holding || (capacity?.open ?? 0) <= 0}
+                                                        title={holding ? HOLD_MESSAGE : (capacity?.open ?? 0) <= 0 ? 'Active roster full' : 'Promote to active roster'}
+                                                    >
+                                                        {sidebarLoading ? '…' : 'Activate'}
+                                                    </button>
+                                                </div>
+                                            </button>
+                                        );
+                                    })
                                 )}
-                            </span>
-                        </div>
-                        {taxiEntries.length === 0 ? (
-                            <p className={styles.tierEmpty}>No players in academy.</p>
-                        ) : (
-                            taxiEntries.map((entry) => {
-                                const isSelected = sidebarSelection?.type === 'taxi' && sidebarSelection.playerId === entry.player.id;
-                                return (
-                                    <div
-                                        key={entry.id}
-                                        className={`g-row g-namerow ${styles.row} ${styles.rowWithActions} ${isSelected ? styles.rowSelected : ''}`}
-                                        style={{ ['--pf' as string]: entry.player.primary_position ? POS_COLOR[entry.player.primary_position] : 'var(--color-border-subtle)' }}
-                                    >
-                                        <PositionBadge position={entry.player.primary_position} size="sm" />
-                                        <span
-                                            className={styles.rowName}
-                                            onClick={() => setViewingPlayer(entry.player)}
-                                            {...playerHoverProps(prefetchPlayer, entry.player)}
-                                        >
-                                            {displayName(entry.player)}
-                                        </span>
-                                        <span className={styles.rowClub}>{entry.player.pl_team}</span>
-                                        <span className={styles.rowSpacer} />
-                                        <RowScore cell={railCell(entry.player)} />
-                                        <div className={styles.rowActions}>
-                                            <button
-                                                type="button"
-                                                className={`${styles.rowBtnGhost} ${isSelected ? styles.rowBtnGhostOn : ''}`}
-                                                onClick={() => {
-                                                    if (isSelected) { setSidebarSelection(null); return; }
-                                                    activateSidebarSelection({ type: 'taxi', playerId: entry.player.id });
-                                                }}
-                                                disabled={sidebarLoading}
-                                                title="Select to swap with a U21 reserve"
-                                            >
-                                                {isSelected ? 'Cancel' : 'Swap'}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={styles.rowBtnPrimary}
-                                                onClick={() => handleTaxiActivate(entry.player.id)}
-                                                disabled={sidebarLoading}
-                                                title="Promote to active roster"
-                                            >
-                                                {sidebarLoading ? '…' : 'Activate'}
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </section>
+                            </section>
+                        );
+                    })()}
 
                     {/* ── INJURED RESERVE ── */}
-                    {irEntries.length > 0 && (
-                        <section className={styles.tier}>
-                            <div className={styles.tierHead}>
-                                <h3 className={styles.tierTitle}>Injured Reserve</h3>
-                                <span className={styles.tierHeadRight}>
-                                    <span className="g-label">{irEntries.length} / {capacity?.irLimit ?? 2} slots</span>
-                                    {irOffer && irEntries.length >= (capacity?.irLimit ?? 2) && (
-                                        <button type="button" className={facilityStyles.railLink} onClick={() => setBuyingFacility(irOffer)}>
-                                            Expand · €{irOffer.next!.price}m
-                                        </button>
-                                    )}
-                                </span>
-                            </div>
-                            {irEntries.map((entry) => {
-                                const isSelected = sidebarSelection?.type === 'ir' && sidebarSelection.playerId === entry.player.id;
-                                const irLocked = isIrLocked(entry.player);
-                                return (
-                                    <div
-                                        key={entry.id}
-                                        className={`g-row g-namerow ${styles.row} ${styles.rowWithActions} ${isSelected ? styles.rowSelected : ''}`}
-                                        style={{ ['--pf' as string]: entry.player.primary_position ? POS_COLOR[entry.player.primary_position] : 'var(--color-border-subtle)' }}
-                                    >
-                                        <PositionBadge position={entry.player.primary_position} size="sm" />
-                                        <span
-                                            className={styles.rowName}
-                                            onClick={() => setViewingPlayer(entry.player)}
-                                            {...playerHoverProps(prefetchPlayer, entry.player)}
+                    {irEntries.length > 0 && (() => {
+                        const isIrDropTarget = validLineupTargets.has('tier-ir');
+                        return (
+                            <section className={`${styles.tier} ${isIrDropTarget ? styles.tierDropTarget : ''}`}>
+                                <div
+                                    className={styles.tierHead}
+                                    style={{ cursor: isIrDropTarget ? 'pointer' : undefined }}
+                                    onClick={isIrDropTarget ? handleIrTierClick : undefined}
+                                    title={isIrDropTarget ? 'Click to move selected player to IR' : undefined}
+                                >
+                                    <h3 className={styles.tierTitle}>Injured Reserve</h3>
+                                    <span className={styles.tierHeadRight}>
+                                        <span className="g-label">{irEntries.length} / {capacity?.irLimit ?? 2} slots</span>
+                                        {irOffer && irEntries.length >= (capacity?.irLimit ?? 2) && (
+                                            <button type="button" className={facilityStyles.railLink} onClick={(e) => { e.stopPropagation(); setBuyingFacility(irOffer); }}>
+                                                Expand · €{irOffer.next!.price}m
+                                            </button>
+                                        )}
+                                    </span>
+                                </div>
+                                {irEntries.map((entry) => {
+                                    const isSelected = lineupSelection?.type === 'ir' && lineupSelection.playerId === entry.player.id;
+                                    const isTarget = validLineupTargets.has(`ir-${entry.player.id}`);
+                                    const irLocked = isIrLocked(entry.player);
+                                    const isDimmed = !!lineupSelection && !isSelected && !isTarget;
+                                    return (
+                                        <button
+                                            key={entry.id}
+                                            type="button"
+                                            className={[
+                                                'g-row', 'g-namerow', styles.row, styles.rowBtn, styles.rowWithActions,
+                                                isSelected ? styles.rowSelected : '',
+                                                isTarget ? styles.rowTarget : '',
+                                                isDimmed ? styles.rowDimmed : '',
+                                                irLocked ? styles.rowLocked : '',
+                                            ].filter(Boolean).join(' ')}
+                                            style={{ ['--pf' as string]: entry.player.primary_position ? POS_COLOR[entry.player.primary_position] : 'var(--color-border-subtle)' }}
+                                            onClick={irLocked ? () => setViewingPlayer(entry.player) : () => handleIrClick(entry.player.id)}
+                                            title={irLocked ? 'Match started — IR is locked until this week is settled' : isTarget ? 'Click to swap with selected player' : isSelected ? 'Selected' : 'Click to select'}
                                         >
-                                            {displayName(entry.player)}
-                                        </span>
-                                        <span className={styles.rowClub}>{entry.player.pl_team}</span>
-                                        <span className={styles.rowSpacer} />
-                                        <RowScore cell={railCell(entry.player)} />
-                                        <div className={styles.rowActions}>
-                                            <button
-                                                type="button"
-                                                className={`${styles.rowBtnGhost} ${isSelected ? styles.rowBtnGhostOn : ''}`}
-                                                onClick={() => {
-                                                    if (isSelected) { setSidebarSelection(null); return; }
-                                                    activateSidebarSelection({ type: 'ir', playerId: entry.player.id });
-                                                }}
-                                                disabled={sidebarLoading || irLocked}
-                                                title={irLocked ? 'Match started — IR is locked until this week is settled' : 'Select to swap with an injured reserve'}
+                                            <PositionBadge position={entry.player.primary_position} size="sm" />
+                                            <span
+                                                className={styles.rowName}
+                                                onClick={(e) => { e.stopPropagation(); setViewingPlayer(entry.player); }}
+                                                {...playerHoverProps(prefetchPlayer, entry.player)}
                                             >
-                                                {isSelected ? 'Cancel' : 'Swap'}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={styles.rowBtnPrimary}
-                                                onClick={() => handleIrActivate(entry.player.id)}
-                                                disabled={sidebarLoading || irLocked}
-                                                title={irLocked ? 'Match started — IR is locked until this week is settled' : 'Activate from IR'}
-                                            >
-                                                {sidebarLoading ? '…' : 'Activate'}
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </section>
-                    )}
+                                                {displayName(entry.player)}
+                                            </span>
+                                            <span className={styles.rowClub}>{entry.player.pl_team}</span>
+                                            <span className={styles.rowSpacer} />
+                                            {isTarget && <span className={styles.eligibleTag}>SWAP</span>}
+                                            <RowScore cell={railCell(entry.player)} />
+                                            {irLocked && <span className={styles.lockIcon}><Icon name="lock" size={14} /></span>}
+                                            <div className={styles.rowActions}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.rowBtnPrimary}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleIrActivate(entry.player.id);
+                                                    }}
+                                                    disabled={sidebarLoading || irLocked || holding || (capacity?.open ?? 0) <= 0}
+                                                    title={irLocked ? 'Match started — IR is locked until this week is settled' : holding ? HOLD_MESSAGE : (capacity?.open ?? 0) <= 0 ? 'Active roster full' : 'Activate from IR'}
+                                                >
+                                                    {sidebarLoading ? '…' : 'Activate'}
+                                                </button>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </section>
+                        );
+                    })()}
 
                     </div>{/* end squadScroll */}
 

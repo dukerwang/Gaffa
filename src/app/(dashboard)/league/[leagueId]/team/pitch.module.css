@@ -580,6 +580,12 @@
     border-radius: var(--r-control);
 }
 
+.nodeWrapDimmed {
+    opacity: 0.35;
+    pointer-events: none;
+    transition: opacity var(--dur-fast) var(--ease-standard);
+}
+
 .nodeWrapEmpty .nodePortrait { opacity: 0.55; }
 
 /* The chip. Its keyline is the pitch's own white line — the field is darker
@@ -984,6 +990,42 @@
     text-transform: uppercase;
     color: var(--color-text-secondary);
     border-left: 2px solid var(--color-border-strong);
+    padding-left: var(--s1);
+    flex-shrink: 0;
+}
+
+.slotTag {
+    font-family: var(--font-condensed);
+    font-size: var(--t-10);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    border-left: 2px solid var(--color-accent);
+    padding-left: var(--s1);
+    flex-shrink: 0;
+}
+
+.flexTag {
+    font-family: var(--font-condensed);
+    font-size: var(--t-10);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    border-left: 2px solid var(--color-border-strong);
+    padding-left: var(--s1);
+    flex-shrink: 0;
+}
+
+.agedOutTag {
+    font-family: var(--font-condensed);
+    font-size: var(--t-10);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-warning-text);
+    border-left: 2px solid var(--color-warning-text);
     padding-left: var(--s1);
     flex-shrink: 0;
 }
@@ -1474,6 +1516,11 @@
 
 .benchCardEmpty { background: transparent; border-style: dashed; }
 .benchCardLocked { opacity: 0.72; }
+.benchCardDimmed {
+    opacity: 0.35;
+    pointer-events: none;
+    transition: opacity var(--dur-fast) var(--ease-standard);
+}
 
 .benchSlotTag {
     position: absolute;
@@ -2074,9 +2121,20 @@
 
    Collapsed it shows only its handle; arming a swap opens it. */
 
+.squadBackdrop { display: none; }
 .squadHandle { display: none; }
 
 @media (max-width: 600px) {
+    .squadBackdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: calc(var(--z-dropdown) - 1);
+        background: rgba(0, 0, 0, 0.4);
+        border: 0;
+        padding: 0;
+        margin: 0;
+    }
     .sidebarCol {
         position: fixed;
         left: 0;

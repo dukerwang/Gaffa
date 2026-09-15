@@ -11,18 +11,10 @@ import { notifyAuctionResolution, type AuctionResolutionResult } from '@/lib/auc
 import { countBuybackSlots, DEFAULT_ROSTER_SIZE, UNCOUNTED_ROSTER_STATUSES } from '@/lib/roster/capacity';
 import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
 
+import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/academyEligibility';
+
 interface Props {
   params: Promise<{ leagueId: string }>;
-}
-
-function calculateAgeInYears(dobIso: string, referenceDate = new Date()): number {
-  const dob = new Date(dobIso);
-  let age = referenceDate.getFullYear() - dob.getFullYear();
-  const monthDiff = referenceDate.getMonth() - dob.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && referenceDate.getDate() < dob.getDate())) {
-    age--;
-  }
-  return age;
 }
 
 export async function POST(req: NextRequest, { params }: Props) {
@@ -105,13 +97,15 @@ export async function POST(req: NextRequest, { params }: Props) {
   // League settings for roster/academy validations
   const { data: league } = await admin
     .from('leagues')
-    .select('roster_size, taxi_size, taxi_age_limit, roster_locked, previous_season, current_season')
+    .select('roster_size, taxi_size, taxi_age_limit, roster_locked, previous_season, current_season, season')
     .eq('id', leagueId)
     .single();
 
   if (!league) {
     return NextResponse.json({ error: 'League not found' }, { status: 404 });
   }
+
+  const seasonRefDate = getSeasonReferenceDate(league.season ?? league.current_season);
 
   // Buy-back exclusion. A manager who took compensation for this player and
   // then sees him return to the PL would otherwise arrive at the auction with a
@@ -168,7 +162,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     const player = r.player as unknown as { name: string; date_of_birth: string | null } | null;
     const dob = player?.date_of_birth;
     if (!dob) return false;
-    return calculateAgeInYears(dob) > ageLimit;
+    return calculateAgeInYears(dob, seasonRefDate) > ageLimit;
   });
   if (agedOut) {
     const agedOutName = (agedOut.player as unknown as { name: string } | null)?.name ?? 'A player';
@@ -215,7 +209,7 @@ export async function POST(req: NextRequest, { params }: Props) {
         { status: 400 },
       );
     }
-    const requestedAge = calculateAgeInYears(playerData.date_of_birth);
+    const requestedAge = calculateAgeInYears(playerData.date_of_birth, seasonRefDate);
     if (requestedAge > ageLimit) {
       return NextResponse.json(
         { error: `${playerData.name ?? 'This player'} is age ${requestedAge} and not U${ageLimit} academy-eligible.` },
@@ -318,7 +312,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       );
     }
 
-    const age = calculateAgeInYears(playerData.date_of_birth);
+    const age = calculateAgeInYears(playerData.date_of_birth, seasonRefDate);
     if (age > ageLimit) {
       return NextResponse.json(
         { error: `Roster is full. ${playerData.name} is age ${age} and not U${ageLimit} academy-eligible; select a drop player instead.` },

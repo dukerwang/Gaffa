@@ -8,10 +8,37 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { calculateAgeInYears, isAcademyEligible } from '../academyEligibility';
+import { calculateAgeInYears, isAcademyEligible, getSeasonReferenceDate } from '../academyEligibility';
 
 const REF = new Date('2026-08-07T00:00:00Z');
 const academy = (current: number, max = 3, age_limit = 21) => ({ current, max, age_limit });
+
+describe('getSeasonReferenceDate', () => {
+    it('returns August 1 of the season start year for formatted season strings', () => {
+        expect(getSeasonReferenceDate('2025-26').toISOString()).toBe('2025-08-01T00:00:00.000Z');
+        expect(getSeasonReferenceDate('2026-27').toISOString()).toBe('2026-08-01T00:00:00.000Z');
+    });
+
+    it('anchors season age so a mid-season birthday does not age a player out early', () => {
+        // Mainoo born 2005-04-19:
+        // In 2025-26 season, kickoff anchor is 2025-08-01. Age on anchor = 20.
+        const ref25 = getSeasonReferenceDate('2025-26');
+        expect(calculateAgeInYears('2005-04-19', ref25)).toBe(20);
+        expect(isAcademyEligible('2005-04-19', academy(0, 3, 21), ref25)).toBe(true);
+
+        // In 2026-27 season, kickoff anchor is 2026-08-01. Age on anchor = 21.
+        // Even when turning 22 during the season (2027-04-19), season age remains 21.
+        const ref26 = getSeasonReferenceDate('2026-27');
+        expect(calculateAgeInYears('2005-04-19', ref26)).toBe(21);
+        expect(isAcademyEligible('2005-04-19', academy(0, 3, 21), ref26)).toBe(true);
+
+        // In 2027-28 season, kickoff anchor is 2027-08-01. Age on anchor = 22.
+        // Now he has aged out at season reset.
+        const ref27 = getSeasonReferenceDate('2027-28');
+        expect(calculateAgeInYears('2005-04-19', ref27)).toBe(22);
+        expect(isAcademyEligible('2005-04-19', academy(0, 3, 21), ref27)).toBe(false);
+    });
+});
 
 describe('calculateAgeInYears', () => {
     it('counts a birthday that already passed this year', () => {

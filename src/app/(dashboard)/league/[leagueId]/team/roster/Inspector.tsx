@@ -5,7 +5,8 @@ import PremiumPlayerCard from '@/components/players/PremiumPlayerCard';
 import ListingEditor from '@/components/transfers/ListingEditor';
 import type { EnrichedPlayer, RosterPlayer, TransfersListing } from '@/lib/transfers/buildTransfersModel';
 import type { SquadEntry } from './ClubClient';
-import { money, signedMoney, statusMeta, valueOf, ageOf } from './clubDerive';
+import { money, signedMoney, statusMeta, valueOf } from './clubDerive';
+import { calculateAgeInYears } from '@/lib/transfers/academyEligibility';
 import styles from './club.module.css';
 
 interface Props {
@@ -49,7 +50,7 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
   const net = value - paid;
   const severance = Math.max(2, Math.floor(value * 0.2));
   const isPurchase = entry.acquisitionType === 'waiver' || entry.acquisitionType === 'trade';
-  const age = ageOf(p.date_of_birth);
+  const age = p.date_of_birth ? calculateAgeInYears(p.date_of_birth) : null;
   const acqDate = entry.acquiredAt ? new Date(entry.acquiredAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
 
   // Mirrors what the hub itself refuses: ListingEditor already filters
