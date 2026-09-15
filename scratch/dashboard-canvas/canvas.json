@@ -1,45 +1,54 @@
 {
   "artboards": [
-    { "file": "Main.dc.html", "title": "Mobile · Home", "x": 0, "y": 0, "w": 390, "h": 1800 },
-    { "file": "FirstRun.dc.html", "title": "Mobile · No leagues yet", "x": 490, "y": 0, "w": 390, "h": 1110 },
-    { "file": "Desktop.dc.html", "title": "Desktop 1440", "x": 0, "y": 1940, "w": 1440, "h": 1440 }
+    {
+      "file": "Main.dc.html",
+      "title": "Mobile \u00b7 Home",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 2100
+    },
+    {
+      "file": "FirstRun.dc.html",
+      "title": "Mobile \u00b7 No leagues yet",
+      "x": 490,
+      "y": 0,
+      "w": 390,
+      "h": 1180
+    },
+    {
+      "file": "Desktop.dc.html",
+      "title": "Desktop 1440",
+      "x": 0,
+      "y": 2240,
+      "w": 1440,
+      "h": 1400
+    }
   ],
   "annotations": [
     {
       "id": "note-headers",
       "x": 980,
       "y": 0,
-      "w": 320,
-      "text": "The underlined headers are gone.\n\nA section head is now a big serif title, a condensed caps meta beside it, and a link pushed right — separation comes from space and from the content below being a real object.\n\nThis departs from DECISIONS 2026-09-04 (\"a serif title over a 2px ink rule with flat content beneath\"), which is still what League Home does. Worth deciding whether the rule changes everywhere or the home screen is the exception."
+      "w": 330,
+      "text": "Headers are no longer just type. Each one carries an instrument that belongs to its section:\n\n\u2022 Your Leagues sits on a green shelf that continues out of the topbar, with your club crests stacked beside it, status pills underneath, and the league cards rising out of its bottom edge.\n\u2022 Top Rated carries a Matchweek / Season switch, so the header does real work.\n\u2022 The fixtures head is a scoreboard: an MW tile, the date range, and a ten-segment strip showing finished, live and to come at a glance.\n\u2022 How Gaffa Works wears the baseline rule as its mark: a track, an ink bar and the median tick."
     },
     {
-      "id": "note-visual",
+      "id": "note-rules",
       "x": 980,
-      "y": 300,
-      "w": 320,
-      "text": "Where the colour comes from now:\n\n• Club crests blown up to 168px and bled off the top-right of each league card at 7% — depth without a shadow or a gradient.\n• Real PL badges at 24px in every fixture row.\n• Player cut-outs on plinths coloured by the player's own tactical role, so the twelve-position spine does visual work instead of sitting in a chip.\n• One dark green block near the foot, so the page has a floor and the cream is not unbroken top to bottom."
+      "y": 420,
+      "w": 330,
+      "text": "Two deliberate departures to confirm:\n\n1. No 2px ink rule under section titles. DECISIONS 2026-09-04 still says that is the section pattern, and League Home uses it.\n2. League cards and the doors use a soft shadow instead of a border, because they overlap the green shelf and a hairline disappears against it. UI_RULES 6 says bounded objects get a border."
     },
     {
-      "id": "note-portraits",
+      "id": "note-fixes",
       "x": 980,
-      "y": 640,
-      "w": 320,
-      "text": "Top Rated is portraits now.\n\nMobile swipes a rail of four at 132px; desktop lays six across the full 1180 at 208px tall with the rank in the corner. Same data, composed for the width rather than reflowed.\n\nSourced at 500x500 from the PL photo CDN and downsampled to 240px, so they hold up at desktop size — the earlier 110x140 crops did not."
-    },
-    {
-      "id": "note-breakpoints",
-      "x": 980,
-      "y": 990,
-      "w": 320,
-      "text": "The two breakpoints are composed separately, not reflowed.\n\nMobile: one column, league cards stacked full width, portraits on a swipe rail, fixtures as full-width rows, 44px targets throughout.\n\nDesktop: leagues take two thirds with the pre-draft card and both doors in a rail beside them; the portrait row then runs the full width as its own band; fixtures split into two columns with the green block alongside. Nothing is a stretched phone layout."
-    },
-    {
-      "id": "note-firstrun",
-      "x": 490,
-      "y": 1170,
-      "w": 390,
-      "text": "First run: the argument, made with faces.\n\nMatchweek 3 really did finish with Alisson 6th and Haaland 12th of 654 rated players. Both portraits are the actual players — an earlier draft had the wrong faces under those names."
+      "y": 700,
+      "w": 330,
+      "text": "Fixed on this pass after rendering it: ratings now sit in a dark chip so they stop colliding with shirt sponsors, and the market icon (which read as a bin) is now swap arrows."
     }
   ],
-  "launch": { "view": "canvas" }
+  "launch": {
+    "view": "canvas"
+  }
 }
