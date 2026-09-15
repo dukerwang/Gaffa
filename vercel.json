@@ -37,6 +37,10 @@
             "schedule": "0 2 * * *"
         },
         {
+            "path": "/api/sync/projections",
+            "schedule": "0 3 * * *"
+        },
+        {
             "path": "/api/sync/api-football-players",
             "schedule": "0 4 * * 0"
         },
