@@ -145,6 +145,16 @@ lineup.
 
 To start from your own side, tap **Share Lineup** on your lineup page.
 
+## Transactions
+
+**Activity** is now **Transactions**: every completed signing, departure,
+trade, and loan in your league, grouped by day. Filter by kind or club, search
+for a player, or switch seasons. Bids stay on Transfers, and payments like Match
+Revenue and solidarity stay on your finance page.
+
+On League Home, **The Wire** is now **Transactions** too. The Wire on Transfers
+still shows live bids, offers, and listings.
+
 ## Projected Points
 
 Before kickoff, you'll see each player's projected points for the gameweek on
@@ -237,7 +247,9 @@ anyway.
 4. **Heritage** is the biggest new surface, but missing it costs nobody points,
    and both alpha leagues are four gameweeks old, so there isn't much in it yet.
    **Lineup Builder** follows as the other new surface: fun to share, but
-   separate from how anyone's league plays out.
+   separate from how anyone's league plays out. **Transactions** comes after
+   because it replaces pages managers already know; it needs one sentence on
+   why revenue rows moved to Finance.
 5. **Projected Points** is valuable, but managers see it the next time they set
    a lineup. Only the outlined-versus-filled convention needs a sentence.
 6. **Home screen** and **Team of the Week** are visible on first load and need
@@ -267,6 +279,8 @@ its line.
 | On Loan Abroad | `0c413192`, migrations 159–160 |
 | Heritage | `894af998`, `d613f7ab` (PR #12), migration 156 |
 | Lineup Builder and Share Lineup | PR #14 (rescued from uncommitted files in the main folder, with layout, pagination and club-filter fixes) |
+| Transactions page and League Home rail | PR #16 (`feat/transactions-page` rebased, with ledger rows filtered in the rail query) |
+| Match Revenue label | PR #15, plus the 22 GW1–4 ledger notes renamed in place |
 | Projected points on lineup and game log | `e1c55b75`, `3e4368d7`, `ed63ade8`, `3e47437a`, `7ba5dc93`, `c1670d3a`, `63b88495`, `248fd773` |
 | Club page Pitch and Depth Chart | `99dcaab2`, `e14943ee`, `d468d1b0` |
 | Home screen | `50ae5bb4`, `28cbb55f`, `776a0841`, `afb318c4` (PR #11), migration `166_season_top_rated` |
