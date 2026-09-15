@@ -18,7 +18,6 @@ import type { createAdminClient } from '@/lib/supabase/admin';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import type { MatchupLineup, Player, RosterStatus } from '@/types';
 import type { CrestConfig } from '@/components/crest/types';
-import { getClubHonours, groupHonours, type HonourGroup } from '@/lib/honours/getClubHonours';
 import {
   getCurrentFplSeason,
   isFplSeasonKickedOff,
@@ -157,11 +156,6 @@ export interface ClubProps {
     /** True if the decisions or slot-usage query failed — the lists below are empty defaults, not "nothing to show". */
     error: boolean;
   };
-  /**
-   * What this club has won, newest first. Public on every club — a trophy is
-   * the one thing on this page nobody has a reason to hide.
-   */
-  honours: HonourGroup[];
   /** Academy, Injured Reserve and Loans Out: slots owned, in use, and the next upgrade. */
   facilities: FacilityView[];
 }
@@ -526,8 +520,6 @@ export async function loadClubView(
     error: !decisionsResult.ok || !slotsResult.ok,
   };
 
-  const honoursByTeam = await getClubHonours(admin, leagueId, [team.id]);
-
   const hasHeld = entries.some((e) => e.status === 'held');
   const [holdState, gwInProgress] = hasHeld
     ? await Promise.all([getHoldState(admin, team.id), isGameweekInProgress(admin)])
@@ -563,7 +555,6 @@ export async function loadClubView(
     hold,
     savedLineup,
     departures,
-    honours: groupHonours(honoursByTeam.get(team.id) ?? []),
     facilities: buildFacilityViews(slots, {
       academy: rosterEntries.filter((e) => e.status === 'taxi').length,
       ir: rosterEntries.filter((e) => e.status === 'ir').length,
