@@ -45,7 +45,7 @@ export interface SolidarityRates {
 export interface SolidarityDistribution {
     /** Total returned to the league, before splitting. */
     pool: number;
-    /** Paid to the auction initiator. Zero when there is no eligible scout. */
+    /** Paid to the auction initiator, win or lose. Zero when a manager didn't open it. */
     scout: number;
     /** Paid to EACH of the other non-winning clubs. */
     perOtherClub: number;
@@ -58,15 +58,23 @@ export interface SolidarityDistribution {
 /**
  * @param amount      The sum being taken from a club (winning bid, severance, buyback fee).
  * @param totalClubs  Number of clubs in the league, including the payer.
- * @param hasScout    True when an auction initiator exists AND is not the winner.
- *                    A Buy Now with no prior manager bid, or an auction the
- *                    initiator went on to win, both pass false.
+ * @param hasScout    True when a manager opened the auction. A Buy Now with no
+ *                    prior manager bid, or an auction the system opened, pass false.
+ * @param scoutIsPayer True when that scout also won. The fee is still paid, as
+ *                    a rebate on their own bid, and they are the only club
+ *                    left out of the equal split.
+ *
+ * Why the scout is paid win or lose: a fee paid only on losing makes losing
+ * worth 10% of the price, so a scout who values a player at v stops bidding
+ * at v / 1.1. Paying the same 10% on a win moves that point back to exactly v.
+ * A rebate larger than the fee would push it past v and make nominating a race.
  */
 export function computeSolidarity(
     amount: number,
     totalClubs: number,
     hasScout: boolean,
     rates: SolidarityRates = { share: DEFAULT_SOLIDARITY_SHARE, scoutShare: DEFAULT_SCOUT_SHARE },
+    scoutIsPayer = false,
 ): SolidarityDistribution {
     if (!Number.isFinite(amount) || amount < 0) {
         throw new Error(`computeSolidarity: amount must be >= 0, got ${amount}`);
@@ -75,9 +83,9 @@ export function computeSolidarity(
     const pool = Math.floor(amount * rates.share);
     const scout = hasScout ? Math.floor(pool * rates.scoutShare) : 0;
 
-    // The payer is always excluded. The scout, when there is one, is paid
-    // separately and so is excluded from the equal split too.
-    const otherClubCount = Math.max(0, totalClubs - (hasScout ? 2 : 1));
+    // The payer is always excluded. A scout who didn't win is paid separately
+    // and so is excluded from the equal split too.
+    const otherClubCount = Math.max(0, totalClubs - (hasScout && !scoutIsPayer ? 2 : 1));
     const perOtherClub = otherClubCount > 0 ? Math.floor((pool - scout) / otherClubCount) : 0;
 
     const handedOut = scout + perOtherClub * otherClubCount;

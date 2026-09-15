@@ -37,8 +37,8 @@ describe('computeSolidarity', () => {
     it('never distributes more than the original amount', () => {
         for (const amount of [1, 7, 20, 40, 60, 90, 150, 220]) {
             for (const clubs of [4, 6, 8, 10]) {
-                for (const hasScout of [true, false]) {
-                    const d = computeSolidarity(amount, clubs, hasScout);
+                for (const [hasScout, scoutIsPayer] of [[true, false], [true, true], [false, false]]) {
+                    const d = computeSolidarity(amount, clubs, hasScout, undefined, scoutIsPayer);
                     const handedOut = d.scout + d.perOtherClub * d.otherClubCount;
                     expect(handedOut).toBeLessThanOrEqual(amount);
                     expect(d.burned).toBe(amount - handedOut);
@@ -62,6 +62,23 @@ describe('computeSolidarity', () => {
         expect(d.scout).toBe(0);
         expect(d.otherClubCount).toBe(5); // only the winner is excluded
         expect(d.perOtherClub).toBe(4);   // floor(20 / 5)
+    });
+
+    it('pays the scout the same fee when the scout wins', () => {
+        const d = computeSolidarity(90, 6, true, undefined, true);
+        expect(d.scout).toBe(9);
+        // Only the winner is excluded, because the winner is the scout.
+        expect(d.otherClubCount).toBe(5);
+        expect(d.perOtherClub).toBe(1); // floor(9 / 5)
+        expect(d.burned).toBe(76);
+    });
+
+    it('burns the same amount whether the scout wins or loses, before rounding', () => {
+        for (const scoutIsPayer of [true, false]) {
+            const d = computeSolidarity(100, 6, true, undefined, scoutIsPayer);
+            expect(d.pool).toBe(20);
+            expect(d.scout).toBe(10);
+        }
     });
 
     it('pays nothing when the amount is too small to floor above zero', () => {
