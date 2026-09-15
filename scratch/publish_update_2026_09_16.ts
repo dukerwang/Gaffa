@@ -4,8 +4,10 @@
  * Reads the post from docs/UPDATE-2026-09-16-futbolpedia-facilities-heritage.md
  * so the copy that ships is the copy that was reviewed.
  *
- *   tsx scratch/publish_update_2026_09_16.ts --dry-run   print the post, write nothing
- *   tsx scratch/publish_update_2026_09_16.ts             publish now and notify everyone
+ *   tsx scratch/publish_update_2026_09_16.ts --dry-run       print the post, write nothing
+ *   tsx scratch/publish_update_2026_09_16.ts --no-notify     publish the entry, send no pop-up
+ *   tsx scratch/publish_update_2026_09_16.ts --notify-only   send the pop-up for the published entry
+ *   tsx scratch/publish_update_2026_09_16.ts                 publish and notify everyone
  *
  * Each account gets one `kind: 'product'` notification. That row lights the bell
  * and opens UpdateAnnouncementModal once (title, summary, highlights, and a
@@ -78,25 +80,50 @@ async function main() {
   }
 
   const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const noNotify = process.argv.includes('--no-notify');
+  const notifyOnly = process.argv.includes('--notify-only');
 
-  const { data: row, error } = await admin
-    .from('product_updates')
-    .upsert(
-      {
-        slug: SLUG,
-        title: TITLE,
-        summary: SUMMARY,
-        body,
-        highlights: HIGHLIGHTS,
-        is_major: true,
-        published_at: new Date().toISOString(),
-      },
-      { onConflict: 'slug' },
-    )
-    .select('id, slug, published_at')
-    .single();
-  if (error) throw new Error(error.message);
-  console.log(`[update] ${row.slug} published_at ${row.published_at}`);
+  if (notifyOnly) {
+    const { data: existing, error: exErr } = await admin
+      .from('product_updates')
+      .select('slug, published_at')
+      .eq('slug', SLUG)
+      .maybeSingle();
+    if (exErr) throw new Error(exErr.message);
+    if (!existing) throw new Error(`${SLUG} isn't published yet; run without --notify-only first`);
+    console.log(`[update] ${existing.slug} already published at ${existing.published_at}`);
+  } else {
+    // Keep the original publish time on a re-run, so a copy fix doesn't move the
+    // entry's date.
+    const { data: prior } = await admin
+      .from('product_updates')
+      .select('published_at')
+      .eq('slug', SLUG)
+      .maybeSingle();
+    const { data: row, error } = await admin
+      .from('product_updates')
+      .upsert(
+        {
+          slug: SLUG,
+          title: TITLE,
+          summary: SUMMARY,
+          body,
+          highlights: HIGHLIGHTS,
+          is_major: true,
+          published_at: prior?.published_at ?? new Date().toISOString(),
+        },
+        { onConflict: 'slug' },
+      )
+      .select('id, slug, published_at')
+      .single();
+    if (error) throw new Error(error.message);
+    console.log(`[update] ${row.slug} published_at ${row.published_at}`);
+  }
+
+  if (noNotify) {
+    console.log('[notifications] skipped (--no-notify)');
+    return;
+  }
 
   // One row per account, league_id NULL so it shows in every league's bell.
   const { data: users, error: uErr } = await admin.from('users').select('id');
