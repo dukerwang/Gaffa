@@ -394,7 +394,7 @@ export default function TopBar() {
         {/* --- Wordmark --- */}
         <Link href={isAuthenticated ? '/dashboard' : '/login'} className={styles.brand} onClick={() => setIsNavigating(true)}>
           <span className={styles.brandIcon}><Icon name="gaffa" size={20} strokeWidth={2} /></span>
-          <span className={styles.brandName}>Gaffa</span>
+          <span className={`${styles.brandName} ${!currentLeagueId ? styles.brandNameKeep : ''}`}>Gaffa</span>
         </Link>
 
         {/* --- Page Navigation (only when in a league) --- */}

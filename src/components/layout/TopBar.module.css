@@ -415,6 +415,12 @@
     display: none;
   }
 
+  /* Outside a league there is no page nav competing for the width, so the
+     wordmark stays. */
+  .brandNameKeep {
+    display: inline;
+  }
+
   .leagueLabel {
     display: none;
   }
