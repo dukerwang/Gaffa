@@ -22,11 +22,15 @@ them and getting them wrong. If you change a rule, change it here first.
 
 ## Surfaces
 
-5. **No white panels floating on the cream ground.** A section is a serif title
-   over a 2px `--color-text-primary` rule with flat content beneath it. See
-   `_home/home.module.css` (`.mast`, `.sect`). — DECISIONS 2026-09-04
-6. **Only a genuinely bounded object gets a box** — a hero, a board, a table.
-   `border: var(--line-strong)` + `--r-shell` + `--color-bg-card`.
+5. **No white panels floating on the cream ground.** The objection is loose
+   white tiles on a blank field. Containers that belong to a composition are
+   fine: anchored to a coloured field, carrying real imagery or data, among
+   objects of different kinds. Reference: `src/app/(dashboard)/dashboard/` and
+   `DESIGN.md` § 3b. — DECISIONS 2026-09-04, 2026-09-15
+6. **Only a genuinely bounded object gets a box**: a hero, a board, a table,
+   a card that is a link. On cream, `border: var(--line-strong)` +
+   `--r-shell` + `--color-bg-card`. Lifted off a coloured field, a shadow
+   instead of the border.
 7. **Elevation is border XOR shadow, declared once.** A 1px border under a soft
    shadow is the ghost-card tell. — `globals.css`
 8. **No coloured accent bars on container edges.** No left stripes, no top
@@ -34,6 +38,9 @@ them and getting them wrong. If you change a rule, change it here first.
    — DECISIONS 2026-08-22
 9. **No generic three-card bento rows.** Use one panel with internal hairlines,
    or an asymmetric grid.
+9a. **Section heads are more than text.** Give each one an instrument (a
+   switch, a status tile, a crest stack, a progress strip) rather than a bare
+   title. — DECISIONS 2026-09-15
 
 ## Type and colour
 

@@ -190,6 +190,12 @@ table — gets `border: var(--line-strong)` + `--r-shell` + `--color-bg-card`.
 Border, not shadow. `.g-panel` (shadow, no border) is the older device; it is
 not the default for a new page.
 
+> **Correction, 2026-09-15.** Only the quote above is Duke's. The paragraph
+> after it — title over a 2px rule, border not shadow — was an agent's reading
+> of how to satisfy it, and later sessions applied it as his rule. See
+> 2026-09-15 below: the complaint stands, and the dashboard answers it a
+> different way.
+
 **Headings are title case.**
 > "also, what is going on with these headers not being capitalized??? i'm tired
 > of it."
@@ -503,3 +509,48 @@ On the reminder:
 
 So the reminder shows only when the Academy or IR is full and the next slot is
 affordable, and a dismissal holds until the next slot is on offer.
+
+---
+
+## 2026-09-15 — The dashboard is the reference for a finished page
+
+**Cards are fine when they belong to a composition; the problem was loose tiles
+on a blank field.**
+> "the no white panels floating is a different vibe to this though. this looks
+> more like parts of a cohesive app page, whereas the results i was getting
+> before was more just like a blank white/cream background with white tiles on
+> top. the dashboard actually looks like a sophisticated design that's worthy
+> of a real app, and i want to get results like this when i prototype
+> consistently"
+
+This refines 2026-09-04 rather than reversing it. The quote there objects to
+"white cards on top" of cream; the dashboard's cards are not that, because each
+is anchored to something — they rise out of the green shelf, carry club crests
+and live data, and sit among objects of different kinds. Shipped in PR #11
+(`src/app/(dashboard)/dashboard/`).
+
+**Section heads should be more than text.**
+> "i don't like headers are just generic html headers, like just letters
+> basically, i wish that i was more sophisticated design wise."
+> "(also a common theme in gaffa right now that i want to move away from)"
+
+**Imagery belongs on the page.**
+> "would probably be better if it was more visual, with player portraits and
+> stuff"
+
+**Desktop and mobile are each designed, not reflowed.**
+> "make sure it fits both desktop and mobile properly - remember that it should
+> look optimized and built for each respectively."
+
+**A card that leads somewhere looks like it does.**
+> "the 'league card' has to seem more clickable, because people should still be
+> going to the league home page by default, my squad and matchups are there to
+> be helpful but i feel like the general 'design philosophy' should not be to
+> kind of emphasize two big buttons, there's no implication that the league
+> card is clickable."
+
+The whole card is the link; secondary destinations are quiet shortcuts.
+
+What the dashboard does to meet these is described, as agent inference with
+file citations, in `DESIGN.md` § "Composing a Page". Those techniques are not
+decisions; these quotes are.
