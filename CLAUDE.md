@@ -16,7 +16,7 @@ Every session for this repo opens in this one folder, so a branch switch or an u
 - **Leave this folder on `main` with a clean working tree.** Don't switch its branch, don't leave uncommitted changes in it, and don't commit feature work here.
 - **Commit to your branch as you go**, so work never exists only as uncommitted files.
 - **To build inside a worktree**, clone the dependencies with `cp -cR "/Users/dukewang/Fantasy Futbol/node_modules" node_modules`. The clone is copy-on-write, so it is instant and uses no extra disk. Don't symlink them: Turbopack rejects a `node_modules` symlink that points outside the worktree. A symlinked `.env.local` is fine.
-- **Before numbering a migration**, check every branch, not only `main`, because parallel branches have already collided on 153 and 154: `git for-each-ref --format='%(refname:short)' refs/heads | xargs -I{} git ls-tree --name-only {} supabase/migrations/ | grep -oE '/[0-9]{3}_' | tr -d '/_' | sort -n | tail -1` prints the highest number in use. Take the next one.
+- **Before numbering a migration**, check every branch, not only `main`, because parallel branches have already collided on 153, 154, and 166: `git for-each-ref --format='%(refname:short)' refs/heads | xargs -I{} git ls-tree --name-only {} supabase/migrations/ | grep -oE '/[0-9]{3}_' | tr -d '/_' | sort -n | tail -1` prints the highest number in use. Take the next one.
 
 ## Commands
 
