@@ -7,12 +7,12 @@ import { getFplStatus } from '@/lib/fpl/api';
 import { processMatchupsForGameweek } from '@/lib/scoring/matchupProcessor';
 
 import PreDraftLobby from './PreDraftLobby';
-import { Masthead } from './_home/Masthead';
-import Attention from './_home/Attention';
-import Fixture, { SeasonClosed } from './_home/Fixture';
-import { Market, Fronts, Matchweek, StandingsTable, TeamOfWeek } from './_home/Sections';
-import Rail from './_home/Rail';
-import { HeroTabProvider } from './_home/HeroTabContext';
+import Shelf from './_home/Shelf';
+import Alerts from './_home/Alerts';
+import Match from './_home/Match';
+import Closed from './_home/Closed';
+import Market from './_home/Market';
+import { TeamOfWeek, Closing } from './_home/Sections';
 import styles from './_home/home.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -166,25 +166,20 @@ export default async function LeaguePage({ params }: Props) {
   // club to build the model around, so send them somewhere that works.
   if (!model) redirect(`/league/${leagueId}/standings`);
 
+  // The order is what you can still act on, then what has settled: the green
+  // shelf and the fixtures you are in, then the alerts, then the market (the
+  // only region with anything left to decide for four days out of seven),
+  // then the look-back regions. `DESIGN.md` § 3b describes the composition.
   return (
     <div className={styles.page}>
-      <Masthead model={model} />
-      <Attention items={model.attention} leagueId={leagueId} />
+      <Shelf model={model} />
 
-      <HeroTabProvider initialTab={model.preferSecondary ? 'secondary' : 'primary'}>
-        <div className={styles.body}>
-          <main className={styles.main}>
-            {model.phase === 'closed' ? <SeasonClosed model={model} /> : <Fixture model={model} />}
-            <Market model={model} />
-            <Fronts model={model} />
-            <Matchweek model={model} />
-            <StandingsTable model={model} />
-            <TeamOfWeek model={model} />
-          </main>
+      {model.phase === 'closed' ? <Closed model={model} /> : <Match model={model} />}
 
-          <Rail model={model} />
-        </div>
-      </HeroTabProvider>
+      <Alerts items={model.attention} leagueId={leagueId} />
+      <Market model={model} />
+      <TeamOfWeek model={model} />
+      <Closing model={model} />
     </div>
   );
 }

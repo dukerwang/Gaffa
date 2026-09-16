@@ -1,404 +1,31 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import NavigationLink from '@/components/ui/NavigationLink';
 import CrestBadge from '@/components/crest/CrestBadge';
-import PositionBadge from '@/components/players/PositionBadge';
-import ReadOnlyFormationBoard, { type FormationBoardSlot } from '@/components/formation/ReadOnlyFormationBoard';
+import ReadOnlyFormationBoard, {
+  type FormationBoardSlot,
+} from '@/components/formation/ReadOnlyFormationBoard';
 import { playerHoverProps, usePlayerCard } from '@/components/players/PlayerCardProvider';
+import { renderBoldedText } from '@/lib/narrative/boldText';
 import type { CrestConfig } from '@/components/crest/types';
 import type { GranularPosition } from '@/types';
 import type { HomeModel } from '@/lib/home/buildHomeModel';
-import Countdown from './Countdown';
 import styles from './home.module.css';
 
 /**
- * In the market.
+ * Team of the Week — the highest-scoring legal XI from the latest completed
+ * gameweek, plus the same four semantic bench slots the lineup editor uses.
  *
- * The biggest addition to the page, and the reason the midweek phase exists
- * at all. A gameweek is roughly three days of football and four days of
- * transfers; through the longer half the old home showed a static hero, four
- * rows of em-dashes, and the market only as past-tense prose in the feed.
- *
- * `auction_state` is a trigger-maintained projection and is already on the
- * Realtime publication, so this is one indexed query.
- */
-export function Market({ model }: { model: HomeModel }) {
-  if (model.phase === 'closed') return null;
-
-  return (
-    <section aria-label="In the market">
-      <div className={styles.sect}>
-        <h2 className={styles.sectT}>
-          {model.phase === 'market' ? 'The Week in the Market' : 'In the Market'}
-        </h2>
-        {model.phase === 'market' && (
-          <span className={styles.sectHint}>nothing kicks off for days</span>
-        )}
-        <NavigationLink href={`/league/${model.leagueId}/transfers`} className={styles.sectMore}>
-          Transfers &rarr;
-        </NavigationLink>
-      </div>
-
-      <div className={styles.mkt}>
-        <div className={styles.mktHd}>
-          <span className={styles.mktSummary}>{model.marketSummary}</span>
-          <span className={styles.mktBudget}>{model.marketBudget}</span>
-        </div>
-
-        {model.market.length === 0 ? (
-          <div className={styles.mktEmpty}>
-            Nothing is on the board. Open an auction to earn a 10% Scout&rsquo;s Fee if another manager
-            wins it.
-          </div>
-        ) : (
-          <>
-            <div className={styles.mktHead}>
-              <span className="g-label">LOT</span>
-              <span className="g-label">STANDING BID</span>
-              <span className="g-label">LEADER</span>
-              <span className="g-label">YOU</span>
-              <span className="g-label">CLOSES</span>
-              <span />
-            </div>
-            {model.market.map((lot) => (
-              <div
-                key={lot.playerId}
-                className={`${styles.mktRow} ${
-                  lot.leading
-                    ? styles.mktRowMine
-                    : lot.outbid
-                      ? styles.mktRowOutbid
-                      : ''
-                }`}
-              >
-                <div className={styles.mktId}>
-                  {lot.position ? (
-                    <PositionBadge position={lot.position as GranularPosition} size="sm" />
-                  ) : (
-                    <span />
-                  )}
-                  <div className={styles.mktName}>
-                    <div className={styles.mktNameN}>{lot.name}</div>
-                    <div className={styles.mktNameM}>{lot.meta}</div>
-                  </div>
-                </div>
-
-                <div className={styles.mktMidRow}>
-                  <div className={`${styles.mktCol} ${styles.mktBidCol}`}>
-                    <span className={styles.mktMobileLabel}>{lot.hasBids ? 'Standing Bid' : 'Floor'}</span>
-                    <div className={`${styles.mktBidV} ${lot.hasBids ? '' : styles.mktBidNone}`}>
-                      {lot.bid}
-                    </div>
-                    <div className={styles.mktBidL}>{lot.floor}</div>
-                  </div>
-
-                  <div className={styles.mktWho}>
-                    <span className={styles.mktMobileLabel}>Leader</span>
-                    <div className={styles.mktWhoVal}>
-                      {lot.leaderTeamId ? (
-                        <>
-                          <CrestBadge
-                            config={lot.leaderCrest as CrestConfig | null}
-                            teamName={lot.leaderName ?? ''}
-                            teamId={lot.leaderTeamId}
-                            size={17}
-                          />
-                          <span className={styles.mktWhoName}>{lot.leaderName}</span>
-                        </>
-                      ) : (
-                        <span className={styles.mktWhoName}>None yet</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  className={`${styles.mktYou} ${
-                    lot.leading
-                      ? styles.mktYouUp
-                      : lot.outbid
-                        ? styles.mktYouOut
-                        : styles.mktYouOff
-                  }`}
-                >
-                  {lot.isMine
-                    ? 'Your lot'
-                    : lot.leading
-                      ? 'Leading'
-                      : lot.outbid
-                        ? 'Outbid'
-                        : '—'}
-                </div>
-
-                <div className={`${styles.mktCol} ${styles.mktClockCol}`}>
-                  <div className={styles.mktClockTime}>
-                    <Countdown to={lot.expiresAt} serverNow={model.serverNow} />
-                  </div>
-                  <div className={styles.mktBids}>
-                    {lot.bidCount === 0
-                      ? 'no bids yet'
-                      : `${lot.bidCount} bid${lot.bidCount === 1 ? '' : 's'}`}
-                  </div>
-                </div>
-
-                <div className={styles.mktAction}>
-                  <NavigationLink
-                    href={lot.href}
-                    className={
-                      lot.outbid
-                        ? styles.btnPrimary
-                        : lot.leading
-                          ? styles.btnMuted
-                          : styles.btn
-                    }
-                  >
-                    {lot.outbid
-                      ? `Raise ${lot.nextBid}`
-                      : lot.leading
-                        ? 'Leading'
-                        : `Bid ${lot.nextBid}`}
-                  </NavigationLink>
-                </div>
-              </div>
-            ))}
-          </>
-        )}
-      </div>
-    </section>
-  );
-}
-
-/**
- * On all fronts — the league and the three cups.
- *
- * Each tile states a FIXTURE and its stakes, not a status noun. "Round 2" is
- * near-worthless, and the old page could not even render that correctly: it
- * read `tournaments.current_round`, which is not a column, so every active cup
- * showed "Round 1" forever.
- */
-export function Fronts({ model }: { model: HomeModel }) {
-  return (
-    <section aria-label="Competitions">
-      <div className={styles.sect}>
-        <h2 className={styles.sectT}>
-          {model.phase === 'closed' ? 'How It Finished' : 'On All Fronts'}
-        </h2>
-      </div>
-      <div className={styles.fronts}>
-        {model.fronts.map((fr, i) => (
-          <div
-            key={i}
-            className={
-              fr.tone === 'won'
-                ? styles.frontWon
-                : fr.tone === 'out'
-                  ? styles.frontOut
-                  : styles.front
-            }
-          >
-            <span className={styles.frontLabel}>{fr.competition}</span>
-            <div
-              className={
-                fr.tone === 'won'
-                  ? styles.frontVGold
-                  : fr.tone === 'out'
-                    ? styles.frontVMuted
-                    : styles.frontV
-              }
-            >
-              {fr.value}
-            </div>
-            <div className={styles.frontS}>{fr.sub}</div>
-            <div className={styles.frontP}>{fr.prize}</div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/**
- * Elsewhere in the matchweek. Live and settled only — in build-up this was a
- * full section of club names and em-dashes carrying no information at all.
- */
-export function Matchweek({ model }: { model: HomeModel }) {
-  if (model.matchweek.length === 0) return null;
-
-  return (
-    <section aria-label="Other fixtures">
-      <div className={styles.sect}>
-        <h2 className={styles.sectT}>
-          Elsewhere in Matchweek {model.fixture?.gameweek ?? model.gameweek}
-        </h2>
-        <NavigationLink href={`/league/${model.leagueId}/matchups`} className={styles.sectMore}>
-          All fixtures &rarr;
-        </NavigationLink>
-      </div>
-      <div className={styles.mw}>
-        {model.matchweek.map((m) => (
-          <NavigationLink
-            key={m.id}
-            href={`/league/${model.leagueId}/matchups/${m.id}`}
-            className={styles.mwRow}
-          >
-            <CrestBadge config={m.home.crest as CrestConfig | null} size={21} teamName={m.home.name} teamId={m.home.id} />
-            <span className={styles.mwName}>{m.home.name}</span>
-            <span
-              className={
-                m.homeScore == null
-                  ? styles.mwScoreDim
-                  : !m.live && !m.drawn && m.homeScore < (m.awayScore ?? 0)
-                    ? styles.mwScoreDim
-                    : styles.mwScore
-              }
-            >
-              {m.homeScore == null ? '—' : m.homeScore.toFixed(2)}
-            </span>
-            <span
-              className={
-                m.live ? styles.mwTagLive : m.drawn ? styles.mwTagBand : styles.mwTag
-              }
-            >
-              {m.tag}
-            </span>
-            <span
-              className={
-                m.awayScore == null
-                  ? styles.mwScoreDim
-                  : !m.live && !m.drawn && (m.awayScore ?? 0) < (m.homeScore ?? 0)
-                    ? styles.mwScoreDim
-                    : styles.mwScore
-              }
-            >
-              {m.awayScore == null ? '—' : m.awayScore.toFixed(2)}
-            </span>
-            <span className={styles.mwNameB}>{m.away.name}</span>
-            <CrestBadge config={m.away.crest as CrestConfig | null} size={21} teamName={m.away.name} teamId={m.away.id} />
-          </NavigationLink>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/**
- * The table — a real `<table>`, ten rows, with what each position is worth.
- *
- * The prize column is `computeSeasonPrize`, a pure function with no database
- * access, so it costs nothing. It is also what stops the table being inert
- * for six days out of seven: a rank is abstract, €34m is not.
- */
-export function StandingsTable({ model }: { model: HomeModel }) {
-  return (
-    <section aria-label="Standings">
-      <div className={styles.sect}>
-        <h2 className={styles.sectT}>
-          {model.phase === 'closed' ? 'The Final Table' : 'The Table'}
-        </h2>
-        <NavigationLink href={`/league/${model.leagueId}/standings`} className={styles.sectMore}>
-          Full standings &rarr;
-        </NavigationLink>
-      </div>
-      <div className={styles.tableWrap}>
-        <table className={styles.table}>
-          <caption>
-            Pays is the placement prize at that finish, on today&rsquo;s table. Form reads newest
-            first.
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col" className={styles.alignLeft}>Rk</th>
-              <th scope="col" className={styles.alignLeft}>Club</th>
-              <th scope="col" className={styles.colDesktop}>W</th>
-              <th scope="col" className={styles.colDesktop}>D</th>
-              <th scope="col" className={styles.colDesktop}>L</th>
-              <th scope="col" className={styles.colDesktop}>For</th>
-              <th scope="col">Pts</th>
-              <th scope="col" className={styles.colDesktop}>Form</th>
-              <th scope="col">Pays</th>
-            </tr>
-          </thead>
-          <tbody>
-            {model.table.map((r) => (
-              <tr key={r.teamId} className={r.isMe ? styles.rowMe : undefined}>
-                <td className={styles.alignLeft}>
-                  <span className={styles.num}>{r.rank}</span>{' '}
-                  {/* The rank is data and must stay in primary ink; only the
-                      glyph is tinted, and it is a shape first. */}
-                  <span
-                    className={
-                      r.movement > 0
-                        ? styles.moveUp
-                        : r.movement < 0
-                          ? styles.moveDown
-                          : styles.moveFlat
-                    }
-                    aria-label={
-                      r.movement > 0
-                        ? `up ${r.movement}`
-                        : r.movement < 0
-                          ? `down ${Math.abs(r.movement)}`
-                          : 'no change'
-                    }
-                  >
-                    {r.movement > 0 ? '▲' : r.movement < 0 ? '▼' : '–'}
-                  </span>
-                </td>
-                <td className={styles.alignLeft}>
-                  <span className={styles.club}>
-                    <CrestBadge
-                      config={r.club.crest as CrestConfig | null}
-                      size={21}
-                      teamName={r.club.name}
-                      teamId={r.teamId}
-                    />
-                    <span className={r.isMe ? styles.clubNameMe : styles.clubName}>
-                      {r.club.name}
-                    </span>
-                    {r.isMe && <span className={styles.you}>You</span>}
-                  </span>
-                </td>
-                <td className={styles.colDesktop}>{r.wins}</td>
-                <td className={styles.colDesktop}>{r.draws}</td>
-                <td className={styles.colDesktop}>{r.losses}</td>
-                <td className={styles.colDesktop}>{r.pointsFor}</td>
-                <td>
-                  <span className={styles.num}>{r.leaguePoints}</span>
-                </td>
-                <td className={styles.colDesktop}>
-                  <span className={styles.form}>
-                    {r.form.map((p, i) => (
-                      <span
-                        key={i}
-                        className={p === 'W' ? styles.pipW : p === 'D' ? styles.pipD : styles.pipL}
-                      >
-                        {p}
-                      </span>
-                    ))}
-                  </span>
-                </td>
-                <td>
-                  <span className={styles.prize}>{r.prize}</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-/**
- * Team of the Week.
- *
- * The highest-scoring legal XI from the latest completed gameweek, plus the
- * same four semantic bench slots the lineup editor uses.
+ * It used to close the page, below the table. It is the only region built
+ * from photographs rather than type, so it now sits where the page needs
+ * imagery: directly under the market, above the league regions.
  */
 export function TeamOfWeek({ model }: { model: HomeModel }) {
   const team = model.teamOfWeek;
-  if (!team) return null;
   const { openPlayerById, prefetchPlayer } = usePlayerCard();
+  if (!team) return null;
+
   const slots: FormationBoardSlot[] = team.starters.map((player) => ({
     slot: player.slot as GranularPosition,
     player: {
@@ -415,14 +42,26 @@ export function TeamOfWeek({ model }: { model: HomeModel }) {
   }));
 
   return (
-    <section aria-label="Team of the Week">
-      <div className={styles.sect}>
-        <h2 className={styles.sectT}>Team of the Week</h2>
-        <span className={styles.sectHint}>gameweek {model.teamOfWeekGw} · {team.formation} · {team.total} pts</span>
-        <NavigationLink href={`/league/${model.leagueId}/stats`} className={styles.sectMore}>
-          Full stats &rarr;
+    <section className={styles.section} aria-labelledby="team-of-the-week">
+      <div className={styles.head}>
+        {/* The instrument: the shape the XI lines up in. */}
+        <span className={styles.shapeTile} aria-hidden="true">
+          <span className={styles.shapeTileK}>SHAPE</span>
+          <span className={styles.shapeTileV}>{team.formation}</span>
+        </span>
+        <div className={styles.headTx}>
+          <h2 id="team-of-the-week" className={styles.headT}>
+            Team of the Week
+          </h2>
+          <div className={styles.headSub}>
+            Matchweek {model.teamOfWeekGw} &middot; {team.total} pts across the eleven
+          </div>
+        </div>
+        <NavigationLink href={`/league/${model.leagueId}/stats`} className={styles.headLink}>
+          Full Stats &rarr;
         </NavigationLink>
       </div>
+
       <div className={styles.tow}>
         <ReadOnlyFormationBoard
           formation={team.formation}
@@ -444,12 +83,17 @@ export function TeamOfWeek({ model }: { model: HomeModel }) {
                   key={slot}
                   className={`${styles.towBenchSlot} ${styles.towBenchSlotButton}`}
                   onClick={() => openPlayerById(player.playerId, { gameweek: model.teamOfWeekGw })}
-                  {...playerHoverProps(prefetchPlayer, { id: player.playerId, photo_url: player.photoUrl })}
+                  {...playerHoverProps(prefetchPlayer, {
+                    id: player.playerId,
+                    photo_url: player.photoUrl,
+                  })}
                   aria-label={`${player.name}, ${slot} bench, ${player.points} points`}
                 >
                   <span className={styles.towBenchSlotLabel}>{slot}</span>
                   <div className={styles.towBenchName}>{player.name}</div>
-                  <div className={styles.towBenchMeta}>{player.club} · {player.owner}</div>
+                  <div className={styles.towBenchMeta}>
+                    {player.club} &middot; {player.owner}
+                  </div>
                   <div className={styles.towBenchPoints}>{player.points} pts</div>
                 </button>
               ) : (
@@ -463,5 +107,323 @@ export function TeamOfWeek({ model }: { model: HomeModel }) {
         </div>
       </div>
     </section>
+  );
+}
+
+/** Where the season stands, with what each finish pays. */
+function TheTable({ model }: { model: HomeModel }) {
+  const played = Math.max(0, model.gameweek - 1);
+  const segments = Array.from({ length: model.totalGameweeks }, (_, i) =>
+    i < played ? styles.segDone : styles.segTodo,
+  );
+
+  return (
+      <section className={styles.section} aria-labelledby="table">
+        <div className={styles.head}>
+          <div className={styles.headTx}>
+            <h2 id="table" className={styles.headT}>
+              {model.phase === 'closed' ? 'The Final Table' : 'The Table'}
+            </h2>
+            <div className={styles.headSub}>
+              Pays: the placement prize at that finish, on today&rsquo;s table &middot; Form:
+              newest first
+            </div>
+          </div>
+          {/* The instrument: how much of the season has actually been played. */}
+          <div className={styles.season}>
+            <div
+              className={styles.seasonBar}
+              style={{ '--n': segments.length } as CSSProperties}
+              aria-hidden="true"
+            >
+              {segments.map((cls, i) => (
+                <span key={i} className={cls} />
+              ))}
+            </div>
+            <div className={styles.seasonKey}>
+              <span>{played} Played</span>
+              <span className={styles.seasonKeyTodo}>
+                {model.totalGameweeks - played} To Come
+              </span>
+            </div>
+          </div>
+          <NavigationLink href={`/league/${model.leagueId}/standings`} className={styles.headLink}>
+            Full Standings &rarr;
+          </NavigationLink>
+        </div>
+
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th scope="col" className={styles.alignLeft}>Rk</th>
+                <th scope="col" className={styles.alignLeft}>Club</th>
+                <th scope="col" className={styles.colDesktop}>W</th>
+                <th scope="col" className={styles.colDesktop}>D</th>
+                <th scope="col" className={styles.colDesktop}>L</th>
+                <th scope="col" className={styles.colDesktop}>For</th>
+                <th scope="col">Pts</th>
+                <th scope="col" className={styles.colDesktop}>Form</th>
+                <th scope="col">Pays</th>
+              </tr>
+            </thead>
+            <tbody>
+              {model.table.map((r) => (
+                <tr key={r.teamId} className={r.isMe ? styles.rowMe : undefined}>
+                  <td className={styles.alignLeft}>
+                    <span className={styles.num}>{r.rank}</span>{' '}
+                    {/* The rank is data and stays in primary ink; only the
+                        glyph is tinted, and it is a shape first. */}
+                    <span
+                      className={
+                        r.movement > 0
+                          ? styles.moveUp
+                          : r.movement < 0
+                            ? styles.moveDown
+                            : styles.moveFlat
+                      }
+                      aria-label={
+                        r.movement > 0
+                          ? `up ${r.movement}`
+                          : r.movement < 0
+                            ? `down ${Math.abs(r.movement)}`
+                            : 'no change'
+                      }
+                    >
+                      {r.movement > 0 ? '▲' : r.movement < 0 ? '▼' : '–'}
+                    </span>
+                  </td>
+                  <td className={styles.alignLeft}>
+                    <span className={`g-namerow ${styles.club}`}>
+                      <CrestBadge
+                        config={r.club.crest as CrestConfig | null}
+                        size={21}
+                        teamName={r.club.name}
+                        teamId={r.teamId}
+                      />
+                      <span className={r.isMe ? styles.clubNameMe : styles.clubName}>
+                        {r.club.name}
+                      </span>
+                      {r.isMe && <span className={styles.you}>You</span>}
+                    </span>
+                  </td>
+                  <td className={styles.colDesktop}>{r.wins}</td>
+                  <td className={styles.colDesktop}>{r.draws}</td>
+                  <td className={styles.colDesktop}>{r.losses}</td>
+                  <td className={styles.colDesktop}>{r.pointsFor}</td>
+                  <td>
+                    <span className={styles.num}>{r.leaguePoints}</span>
+                  </td>
+                  <td className={styles.colDesktop}>
+                    <span className={styles.form}>
+                      {r.form.map((p, i) => (
+                        <span
+                          key={i}
+                          className={p === 'W' ? styles.pipW : p === 'D' ? styles.pipD : styles.pipL}
+                        >
+                          {p}
+                        </span>
+                      ))}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={styles.prize}>{r.prize}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+  );
+}
+
+/** The rest of this matchweek, as crest-led score lines. */
+function Elsewhere({ model }: { model: HomeModel }) {
+  if (model.matchweek.length === 0) return null;
+
+  return (
+        <section className={styles.section} aria-labelledby="elsewhere">
+          <div className={styles.head}>
+            <span className={styles.mwTile} aria-hidden="true">
+              <span className={styles.mwTileK}>MW</span>
+              <span className={styles.mwTileV}>{model.fixture?.gameweek ?? model.gameweek}</span>
+            </span>
+            <div className={styles.headTx}>
+              <h2 id="elsewhere" className={styles.headT}>
+                Elsewhere
+              </h2>
+              <div className={styles.headSub}>The rest of the matchweek</div>
+            </div>
+            <NavigationLink href={`/league/${model.leagueId}/matchups`} className={styles.headLink}>
+              All Fixtures &rarr;
+            </NavigationLink>
+          </div>
+
+          <div className={styles.mw}>
+            {model.matchweek.map((m) => (
+              <NavigationLink
+                key={m.id}
+                href={`/league/${model.leagueId}/matchups/${m.id}`}
+                className={styles.mwRow}
+              >
+                <CrestBadge
+                  config={m.home.crest as CrestConfig | null}
+                  size={22}
+                  teamName={m.home.name}
+                  teamId={m.home.id}
+                  interactive={false}
+                />
+                <span
+                  className={
+                    !m.live && !m.drawn && (m.homeScore ?? 0) < (m.awayScore ?? 0)
+                      ? styles.mwNameDim
+                      : styles.mwName
+                  }
+                >
+                  {m.home.name}
+                </span>
+                <span className={styles.mwScores}>
+                  <span className={m.homeScore == null ? styles.mwScoreDim : styles.mwScore}>
+                    {m.homeScore == null ? '—' : m.homeScore.toFixed(1)}
+                  </span>
+                  <span className={m.live ? styles.mwTagLive : m.drawn ? styles.mwTagBand : styles.mwTag}>
+                    {m.tag}
+                  </span>
+                  <span className={m.awayScore == null ? styles.mwScoreDim : styles.mwScore}>
+                    {m.awayScore == null ? '—' : m.awayScore.toFixed(1)}
+                  </span>
+                </span>
+                <span
+                  className={
+                    !m.live && !m.drawn && (m.awayScore ?? 0) < (m.homeScore ?? 0)
+                      ? `${styles.mwNameDim} ${styles.mwNameB}`
+                      : `${styles.mwName} ${styles.mwNameB}`
+                  }
+                >
+                  {m.away.name}
+                </span>
+                <CrestBadge
+                  config={m.away.crest as CrestConfig | null}
+                  size={22}
+                  teamName={m.away.name}
+                  teamId={m.away.id}
+                  interactive={false}
+                />
+              </NavigationLink>
+            ))}
+          </div>
+        </section>
+  );
+}
+
+/**
+ * The cups, and the club's own record.
+ *
+ * "On All Fronts" carried four tiles, and the first of them — League, your
+ * rank, the gap to the leader, the prize — was the masthead's first figure
+ * and the table's Pays column said a third time. It is gone; the three cups
+ * are what is left, because a cup is the only competition whose standing is
+ * not already on this page.
+ */
+function Cups({ model }: { model: HomeModel }) {
+  const cups = model.fronts.filter((f) => f.competition !== 'League');
+
+  return (
+      <section className={styles.section} aria-labelledby="cups">
+        <div className={styles.head}>
+          <div className={styles.headTx}>
+            <h2 id="cups" className={styles.headT}>
+              {model.phase === 'closed' ? 'How the Cups Finished' : 'Cups'}
+            </h2>
+            <div className={styles.headSub}>Three knockouts run alongside the league</div>
+          </div>
+          <NavigationLink href={`/league/${model.leagueId}/tournaments`} className={styles.headLink}>
+            Brackets &rarr;
+          </NavigationLink>
+        </div>
+
+        <div className={styles.cups}>
+          {cups.map((fr, i) => (
+            <div
+              key={i}
+              className={fr.tone === 'won' ? styles.cupWon : fr.tone === 'out' ? styles.cupOut : styles.cupTile}
+            >
+              <span className={styles.cupName}>{fr.competition}</span>
+              <span
+                className={
+                  fr.tone === 'won' ? styles.cupVGold : fr.tone === 'out' ? styles.cupVMuted : styles.cupV
+                }
+              >
+                {fr.value}
+              </span>
+              <span className={styles.cupSub}>{fr.sub}</span>
+              <span className={styles.cupPrize}>{fr.prize}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className={styles.facts}>
+          {model.clubFacts.map((f, i) => (
+            <div key={i} className={styles.fact}>
+              <span className={styles.factK}>{f.label}</span>
+              <span className={f.gold ? styles.factVGold : styles.factV}>{f.value}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+  );
+}
+
+/** Players who have changed hands, as the settled record. */
+function Transactions({ model }: { model: HomeModel }) {
+  return (
+      <section className={styles.section} aria-labelledby="transactions">
+        <div className={styles.head}>
+          <div className={styles.headTx}>
+            <h2 id="transactions" className={styles.headT}>
+              Transactions
+            </h2>
+            <div className={styles.headSub}>Players who have changed hands</div>
+          </div>
+          <NavigationLink href={`/league/${model.leagueId}/activity`} className={styles.headLink}>
+            All Transactions &rarr;
+          </NavigationLink>
+        </div>
+
+        {model.wire.length === 0 ? (
+          <div className={styles.lotsEmpty}>No player has changed hands yet this season.</div>
+        ) : (
+          <div className={styles.wire}>
+            {model.wire.map((e) => (
+              <div key={e.id} className={styles.ev}>
+                {/* The generators mark emphasis with **…** and encode player
+                    references as **p:{id}:{Name}**. Printing the raw string
+                    leaks both. renderBoldedText is the parser the rest of the
+                    app already uses; with no click handler it degrades to
+                    <strong>, which is exactly right for a digest. */}
+                <span className={styles.evText}>{renderBoldedText(e.text)}</span>
+                <span className={styles.evTime}>{e.at}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+  );
+}
+
+/** The two settled columns, laid out as one band. */
+export function Closing({ model }: { model: HomeModel }) {
+  return (
+    <div className={styles.closing}>
+      <div className={styles.closingMain}>
+        <TheTable model={model} />
+        <Cups model={model} />
+      </div>
+      <div className={styles.closingSide}>
+        <Elsewhere model={model} />
+        <Transactions model={model} />
+      </div>
+    </div>
   );
 }

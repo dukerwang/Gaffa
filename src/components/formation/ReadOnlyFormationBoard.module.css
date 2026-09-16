@@ -1,9 +1,12 @@
+/* 850px is the lineup editor's board. A consumer that needs a shorter one —
+   League Home runs the pitch beside its bench rather than above it — sets
+   `--pitch-height` on an ancestor; everything inside is percentage-based. */
 .pitchField {
   position: relative;
   width: 100%;
-  height: 850px;
-  min-height: 850px;
-  max-height: 850px;
+  height: var(--pitch-height, 850px);
+  min-height: var(--pitch-height, 850px);
+  max-height: var(--pitch-height, 850px);
   background: repeating-linear-gradient(
     to bottom,
     var(--color-pitch),

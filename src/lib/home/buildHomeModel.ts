@@ -59,11 +59,47 @@ const DRAW_BAND = DRAW_THRESHOLD;
 
 export type HomePhase = 'buildup' | 'live' | 'ft' | 'market' | 'closed';
 
-export interface HomeFigure {
-  value: string;
-  /** A stake, not a label. "Points for" was a cumulative nobody acts on. */
-  stake: string;
-  accent?: boolean;
+/**
+ * Where your club sits, in parts rather than as pre-formatted display strings.
+ *
+ * This replaced `figures`, a four-item array the old masthead printed as a row
+ * of read-only numbers on the right of the page title. Duke named that device
+ * as the thing that makes Gaffa read like an HTML page rather than an app
+ * (DECISIONS, 2026-09-10), and its first entry — rank, projected prize and the
+ * gap to the leader — was word-for-word the League tile in "On All Fronts" a
+ * screen further down. Broken into parts, each piece can go where it is
+ * actionable: the ladder into the shelf, the prize into the table's Pays
+ * column, the balance onto the market's own head.
+ */
+export interface HomeStanding {
+  rank: number;
+  teamCount: number;
+  leaguePoints: number;
+  /** Points behind the leader; 0 when you are the leader. */
+  gapToLeader: number;
+  leaderName: string | null;
+  /** "3-0-1", won-drawn-lost. */
+  record: string;
+  form: ('W' | 'D' | 'L')[];
+  /** Matches without defeat, counting back from the most recent. */
+  unbeaten: number;
+  /** The placement prize at this rank, on today's table. */
+  projectedPrize: string;
+  /** Trophies in the cabinet. Only meaningful once a season has closed. */
+  trophies: number;
+}
+
+/** The club's money, as parts. Formatted, because every one of these is €m. */
+export interface HomeMoney {
+  balance: string;
+  /** 1 = richest club in the league. */
+  balanceRank: number;
+  /** Match Revenue banked in the current block. */
+  meritSoFar: string;
+  /** "GW1–4", or null outside a merit block. */
+  meritBlock: string | null;
+  /** What a win in the current matchweek pays. */
+  meritAtStake: string;
 }
 
 export type AttentionTone = 'warn' | 'plain';
@@ -144,6 +180,9 @@ export interface MarketLot {
   playerId: string;
   name: string;
   position: string;
+  /** The lot is a player, so it is shown as one. See `src/lib/players/photo.ts`. */
+  photoUrl: string | null;
+  photoVersion: string | null;
   meta: string;
   bid: string;
   floor: string;
@@ -260,7 +299,8 @@ export interface HomeModel {
   totalGameweeks: number;
   club: HomeClub;
   subtitle: string;
-  figures: HomeFigure[];
+  standing: HomeStanding;
+  money: HomeMoney;
   attention: AttentionItem[];
   fixture: HomeFixtureModel | null;
   xi: XiSlot[];
@@ -293,11 +333,8 @@ export interface HomeModel {
   secondaryBenchSummary: BenchPlayer[];
   secondaryDebrief: DebriefItem[];
   secondaryOpponent: OpponentCard | null;
-  /** True when the secondary view should open by default — next week is close. */
-  preferSecondary: boolean;
   market: MarketLot[];
   marketSummary: string;
-  marketBudget: string;
   fronts: FrontTile[];
   matchweek: OtherFixture[];
   table: TableRow[];
@@ -569,6 +606,20 @@ export async function buildHomeModel(
   const archiveCups = (archiveCupsRes.data ?? []) as any[];
   const archiveMatchups = (archiveMatchupsRes.data ?? []) as any[];
 
+  // Cup rounds. Two regions need them — the hero's cup line, and the cup
+  // tiles, which state the round a cup has reached rather than repeating
+  // "Still alive" three times — so the read starts once, here, and is awaited
+  // in both places.
+  const tourneyIds = tournaments.map((t) => t.id);
+  const roundsRead = tourneyIds.length
+    ? Promise.resolve(
+        admin
+          .from('tournament_rounds')
+          .select('id, tournament_id, name, round_number, start_gameweek, end_gameweek, is_two_leg')
+          .in('tournament_id', tourneyIds),
+      )
+    : null;
+
   // The market's two lookups need nothing computed below, so they start now
   // and are awaited where the market is built.
   const lotPlayerIds = liveAuctions.map((a) => a.player_id);
@@ -577,7 +628,9 @@ export async function buildHomeModel(
     ? Promise.resolve(
         admin
           .from('players')
-          .select('id, web_name, name, full_name, sofifa_common_name, primary_position, pl_team, market_value')
+          .select(
+            'id, web_name, name, full_name, sofifa_common_name, primary_position, pl_team, market_value, photo_url, photo_version',
+          )
           .in('id', lotPlayerIds),
       )
     : null;
@@ -744,40 +797,26 @@ export async function buildHomeModel(
     unbeaten++;
   }
 
-  const figures: HomeFigure[] = seasonOver
-    ? [
-        { value: ordinal(myRank), stake: `Finished, of ${teamCount}` },
-        {
-          value: String(archiveCups.filter((c) => c.winner_id === myTeamId).length || '—'),
-          stake: 'Trophies in the cabinet',
-        },
-        { value: money(computeSeasonPrize(myRank, teamCount)), stake: 'Placement prize' },
-        { value: money(balance), stake: 'Club Balance', accent: true },
-      ]
-    : [
-        {
-          value: ordinal(myRank),
-          stake:
-            myRank === 1
-              ? `${money(computeSeasonPrize(1, teamCount))} projected · top of the table`
-              : `${money(computeSeasonPrize(myRank, teamCount))} projected · ${gapToLeader} behind ${leader?.club.name.split(' ')[0] ?? 'the leader'}`,
-        },
-        {
-          value: `${myStanding?.wins ?? 0}-${myStanding?.draws ?? 0}-${myStanding?.losses ?? 0}`,
-          stake: unbeaten >= 2 ? `Unbeaten in ${unbeaten}` : 'Won-drawn-lost',
-        },
-        {
-          value: money1(meritSoFar),
-          stake: meritGws.length
-            ? `GW${meritGws[0]}–${meritGws[meritGws.length - 1]} so far · ${money1(rates.win)} riding on this one`
-            : 'Match revenue this block',
-        },
-        {
-          value: money(balance),
-          stake: `Club Balance · ${ordinal(balanceRank)}-richest`,
-          accent: true,
-        },
-      ];
+  const standing: HomeStanding = {
+    rank: myRank,
+    teamCount,
+    leaguePoints: myStanding?.league_points ?? 0,
+    gapToLeader,
+    leaderName: leader?.club.name ?? null,
+    record: `${myStanding?.wins ?? 0}-${myStanding?.draws ?? 0}-${myStanding?.losses ?? 0}`,
+    form: recentForm,
+    unbeaten,
+    projectedPrize: money(computeSeasonPrize(myRank, teamCount)),
+    trophies: archiveCups.filter((c) => c.winner_id === myTeamId).length,
+  };
+
+  const clubMoney: HomeMoney = {
+    balance: money(balance),
+    balanceRank,
+    meritSoFar: money1(meritSoFar),
+    meritBlock: meritGws.length ? `GW${meritGws[0]}–${meritGws[meritGws.length - 1]}` : null,
+    meritAtStake: money1(rates.win),
+  };
 
   // ── squad, availability and the XI ──────────────────────────
   const rosterPlayers = roster.map((r) => ({ ...r, player: r.player })).filter((r) => r.player);
@@ -1378,18 +1417,6 @@ export async function buildHomeModel(
       cupLine: null,
     };
 
-    // The cup line below needs only the tournaments already in hand, so its
-    // first read starts before the debrief's rather than after them.
-    const tourneyIds = tournaments.map((t) => t.id);
-    const roundsRead = tourneyIds.length
-      ? Promise.resolve(
-          admin
-            .from('tournament_rounds')
-            .select('id, tournament_id, name, round_number, start_gameweek, end_gameweek, is_two_leg')
-            .in('tournament_id', tourneyIds),
-        )
-      : null;
-
     // ── your gameweek + the debrief ───────────────────────────
     // Both come from the same scoring call the matchup itself uses, so the
     // explanation can never disagree with the score it is explaining.
@@ -1879,9 +1906,66 @@ export async function buildHomeModel(
     };
   }
 
-  const preferSecondary = secondaryKind === 'preview' && fpl.nextGwIsClose;
-
   // ── fronts ──────────────────────────────────────────────────
+  /**
+   * Where each cup has actually reached, and who you meet there.
+   *
+   * The tiles used to read "In it / Still alive / Pays €50m" three times over,
+   * which is a status noun saying the same thing twice and nothing a manager
+   * can act on. A round name and an opponent is a fixture. Two reads that were
+   * already in flight for the hero's cup line answer it — `roundsRead`, plus
+   * one lookup of the ties in the rounds that matter.
+   */
+  const cupStage = new Map<
+    string,
+    { round: string; against: string | null; startsGw: number | null }
+  >();
+  if (roundsRead) {
+    const { data: rounds } = await roundsRead;
+    // The round a cup is AT: the latest one that has started. Every cup in
+    // this league starts late — the first Champions Cup tie is MW32 — so a
+    // tournament with nothing played yet reports its FIRST round and the
+    // matchweek it begins, which beats "Still alive" by a season.
+    const stageByTourney = new Map<string, { round: any; started: boolean }>();
+    for (const r of rounds ?? []) {
+      const held = stageByTourney.get(r.tournament_id);
+      const started = r.start_gameweek <= gameweek;
+      if (!held) {
+        stageByTourney.set(r.tournament_id, { round: r, started });
+        continue;
+      }
+      // Prefer the latest started round; failing that, the earliest upcoming.
+      const better = started
+        ? !held.started || r.round_number > held.round.round_number
+        : !held.started && r.round_number < held.round.round_number;
+      if (better) stageByTourney.set(r.tournament_id, { round: r, started });
+    }
+
+    const startedIds = [...stageByTourney.values()].filter((s) => s.started).map((s) => s.round.id);
+    const { data: ties } = startedIds.length
+      ? await admin
+          .from('tournament_matchups')
+          .select('round_id, team_a_id, team_b_id')
+          .in('round_id', startedIds)
+      : { data: [] as any[] };
+
+    for (const [tourneyId, stage] of stageByTourney) {
+      const mine = stage.started
+        ? (ties ?? []).find(
+            (t: any) =>
+              t.round_id === stage.round.id &&
+              (t.team_a_id === myTeamId || t.team_b_id === myTeamId),
+          )
+        : null;
+      const otherId = mine ? (mine.team_a_id === myTeamId ? mine.team_b_id : mine.team_a_id) : null;
+      cupStage.set(tourneyId, {
+        round: stage.round.name,
+        against: otherId ? clubOf(otherId).name : null,
+        startsGw: stage.started ? null : stage.round.start_gameweek,
+      });
+    }
+  }
+
   const fronts: FrontTile[] = [];
   fronts.push({
     competition: 'League',
@@ -1914,10 +1998,25 @@ export async function buildHomeModel(
     const won = archiveCups.some(
       (c) => c.tournament_name === t.name && c.winner_id === myTeamId && c.season === season,
     );
+    const stage = cupStage.get(t.id);
     fronts.push({
       competition: t.name,
-      value: won ? 'Winners' : t.status === 'completed' ? 'Out' : 'In it',
-      sub: won ? 'Champions' : t.status === 'completed' ? 'Knocked out' : 'Still alive',
+      value: won
+        ? 'Winners'
+        : t.status === 'completed'
+          ? 'Out'
+          : (stage?.round ?? 'In it'),
+      sub: won
+        ? 'Champions'
+        : t.status === 'completed'
+          ? 'Knocked out'
+          : stage?.startsGw != null
+            ? `From Matchweek ${stage.startsGw}`
+            : stage?.against
+              ? `Against ${stage.against}`
+              : stage
+                ? 'Bye this round'
+                : 'Not drawn yet',
       // SAFETY: t.type is always one of the three cup tournament types (see TournamentType in @/types).
       prize: `${seasonOver ? 'Paid' : 'Pays'} ${money(cupPrizes[t.type as keyof typeof cupPrizes] ?? 25)}`,
       tone: won ? 'won' : t.status === 'completed' ? 'out' : 'plain',
@@ -1989,6 +2088,8 @@ export async function buildHomeModel(
         playerId: a.player_id,
         name: p ? getPlayerDisplayName(p, 'initial_last') : 'Unknown player',
         position: p?.primary_position ?? '',
+        photoUrl: p?.photo_url ?? null,
+        photoVersion: p?.photo_version ?? null,
         meta: `${p?.pl_team ?? ''}${sellerClub ? ` · ${sellerClub.name}` : ' · free agent'}`,
         bid: highest > 0 ? money(highest) : 'No bids',
         floor: highest > 0 ? `from ${money(floorVal)}` : `floor ${money(floorVal)}`,
@@ -2022,14 +2123,6 @@ export async function buildHomeModel(
   const marketSummary = liveAuctions.length
     ? `${liveAuctions.length} ${liveAuctions.length === 1 ? 'lot' : 'lots'} live · ${closingToday} closing today · you lead ${iLead}`
     : 'Nothing on the board right now';
-
-  const richest = [...teams].sort(
-    (a, b) => Number(b.faab_budget ?? 0) - Number(a.faab_budget ?? 0),
-  )[0];
-  const marketBudget =
-    richest && richest.id !== myTeamId
-      ? `${money(balance)} to spend · ${richest.team_name.split(' ')[0]} hold ${money(Number(richest.faab_budget ?? 0))}`
-      : `${money(balance)} to spend · the most in the league`;
 
   // ── the wire ────────────────────────────────────────────────
   // Money-only rows are Finance's ledger, not news. Left in, they dominated the
@@ -2201,7 +2294,8 @@ export async function buildHomeModel(
     totalGameweeks,
     club: myClub,
     subtitle,
-    figures,
+    standing,
+    money: clubMoney,
     attention,
     fixture,
     xi,
@@ -2223,10 +2317,8 @@ export async function buildHomeModel(
     secondaryBenchSummary,
     secondaryDebrief,
     secondaryOpponent,
-    preferSecondary,
     market,
     marketSummary,
-    marketBudget,
     fronts,
     matchweek,
     table,
