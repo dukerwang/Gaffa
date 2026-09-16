@@ -18,6 +18,7 @@ import { getCurrentFplSeason, getLatestReferenceStatsSeason } from '@/lib/season
 import { redirect } from 'next/navigation';
 import styles from './scoring-v2.module.css';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
+import { fetchAllPages } from '@/lib/supabase/pagination';
 import { calculateMatchRating } from '@/lib/scoring/matchRating';
 import { loadReferenceStats, calculateTeamScore } from '@/lib/scoring/matchups';
 import { normalizeMatchupLineup } from '@/lib/lineups/normalizeMatchupLineup';
@@ -376,9 +377,15 @@ export default async function ScoringV2Page() {
   }
 
   // 6. Matchup score deltas > 5 with the team names.
-  const { data: matchupsRaw } = await admin
-    .from('matchups')
-    .select('id, gameweek, score_a, score_b, lineup_a, lineup_b, team_a_id, team_b_id, team_a:teams!matchups_team_a_id_fkey(team_name), team_b:teams!matchups_team_b_id_fkey(team_name)');
+  // Every matchup in every league and season: 759 rows in September 2026 and
+  // growing by a league's schedule each season, so paged past the 1,000-row cap.
+  const matchupsRaw = await fetchAllPages<any>((from, to) =>
+    admin
+      .from('matchups')
+      .select('id, gameweek, score_a, score_b, lineup_a, lineup_b, team_a_id, team_b_id, team_a:teams!matchups_team_a_id_fkey(team_name), team_b:teams!matchups_team_b_id_fkey(team_name)')
+      .order('id', { ascending: true })
+      .range(from, to),
+  );
 
   const playerPositions = new Map<string, string[]>();
   const playerPlTeamId = new Map<string, number>();

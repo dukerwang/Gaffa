@@ -278,8 +278,8 @@ throat-clearing, no inanimate agency, prose over lists — is untouched by this.
 
 **The `role` column stays as built, and "Roles" is the user-facing word.**
 
-Migration `155_target_role.sql` and `src/lib/transfers/targetRole.ts` added a
-required `role` (star / starter / bench / prospect) on profile targets, and
+Migration `155_target_role.sql` and `src/lib/transfers/targetRole.ts` (both on
+`feat/heritage-targets-projections`, not yet on `main`) added a required `role` (star / starter / bench / prospect) on profile targets, and
 renamed the concept from "profile" to "Roles" in the UI. Neither was in the
 approved spec — `docs/superpowers/specs/2026-09-04-targets-design.md` deliberates
 the word "profile" at length and rejects four alternatives. Asked whether to

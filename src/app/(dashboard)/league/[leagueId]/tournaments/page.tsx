@@ -22,28 +22,32 @@ export default async function TournamentsPage({ params, searchParams }: Props) {
 
     const admin = createAdminClient();
 
-    const { data: league } = await admin
-        .from('leagues')
-        .select('id, name, created_at')
-        .eq('id', leagueId)
-        .single();
+    // The league, the viewer's membership, its cups and FPL's gameweek share no
+    // inputs, so they go out together. The rounds and their ties follow, each
+    // waiting only on the read before it.
+    const [{ data: league }, { data: member }, { data: tournamentsData }, fplState] = await Promise.all([
+        admin
+            .from('leagues')
+            .select('id, name, created_at')
+            .eq('id', leagueId)
+            .single(),
+        admin
+            .from('teams')
+            .select('id')
+            .eq('league_id', leagueId)
+            .eq('user_id', user.id)
+            .single(),
+        admin
+            .from('tournaments')
+            .select('*')
+            .eq('league_id', leagueId)
+            .order('created_at', { ascending: false }),
+        readFplGameweekState(),
+    ]);
 
     if (!league) notFound();
 
-    const { data: member } = await admin
-        .from('teams')
-        .select('id')
-        .eq('league_id', leagueId)
-        .eq('user_id', user.id)
-        .single();
-
     if (!member) redirect('/dashboard');
-
-    const { data: tournamentsData } = await admin
-        .from('tournaments')
-        .select('*')
-        .eq('league_id', leagueId)
-        .order('created_at', { ascending: false });
 
     let tournaments = (tournamentsData ?? []) as Tournament[];
     
@@ -111,29 +115,7 @@ export default async function TournamentsPage({ params, searchParams }: Props) {
     }
 
     // ── Current FPL State ──
-    let currentFplGw = 1;
-    let isFinished = false;
-    try {
-        const fplRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', { next: { revalidate: 3600 } });
-        if (fplRes.ok) {
-            const fplData = await fplRes.json();
-            const currentEvent = (fplData.events as any[]).find((e: any) => e.is_current);
-            if (currentEvent) {
-                currentFplGw = currentEvent.id;
-                isFinished = currentEvent.finished;
-            } else {
-                // Fallback to deadline check if no event is marked current
-                const now = new Date();
-                for (const ev of fplData.events as any[]) {
-                    if (ev.deadline_time && new Date(ev.deadline_time) <= now) {
-                        currentFplGw = Math.max(currentFplGw, ev.id);
-                    }
-                }
-                const fallbackEvent = (fplData.events as any[]).find((e: any) => e.id === currentFplGw);
-                isFinished = fallbackEvent?.finished ?? false;
-            }
-        }
-    } catch { /* FPL unreachable */ }
+    const { currentFplGw, isFinished } = fplState;
 
     // Binary Tree padding logic
     const roundsWithPairs = rounds.map((round, roundIdx) => {
@@ -326,4 +308,37 @@ export default async function TournamentsPage({ params, searchParams }: Props) {
 function hasIncomingActiveLeft(m: TournamentMatchup | null, myId: string) {
     if (!m) return false;
     return (m.team_a_id === myId || m.team_b_id === myId);
+}
+
+/**
+ * FPL's current gameweek and whether it has finished, with the page's existing
+ * fallbacks: the event marked current, else the latest passed deadline, else
+ * GW1 unfinished when FPL is unreachable. A function so it can join the page's
+ * first wave of reads.
+ */
+async function readFplGameweekState(): Promise<{ currentFplGw: number; isFinished: boolean }> {
+    let currentFplGw = 1;
+    let isFinished = false;
+    try {
+        const fplRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', { next: { revalidate: 3600 } });
+        if (fplRes.ok) {
+            const fplData = await fplRes.json();
+            const currentEvent = (fplData.events as any[]).find((e: any) => e.is_current);
+            if (currentEvent) {
+                currentFplGw = currentEvent.id;
+                isFinished = currentEvent.finished;
+            } else {
+                // Fallback to deadline check if no event is marked current
+                const now = new Date();
+                for (const ev of fplData.events as any[]) {
+                    if (ev.deadline_time && new Date(ev.deadline_time) <= now) {
+                        currentFplGw = Math.max(currentFplGw, ev.id);
+                    }
+                }
+                const fallbackEvent = (fplData.events as any[]).find((e: any) => e.id === currentFplGw);
+                isFinished = fallbackEvent?.finished ?? false;
+            }
+        }
+    } catch { /* FPL unreachable */ }
+    return { currentFplGw, isFinished };
 }

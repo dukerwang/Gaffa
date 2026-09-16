@@ -117,7 +117,14 @@ export default async function MatchupsPage({ params, searchParams }: Props) {
     );
 
     if (needsSync) {
-        await processMatchupsForGameweek(targetGw, isCurrentFplGwFinished);
+        // Best effort, as on League Home: a failed read inside the processor
+        // throws instead of scoring from partial data, and the stored rows
+        // below still render.
+        try {
+            await processMatchupsForGameweek(targetGw, isCurrentFplGwFinished);
+        } catch (err) {
+            console.error('[matchups] Score sync failed; rendering stored scores:', err);
+        }
         const { data: freshData } = await admin
             .from('matchups')
             .select(MATCHUP_SELECT)

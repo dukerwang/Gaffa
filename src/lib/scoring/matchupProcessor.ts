@@ -9,6 +9,7 @@ import { executeAdvanceTournament } from '@/lib/tournaments/advanceTournament';
 import { payMeritPeriod } from '@/lib/economy/payMeritPeriod';
 import { DRAW_THRESHOLD } from '@/lib/scoring/drawBand';
 import { getFinishedPlTeamIds } from '@/lib/fixtures/lockout';
+import { fetchAllPagesIn } from '@/lib/supabase/pagination';
 import type { MatchupLineup } from '@/types';
 
 type MatchupUpdatePayload = {
@@ -139,23 +140,43 @@ export async function processMatchupsForGameweek(
 
 
     // 3. Fetch player stats for this GW (current season only — see statsSeason above)
-    const { data: statsData } = await admin
-        .from('player_stats')
-        .select('player_id, fantasy_points, stats')
-        .eq('season', statsSeason)
-        .eq('gameweek', gameweek)
-        .in('player_id', Array.from(playerIds));
+    //
+    // Every read from here to the write loop spans ALL active leagues at once,
+    // so none of them is bounded by one squad. They are chunked and paged, and
+    // a failed page throws: PostgREST caps a response at 1,000 rows without
+    // saying so, and an error used to read as "no rows". Either one scores a
+    // lineup from data that is not all there, and when `finished` is set that
+    // score is locked and never revisited.
+    const statsData = await fetchAllPagesIn(Array.from(playerIds), (chunk, from, to) =>
+        admin
+            .from('player_stats')
+            .select('player_id, fantasy_points, stats')
+            .eq('season', statsSeason)
+            .eq('gameweek', gameweek)
+            .in('player_id', chunk)
+            .order('id', { ascending: true })
+            .range(from, to),
+    );
 
-    // Fetch all current roster entries for these teams to sanitize fallbacks
+    // Fetch all current roster entries for these teams to sanitize fallbacks.
+    //
+    // This one had the least headroom: 967 rows across the eight active
+    // leagues against a 1,000-row cap. `sanitize` below nulls out any starter
+    // it cannot find in his team's roster set, so a truncated read strips real
+    // players from a lineup at exactly the moment the score locks.
     const teamIds = new Set<string>();
     for (const m of matchups) {
         teamIds.add(m.team_a_id);
         teamIds.add(m.team_b_id);
     }
-    const { data: allRosterEntries } = await admin
-        .from('roster_entries')
-        .select('team_id, player_id, status')
-        .in('team_id', Array.from(teamIds));
+    const allRosterEntries = await fetchAllPagesIn(Array.from(teamIds), (chunk, from, to) =>
+        admin
+            .from('roster_entries')
+            .select('team_id, player_id, status')
+            .in('team_id', chunk)
+            .order('id', { ascending: true })
+            .range(from, to),
+    );
     
     const teamRosterMap = new Map<string, Set<string>>();
     const teamIrMap = new Map<string, Set<string>>();
@@ -185,10 +206,14 @@ export async function processMatchupsForGameweek(
     }
 
     // 4. Fetch player positions and PL team IDs
-    const { data: playersData } = await admin
-        .from('players')
-        .select('id, primary_position, secondary_positions, pl_team_id')
-        .in('id', Array.from(playerIds));
+    const playersData = await fetchAllPagesIn(Array.from(playerIds), (chunk, from, to) =>
+        admin
+            .from('players')
+            .select('id, primary_position, secondary_positions, pl_team_id')
+            .in('id', chunk)
+            .order('id', { ascending: true })
+            .range(from, to),
+    );
 
     const playerPositions = new Map<string, string[]>();
     const playerPlTeamId = new Map<string, number>();
