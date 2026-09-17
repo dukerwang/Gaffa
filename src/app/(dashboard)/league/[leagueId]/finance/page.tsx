@@ -18,21 +18,21 @@ export default async function FinancePage({ params }: Props) {
 
   const admin = createAdminClient();
 
-  const { data: league } = await admin
-    .from('leagues')
-    .select('id, name, season, current_season, faab_budget, commissioner_id')
-    .eq('id', leagueId)
-    .single();
+  const [{ data: league }, { data: myTeam }] = await Promise.all([
+    admin
+      .from('leagues')
+      .select('id, name, season, current_season, faab_budget, commissioner_id')
+      .eq('id', leagueId)
+      .single(),
+    admin
+      .from('teams')
+      .select('id, team_name, faab_budget')
+      .eq('league_id', leagueId)
+      .eq('user_id', user.id)
+      .maybeSingle(),
+  ]);
 
   if (!league) notFound();
-
-  const { data: myTeam } = await admin
-    .from('teams')
-    .select('id, team_name, faab_budget')
-    .eq('league_id', leagueId)
-    .eq('user_id', user.id)
-    .single();
-
   if (!myTeam && league.commissioner_id !== user.id) redirect('/dashboard');
 
   if (!myTeam) {

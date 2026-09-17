@@ -2,10 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import NavigationLink from '@/components/ui/NavigationLink';
+import dynamic from 'next/dynamic';
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
-import GlobalStatsTable from '../stats/GlobalStatsTable';
-import PlayerExplorer from './PlayerExplorer';
+import type GlobalStatsTableType from '../stats/GlobalStatsTable';
+
+const GlobalStatsTable = dynamic(() => import('../stats/GlobalStatsTable'));
+const PlayerExplorer = dynamic(() => import('./PlayerExplorer'));
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { SPINE, POS_COLOR } from '@/lib/positions/spine';
 import type { GranularPosition } from '@/types';
@@ -38,7 +41,7 @@ interface Props {
   explorerRows: ExplorerRow[];
   gameweeks: number[];
   gameweek: number | null;
-  shadowMaps: React.ComponentProps<typeof GlobalStatsTable>['shadowMaps'];
+  shadowMaps: React.ComponentProps<typeof GlobalStatsTableType>['shadowMaps'];
   isSiteAdmin?: boolean;
 }
 

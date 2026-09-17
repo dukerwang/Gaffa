@@ -74,25 +74,24 @@ export default async function StandingsPage({ params }: Props) {
 
   const admin = createAdminClient();
 
-  const { data: league } = await admin
-    .from('leagues')
-    .select('id, name, season, commissioner_id')
-    .eq('id', leagueId)
-    .single();
-
-  if (!league) notFound();
-
-  const { data: membership } = await admin
-    .from('teams')
-    .select('id')
-    .eq('league_id', leagueId)
-    .eq('user_id', user.id)
-    .single();
-
-  if (!membership && league.commissioner_id !== user.id) redirect('/dashboard');
-
-  // Fetch standings, recent matchups, and team crest configs in parallel
-  const [{ data: standingsRaw }, { data: recentMatchups }, { data: teamsRaw }] = await Promise.all([
+  const [
+    { data: league },
+    { data: membership },
+    { data: standingsRaw },
+    { data: recentMatchups },
+    { data: teamsRaw },
+  ] = await Promise.all([
+    admin
+      .from('leagues')
+      .select('id, name, season, commissioner_id')
+      .eq('id', leagueId)
+      .single(),
+    admin
+      .from('teams')
+      .select('id')
+      .eq('league_id', leagueId)
+      .eq('user_id', user.id)
+      .maybeSingle(),
     admin
       .from('league_standings')
       .select('*')
@@ -110,6 +109,9 @@ export default async function StandingsPage({ params }: Props) {
       .select('id, crest_config')
       .eq('league_id', leagueId),
   ]);
+
+  if (!league) notFound();
+  if (!membership && league.commissioner_id !== user.id) redirect('/dashboard');
 
   const crestMap = new Map((teamsRaw ?? []).map((t: any) => [t.id, t.crest_config]));
 

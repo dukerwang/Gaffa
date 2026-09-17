@@ -13,13 +13,16 @@ import type { CrestConfig } from '@/components/crest/types';
 import CrestBadge from '@/components/crest/CrestBadge';
 import PositionBadge from '@/components/players/PositionBadge';
 import { playerHoverProps, usePlayerCard } from '@/components/players/PlayerCardProvider';
+import dynamic from 'next/dynamic';
 import TransfersSubNav from '@/components/transfers/TransfersSubNav';
 import ListingCard from '@/components/transfers/ListingCard';
-import ProposeBuilder, { type LoanDirection, type ProposeMode } from '@/components/transfers/ProposeBuilder';
-import ListingEditor from '@/components/transfers/ListingEditor';
+import type { LoanDirection, ProposeMode } from '@/components/transfers/ProposeBuilder';
 import { setServerClock } from '@/components/transfers/useTick';
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import styles from './deals.module.css';
+
+const ProposeBuilder = dynamic(() => import('@/components/transfers/ProposeBuilder'), { ssr: false });
+const ListingEditor = dynamic(() => import('@/components/transfers/ListingEditor'), { ssr: false });
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { describeDeal } from '@/lib/transfers/describeDeal';
 

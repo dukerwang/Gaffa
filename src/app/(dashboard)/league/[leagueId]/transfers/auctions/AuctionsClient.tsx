@@ -10,12 +10,15 @@ import PositionBadge from '@/components/players/PositionBadge';
 import Portrait from '@/components/players/Portrait';
 import { playerHoverProps, usePlayerCard } from '@/components/players/PlayerCardProvider';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import dynamic from 'next/dynamic';
 import TransfersSubNav from '@/components/transfers/TransfersSubNav';
-import BidDialog, { type BidMode } from '@/components/transfers/BidDialog';
+import type { BidMode } from '@/components/transfers/BidDialog';
 import { setServerClock, useTick, formatAuctionClock, isClosing } from '@/components/transfers/useTick';
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import AuctionTimingHelp from '@/components/transfers/AuctionTimingHelp';
 import styles from './auctions.module.css';
+
+const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
 
 /**
  * The Auction Room.

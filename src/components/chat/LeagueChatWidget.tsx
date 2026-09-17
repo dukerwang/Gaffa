@@ -8,10 +8,15 @@ import FormattedText from '@/components/ui/FormattedText';
 import CrestBadge from '@/components/crest/CrestBadge';
 import TradeOfferCard, { type TradeSummary } from '@/components/chat/TradeOfferCard';
 import LoanOfferCard, { type LoanSummary } from '@/components/chat/LoanOfferCard';
+import dynamic from 'next/dynamic';
 import { useLeagueChat } from './LeagueChatContext';
-import FutbolpediaChatPanel from '@/components/integrations/FutbolpediaChatPanel';
 import { FUTBOLPEDIA_ASSISTANT_CAPTION } from '@/lib/chat/isClubChatContext';
 import styles from './LeagueChatWidget.module.css';
+
+const FutbolpediaChatPanel = dynamic(
+  () => import('@/components/integrations/FutbolpediaChatPanel'),
+  { ssr: false },
+);
 
 interface UserInfo {
   id: string;

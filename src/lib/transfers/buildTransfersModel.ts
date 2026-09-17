@@ -296,41 +296,40 @@ export async function buildTransfersModel(
   leagueId: string,
   userId: string,
 ): Promise<TransfersModel | null> {
-  // 1. League + membership. Everything else depends on these.
-  const { data: league } = await admin
-    .from('leagues')
-    .select(`id, name, roster_size, taxi_size, taxi_age_limit, status, roster_locked,
-             total_gameweeks, current_season, previous_season, loan_slot_buyback_fee,
-             loan_bonus_cap_default, max_loan_outs, max_loan_ins, free_agent_bid_floor`)
-    .eq('id', leagueId)
-    .single();
-  if (!league) return null;
-
-  const { data: myTeam } = await admin
-    .from('teams')
-    .select('id, team_name, faab_budget, abbreviation, crest_config, academy_slots, loan_out_slots')
-    .eq('league_id', leagueId)
-    .eq('user_id', userId)
-    .single();
-  if (!myTeam) return null;
+  // 1. League + membership. None of these reads depends on another.
+  const [{ data: league }, { data: myTeam }, { data: allTeams }] = await Promise.all([
+    admin
+      .from('leagues')
+      .select(`id, name, roster_size, taxi_size, taxi_age_limit, status, roster_locked,
+               total_gameweeks, current_season, previous_season, loan_slot_buyback_fee,
+               loan_bonus_cap_default, max_loan_outs, max_loan_ins, free_agent_bid_floor`)
+      .eq('id', leagueId)
+      .single(),
+    admin
+      .from('teams')
+      .select('id, team_name, faab_budget, abbreviation, crest_config, academy_slots, loan_out_slots')
+      .eq('league_id', leagueId)
+      .eq('user_id', userId)
+      .single(),
+    admin
+      .from('teams')
+      .select('id, team_name, faab_budget, abbreviation, crest_config')
+      .eq('league_id', leagueId),
+  ]);
+  if (!league || !myTeam) return null;
 
   // Club Facilities raise the viewer's own Academy and Loans Out capacity above
   // the league setting. Every consumer of this model reads those two figures as
   // "my limit", so the league row carries the viewer's effective values.
   const mySlots = effectiveSlots(myTeam, league);
 
-  const { data: allTeams } = await admin
-    .from('teams')
-    .select('id, team_name, faab_budget, abbreviation, crest_config')
-    .eq('league_id', leagueId);
-
   const teamIds = (allTeams ?? []).map((t) => t.id);
   const teamNameById = new Map((allTeams ?? []).map((t) => [t.id, t.team_name]));
 
-  const maps = await fetchEnrichmentMaps(admin, league);
-
-  // 2. The board, straight from the projection.
+  // 2. The board, straight from the projection. Maps and deal flow start concurrently.
   const [
+    maps,
+    dealFlowRaw,
     { data: auctionRows },
     { data: myClaims },
     { data: listings },
@@ -341,6 +340,8 @@ export async function buildTransfersModel(
     { data: newArrivalRows },
     { data: prevSeasonClubRows },
   ] = await Promise.all([
+    fetchEnrichmentMaps(admin, league),
+    queryDealFlow(admin, leagueId, myTeam.id),
     admin
       .from('auction_state')
       .select('*')
@@ -499,7 +500,7 @@ export async function buildTransfersModel(
   // one field in the model that comes from outside Supabase — it is cached for
   // five minutes upstream, so this does not add a round trip per request.
   const [{ myOffers, leagueFeed, loans }, fplStatus] = await Promise.all([
-    fetchDealFlow(admin, leagueId, myTeam.id, maps, playerMap),
+    resolveDealFlow(admin, dealFlowRaw, maps, playerMap),
     getFplStatus(),
   ]);
 
@@ -665,14 +666,18 @@ export async function buildTransfersModel(
 // ── Helpers ───────────────────────────────────────────────────
 
 
-/** My live offers, the settled league feed, and loans — plus any players they name. */
-async function fetchDealFlow(
+/** Raw deal flow queries launched concurrently with board queries. */
+type DealFlowRaw = {
+  myOffers: unknown[] | null;
+  leagueFeed: unknown[] | null;
+  loans: unknown[] | null;
+};
+
+async function queryDealFlow(
   admin: AdminClient,
   leagueId: string,
   myTeamId: string,
-  maps: EnrichmentMaps,
-  playerMap: Record<string, EnrichedPlayer>,
-) {
+): Promise<DealFlowRaw> {
   const proposalSelect = `
     id, league_id, team_a_id, team_b_id, offered_players, requested_players,
     offered_faab, requested_faab, offered_rights, requested_rights,
@@ -708,10 +713,25 @@ async function fetchDealFlow(
       .order('created_at', { ascending: false }),
   ]);
 
+  return { myOffers, leagueFeed, loans };
+}
+
+/** Resolves and enriches missing players for deal flow. */
+async function resolveDealFlow(
+  admin: AdminClient,
+  dealFlowRaw: DealFlowRaw,
+  maps: EnrichmentMaps,
+  playerMap: Record<string, EnrichedPlayer>,
+) {
+  const { myOffers, leagueFeed, loans } = dealFlowRaw;
+  const typedOffers = (myOffers ?? []) as unknown as TradeProposalRow[];
+  const typedFeed = (leagueFeed ?? []) as unknown as TradeProposalRow[];
+  const typedLoans = (loans ?? []) as unknown as LoanRow[];
+
   // Backfill playerMap for anything a proposal references but no roster carries
   // (a player can be traded away while his proposal stays in the feed).
   const missing = new Set<string>();
-  for (const t of [...(myOffers ?? []), ...(leagueFeed ?? [])]) {
+  for (const t of [...typedOffers, ...typedFeed]) {
     for (const id of [...(t.offered_players ?? []), ...(t.requested_players ?? [])]) {
       if (!playerMap[id]) missing.add(id);
     }
@@ -724,14 +744,14 @@ async function fetchDealFlow(
     for (const p of extra ?? []) playerMap[p.id] = enrichPlayer(p, maps);
   }
 
-  for (const l of (loans ?? []) as unknown as LoanRow[]) {
+  for (const l of typedLoans) {
     if (l.player) l.player = enrichPlayer(l.player, maps);
   }
 
   return {
     // See TradeProposalRow: PostgREST types these to-one embeds as arrays.
-    myOffers: (myOffers ?? []) as unknown as TradeProposalRow[],
-    leagueFeed: (leagueFeed ?? []) as unknown as TradeProposalRow[],
-    loans: (loans ?? []) as unknown as LoanRow[],
+    myOffers: typedOffers,
+    leagueFeed: typedFeed,
+    loans: typedLoans,
   };
 }

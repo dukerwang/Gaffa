@@ -82,8 +82,9 @@ export default async function MatchupDetailPage({ params }: Props) {
         team_b: { id: string; team_name: string; crest_config: any } | null;
     };
 
-    // Both sides of the tie, resolved together — neither reads the other.
-    const [lineupA, lineupB] = await Promise.all([
+    // Both sides of the tie, resolved together with season reference metadata
+    // and lockout signals so all independent lookups complete in parallel.
+    const [lineupA, lineupB, currentSeason, refSeason, lockedTeamIds, finishedPlTeamIds] = await Promise.all([
         getEffectiveLineupForTeam(admin, {
             teamId: matchup.team_a_id,
             gameweek: matchup.gameweek,
@@ -96,6 +97,14 @@ export default async function MatchupDetailPage({ params }: Props) {
                 currentLineup: matchup.lineup_b as MatchupLineup | null,
             })
             : Promise.resolve(null),
+        getCurrentFplSeason(undefined, true),
+        getLatestReferenceStatsSeason(admin),
+        matchup.status !== 'completed' && matchupData.gameweek
+            ? getLockedPlTeamIds(admin, matchupData.gameweek).catch(() => null)
+            : Promise.resolve(null),
+        matchupData.gameweek
+            ? getFinishedPlTeamIds(matchupData.gameweek).catch(() => new Set<number>())
+            : Promise.resolve(new Set<number>()),
     ]);
 
     const playerIds = new Set<string>();
@@ -103,13 +112,47 @@ export default async function MatchupDetailPage({ params }: Props) {
     (lineupA?.bench as any[] ?? []).forEach((b) => playerIds.add(b.player_id));
     lineupB?.starters.forEach((s) => playerIds.add(s.player_id));
     (lineupB?.bench as any[] ?? []).forEach((b) => playerIds.add(b.player_id));
+    const playerIdsArr = Array.from(playerIds);
+
+    const hasPlayers = playerIdsArr.length > 0;
+    const hasGw = Boolean(matchupData.gameweek);
+
+    // Parallelize all player, stats, reference, finalization, and fixture lookups.
+    const [
+        playersRes,
+        rankingsRes,
+        statsRes,
+        refStats,
+        finalised,
+        fixtureMap,
+    ] = await Promise.all([
+        hasPlayers
+            ? (admin.from('players').select(FULL_PLAYER_SELECT).in('id', playerIdsArr) as any)
+            : Promise.resolve({ data: [] }),
+        hasPlayers
+            ? admin.from('player_rankings').select('*').in('player_id', playerIdsArr)
+            : Promise.resolve({ data: [] }),
+        hasPlayers && hasGw
+            ? admin
+                .from('player_stats')
+                .select('player_id, fantasy_points, match_rating, stats, perf')
+                .eq('season', currentSeason)
+                .eq('gameweek', matchupData.gameweek)
+                .in('player_id', playerIdsArr)
+            : Promise.resolve({ data: [] }),
+        hasPlayers && hasGw
+            ? loadReferenceStats(admin, refSeason)
+            : Promise.resolve({}),
+        isGameweekFinalised(admin, currentSeason, matchupData.gameweek),
+        hasGw
+            ? getGameweekFixtureMap(admin, currentSeason, matchupData.gameweek)
+            : Promise.resolve({}),
+    ]);
 
     const playerMap: Record<string, Partial<Player>> = {};
-    if (playerIds.size > 0) {
-        const [{ data: playersData }, { data: rankings }] = await Promise.all([
-            admin.from('players').select(FULL_PLAYER_SELECT).in('id', Array.from(playerIds)) as any,
-            admin.from('player_rankings').select('*').in('player_id', Array.from(playerIds)),
-        ]);
+    if (hasPlayers) {
+        const playersData = playersRes?.data ?? [];
+        const rankings = rankingsRes?.data ?? [];
         const rankMap = new Map((rankings ?? []).map((r: any) => [r.player_id, r]));
         for (const p of (playersData ?? []) as any[]) {
             const ranks = rankMap.get(p.id);
@@ -125,32 +168,10 @@ export default async function MatchupDetailPage({ params }: Props) {
     // can't drift from the number already written.
     const detailMap: Record<string, MatchupPlayerDetail> = {};
     let perfMap: Record<string, PerfGroup[]> = {};
-    // Hoisted out of the block below: also needed to compute the live team
-    // total (calculateTeamScore) further down, not just the per-player chips.
-    let statsRows: any[] | undefined;
-    let refStats: Awaited<ReturnType<typeof loadReferenceStats>> | undefined;
-    if (playerIds.size > 0 && matchupData.gameweek) {
-        // Scope by season too — gameweek numbers repeat every season, and
-        // player_stats keeps every past season's rows (never archived/cleared).
-        const [statsSeason, refSeason] = await Promise.all([
-            getCurrentFplSeason(undefined, true),
-            getLatestReferenceStatsSeason(admin),
-        ]);
-        const [{ data: fetchedStatsRows }, fetchedRefStats] = await Promise.all([
-            admin
-                .from('player_stats')
-                // match_rating is its own column, never a key inside stats — the pitch
-                // chip needs it passed through explicitly.
-                .select('player_id, fantasy_points, match_rating, stats, perf')
-                .eq('season', statsSeason)
-                .eq('gameweek', matchupData.gameweek)
-                .in('player_id', Array.from(playerIds)),
-            loadReferenceStats(admin, refSeason),
-        ]);
-        statsRows = fetchedStatsRows ?? undefined;
-        refStats = fetchedRefStats;
+    const statsRows: any[] = statsRes?.data ?? [];
 
-        for (const s of statsRows ?? []) {
+    if (hasPlayers && hasGw) {
+        for (const s of statsRows) {
             detailMap[s.player_id] = {
                 points: Number(s.fantasy_points),
                 rating: s.match_rating != null ? Number(s.match_rating) : null,
@@ -163,17 +184,6 @@ export default async function MatchupDetailPage({ params }: Props) {
             };
         }
     }
-
-    // Whether we hold FPL's reviewed stats for this gameweek yet. Until the
-    // post-lockdown pass runs, the scoreline is an estimate and must not be
-    // labelled "Final" — see src/lib/scoring/gameweekState.ts.
-    const currentSeason = await getCurrentFplSeason(undefined, true);
-    const [finalised, fixtureMap] = await Promise.all([
-        isGameweekFinalised(admin, currentSeason, matchupData.gameweek),
-        matchupData.gameweek
-            ? getGameweekFixtureMap(admin, currentSeason, matchupData.gameweek)
-            : Promise.resolve({}),
-    ]);
 
     // Live/provisional total, computed the same way the matchup processor
     // computes the resolved one — auto-subs for blanked starters and the bench
@@ -188,9 +198,9 @@ export default async function MatchupDetailPage({ params }: Props) {
     let computedScoreB = 0;
     const detailA: TeamScoreDetail = emptyTeamScoreDetail();
     const detailB: TeamScoreDetail = emptyTeamScoreDetail();
-    if (playerIds.size > 0 && matchupData.gameweek) {
+    if (hasPlayers && hasGw) {
         const playerRecord = new Map<string, PlayerScoreRecord>();
-        for (const s of statsRows ?? []) {
+        for (const s of statsRows) {
             const stats = (s.stats as RawStats | null) ?? null;
             const fixtureMins = stats?.minutes_played ?? 0;
             playerRecord.set(s.player_id, {
@@ -204,8 +214,6 @@ export default async function MatchupDetailPage({ params }: Props) {
             playerPositions.set(id, [p.primary_position, ...(p.secondary_positions ?? [])].filter(Boolean) as string[]);
             if (p.pl_team_id != null) playerPlTeamId.set(id, Number(p.pl_team_id));
         }
-
-        const finishedPlTeamIds = await getFinishedPlTeamIds(matchupData.gameweek);
 
         computedScoreA = calculateTeamScore(lineupA, playerRecord, playerPositions, playerPlTeamId, refStats ?? {}, finalised, finishedPlTeamIds, detailA);
         computedScoreB = calculateTeamScore(lineupB, playerRecord, playerPositions, playerPlTeamId, refStats ?? {}, finalised, finishedPlTeamIds, detailB);
@@ -234,24 +242,15 @@ export default async function MatchupDetailPage({ params }: Props) {
     // meaningless without it — the reader can't tell "played, did nothing" from
     // "hasn't started yet". Reuses the lineup lockout's kickoff signal rather
     // than deriving a second one.
-    //
-    // Undefined only when the matchup is completed, so all players are settled
-    // as played or DNP. For scheduled or live matchups, startedPlayerIds is the
-    // set of players whose matches have actually kicked off (empty array if none
-    // have kicked off yet, which correctly renders every player as 'pending' with
-    // their upcoming fixture and kickoff time).
     let startedPlayerIds: string[] | undefined;
     if (isCompleted) {
         startedPlayerIds = undefined;
+    } else if (lockedTeamIds) {
+        startedPlayerIds = Object.values(playerMap)
+            .filter((p) => p?.id && p.pl_team_id != null && lockedTeamIds.has(Number(p.pl_team_id)))
+            .map((p) => p!.id as string);
     } else {
-        try {
-            const lockedTeamIds = await getLockedPlTeamIds(admin, matchupData.gameweek);
-            startedPlayerIds = Object.values(playerMap)
-                .filter((p) => p?.id && p.pl_team_id != null && lockedTeamIds.has(Number(p.pl_team_id)))
-                .map((p) => p!.id as string);
-        } catch {
-            startedPlayerIds = isLive ? undefined : [];
-        }
+        startedPlayerIds = isLive ? undefined : [];
     }
     const scoreA      = isCompleted ? matchup.score_a : computedScoreA;
     const scoreB      = isCompleted ? matchup.score_b : computedScoreB;

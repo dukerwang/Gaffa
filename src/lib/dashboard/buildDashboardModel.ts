@@ -13,7 +13,8 @@
  * fully resolved view model.
  */
 
-import type { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { unstable_cache } from 'next/cache';
 import type { FplStatus } from '@/lib/fpl/api';
 import type { GwFixture } from '@/lib/fpl/fixtures';
 import type { GranularPosition } from '@/types';
@@ -160,7 +161,7 @@ export async function buildDashboardModel(
   admin: AdminClient,
   userId: string,
   fpl: FplStatus,
-  fixtures: GwFixture[],
+  fixtures: GwFixture[] | Promise<GwFixture[]>,
   season: string,
 ): Promise<DashboardModel> {
   const serverNow = Date.now();
@@ -184,7 +185,7 @@ export async function buildDashboardModel(
 
   const ratedGw = fpl.currentGw;
 
-  const [standingsRes, membersRes, matchupsRes, draftTeamsRes, draftPicksRes, gwTopRes, seasonTopRes] =
+  const [standingsRes, membersRes, matchupsRes, draftTeamsRes, draftPicksRes, topRated] =
     await Promise.all([
       leagueIds.length
         ? admin.from('league_standings').select('league_id, team_id, rank, wins, draws, losses').in('league_id', leagueIds)
@@ -206,19 +207,7 @@ export async function buildDashboardModel(
       draftingIds.length
         ? admin.from('draft_picks').select('league_id').in('league_id', draftingIds)
         : Promise.resolve({ data: [] as any[] }),
-      Promise.all(
-        [ratedGw, Math.max(1, ratedGw - 1)].map((gw) =>
-          admin
-            .from('player_stats')
-            .select(`player_id, gameweek, match_rating, player:players!player_id(${PLAYER_FIELDS})`)
-            .eq('season', season)
-            .eq('gameweek', gw)
-            .gt('match_rating', 0)
-            .order('match_rating', { ascending: false })
-            .limit(12),
-        ),
-      ).then((res) => ({ data: res.flatMap((r) => (r.data ?? []) as any[]) })),
-      admin.rpc('season_top_rated', { p_season: season, p_limit: 6 }),
+      loadTopRatedPlayers(admin, season, ratedGw),
     ]);
 
   const standings = (standingsRes.data ?? []) as any[];
@@ -228,35 +217,9 @@ export async function buildDashboardModel(
     return s ? `${s.wins}–${s.draws}–${s.losses}` : null;
   };
 
-  // ── Top rated ──────────────────────────────────────────────
-  // The current gameweek's list while it has ratings; otherwise the one before
-  // it, so the band never goes blank in the days between deadline and kickoff.
-  const gwRows = (gwTopRes.data ?? []) as any[];
-  const pickGw = gwRows.some((r) => r.gameweek === ratedGw) ? ratedGw : Math.max(1, ratedGw - 1);
-  const seen = new Set<string>();
-  const matchweekPlayers: RatedPlayer[] = [];
-  for (const r of gwRows) {
-    if (r.gameweek !== pickGw || seen.has(r.player_id)) continue;
-    seen.add(r.player_id);
-    matchweekPlayers.push(toRated(one(r.player), r.match_rating));
-    if (matchweekPlayers.length === 6) break;
-  }
-
-  const seasonRows = (seasonTopRes.data ?? []) as { player_id: string; avg_rating: number }[];
-  let seasonPlayers: RatedPlayer[] = [];
-  if (seasonRows.length) {
-    const { data: seasonPlayerRows } = await admin
-      .from('players')
-      .select(PLAYER_FIELDS)
-      .in('id', seasonRows.map((r) => r.player_id));
-    const byId = new Map(((seasonPlayerRows ?? []) as any[]).map((p) => [p.id, p]));
-    seasonPlayers = seasonRows
-      .filter((r) => byId.has(r.player_id))
-      .map((r) => toRated(byId.get(r.player_id), r.avg_rating));
-  }
-
   // ── Fixtures ──────────────────────────────────────────────
-  const rows: FixtureRow[] = fixtures.map((f) => ({
+  const resolvedFixtures = await fixtures;
+  const rows: FixtureRow[] = resolvedFixtures.map((f) => ({
     id: f.id,
     homeName: f.homeName,
     awayName: f.awayName,
@@ -270,7 +233,7 @@ export async function buildDashboardModel(
   }));
   const order = { live: 0, finished: 1, upcoming: 2 } as const;
   rows.sort((a, b) => order[a.state] - order[b.state]);
-  const dated = fixtures.map((f) => f.kickoff).filter((k): k is string => !!k).sort();
+  const dated = resolvedFixtures.map((f) => f.kickoff).filter((k): k is string => !!k).sort();
   const fixturesModel = {
     rows,
     finished: rows.filter((r) => r.state === 'finished').length,
@@ -300,7 +263,7 @@ export async function buildDashboardModel(
   // every fixture is over nobody is still playing: the score is provisional,
   // not live.
   const allFixturesDone =
-    fpl.displayGw === fpl.currentGw && fixtures.length > 0 && fixtures.every((f) => f.finished);
+    fpl.displayGw === fpl.currentGw && resolvedFixtures.length > 0 && resolvedFixtures.every((f) => f.finished);
 
   // Pick the one matchup each card is about.
   type Chosen = { matchup: any; state: MatchState; myTeamId: string; leagueId: string };
@@ -519,16 +482,87 @@ export async function buildDashboardModel(
     nextDeadline: fpl.nextDeadline,
     cards,
     counts,
-    topRated: {
-      matchweek: matchweekPlayers.length ? { gameweek: pickGw, players: matchweekPlayers } : null,
-      season: seasonPlayers,
-    },
+    topRated,
     roleRatings,
     fixtures: fixturesModel,
   };
 }
 
-async function findRolePair(admin: AdminClient, season: string, gameweek: number): Promise<RoleRatingPair | null> {
+async function fetchTopRatedPlayers(
+  admin: AdminClient,
+  season: string,
+  ratedGw: number,
+): Promise<{
+  matchweek: { gameweek: number; players: RatedPlayer[] } | null;
+  season: RatedPlayer[];
+}> {
+  const [gwTopRes, seasonTopRes] = await Promise.all([
+    Promise.all(
+      [ratedGw, Math.max(1, ratedGw - 1)].map((gw) =>
+        admin
+          .from('player_stats')
+          .select(`player_id, gameweek, match_rating, player:players!player_id(${PLAYER_FIELDS})`)
+          .eq('season', season)
+          .eq('gameweek', gw)
+          .gt('match_rating', 0)
+          .order('match_rating', { ascending: false })
+          .limit(12),
+      ),
+    ).then((res) => ({ data: res.flatMap((r) => (r.data ?? []) as any[]) })),
+    admin.rpc('season_top_rated', { p_season: season, p_limit: 6 }),
+  ]);
+
+  const gwRows = (gwTopRes.data ?? []) as any[];
+  const pickGw = gwRows.some((r) => r.gameweek === ratedGw) ? ratedGw : Math.max(1, ratedGw - 1);
+  const seen = new Set<string>();
+  const matchweekPlayers: RatedPlayer[] = [];
+  for (const r of gwRows) {
+    if (r.gameweek !== pickGw || seen.has(r.player_id)) continue;
+    seen.add(r.player_id);
+    matchweekPlayers.push(toRated(one(r.player), r.match_rating));
+    if (matchweekPlayers.length === 6) break;
+  }
+
+  const seasonRows = (seasonTopRes.data ?? []) as { player_id: string; avg_rating: number }[];
+  let seasonPlayers: RatedPlayer[] = [];
+  if (seasonRows.length) {
+    const { data: seasonPlayerRows } = await admin
+      .from('players')
+      .select(PLAYER_FIELDS)
+      .in('id', seasonRows.map((r) => r.player_id));
+    const byId = new Map(((seasonPlayerRows ?? []) as any[]).map((p) => [p.id, p]));
+    seasonPlayers = seasonRows
+      .filter((r) => byId.has(r.player_id))
+      .map((r) => toRated(byId.get(r.player_id), r.avg_rating));
+  }
+
+  return {
+    matchweek: matchweekPlayers.length ? { gameweek: pickGw, players: matchweekPlayers } : null,
+    season: seasonPlayers,
+  };
+}
+
+const getCachedTopRatedPlayers = unstable_cache(
+  async (season: string, ratedGw: number) => {
+    const admin = createAdminClient();
+    return fetchTopRatedPlayers(admin, season, ratedGw);
+  },
+  ['dashboard-top-rated-players'],
+  { revalidate: 60 },
+);
+
+async function loadTopRatedPlayers(
+  admin: AdminClient,
+  season: string,
+  ratedGw: number,
+) {
+  if (process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST)) {
+    return fetchTopRatedPlayers(admin, season, ratedGw);
+  }
+  return getCachedTopRatedPlayers(season, ratedGw);
+}
+
+async function fetchRolePair(admin: AdminClient, season: string, gameweek: number): Promise<RoleRatingPair | null> {
   const bestAt = (position: string, maxRating?: number) => {
     let q = admin
       .from('player_stats')
@@ -572,4 +606,20 @@ async function findRolePair(admin: AdminClient, season: string, gameweek: number
     keeper: { ...toRated(one((gk as any).player), gk.match_rating), rank: gkRank },
     striker: { ...toRated(one((st as any).player), st.match_rating), rank: stRank },
   };
+}
+
+const getCachedRolePair = unstable_cache(
+  async (season: string, gameweek: number) => {
+    const admin = createAdminClient();
+    return fetchRolePair(admin, season, gameweek);
+  },
+  ['dashboard-role-pair'],
+  { revalidate: 300 },
+);
+
+async function findRolePair(admin: AdminClient, season: string, gameweek: number): Promise<RoleRatingPair | null> {
+  if (process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST)) {
+    return fetchRolePair(admin, season, gameweek);
+  }
+  return getCachedRolePair(season, gameweek);
 }

@@ -65,20 +65,20 @@ export async function GET(req: NextRequest, { params }: Props) {
 
   const admin = createAdminClient();
 
-  const { data: myTeam } = await admin
-    .from('teams')
-    .select('id')
-    .eq('league_id', leagueId)
-    .eq('user_id', user.id)
-    .single();
-  if (!myTeam) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
-  const { data: league } = await admin
-    .from('leagues')
-    .select('current_season, previous_season')
-    .eq('id', leagueId)
-    .single();
-  if (!league) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const [{ data: myTeam }, { data: league }] = await Promise.all([
+    admin
+      .from('teams')
+      .select('id')
+      .eq('league_id', leagueId)
+      .eq('user_id', user.id)
+      .single(),
+    admin
+      .from('leagues')
+      .select('current_season, previous_season')
+      .eq('id', leagueId)
+      .single(),
+  ]);
+  if (!myTeam || !league) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const sp = req.nextUrl.searchParams;
   const q = (sp.get('q') ?? '').trim();
@@ -90,13 +90,29 @@ export async function GET(req: NextRequest, { params }: Props) {
   const pageSize = Math.min(100, Math.max(1, parseInt(sp.get('pageSize') ?? '40', 10) || 40));
   const newOnly = sp.get('newOnly') === 'true';
 
+  // SQL narrows; the rest is done post-enrichment.
+  let query = admin.from('players').select(FULL_PLAYER_SELECT).eq('is_active', true);
+  if (position) query = query.eq('primary_position', position);
+  if (club) query = query.eq('pl_team', club);
+  if (newOnly) {
+    const cutoff = new Date(Date.now() - 7 * 86400_000).toISOString();
+    query = query.gte('pl_team_changed_at', cutoff);
+  }
+
   // Who is unavailable: on any roster in this league, already in a live
   // auction (the board shows those, the free-agent list must not double them),
-  // or held under a retained claim. A retained player has no roster_entries
-  // row — that's the whole point — so without this he reads as unowned and
-  // surfaces here out from under the manager who paid for him with forgone
-  // compensation. Mirrors the ownership check in seasonKickoff.
-  const [{ data: teams }, { data: liveAuctions }, rightsHeld] = await Promise.all([
+  // or held under a retained claim.
+  // Fetched in parallel alongside candidate players and enrichment maps.
+  const [
+    { data: candidates, error },
+    maps,
+    { data: teams },
+    { data: liveAuctions },
+    rightsHeld,
+    prevSeasonClubRows,
+  ] = await Promise.all([
+    query,
+    fetchEnrichmentMaps(admin, league),
     admin.from('teams').select('id').eq('league_id', leagueId),
     admin
       .from('auction_state')
@@ -104,7 +120,19 @@ export async function GET(req: NextRequest, { params }: Props) {
       .eq('league_id', leagueId)
       .eq('status', 'live'),
     getRightsHeldPlayerIds(admin, leagueId),
+    newOnly && league.previous_season
+      ? fetchAllPages<{ player_id: string }>((from, to) =>
+          admin
+            .from('player_season_clubs')
+            .select('player_id')
+            .eq('season', league.previous_season!)
+            .order('player_id', { ascending: true })
+            .range(from, to),
+        )
+      : Promise.resolve([] as { player_id: string }[]),
   ]);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const teamIds = (teams ?? []).map((t) => t.id);
   const { data: rostered } = teamIds.length
@@ -117,41 +145,7 @@ export async function GET(req: NextRequest, { params }: Props) {
     ...rightsHeld,
   ]);
 
-  // For newOnly: who was already a Premier League player last season, so a
-  // same-league transfer (pl_team_changed_at fires for that too) doesn't read
-  // as a "new transfer" the way a first-time PL arrival does. Same definition
-  // as loadDraftPool's isNewToPrem. Only fetched for this path — the regular
-  // browse list has no reason to care whether a player is PL-established.
-  let prevSeasonClubIds = new Set<string>();
-  if (newOnly && league.previous_season) {
-    const prevSeason = league.previous_season;
-    // player_season_clubs holds one row per player per season, 796 of them for
-    // 2025-26. That is under PostgREST's 1,000-row cap, but not by much, and a
-    // truncated read here marks established players as new arrivals.
-    const prevSeasonClubRows = await fetchAllPages<{ player_id: string }>((from, to) =>
-      admin
-        .from('player_season_clubs')
-        .select('player_id')
-        .eq('season', prevSeason)
-        .order('player_id', { ascending: true })
-        .range(from, to),
-    );
-    prevSeasonClubIds = new Set(prevSeasonClubRows.map((r) => r.player_id));
-  }
-
-  // SQL narrows; the rest is done post-enrichment.
-  let query = admin.from('players').select(FULL_PLAYER_SELECT).eq('is_active', true);
-  if (position) query = query.eq('primary_position', position);
-  if (club) query = query.eq('pl_team', club);
-  if (newOnly) {
-    const cutoff = new Date(Date.now() - 7 * 86400_000).toISOString();
-    query = query.gte('pl_team_changed_at', cutoff);
-  }
-
-  const { data: candidates, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  const maps = await fetchEnrichmentMaps(admin, league);
+  const prevSeasonClubIds = new Set((prevSeasonClubRows ?? []).map((r) => r.player_id));
 
   // Name matching runs here rather than as an `ilike` in the query above,
   // because Postgres cannot fold diacritics without the unaccent extension and

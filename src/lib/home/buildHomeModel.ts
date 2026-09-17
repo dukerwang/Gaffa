@@ -412,33 +412,48 @@ function rankAsOf(
 
 // ── Builder ───────────────────────────────────────────────────
 
+export interface BuildHomeModelOptions {
+  league?: Record<string, unknown> | null;
+  myTeam?: Record<string, unknown> | null;
+  fplStatus?: Awaited<ReturnType<typeof getFplStatus>> | null;
+}
+
 export async function buildHomeModel(
   admin: AdminClient,
   leagueId: string,
   userId: string,
+  options?: BuildHomeModelOptions,
 ): Promise<HomeModel | null> {
   const serverNow = new Date().toISOString();
 
-  // Every read in this function waits only on what it actually uses. These
-  // three share no inputs, so they go out together.
-  const [{ data: league }, { data: myTeamRow }, fpl] = await Promise.all([
-    admin
-      .from('leagues')
-      .select(
-        `id, name, status, season, current_season, previous_season, total_gameweeks,
-       roster_size, taxi_size, taxi_age_limit, retained_slots, prize_config, ir_size, max_loan_outs,
-       merit_win, merit_draw, merit_loss, merit_bye, free_agent_bid_floor`,
-      )
-      .eq('id', leagueId)
-      .single(),
-    admin
-      .from('teams')
-      .select('id, team_name, abbreviation, crest_config, faab_budget, user_id, academy_slots, ir_slots, loan_out_slots')
-      .eq('league_id', leagueId)
-      .eq('user_id', userId)
-      .single(),
-    getFplStatus(),
+  // Every read in this function waits only on what it actually uses. When
+  // pre-fetched context is supplied by the caller, reuse it to eliminate
+  // duplicate database round trips.
+  const [leagueRes, myTeamRes, fpl] = await Promise.all([
+    options?.league
+      ? Promise.resolve({ data: options.league })
+      : admin
+          .from('leagues')
+          .select(
+            `id, name, status, season, current_season, previous_season, total_gameweeks,
+           roster_size, taxi_size, taxi_age_limit, retained_slots, prize_config, ir_size, max_loan_outs,
+           merit_win, merit_draw, merit_loss, merit_bye, free_agent_bid_floor`,
+          )
+          .eq('id', leagueId)
+          .single(),
+    options?.myTeam
+      ? Promise.resolve({ data: options.myTeam })
+      : admin
+          .from('teams')
+          .select('id, team_name, abbreviation, crest_config, faab_budget, user_id, academy_slots, ir_slots, loan_out_slots')
+          .eq('league_id', leagueId)
+          .eq('user_id', userId)
+          .single(),
+    options?.fplStatus ? Promise.resolve(options.fplStatus) : getFplStatus(),
   ]);
+
+  const league = leagueRes.data as any;
+  const myTeamRow = myTeamRes.data as any;
   if (!league) return null;
   if (!myTeamRow) return null;
 

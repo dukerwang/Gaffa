@@ -17,13 +17,17 @@ import type { CrestConfig } from '@/components/crest/types';
 import TransfersSubNav from '@/components/transfers/TransfersSubNav';
 import ListingCard from '@/components/transfers/ListingCard';
 import AuctionTimingHelp from '@/components/transfers/AuctionTimingHelp';
-import BidDialog, { type BidMode } from '@/components/transfers/BidDialog';
-import ProposeBuilder, { type ProposeMode } from '@/components/transfers/ProposeBuilder';
-import ListingEditor from '@/components/transfers/ListingEditor';
+import dynamic from 'next/dynamic';
+import type { BidMode } from '@/components/transfers/BidDialog';
+import type { ProposeMode } from '@/components/transfers/ProposeBuilder';
 import { setServerClock, useTick, formatAuctionClock, isClosing } from '@/components/transfers/useTick';
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import styles from './market.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+
+const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
+const ProposeBuilder = dynamic(() => import('@/components/transfers/ProposeBuilder'), { ssr: false });
+const ListingEditor = dynamic(() => import('@/components/transfers/ListingEditor'), { ssr: false });
 
 /**
  * Transfer Market — the front page.

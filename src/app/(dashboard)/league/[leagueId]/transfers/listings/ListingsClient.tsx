@@ -7,14 +7,18 @@ import type { Player } from '@/types';
 import { usePlayerCard } from '@/components/players/PlayerCardProvider';
 import TransfersSubNav from '@/components/transfers/TransfersSubNav';
 import ListingCard from '@/components/transfers/ListingCard';
+import dynamic from 'next/dynamic';
 import AuctionTimingHelp from '@/components/transfers/AuctionTimingHelp';
-import BidDialog, { type BidMode } from '@/components/transfers/BidDialog';
-import ProposeBuilder, { type ProposeMode } from '@/components/transfers/ProposeBuilder';
-import ListingEditor from '@/components/transfers/ListingEditor';
+import type { BidMode } from '@/components/transfers/BidDialog';
+import type { ProposeMode } from '@/components/transfers/ProposeBuilder';
 import { setServerClock } from '@/components/transfers/useTick';
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import styles from './listings.module.css';
 import { fold } from '@/lib/text/fold';
+
+const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
+const ProposeBuilder = dynamic(() => import('@/components/transfers/ProposeBuilder'), { ssr: false });
+const ListingEditor = dynamic(() => import('@/components/transfers/ListingEditor'), { ssr: false });
 
 /**
  * The Listings board — supply from clubs, on its own page.

@@ -51,7 +51,7 @@ export default async function LeaguePage({ params }: Props) {
     admin.from('leagues').select('*').eq('id', leagueId).single(),
     admin
       .from('teams')
-      .select('id, abbreviation')
+      .select('id, team_name, abbreviation, crest_config, faab_budget, user_id, academy_slots, ir_slots, loan_out_slots')
       .eq('league_id', leagueId)
       .eq('user_id', user.id)
       .maybeSingle(),
@@ -160,7 +160,11 @@ export default async function LeaguePage({ params }: Props) {
     }
   }
 
-  const model = await buildHomeModel(admin, leagueId, user.id);
+  const model = await buildHomeModel(admin, leagueId, user.id, {
+    league,
+    myTeam,
+    fplStatus,
+  });
 
   // A commissioner with no team of their own can reach this page; there is no
   // club to build the model around, so send them somewhere that works.

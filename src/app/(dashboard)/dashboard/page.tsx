@@ -26,8 +26,8 @@ export default async function DashboardPage() {
 
   const admin = createAdminClient();
   const [fpl, season] = await Promise.all([getFplStatus(), getCurrentFplSeason()]);
-  const fixtures: GwFixture[] = fpl.displayGw ? await getGameweekFixtures(fpl.displayGw) : [];
-  const model = await buildDashboardModel(admin, user.id, fpl, fixtures, season);
+  const fixturesPromise = fpl.displayGw ? getGameweekFixtures(fpl.displayGw) : Promise.resolve([]);
+  const model = await buildDashboardModel(admin, user.id, fpl, fixturesPromise, season);
 
   if (model.cards.length === 0) {
     return (

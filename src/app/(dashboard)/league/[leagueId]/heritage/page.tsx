@@ -30,30 +30,27 @@ export default async function HeritagePage({ params }: Props) {
 
   const admin = createAdminClient();
 
-  const { data: league } = await admin
-    .from('leagues')
-    .select('id, name, season, current_season, commissioner_id')
-    .eq('id', leagueId)
-    .single();
+  const [{ data: league }, { data: membership }, board] = await Promise.all([
+    admin
+      .from('leagues')
+      .select('id, name, season, current_season, commissioner_id')
+      .eq('id', leagueId)
+      .single(),
+    admin
+      .from('teams')
+      .select('id')
+      .eq('league_id', leagueId)
+      .eq('user_id', user.id)
+      .maybeSingle(),
+    loadHonoursBoard(admin, leagueId),
+  ]);
 
   if (!league) notFound();
-
-  const { data: membership } = await admin
-    .from('teams')
-    .select('id')
-    .eq('league_id', leagueId)
-    .eq('user_id', user.id)
-    .maybeSingle();
-
   if (!membership && league.commissioner_id !== user.id) redirect('/dashboard');
 
   // `matchups` has no season column, so the live season has to be named for it.
   const currentSeason = league.current_season ?? league.season;
-
-  const [board, results] = await Promise.all([
-    loadHonoursBoard(admin, leagueId),
-    loadAllResults(admin, leagueId, currentSeason),
-  ]);
+  const results = await loadAllResults(admin, leagueId, currentSeason);
 
   const viewerTeamId = membership?.id ?? null;
   const champion = reigningChampion(board);

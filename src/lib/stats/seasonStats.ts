@@ -26,7 +26,8 @@
  */
 
 import { fetchAllPages } from '@/lib/supabase/pagination';
-import type { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { unstable_cache } from 'next/cache';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import { loadReferenceStats } from '@/lib/scoring/matchups';
 import { getLatestReferenceStatsSeason } from '@/lib/season/currentSeason';
@@ -124,8 +125,6 @@ export async function loadSeasonStatsContext(
 ): Promise<SeasonStatsContext> {
   // The season being viewed may predate any reference stats of its own; the
   // latest calibrated season is what the rest of the app scores against.
-  const refSeason = await getLatestReferenceStatsSeason(admin);
-
   const [archives, playersData, statRows, refStats, seasonClubs] = await Promise.all([
     fetchAllPages<any>((from, to) =>
       admin
@@ -144,12 +143,12 @@ export async function loadSeasonStatsContext(
     fetchAllPages<AggregatableStatRow>((from, to) => {
       let q = admin
         .from('player_stats')
-        .select('player_id, match_rating, fantasy_points, stats')
+        .select('player_id, match_rating, fantasy_points, stats', { count: 'exact' })
         .eq('season', season);
       if (options.gameweek != null) q = q.eq('gameweek', options.gameweek);
       return q.range(from, to) as any;
     }),
-    loadReferenceStats(admin, refSeason),
+    getLatestReferenceStatsSeason(admin).then((refSeason) => loadReferenceStats(admin, refSeason)),
     fetchAllPages<{ player_id: string; club_slug: string }>((from, to) =>
       admin
         .from('player_season_clubs')
@@ -237,15 +236,14 @@ export interface SeasonLeaderboard {
   archived: boolean;
 }
 
-/** Everything GlobalStatsTable needs for a season, minus league ownership. */
-export async function loadSeasonLeaderboard(
-  admin: Admin,
+async function fetchSeasonLeaderboardUncached(
   season: string,
-  options: { gameweek?: number | null } = {},
+  gameweek: number | null,
 ): Promise<SeasonLeaderboard> {
+  const admin = createAdminClient();
   const ctx = await loadSeasonStatsContext(admin, season, {
     includeActiveWithoutArchive: true,
-    gameweek: options.gameweek ?? null,
+    gameweek,
   });
 
   // Players with an archive row already carry that season's frozen ranks, applied
@@ -268,6 +266,25 @@ export async function loadSeasonLeaderboard(
   }
 
   return { players: ctx.players, shadowMaps: buildShadowMaps(ctx), archived: ctx.archived };
+}
+
+const getCachedSeasonLeaderboard = unstable_cache(
+  async (season: string, gameweekStr: string): Promise<SeasonLeaderboard> => {
+    const gameweek = gameweekStr === 'all' ? null : Number(gameweekStr);
+    return fetchSeasonLeaderboardUncached(season, gameweek);
+  },
+  ['season-leaderboard'],
+  { revalidate: 60 },
+);
+
+/** Everything GlobalStatsTable needs for a season, minus league ownership. */
+export async function loadSeasonLeaderboard(
+  _admin: Admin,
+  season: string,
+  options: { gameweek?: number | null } = {},
+): Promise<SeasonLeaderboard> {
+  const gwStr = options.gameweek != null ? String(options.gameweek) : 'all';
+  return getCachedSeasonLeaderboard(season, gwStr);
 }
 
 export interface RecomputeResult {

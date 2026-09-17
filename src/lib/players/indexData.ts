@@ -14,6 +14,8 @@ import { loadSeasonLeaderboard } from '@/lib/stats/seasonStats';
 import { loadFacetInputs } from '@/lib/outlook/facetInputs';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { fetchAllPages } from '@/lib/supabase/pagination';
+import { unstable_cache } from 'next/cache';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 /**
  * The players index: the same pool the stats table has always shown, plus the
@@ -59,7 +61,8 @@ function lede(outlook: string): string {
  * own — quality is a judgment, and guessing it from output is the mistake that
  * called an elite centre-back "limited".
  */
-export async function loadScoutIndex(admin: SupabaseClient): Promise<Map<string, IndexScout>> {
+async function fetchScoutIndexRecordUncached(): Promise<Record<string, IndexScout>> {
+  const admin = createAdminClient();
   const [rows, factBundle, positions] = await Promise.all([
     fetchAllPages<{ player_id: string; outlook: string; sidecar: Record<string, unknown> | null }>(
       (from, to) =>
@@ -77,15 +80,14 @@ export async function loadScoutIndex(admin: SupabaseClient): Promise<Map<string,
   ]);
 
   const positionsById = new Map(positions.map((p) => [p.id, p]));
-
-  const out = new Map<string, IndexScout>();
+  const out: Record<string, IndexScout> = {};
 
   for (const row of rows) {
     const s = (row.sidecar ?? {}) as Record<string, unknown>;
     // A sidecar written before v0.3 has no judged facets and cannot be read;
     // those players fall through to the computed layer below.
     if (typeof s.quality !== 'string') continue;
-    out.set(row.player_id, {
+    out[row.player_id] = {
       quality: s.quality as QualityTier,
       minutes_role: (s.minutes_role as MinutesRole) ?? 'rotation_risk',
       career_phase: (s.career_phase as OutlookCareerPhase) ?? 'unknown',
@@ -101,13 +103,13 @@ export async function loadScoutIndex(admin: SupabaseClient): Promise<Map<string,
       set_pieces: (s.set_pieces as SetPieceDuty[]) ?? [],
       lede: lede(row.outlook),
       fromFallback: false,
-    });
+    };
   }
 
   for (const [playerId, inputs] of factBundle.inputs) {
-    if (out.has(playerId)) continue;
+    if (out[playerId]) continue;
     const f = computeFallbackFacets(inputs);
-    out.set(playerId, {
+    out[playerId] = {
       // Not judged, so not claimed. The card shows no quality chip for these.
       quality: 'solid',
       minutes_role: f.minutes_role,
@@ -119,10 +121,21 @@ export async function loadScoutIndex(admin: SupabaseClient): Promise<Map<string,
       set_pieces: f.set_pieces,
       lede: '',
       fromFallback: true,
-    });
+    };
   }
 
   return out;
+}
+
+export const loadScoutIndexRecord = unstable_cache(
+  fetchScoutIndexRecordUncached,
+  ['scout-index-record'],
+  { revalidate: 120 },
+);
+
+export async function loadScoutIndex(_admin?: SupabaseClient): Promise<Map<string, IndexScout>> {
+  const record = await loadScoutIndexRecord();
+  return new Map(Object.entries(record));
 }
 
 export { loadSeasonLeaderboard };

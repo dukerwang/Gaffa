@@ -38,9 +38,16 @@ export default async function MyTeamPage({ params }: Props) {
 
   const admin = createAdminClient();
 
-  // Wave 1: the club, and FPL's season, kickoff state and current gameweek.
+  // Wave 1: the club, league listings, reference season, and FPL's kickoff state.
   // None of these reads needs another.
-  const [{ data: team }, currentFpl, kickedOff, currentFplGw] = await Promise.all([
+  const [
+    { data: team },
+    { data: listings },
+    currentFpl,
+    kickedOff,
+    currentFplGw,
+    refSeason,
+  ] = await Promise.all([
     admin
       .from('teams')
       .select(`
@@ -50,9 +57,15 @@ export default async function MyTeamPage({ params }: Props) {
       .eq('league_id', leagueId)
       .eq('user_id', user.id)
       .single(),
+    admin
+      .from('player_sale_listings')
+      .select('id, player_id, status, min_bid, buy_now_price')
+      .eq('league_id', leagueId)
+      .in('status', ['pending', 'active']),
     getCurrentFplSeason(),
     isFplSeasonKickedOff(),
     latestStartedGameweek(),
+    getLatestReferenceStatsSeason(admin),
   ]);
 
   if (!team) {
@@ -70,16 +83,14 @@ export default async function MyTeamPage({ params }: Props) {
 
   // Wave 2: everything keyed on the club and the gameweek alone. The roster
   // has to land before the enrichment reads, which are scoped to it.
+  const statsSeason = currentFplGw ? currentFpl : null;
   const [
     { data: rosterData },
-    { data: listings },
     holdState,
     buybackSlots,
     matchup,
     { data: scoringMatchup },
     season,
-    statsSeason,
-    refSeason,
   ] = await Promise.all([
     admin
       .from('roster_entries')
@@ -91,11 +102,6 @@ export default async function MyTeamPage({ params }: Props) {
       )
       .eq('team_id', team.id)
       .order('status', { ascending: true }),
-    admin
-      .from('player_sale_listings')
-      .select('id, player_id, status, min_bid, buy_now_price')
-      .eq('league_id', leagueId)
-      .in('status', ['pending', 'active']),
     getHoldState(admin, team.id),
     // The cap is not simply `roster_size`: a loan-out that paid its buyback fee
     // holds a slot open, which is why capacity needs the loans table too.
@@ -116,8 +122,6 @@ export default async function MyTeamPage({ params }: Props) {
         ? resolveDraftStatsSeason(admin, team.league as any)
         : fromLeague;
     })(),
-    currentFplGw ? getCurrentFplSeason(undefined, true) : Promise.resolve(null),
-    currentFplGw ? getLatestReferenceStatsSeason(admin) : Promise.resolve(null),
   ]);
 
   const rosterPlayerIds = (rosterData ?? [])

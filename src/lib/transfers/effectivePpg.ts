@@ -90,6 +90,13 @@ export function calculateEffectivePpg(
  * DNPs (minutes <= 0) are excluded before any averaging — appearances, not
  * gameweeks, are the denominator.
  */
+const ppgCache = new Map<string, { value: number; expiresAt: number }>();
+const PPG_CACHE_TTL_MS = 60_000;
+
+export function clearPpgCache(): void {
+  ppgCache.clear();
+}
+
 export async function buildEffectivePpgMap(
   admin: AdminClient,
   playerIds: string[],
@@ -99,6 +106,25 @@ export async function buildEffectivePpgMap(
 ): Promise<Record<string, number>> {
   const result: Record<string, number> = {};
   if (playerIds.length === 0) return result;
+
+  const isTest = process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST);
+  const now = Date.now();
+  const missingPlayerIds: string[] = [];
+
+  for (const id of playerIds) {
+    const mv = marketValues[id] ?? 0;
+    const key = `${id}:${currentSeason}:${prevSeason}:${mv}`;
+    if (!isTest) {
+      const hit = ppgCache.get(key);
+      if (hit && hit.expiresAt > now) {
+        result[id] = hit.value;
+        continue;
+      }
+    }
+    missingPlayerIds.push(id);
+  }
+
+  if (missingPlayerIds.length === 0) return result;
 
   const groups: Record<string, { curr: PpgSample[]; prev: PpgSample[] }> = {};
 
@@ -113,8 +139,8 @@ export async function buildEffectivePpgMap(
   // 0-9-appearance branches lean on. Page until a short page arrives.
   const CHUNK = 200;
   const PAGE = 1000;
-  for (let i = 0; i < playerIds.length; i += CHUNK) {
-    const chunk = playerIds.slice(i, i + CHUNK);
+  for (let i = 0; i < missingPlayerIds.length; i += CHUNK) {
+    const chunk = missingPlayerIds.slice(i, i + CHUNK);
 
     for (let offset = 0; ; offset += PAGE) {
       const { data: stats } = await admin
@@ -147,9 +173,17 @@ export async function buildEffectivePpgMap(
     }
   }
 
-  for (const id of playerIds) {
+  for (const id of missingPlayerIds) {
     const g = groups[id] ?? { curr: [], prev: [] };
-    result[id] = calculateEffectivePpg(g.curr, g.prev, marketValues[id] ?? 0);
+    const mv = marketValues[id] ?? 0;
+    const val = calculateEffectivePpg(g.curr, g.prev, mv);
+    result[id] = val;
+    if (!isTest) {
+      ppgCache.set(`${id}:${currentSeason}:${prevSeason}:${mv}`, {
+        value: val,
+        expiresAt: now + PPG_CACHE_TTL_MS,
+      });
+    }
   }
 
   return result;

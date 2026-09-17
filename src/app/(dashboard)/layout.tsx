@@ -1,13 +1,17 @@
+import dynamic from 'next/dynamic';
 import TopBar from '@/components/layout/TopBar';
 import { PlayerCardProvider } from '@/components/players/PlayerCardProvider';
 import { SquadPeekProvider } from '@/components/teams/SquadPeekProvider';
 import TeamLogoPreloader from '@/components/players/TeamLogoPreloader';
-import UpdateAnnouncementModal from '@/components/layout/UpdateAnnouncementModal';
 import { LeagueChatProvider } from '@/components/chat/LeagueChatContext';
 import LeagueChatWidget from '@/components/chat/LeagueChatWidget';
 import PushAutoSync from '@/components/layout/PushAutoSync';
 import PushBanner from '@/components/layout/PushBanner';
 import styles from './layout.module.css';
+
+const UpdateAnnouncementModal = dynamic(
+  () => import('@/components/layout/UpdateAnnouncementModal'),
+);
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (

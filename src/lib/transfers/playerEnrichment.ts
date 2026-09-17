@@ -28,7 +28,8 @@ import {
   previousSeason,
   resolveDraftStatsSeason,
 } from '@/lib/season/currentSeason';
-import type { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { unstable_cache } from 'next/cache';
 import type { Player } from '@/types';
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -91,6 +92,25 @@ export async function resolveDisplaySeason(
   };
 }
 
+const getCachedEnrichmentData = unstable_cache(
+  async (season: string) => {
+    const admin = createAdminClient();
+    const [{ data: rankings }, { data: archives }] = await Promise.all([
+      admin.from('player_rankings').select('*'),
+      admin
+        .from('season_player_stats_archive')
+        .select('player_id, total_points, ppg, form_rating, overall_rank, position_ranks')
+        .eq('season', season),
+    ]);
+    return {
+      rankings: ((rankings ?? []) as ({ player_id: string } & StatOverrides)[]),
+      archives: ((archives ?? []) as ({ player_id: string } & StatOverrides)[]),
+    };
+  },
+  ['transfers-enrichment-data'],
+  { revalidate: 60 },
+);
+
 /** Fetch the rankings view and the season archive once, for merging. */
 export async function fetchEnrichmentMaps(
   admin: AdminClient,
@@ -98,24 +118,16 @@ export async function fetchEnrichmentMaps(
 ): Promise<EnrichmentMaps> {
   const { season, previousSeason: prev } = await resolveDisplaySeason(league, admin);
 
-  const [{ data: rankings }, { data: archives }] = await Promise.all([
-    admin.from('player_rankings').select('*'),
-    admin
-      .from('season_player_stats_archive')
-      .select('player_id, total_points, ppg, form_rating, overall_rank, position_ranks')
-      .eq('season', season),
-  ]);
+  const { rankings, archives } = await getCachedEnrichmentData(season);
 
-  const byPlayerId = (rows: unknown[]): Map<string, StatOverrides> =>
-    new Map(
-      (rows as ({ player_id: string } & StatOverrides)[]).map((r) => [r.player_id, r]),
-    );
+  const byPlayerId = (rows: ({ player_id: string } & StatOverrides)[]): Map<string, StatOverrides> =>
+    new Map(rows.map((r) => [r.player_id, r]));
 
   return {
     season,
     previousSeason: prev,
-    rankMap: byPlayerId(rankings ?? []),
-    archiveMap: byPlayerId(archives ?? []),
+    rankMap: byPlayerId(rankings),
+    archiveMap: byPlayerId(archives),
   };
 }
 

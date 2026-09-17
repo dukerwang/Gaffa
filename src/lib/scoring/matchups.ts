@@ -3,7 +3,8 @@ import { featExcessFor } from './matchRating';
 import { buildPerformanceGroups, type PerfGroup } from './perfBand';
 import { BENCH_DEPTH_BONUS } from '@/types';
 import type { GranularPosition, RawStats, ReferenceStats, RatingComponent } from '@/types';
-import type { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { unstable_cache } from 'next/cache';
 
 export type RefStatsMap = Record<string, ReferenceStats>;
 
@@ -471,13 +472,9 @@ export function calculateTeamScore(
   return Math.round(score * 100) / 100;
 }
 
-/**
- * Load reference stats (median/stddev) from the database for dynamic scoring.
- * Falls back to hardcoded defaults if DB fetch fails.
- */
-export async function loadReferenceStats(
+async function fetchReferenceStats(
   admin: ReturnType<typeof createAdminClient>,
-  season: string
+  season: string,
 ): Promise<RefStatsMap> {
   const { data, error } = await admin
     .from('rating_reference_stats')
@@ -497,4 +494,27 @@ export async function loadReferenceStats(
     }
   }
   return ref;
+}
+
+const getCachedReferenceStats = unstable_cache(
+  async (season: string): Promise<RefStatsMap> => {
+    const admin = createAdminClient();
+    return fetchReferenceStats(admin, season);
+  },
+  ['rating-reference-stats'],
+  { revalidate: 3600 },
+);
+
+/**
+ * Load reference stats (median/stddev) from the database for dynamic scoring.
+ * Falls back to hardcoded defaults if DB fetch fails. Cached for 1 hour.
+ */
+export async function loadReferenceStats(
+  admin: ReturnType<typeof createAdminClient>,
+  season: string,
+): Promise<RefStatsMap> {
+  if (process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST)) {
+    return fetchReferenceStats(admin, season);
+  }
+  return getCachedReferenceStats(season);
 }

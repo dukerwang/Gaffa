@@ -20,33 +20,31 @@ export default async function FixturesPage({ params }: Props) {
 
   const admin = createAdminClient();
 
-  // League check
-  const { data: league } = await admin
-    .from('leagues')
-    .select('id, name, season, commissioner_id')
-    .eq('id', leagueId)
-    .single();
+  const [
+    { data: league },
+    { data: membership },
+    { data: matchups },
+  ] = await Promise.all([
+    admin
+      .from('leagues')
+      .select('id, name, season, commissioner_id')
+      .eq('id', leagueId)
+      .single(),
+    admin
+      .from('teams')
+      .select('id')
+      .eq('league_id', leagueId)
+      .eq('user_id', user.id)
+      .maybeSingle(),
+    admin
+      .from('matchups')
+      .select('*, team_a:teams!team_a_id(team_name), team_b:teams!team_b_id(team_name)')
+      .eq('league_id', leagueId)
+      .order('gameweek', { ascending: true }),
+  ]);
 
   if (!league) notFound();
-
-  // Membership check
-  const { data: membership } = await admin
-    .from('teams')
-    .select('id')
-    .eq('league_id', leagueId)
-    .eq('user_id', user.id)
-    .single();
-
   if (!membership && league.commissioner_id !== user.id) redirect('/dashboard');
-
-  // Fetch all matchups with team names
-  const { data: matchups } = await admin
-    .from('matchups')
-    .select(
-      '*, team_a:teams!team_a_id(team_name), team_b:teams!team_b_id(team_name)',
-    )
-    .eq('league_id', leagueId)
-    .order('gameweek', { ascending: true });
 
   // Group by gameweek
   const gwMap = new Map<number, typeof matchups>();

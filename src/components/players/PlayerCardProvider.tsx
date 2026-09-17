@@ -10,8 +10,8 @@ import {
   useState,
 } from 'react';
 import { useParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import type { Player, PlayerOwnership } from '@/types';
-import PlayerDetailsModal from './PlayerDetailsModal';
 import {
   fetchFront,
   getCachedFront,
@@ -20,6 +20,8 @@ import {
   primeFront,
   warmImages,
 } from '@/lib/players/cardCache';
+
+const PlayerDetailsModal = dynamic(() => import('./PlayerDetailsModal'), { ssr: false });
 
 export interface OpenPlayerOptions {
   /**
@@ -154,6 +156,7 @@ export function PlayerCardProvider({ children }: { children: React.ReactNode }) 
       const timer = setTimeout(() => {
         hoverTimers.current.delete(target.id);
         prefetchPlayerCard(target, leagueId);
+        import('./PlayerDetailsModal');
       }, 80);
       hoverTimers.current.set(target.id, timer);
     },

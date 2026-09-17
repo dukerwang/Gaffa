@@ -5,14 +5,16 @@ import { useRouter } from 'next/navigation';
 import type { GranularPosition, Player } from '@/types';
 import type { EnrichedPlayer, TransfersAuction, TransfersModel } from '@/lib/transfers/buildTransfersModel';
 import { playerHoverProps, usePlayerCard } from '@/components/players/PlayerCardProvider';
+import dynamic from 'next/dynamic';
 import PositionBadge from '@/components/players/PositionBadge';
 import TransfersSubNav from '@/components/transfers/TransfersSubNav';
-import BidDialog from '@/components/transfers/BidDialog';
 import AuctionTimingHelp from '@/components/transfers/AuctionTimingHelp';
 import { setServerClock, useTick, formatAuctionClock, isClosing } from '@/components/transfers/useTick';
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import styles from './free-agents.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+
+const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
 
 /**
  * Free Agency — the browsing problem.
@@ -66,7 +68,7 @@ export default function FreeAgentsClient({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [bidFor, setBidFor] = useState<EnrichedPlayer | null>(null);
-  const [newTransfers, setNewTransfers] = useState<EnrichedPlayer[]>([]);
+  const [newTransfers, setNewTransfers] = useState<EnrichedPlayer[]>(() => initial.newTransfers ?? []);
 
   useEffect(() => { setServerClock(model.serverNow); }, [model.serverNow]);
 
@@ -120,6 +122,7 @@ export default function FreeAgentsClient({
   // main table's own filters/sort/page, so it always shows who actually just
   // arrived rather than whatever the current sort happens to surface.
   useEffect(() => {
+    if (initial.newTransfers && initial.newTransfers.length > 0) return;
     let cancelled = false;
     (async () => {
       try {
@@ -133,7 +136,7 @@ export default function FreeAgentsClient({
       }
     })();
     return () => { cancelled = true; };
-  }, [leagueId, primePlayers]);
+  }, [leagueId, primePlayers, initial.newTransfers]);
 
   // Free-agent auctions already running, shown above the table.
   const liveAuctions = useMemo(

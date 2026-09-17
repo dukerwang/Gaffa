@@ -2,8 +2,10 @@
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import type { SquadPeek } from '@/lib/teams/squadPeekTypes';
-import SquadPeekDrawer from './SquadPeekDrawer';
+
+const SquadPeekDrawer = dynamic(() => import('./SquadPeekDrawer'), { ssr: false });
 
 /**
  * One drawer for the whole app, opened by team id from anywhere.
@@ -123,6 +125,7 @@ export function SquadPeekProvider({ children }: { children: React.ReactNode }) {
 
   const prefetchPeek = useCallback(
     (target: string) => {
+      import('./SquadPeekDrawer');
       if (!leagueId) return;
       if (readCache(cacheKey(leagueId, target))) return;
       void load(leagueId, target);

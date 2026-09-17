@@ -4,7 +4,7 @@ import { redirect, notFound } from 'next/navigation';
 import type { Player } from '@/types';
 import { getCurrentFplSeason, isFplSeasonKickedOff } from '@/lib/season/currentSeason';
 import { loadSeasonLeaderboard } from '@/lib/stats/seasonStats';
-import { loadExplorerRows, loadScoutIndex } from '@/lib/players/indexData';
+import { loadExplorerRows, loadScoutIndexRecord } from '@/lib/players/indexData';
 import { isSiteAdminEmail } from '@/lib/auth/siteAdmin';
 import { isPlayerMapped } from '@/lib/players/playerMapping';
 import PlayersIndex from './PlayersIndex';
@@ -63,11 +63,6 @@ export default async function PlayersPage({ params, searchParams }: Props) {
 
   // The explorer needs per-season aggregates the leaderboard does not carry,
   // and the scout layer is dead weight to it — load each only where used.
-  // Which gameweeks the season actually has rows for — never a fixed 1..38,
-  // which would offer weeks that have not been played.
-  // One row per gameweek, from the database. Selecting `gameweek` for the whole
-  // season and de-duplicating here read 14,521 rows for 2025-26 and got the
-  // first 1,000 back -- ascending, so the picker offered gameweeks 1-3 of 38.
   const gameweeksRead = (async () => {
     const { data: gwRows } = await admin.rpc('season_gameweeks', { p_season: season });
     return ((gwRows ?? []) as { gameweek: number }[])
@@ -75,21 +70,26 @@ export default async function PlayersPage({ params, searchParams }: Props) {
       .filter((n): n is number => n != null);
   })();
 
-  // Only the leaderboard waits on that list: a requested gameweek is honoured
-  // only if the season has rows for it. The scout layer, the explorer and the
-  // owner lookup need nothing from it, so they start now too.
   const requestedGw = gw ? Number(gw) : null;
-  const leaderboardRead = gameweeksRead.then(async (gameweeks) => {
-    const gameweek = requestedGw != null && gameweeks.includes(requestedGw) ? requestedGw : null;
-    return { gameweek, ...(await loadSeasonLeaderboard(admin, season, { gameweek })) };
-  });
+  const leaderboardRead = (async () => {
+    if (requestedGw == null) {
+      return { gameweek: null, ...(await loadSeasonLeaderboard(admin, season, { gameweek: null })) };
+    }
+    const [gameweeks, raw] = await Promise.all([
+      gameweeksRead,
+      loadSeasonLeaderboard(admin, season, { gameweek: requestedGw }),
+    ]);
+    const valid = gameweeks.includes(requestedGw);
+    if (valid) return { gameweek: requestedGw, ...raw };
+    return { gameweek: null, ...(await loadSeasonLeaderboard(admin, season, { gameweek: null })) };
+  })();
 
-  const [gameweeks, { gameweek, players, shadowMaps }, scoutIndex, explorerRows, { data: rosterEntries }] = await Promise.all([
+  const [gameweeks, { gameweek, players, shadowMaps }, scoutRecord, explorerRows, { data: rosterEntries }] = await Promise.all([
     gameweeksRead,
     leaderboardRead,
     activeView === 'explorer'
-      ? Promise.resolve(new Map())
-      : loadScoutIndex(admin),
+      ? Promise.resolve({})
+      : loadScoutIndexRecord(),
     activeView === 'explorer' ? loadExplorerRows(admin, season) : Promise.resolve([]),
     teamIds.length > 0
       ? admin
@@ -123,7 +123,7 @@ export default async function PlayersPage({ params, searchParams }: Props) {
       leagueId={leagueId}
       leagueName={league.name}
       players={visibleRows}
-      scout={Object.fromEntries(scoutIndex)}
+      scout={scoutRecord}
       season={season}
       seasons={seasons}
       view={activeView}
