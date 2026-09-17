@@ -50,6 +50,11 @@ export const FPL_POSITION_OVERRIDES: Record<string, GranularPosition> = {
   'reece welch': 'CB',
   'callum bates': 'CM',
 
+  // Ipswich Town
+  'julio enciso': 'AM',
+  'julio enciso espínola': 'AM',
+  'julio enciso espinola': 'AM',
+
   // Liverpool
   'kieran morrison': 'RW',
   'jayden danns': 'ST',
@@ -87,12 +92,15 @@ export function resolvePosition(
   firstName: string,
   secondName: string,
   webName: string,
-  _elementType?: number
+  _elementType?: number,
+  knownName?: string | null,
 ): GranularPosition | null {
   const fullKey = `${firstName} ${secondName}`.toLowerCase();
   const webKey = webName.toLowerCase();
+  const knownKey = knownName?.trim().toLowerCase();
 
   return (
+    (knownKey ? FPL_POSITION_OVERRIDES[knownKey] : null) ??
     FPL_POSITION_OVERRIDES[fullKey] ??
     FPL_POSITION_OVERRIDES[webKey] ??
     null

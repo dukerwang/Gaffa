@@ -39,6 +39,7 @@ function storedPlayers() {
     name: `Given${i} Family${i}`,
     web_name: `Family${i}`,
     full_name: null,
+    sofifa_common_name: null,
     pl_team: 'Everton',
     date_of_birth: '1998-01-01',
     photo_url: `https://resources.premierleague.com/premierleague25/photos/players/110x140/${code(i)}.png`,
@@ -79,6 +80,51 @@ describe('syncing past 1,000 stored players', () => {
     expect(inserted).toHaveLength(0);
     expect(admin.__tables.players).toHaveLength(COUNT);
     expect(admin.__tables.players.every((p) => p.market_value === 12)).toBe(true);
+  });
+
+  it('adopts FPL known_name over existing legal full name', async () => {
+    const customBootstrap = {
+      teams: [{ id: 1, name: 'Bournemouth' }],
+      elements: [
+        {
+          id: 99,
+          first_name: 'António João',
+          second_name: 'Pereira de Albuquerque Tavares da Silva',
+          known_name: 'António Silva',
+          web_name: 'A. Silva',
+          element_type: 2,
+          team: 1,
+          photo: '543210.jpg',
+          status: 'a',
+          news: '',
+        },
+      ],
+    };
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => customBootstrap })));
+
+    const existingPlayer = {
+      id: 'player-silva',
+      fpl_id: 99,
+      is_active: true,
+      primary_position: 'CB',
+      secondary_positions: [],
+      market_value: 30,
+      name: 'António João Pereira de Albuquerque Tavares da Silva',
+      web_name: 'A. Silva',
+      full_name: null,
+      sofifa_common_name: null,
+      pl_team: 'Bournemouth',
+      date_of_birth: '2003-10-30',
+      photo_url: 'https://resources.premierleague.com/premierleague25/photos/players/110x140/543210.png',
+      pl_team_changed_at: null,
+    };
+
+    const admin = createFakeSupabase({ players: [existingPlayer], leagues: [] });
+    const result = await syncPlayersFromFpl(admin as any);
+
+    expect(result.error).toBeUndefined();
+    const updated = admin.__tables.players.find((p) => p.id === 'player-silva');
+    expect(updated?.name).toBe('António Silva');
   });
 
   it('aborts without writing a player when the snapshot read fails', async () => {

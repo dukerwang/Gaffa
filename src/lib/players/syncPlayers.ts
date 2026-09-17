@@ -31,6 +31,7 @@ interface FplElement {
   first_name: string;
   second_name: string;
   web_name: string;
+  known_name?: string | null;
   element_type: number;
   team: number;
   now_cost: number;
@@ -92,7 +93,9 @@ export async function syncPlayersFromFpl(admin: SupabaseClient): Promise<SyncPla
   const rows = (fplData.elements as FplElement[])
     .filter((el) => el.element_type >= 1 && el.element_type <= 4)
     .map((el) => {
-      const position = resolvePosition(el.first_name, el.second_name, el.web_name, el.element_type);
+      const rawFullName = `${el.first_name} ${el.second_name}`;
+      const knownName = el.known_name?.trim() || null;
+      const position = resolvePosition(el.first_name, el.second_name, el.web_name, el.element_type, knownName);
       const photoCode = el.photo?.replace('.jpg', '') ?? null;
       const photoUrl = photoCode
         ? `https://resources.premierleague.com/premierleague25/photos/players/110x140/${photoCode}.png`
@@ -101,7 +104,9 @@ export async function syncPlayersFromFpl(admin: SupabaseClient): Promise<SyncPla
       return {
         fpl_id: el.id,
         fplCode: photoCode,
-        name: `${el.first_name} ${el.second_name}`,
+        name: knownName || rawFullName,
+        raw_name: rawFullName,
+        known_name: knownName,
         web_name: el.web_name,
         element_type: el.element_type,
         pl_team: teamMap.get(el.team) ?? 'Unknown',
@@ -146,6 +151,7 @@ export async function syncPlayersFromFpl(admin: SupabaseClient): Promise<SyncPla
     name: string;
     web_name: string | null;
     full_name: string | null;
+    sofifa_common_name: string | null;
     pl_team: string | null;
     date_of_birth: string | null;
     photo_url: string | null;
@@ -166,7 +172,7 @@ export async function syncPlayersFromFpl(admin: SupabaseClient): Promise<SyncPla
     existingPlayers = await fetchAllPagesOrThrow<DbPlayer>((from, to) =>
       admin
         .from('players')
-        .select('id, fpl_id, is_active, primary_position, secondary_positions, market_value, name, web_name, full_name, pl_team, date_of_birth, photo_url, pl_team_changed_at')
+        .select('id, fpl_id, is_active, primary_position, secondary_positions, market_value, name, web_name, full_name, sofifa_common_name, pl_team, date_of_birth, photo_url, pl_team_changed_at')
         .order('id', { ascending: true })
         .range(from, to),
     );
@@ -585,7 +591,7 @@ export async function syncPlayersFromFpl(admin: SupabaseClient): Promise<SyncPla
 
     const sofifaMatch = findBestSofifaMatch({
       name: row.name,
-      raw_name: row.name,
+      raw_name: row.raw_name,
       web_name: row.web_name,
       pl_team: row.pl_team,
       element_type: row.element_type,
@@ -609,12 +615,15 @@ export async function syncPlayersFromFpl(admin: SupabaseClient): Promise<SyncPla
       row.secondary_positions = sofifaMatch.secondary_positions as GranularPosition[];
     }
 
+    const sofifaCommonName = existing?.sofifa_common_name ?? sofifaMatch?.common_name ?? null;
+
     // Curated FPL_POSITION_OVERRIDES always win (e.g. Zubimendi → DM). Otherwise
     // keep a manually-set granular primary so sync doesn't flatten everyone back
     // to FPL's GK/DEF/MID/FWD defaults every night. row.primary_position already
     // went through resolvePosition(), so it carries the override when one exists.
     const hasOverride =
       Object.prototype.hasOwnProperty.call(FPL_POSITION_OVERRIDES, row.name.toLowerCase()) ||
+      Object.prototype.hasOwnProperty.call(FPL_POSITION_OVERRIDES, row.raw_name.toLowerCase()) ||
       Object.prototype.hasOwnProperty.call(FPL_POSITION_OVERRIDES, row.web_name.toLowerCase());
     const primaryPosition = hasOverride
       ? row.primary_position
@@ -624,13 +633,14 @@ export async function syncPlayersFromFpl(admin: SupabaseClient): Promise<SyncPla
     const secondaryPositions =
       existing?.secondary_positions?.length
         ? existing.secondary_positions
-        : (row.secondary_positions ?? []);
+        : (sofifaMatch?.secondary_positions?.length ? (sofifaMatch.secondary_positions as GranularPosition[]) : (row.secondary_positions ?? []));
 
     // Keep a manually-simplified name only when it still describes this player.
     // A row matched by fpl_id whose name no longer resembles the FPL name means
     // FPL reassigned the id — take their name rather than mislabel the row.
-    const keepExistingName = !!existing?.name && isSameIdentity(existing, row.name);
-    const finalName = keepExistingName ? (existing as DbPlayer).name : row.name;
+    // When FPL provides an explicit known_name, adopt it over a stale legal name.
+    const keepExistingName = !row.known_name && !!existing?.name && isSameIdentity(existing, row.name);
+    const finalName = row.known_name ? row.known_name : (keepExistingName ? (existing as DbPlayer).name : row.name);
 
     // full_name is a legacy display column the sync doesn't otherwise write —
     // it holds a richer registered name for ~30 players (David Raya → "David
@@ -644,11 +654,12 @@ export async function syncPlayersFromFpl(admin: SupabaseClient): Promise<SyncPla
       !!existing?.full_name && !isSameIdentity({ name: existing.full_name } as DbPlayer, finalName);
 
     // fplCode is a matching key derived from el.photo, not a column.
-    const { fplCode: _fplCode, element_type: _element_type, ...dbRow } = row;
+    const { fplCode: _fplCode, element_type: _element_type, raw_name: _raw_name, known_name: _known_name, ...dbRow } = row;
 
-    const finalRow: typeof dbRow & { id?: string; full_name?: string | null; pl_team_changed_at: string | null } = {
+    const finalRow: typeof dbRow & { id?: string; full_name?: string | null; pl_team_changed_at: string | null; sofifa_common_name: string | null } = {
       ...dbRow,
       name: finalName,
+      sofifa_common_name: sofifaCommonName,
       primary_position: primaryPosition,
       secondary_positions: (secondaryPositions ?? [])
         .filter((p: string) => p !== primaryPosition),

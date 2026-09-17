@@ -917,7 +917,7 @@ export async function buildHomeModel(
         const player = pickedById.get(playerId);
         return {
           playerId,
-          name: player ? getPlayerDisplayName(player, 'full') : '',
+          name: player ? getPlayerDisplayName(player, 'smart') : '',
           position: player?.primary_position ?? positionsById.get(playerId)?.[0] ?? '',
           club: player?.pl_team ?? '',
           points: (scoreById.get(playerId) ?? 0).toFixed(2),

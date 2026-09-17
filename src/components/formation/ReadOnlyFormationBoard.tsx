@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import type { Formation, GranularPosition } from '@/types';
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
+import { getPlayerDisplayName } from '@/lib/players/displayName';
 import styles from './ReadOnlyFormationBoard.module.css';
 
 type PitchZone = 'ATT' | 'AMZ' | 'CMZ' | 'DMZ' | 'WBZ' | 'DEF' | 'GK';
@@ -187,9 +188,11 @@ function Node({
         </span>
 
         <span className={styles.nodeChip}>
-          <span className={styles.nodeName}>{player.name}</span>
           <span className={styles.nodeMeta}>
             <PositionBadge position={item.slot} size="sm" />
+          </span>
+          <span className={styles.nodeName} title={player.name}>
+            {getPlayerDisplayName(player.name, 'smart')}
           </span>
         </span>
       </button>

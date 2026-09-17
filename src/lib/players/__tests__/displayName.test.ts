@@ -96,4 +96,115 @@ describe('getPlayerDisplayName', () => {
       ),
     ).toBe('Erling Haaland');
   });
+
+  it('formats names with smart budget-driven fallback', () => {
+    // Mononyms remain mononyms
+    expect(
+      getPlayerDisplayName(
+        {
+          name: 'Rodrigo Hernandez Cascante',
+          web_name: 'Rodri',
+        },
+        'smart',
+      ),
+    ).toBe('Rodri');
+
+    // Short full names (<= 14 chars) remain full names
+    expect(
+      getPlayerDisplayName(
+        {
+          name: 'Cole Palmer',
+          web_name: 'Palmer',
+        },
+        'smart',
+      ),
+    ).toBe('Cole Palmer');
+
+    expect(
+      getPlayerDisplayName(
+        {
+          name: 'Bukayo Saka',
+          web_name: 'Saka',
+        },
+        'smart',
+      ),
+    ).toBe('Bukayo Saka');
+
+    expect(
+      getPlayerDisplayName(
+        {
+          name: 'Erling Haaland',
+          web_name: 'Haaland',
+        },
+        'smart',
+      ),
+    ).toBe('Erling Haaland');
+
+    expect(
+      getPlayerDisplayName(
+        {
+          name: 'Alexander Isak',
+          web_name: 'Isak',
+        },
+        'smart',
+      ),
+    ).toBe('Alexander Isak');
+
+    // Long names (> 14 chars) fall back to initial_last ("F. Last")
+    expect(
+      getPlayerDisplayName(
+        {
+          name: 'Dominic Calvert-Lewin',
+          web_name: 'Calvert-Lewin',
+        },
+        'smart',
+      ),
+    ).toBe('D. Calvert-Lewin');
+
+    expect(
+      getPlayerDisplayName(
+        {
+          name: 'Trent Alexander-Arnold',
+          web_name: 'Alexander-Arnold',
+        },
+        'smart',
+      ),
+    ).toBe('T. Alexander-Arnold');
+
+    expect(
+      getPlayerDisplayName(
+        {
+          name: 'Martin Ødegaard',
+          web_name: 'Ødegaard',
+        },
+        'smart',
+      ),
+    ).toBe('M. Ødegaard');
+
+    expect(
+      getPlayerDisplayName(
+        {
+          name: 'Bruno Fernandes',
+          web_name: 'B.Fernandes',
+        },
+        'smart',
+      ),
+    ).toBe('B. Fernandes');
+
+    // Accepts raw strings as well
+    expect(getPlayerDisplayName('Cole Palmer', 'smart')).toBe('Cole Palmer');
+    expect(getPlayerDisplayName('Dominic Calvert-Lewin', 'smart')).toBe('D. Calvert-Lewin');
+
+    // Custom threshold
+    expect(
+      getPlayerDisplayName(
+        {
+          name: 'Erling Haaland',
+          web_name: 'Haaland',
+        },
+        'smart',
+        10,
+      ),
+    ).toBe('E. Haaland');
+  });
 });

@@ -36,6 +36,28 @@ describe('fetchAllPagesOrThrow', () => {
 
     await expect(fetchAllPagesOrThrow(run)).rejects.toThrow('statement timeout');
   });
+
+  it('parallel batches remaining pages when count is returned and preserves order', async () => {
+    const totalRows = 3_250;
+    const all = Array.from({ length: totalRows }, (_, i) => ({ id: i }));
+    const requestedRanges: [number, number][] = [];
+
+    const run = async (from: number, to: number) => {
+      requestedRanges.push([from, to]);
+      return {
+        data: all.slice(from, to + 1),
+        error: null,
+        count: totalRows,
+      };
+    };
+
+    const rows = await fetchAllPagesOrThrow<{ id: number }>(run);
+    expect(rows).toHaveLength(totalRows);
+    expect(rows.map((r) => r.id)).toEqual(all.map((r) => r.id));
+    // Verify first page was requested, followed by parallel pages
+    expect(requestedRanges[0]).toEqual([0, 999]);
+    expect(requestedRanges).toHaveLength(4);
+  });
 });
 
 describe('fetchAllPagesIn', () => {

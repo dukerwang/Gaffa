@@ -10,10 +10,33 @@
 export const PAGE_SIZE = 1000;
 
 export async function fetchAllPages<T>(
-  run: (from: number, to: number) => PromiseLike<{ data: T[] | null }>,
+  run: (from: number, to: number) => PromiseLike<{ data: T[] | null; count?: number | null }>,
 ): Promise<T[]> {
-  const out: T[] = [];
-  for (let page = 0; ; page++) {
+  const first = await run(0, PAGE_SIZE - 1);
+  if (!first.data || first.data.length === 0) return [];
+  const out: T[] = [...first.data];
+  if (first.data.length < PAGE_SIZE) return out;
+
+  const count = (first as { count?: number | null }).count;
+  if (count != null && count > PAGE_SIZE) {
+    const totalPages = Math.ceil(count / PAGE_SIZE);
+    const BATCH_SIZE = 5;
+    for (let i = 1; i < totalPages; i += BATCH_SIZE) {
+      const batchPages: number[] = [];
+      for (let p = i; p < Math.min(i + BATCH_SIZE, totalPages); p++) {
+        batchPages.push(p);
+      }
+      const results = await Promise.all(
+        batchPages.map((p) => run(p * PAGE_SIZE, (p + 1) * PAGE_SIZE - 1)),
+      );
+      for (const res of results) {
+        if (res.data) out.push(...res.data);
+      }
+    }
+    return out;
+  }
+
+  for (let page = 1; ; page++) {
     const { data } = await run(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
     if (!data || data.length === 0) break;
     out.push(...data);
@@ -22,7 +45,7 @@ export async function fetchAllPages<T>(
   return out;
 }
 
-type PageResult<T> = PromiseLike<{ data: T[] | null; error: { message: string } | null }>;
+type PageResult<T> = PromiseLike<{ data: T[] | null; error: { message: string } | null; count?: number | null }>;
 
 /**
  * `fetchAllPages`, but a failed page throws instead of ending the loop.
@@ -39,8 +62,33 @@ type PageResult<T> = PromiseLike<{ data: T[] | null; error: { message: string } 
 export async function fetchAllPagesOrThrow<T>(
   run: (from: number, to: number) => PageResult<T>,
 ): Promise<T[]> {
-  const out: T[] = [];
-  for (let page = 0; ; page++) {
+  const first = await run(0, PAGE_SIZE - 1);
+  if (first.error) throw new Error(first.error.message);
+  if (!first.data || first.data.length === 0) return [];
+  const out: T[] = [...first.data];
+  if (first.data.length < PAGE_SIZE) return out;
+
+  const count = (first as { count?: number | null }).count;
+  if (count != null && count > PAGE_SIZE) {
+    const totalPages = Math.ceil(count / PAGE_SIZE);
+    const BATCH_SIZE = 5;
+    for (let i = 1; i < totalPages; i += BATCH_SIZE) {
+      const batchPages: number[] = [];
+      for (let p = i; p < Math.min(i + BATCH_SIZE, totalPages); p++) {
+        batchPages.push(p);
+      }
+      const results = await Promise.all(
+        batchPages.map((p) => run(p * PAGE_SIZE, (p + 1) * PAGE_SIZE - 1)),
+      );
+      for (const res of results) {
+        if (res.error) throw new Error(res.error.message);
+        if (res.data) out.push(...res.data);
+      }
+    }
+    return out;
+  }
+
+  for (let page = 1; ; page++) {
     const { data, error } = await run(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
     if (error) throw new Error(error.message);
     if (!data || data.length === 0) break;

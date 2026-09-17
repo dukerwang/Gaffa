@@ -195,28 +195,45 @@ function formatSofifaCommon(
  * narrative text.
  * `'initial_last'` (default) — "F. Last", mononym-resolved. Compact rows:
  * roster/auction/listing tables, draft picks, trade block.
+ * `'smart'` — full name if <= maxSmartLen characters (default 14); otherwise "F. Last".
+ * Mononym-resolved. Pitch chips, bench slots.
  * `'split'` — `{ first, last }` for layouts that style the two separately
  * (e.g. a small first name over a bold surname).
  */
-export function getPlayerDisplayName(player?: NameLike | null, format?: 'full' | 'initial_last'): string;
 export function getPlayerDisplayName(
-  player: NameLike | null | undefined,
+  player?: NameLike | string | null,
+  format?: 'full' | 'initial_last' | 'smart',
+  maxSmartLen?: number,
+): string;
+export function getPlayerDisplayName(
+  player: NameLike | string | null | undefined,
   format: 'split',
 ): { first: string; last: string };
 export function getPlayerDisplayName(
-  player?: NameLike | null,
-  format: 'full' | 'initial_last' | 'split' = 'initial_last',
+  player?: NameLike | string | null,
+  format: 'full' | 'initial_last' | 'smart' | 'split' = 'initial_last',
+  maxSmartLen = 14,
 ): string | { first: string; last: string } {
   if (!player) return format === 'split' ? { first: '', last: '—' } : '—';
 
-  const dbName = (player.name || player.full_name)?.trim() || player.web_name?.trim() || '';
-  if (!dbName && !player.sofifa_common_name) return format === 'split' ? { first: '', last: '—' } : '—';
+  const playerObj: NameLike = typeof player === 'string' ? { name: player } : player;
 
-  const webName = player.web_name?.trim() || '';
+  if (format === 'smart') {
+    const full = getPlayerDisplayName(playerObj, 'full');
+    if (typeof full === 'string' && full.length <= maxSmartLen) {
+      return full;
+    }
+    return getPlayerDisplayName(playerObj, 'initial_last');
+  }
+
+  const dbName = (playerObj.name || playerObj.full_name)?.trim() || playerObj.web_name?.trim() || '';
+  if (!dbName && !playerObj.sofifa_common_name) return format === 'split' ? { first: '', last: '—' } : '—';
+
+  const webName = playerObj.web_name?.trim() || '';
   const mononym = resolveMononym(dbName, webName);
   if (mononym) return format === 'split' ? { first: '', last: mononym } : mononym;
 
-  const sofifaCommon = player.sofifa_common_name?.trim();
+  const sofifaCommon = playerObj.sofifa_common_name?.trim();
   if (sofifaCommon) {
     return formatSofifaCommon(sofifaCommon, dbName, format, webName);
   }
@@ -227,7 +244,7 @@ export function getPlayerDisplayName(
     // "Martín Zubimendi" rather than "Martín Zubimendi Ibáñez".
     const preferred = preferWebSurname(dbName, webName);
     if (preferred?.first) return `${preferred.first} ${preferred.last}`;
-    return player.full_name || player.name || webName;
+    return playerObj.full_name || playerObj.name || webName;
   }
   return initialLast(dbName, webName);
 }

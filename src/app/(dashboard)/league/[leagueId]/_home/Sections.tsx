@@ -447,7 +447,7 @@ export function TeamOfWeek({ model }: { model: HomeModel }) {
                   aria-label={`${player.name}, ${slot} bench, ${player.points} points`}
                 >
                   <span className={styles.towBenchSlotLabel}>{slot}</span>
-                  <div className={styles.towBenchName}>{player.name}</div>
+                  <div className={styles.towBenchName} title={player.name}>{player.name}</div>
                   <div className={styles.towBenchMeta}>{player.club} · {player.owner}</div>
                   <div className={styles.towBenchPoints}>{player.points} pts</div>
                 </button>
