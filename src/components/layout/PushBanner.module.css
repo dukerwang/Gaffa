@@ -10,7 +10,6 @@
   margin: 12px auto;
   max-width: 960px;
   width: calc(100% - 24px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .content {
@@ -49,7 +48,6 @@
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.03em;
-  text-transform: uppercase;
   background: var(--color-pitch-grass, #2C4C3B);
   color: #FFFFFF;
   border: none;

@@ -1,3 +1,5 @@
+import { createClient } from '@/lib/supabase/client';
+
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -115,6 +117,36 @@ export async function syncPushSubscription(): Promise<boolean> {
     return res.ok;
   } catch (err) {
     console.error('[push] Failed to sync push subscription:', err);
+    return false;
+  }
+}
+
+/**
+ * Checks whether the current user account has at least one active push
+ * subscription across any of their devices (e.g. mobile phone).
+ */
+export async function hasAccountPushSubscription(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { count, error } = await supabase
+      .from('push_subscriptions')
+      .select('id', { count: 'exact', head: true });
+
+    if (error) {
+      console.error('[push] Failed to query push subscriptions:', error.message);
+      return false;
+    }
+
+    return typeof count === 'number' && count > 0;
+  } catch (err) {
+    console.error('[push] Failed to check account push subscription:', err);
     return false;
   }
 }

@@ -1,7 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getPushAvailability, subscribeToPush } from '@/lib/push/subscribe';
+import {
+  getPushAvailability,
+  hasAccountPushSubscription,
+  subscribeToPush,
+} from '@/lib/push/subscribe';
 import styles from './PushBanner.module.css';
 
 const DISMISS_STORAGE_KEY = 'gaffa_push_prompt_dismissed_at';
@@ -12,6 +16,8 @@ export default function PushBanner() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     try {
       const dismissed = localStorage.getItem(DISMISS_STORAGE_KEY);
       if (dismissed) {
@@ -24,11 +30,18 @@ export default function PushBanner() {
       // ignore localStorage errors in private browsing
     }
 
-    getPushAvailability().then((status) => {
-      if (status === 'unsubscribed') {
-        setVisible(true);
-      }
+    getPushAvailability().then(async (status) => {
+      if (cancelled || status !== 'unsubscribed') return;
+
+      const hasOtherDevice = await hasAccountPushSubscription();
+      if (cancelled || hasOtherDevice) return;
+
+      setVisible(true);
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (!visible) return null;
@@ -78,7 +91,7 @@ export default function PushBanner() {
           onClick={handleTurnOn}
           disabled={busy}
         >
-          {busy ? 'Enabling…' : 'Turn on'}
+          {busy ? 'Enabling…' : 'Turn On'}
         </button>
       </div>
     </aside>
