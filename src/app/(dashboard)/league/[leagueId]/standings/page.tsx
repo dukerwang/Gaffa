@@ -62,7 +62,7 @@ function computeForm(teamId: string, matchups: any[]): FormResult[] {
       results.push('L');
     }
   }
-  return results;
+  return results.reverse();
 }
 
 export default async function StandingsPage({ params }: Props) {
@@ -281,6 +281,10 @@ export default async function StandingsPage({ params }: Props) {
                       <td>{row.pa.toFixed(2)}</td>
                       <td className={styles.formCell}>
                         <div className={styles.formDots}>
+                          {/* Pad with empty dots on the left if fewer than 5 results so latest match is on the right */}
+                          {Array.from({ length: Math.max(0, 5 - form.length) }).map((_, idx) => (
+                            <span key={`empty-${idx}`} className={`${styles.formDot} ${styles.formDotEmpty}`} />
+                          ))}
                           {form.map((result, idx) => (
                             <span
                               key={idx}
@@ -292,10 +296,6 @@ export default async function StandingsPage({ params }: Props) {
                                   : styles.formDotL
                               }`}
                             />
-                          ))}
-                          {/* Pad with empty dots if fewer than 5 results */}
-                          {Array.from({ length: Math.max(0, 5 - form.length) }).map((_, idx) => (
-                            <span key={`empty-${idx}`} className={`${styles.formDot} ${styles.formDotEmpty}`} />
                           ))}
                         </div>
                       </td>

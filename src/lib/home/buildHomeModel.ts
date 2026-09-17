@@ -698,7 +698,8 @@ export async function buildHomeModel(
         maximumFractionDigits: 1,
       }),
       leaguePoints: s.league_points,
-      form: formMap.get(s.team_id) ?? [],
+      // Standard football form guide: chronological from left to right (oldest to newest)
+      form: (formMap.get(s.team_id) ?? []).slice().reverse(),
       prize: money(computeSeasonPrize(s.rank, teamCount)),
       isMe: s.team_id === myTeamId,
     };

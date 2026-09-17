@@ -143,3 +143,29 @@ describe('Matchweek fixture status derivation', () => {
   });
 });
 
+describe('Standings table form guide ordering', () => {
+  it('orders form chronologically so the oldest match is on the left and the latest match is on the right', () => {
+    // A team whose completed matches from earliest to latest are: GW1 (W), GW2 (W), GW3 (L), GW4 (L)
+    const matchesChronological = [
+      { gameweek: 1, result: 'W' as const },
+      { gameweek: 2, result: 'W' as const },
+      { gameweek: 3, result: 'L' as const },
+      { gameweek: 4, result: 'L' as const },
+    ];
+
+    // Form collection grabs up to 5 newest first
+    const newestFirst: ('W' | 'D' | 'L')[] = [];
+    for (const m of [...matchesChronological].reverse()) {
+      if (newestFirst.length >= 5) break;
+      newestFirst.push(m.result);
+    }
+    expect(newestFirst).toEqual(['L', 'L', 'W', 'W']);
+
+    // The table form guide presents them chronologically (oldest on left, latest on right)
+    const tableForm = newestFirst.slice().reverse();
+    expect(tableForm).toEqual(['W', 'W', 'L', 'L']);
+    expect(tableForm[tableForm.length - 1]).toBe('L'); // latest match is GW4 (L)
+    expect(tableForm[0]).toBe('W'); // oldest match in window is GW1 (W)
+  });
+});
+

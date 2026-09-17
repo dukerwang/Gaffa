@@ -302,8 +302,7 @@ export function StandingsTable({ model }: { model: HomeModel }) {
       <div className={styles.tableWrap}>
         <table className={styles.table}>
           <caption>
-            Pays is the placement prize at that finish, on today&rsquo;s table. Form reads newest
-            first.
+            Pays is the placement prize at that finish, on today&rsquo;s table.
           </caption>
           <thead>
             <tr>
