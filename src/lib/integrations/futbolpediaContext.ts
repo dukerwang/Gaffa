@@ -11,12 +11,14 @@ import type {
   FutbolpediaOpenAuction,
   FutbolpediaOpenListing,
 } from './futbolpediaContextTypes';
+import { loadUnownedFreeAgents } from './futbolpediaFreeAgents';
 
 const LINEUP_VISIBILITY: 'last_saved' | 'locked' = 'last_saved';
 
 /**
  * Build the Futbolpedia club context bag. Identity/status only — no fantasy
  * points or private match ratings (scoring-data firewall for the chat bag).
+ * `free_agents` is the unowned PL pool (true FA), not live auctions.
  */
 export async function buildFutbolpediaClubContext(
   leagueId: string,
@@ -204,8 +206,16 @@ export async function buildFutbolpediaClubContext(
     ir_size: slots.ir,
     max_loan_outs: slots.loansOut,
   };
+  const liveAuctionIds = new Set(
+    ((auctionRows ?? []) as Array<{ player_id?: string }>)
+      .map((row) => row.player_id)
+      .filter((id): id is string => Boolean(id)),
+  );
   const open_listings = mapListings(listingRows as any[] | null, team.id);
-  const open_auctions = await mapAuctions(admin, auctionRows as any[] | null);
+  const [open_auctions, free_agents] = await Promise.all([
+    mapAuctions(admin, auctionRows as any[] | null),
+    loadUnownedFreeAgents(admin, leagueId, liveAuctionIds),
+  ]);
 
   return {
     league_id: league.id,
@@ -228,6 +238,7 @@ export async function buildFutbolpediaClubContext(
     settings,
     open_listings,
     open_auctions,
+    free_agents,
     synced_at: new Date().toISOString(),
   };
 }
