@@ -88,6 +88,22 @@ export interface FutbolpediaOpenAuction {
   expires_at: string | null;
 }
 
+/**
+ * One unowned player in this league — Gaffa free agency.
+ * Not a listing (owned) and not merely "on the live auction board".
+ * `live_auction` is true when someone has already opened a bid on them.
+ */
+export interface FutbolpediaFreeAgent {
+  player_id: string;
+  name: string;
+  display_name?: string;
+  position: string;
+  pl_team: string | null;
+  market_value_eur_m: number | null;
+  age: number | null;
+  live_auction: boolean;
+}
+
 export interface FutbolpediaClubContextResponse {
   league_id: string;
   club_id: string;
@@ -101,5 +117,7 @@ export interface FutbolpediaClubContextResponse {
   settings: FutbolpediaLeagueSettings;
   open_listings: FutbolpediaOpenListing[];
   open_auctions: FutbolpediaOpenAuction[];
+  /** Unowned active PL players in this league. This is free agency. */
+  free_agents: FutbolpediaFreeAgent[];
   synced_at: string;
 }
