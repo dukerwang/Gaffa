@@ -85,13 +85,29 @@ export async function getCurrentFplSeason(fallback?: string, useRawSeason = fals
 
 /**
  * Checks if the current FPL season has kicked off (i.e. GW1 has started).
+ *
+ * Module-cached for the life of the invocation, like `getCurrentFplSeason`
+ * above. Both are called by `resolveCardSeason`, which runs on every player-card
+ * request — and this one was the only season helper without a cache, so it
+ * re-fetched and re-parsed the ~1MB bootstrap payload every time. Next's Data
+ * Cache spares the network but not the `JSON.parse`, and its key includes
+ * headers, so this call and the one in cardData.ts (which sends a User-Agent)
+ * do not even share an entry.
+ *
+ * The answer moves exactly once a season, so a per-invocation cache is free.
  */
+let _cachedKickedOff: boolean | null = null;
+
 export async function isFplSeasonKickedOff(): Promise<boolean> {
+  if (_cachedKickedOff !== null) return _cachedKickedOff;
   try {
     const res = await fetch(
       'https://fantasy.premierleague.com/api/bootstrap-static/',
       { next: { revalidate: 3600 } },
     );
+    // A failed fetch answers false but is NOT cached — that would pin a
+    // transient outage for the rest of the invocation. Only an answer actually
+    // read off the payload is worth keeping.
     if (!res.ok) return false;
 
     const data = await res.json();
@@ -100,6 +116,7 @@ export async function isFplSeasonKickedOff(): Promise<boolean> {
     // If the retrieved season has already finished (GW38 completed), we are in the offseason preparing for the next season
     const lastEvent = events[events.length - 1];
     if (lastEvent?.finished) {
+      _cachedKickedOff = false;
       return false;
     }
 
@@ -109,7 +126,8 @@ export async function isFplSeasonKickedOff(): Promise<boolean> {
     const gw1Deadline = new Date(gw1.deadline_time);
     const now = new Date();
 
-    return now >= gw1Deadline;
+    _cachedKickedOff = now >= gw1Deadline;
+    return _cachedKickedOff;
   } catch {
     return false;
   }
