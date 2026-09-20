@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Formation, GranularPosition, Player } from '@/types';
 import { FORMATION_SLOTS } from '@/types';
 import clubsData from '@/lib/clubs/clubs.json';
-import { serializeLineup, isFormation, type SerializedLineup } from '@/lib/lineups/lineupSerializer';
+import { serializeLineup, VALID_FORMATIONS, type SerializedLineup } from '@/lib/lineups/lineupSerializer';
 import { exportLineupToBlob, type LineupExportSlot } from '@/lib/lineups/lineupImageExport';
-import LineupPitch from './LineupPitch';
+import ReadOnlyFormationBoard, { type FormationBoardSlot } from '@/components/formation/ReadOnlyFormationBoard';
 import LineupPlayerPickerModal from './LineupPlayerPickerModal';
 import styles from './lineup-builder.module.css';
 
@@ -15,20 +15,9 @@ interface Props {
   initialState: SerializedLineup;
 }
 
-const FORMATIONS: Formation[] = [
-  '4-3-3',
-  '4-2-1-3',
-  '4-2-2-2',
-  '3-4-1-2',
-  '3-5-2',
-  '3-4-3',
-  '5-3-2',
-  '3-4-2-1',
-  '4-3-1-2',
-  '4-3-2-1',
-  '4-2-4',
-  '5-2-3',
-];
+const FORMATIONS: readonly Formation[] = VALID_FORMATIONS;
+
+const BACK_LINES = ['3', '4', '5'] as const;
 
 export default function LineupBuilderClient({ allPlayers, initialState }: Props) {
   const [formation, setFormation] = useState<Formation>(initialState.formation);
@@ -92,6 +81,30 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
     }
     return set;
   }, [assignments]);
+
+  const boardSlots = useMemo<FormationBoardSlot[]>(
+    () =>
+      (FORMATION_SLOTS[formation] as GranularPosition[]).map((slot, index) => {
+        const p = assignments[index];
+        return {
+          slot,
+          index,
+          player: p
+            ? {
+                id: p.id,
+                name: p.name,
+                club: p.pl_team,
+                photoUrl: p.photo_url,
+                photoVersion: p.photo_version,
+                headTopPct: p.portrait_head_top_pct,
+                headWidthPct: p.portrait_head_width_pct,
+              }
+            : null,
+        };
+      }),
+    [formation, assignments],
+  );
+  const filledCount = assignedPlayerIds.size;
 
   const handleOpenSlot = useCallback(
     (slotIndex: number) => {
@@ -221,68 +234,82 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
   }, [assignments, formation, title]);
 
   return (
-    <div className={styles.container}>
-      {/* Header Bar */}
-      <header className={styles.header}>
-        <div className={styles.titleRow}>
-          <div className={styles.titleInputWrapper}>
-            <input
-              type="text"
-              className={styles.titleInput}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Name your lineup (e.g. Chelsea vs Hull)..."
-              aria-label="Lineup Title"
-            />
+    <div className={styles.page}>
+      <div className={styles.shelf}>
+        <div className={styles.shelfInner}>
+          <div className={styles.tile} aria-hidden="true">
+            <span className={styles.tileFigure}>{filledCount}</span>
+            <span className={styles.tileOf}>of 11</span>
           </div>
-
-          <div className={styles.actionsRow}>
-            <button
-              type="button"
-              className={`${styles.actionBtn} ${styles.primaryBtn}`}
-              onClick={handleShare}
-              disabled={isExporting}
-            >
-              {isExporting ? 'Generating...' : 'Share XI'}
-            </button>
-
-            <button type="button" className={`${styles.actionBtn} ${styles.secondaryBtn}`} onClick={handleCopyLink}>
-              Copy Link
-            </button>
-
-            <button type="button" className={`${styles.actionBtn} ${styles.secondaryBtn}`} onClick={handleReset}>
-              Reset Pitch
-            </button>
+          <div className={styles.shelfTitle}>
+            <h1 className={styles.shelfH}>Lineup Builder</h1>
+            <div className={styles.shelfSub}>Any Premier League player, in any of the 12 formations</div>
+          </div>
+          <div className={styles.pills}>
+            <span className={styles.pill}>{formation}</span>
+            <span className={styles.pill}>{filledCount === 11 ? 'Complete' : `${11 - filledCount} Open`}</span>
           </div>
         </div>
+      </div>
 
-        {/* Formation & Club Quick Filters */}
-        <div className={styles.controlsRow}>
-          <div className={styles.formationGroup}>
-            <span className={styles.groupLabel}>Formation</span>
-            <select
-              className={styles.formationSelect}
-              value={formation}
-              onChange={(e) => {
-                if (isFormation(e.target.value)) setFormation(e.target.value);
-              }}
-              aria-label="Select Formation"
-            >
-              {FORMATIONS.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
+      <div className={styles.workspace}>
+        <section className={`${styles.card} ${styles.formationCard}`} aria-label="Formation">
+          <h2 className={styles.cardH}>Formation</h2>
+          <div className={styles.formationGroups}>
+            {BACK_LINES.map((line) => (
+              <div key={line} className={styles.formationGroup}>
+                <span className={styles.formationGroupLabel} aria-hidden>
+                  Back {line}
+                </span>
+                <div className={styles.formationPills}>
+                  {FORMATIONS.filter((f) => f.charAt(0) === line).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      className={`${styles.formationPill} ${formation === f ? styles.formationPillActive : ''}`}
+                      onClick={() => setFormation(f)}
+                      aria-pressed={formation === f}
+                      aria-label={`${f}, ${line} at the back`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
+        </section>
 
-          <div className={styles.formationGroup}>
-            <span className={styles.groupLabel}>Club Filter</span>
+        <section className={`${styles.card} ${styles.boardCard}`} aria-label="Starting XI">
+          <ReadOnlyFormationBoard
+            formation={formation}
+            slots={boardSlots}
+            emptyLabel="Pick a formation to start"
+            ariaLabel={`${formation} starting XI`}
+            variant="standard"
+            onSelectSlot={handleOpenSlot}
+          />
+        </section>
+
+        <section className={`${styles.card} ${styles.detailsCard}`} aria-label="Lineup Details">
+          <h2 className={styles.cardH}>Details</h2>
+          <label className={styles.field}>
+            <span className="g-label">Lineup Name</span>
+            <input
+              type="text"
+              className={styles.input}
+              value={title}
+              maxLength={60}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Chelsea vs Hull"
+            />
+          </label>
+          <label className={styles.field}>
+            <span className="g-label">Club Filter</span>
             <select
-              className={styles.clubFilterSelect}
+              className={styles.input}
               value={clubFilter || ''}
               onChange={(e) => setClubFilter(e.target.value || null)}
-              aria-label="Filter Squad by Club"
             >
               <option value="">All Clubs</option>
               {clubsData.map((c) => (
@@ -291,29 +318,32 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
                 </option>
               ))}
             </select>
+          </label>
+        </section>
+
+        <section className={`${styles.shareCard}`} aria-label="Share">
+          <h2 className={styles.shareH}>Share Your XI</h2>
+          <p className={styles.shareP}>Save it as an image or send the link. Anyone with the link opens the same lineup.</p>
+          <div className={styles.shareActions}>
+            <button type="button" className={styles.sharePrimary} onClick={handleShare} disabled={isExporting}>
+              {isExporting ? 'Generating…' : 'Share XI'}
+            </button>
+            <button type="button" className={styles.shareSecondary} onClick={handleCopyLink}>
+              Copy Link
+            </button>
+            <button type="button" className={styles.shareSecondary} onClick={handleReset} disabled={filledCount === 0}>
+              Clear XI
+            </button>
           </div>
-
-          {feedbackNotice && (
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-accent)' }}>
-              {feedbackNotice}
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Main Pitch */}
-      <main>
-        <LineupPitch
-          formation={formation}
-          assignments={assignments}
-          onSelectSlot={handleOpenSlot}
-        />
-      </main>
+          <p className={styles.notice} role="status" aria-live="polite">
+            {feedbackNotice ?? ''}
+          </p>
+        </section>
+      </div>
 
       {/* Player Picker Modal */}
       {activeSlot && (
         <LineupPlayerPickerModal
-          slotIndex={activeSlot.slotIndex}
           slotPos={activeSlot.pos}
           currentPlayer={assignments[activeSlot.slotIndex]}
           allPlayers={allPlayers}

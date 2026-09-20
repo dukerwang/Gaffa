@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { fetchAllPages } from '@/lib/supabase/pagination';
 import type { Player } from '@/types';
 import { deserializeLineup } from '@/lib/lineups/lineupSerializer';
 import LineupBuilderClient from './LineupBuilderClient';
 
 export const metadata: Metadata = {
   title: 'Lineup Builder · Gaffa',
-  description: 'Build and share custom Premier League starting XIs and match predictions.',
+  description: 'Build a starting XI from any Premier League players and share it as an image or a link.',
 };
 
 export const dynamic = 'force-dynamic';
@@ -21,22 +22,15 @@ export default async function LineupBuilderPage({ searchParams }: Props) {
 
   const admin = createAdminClient();
 
-  // PostgREST caps a single request at 1000 rows; the player pool sits close
-  // enough to that (978 as of 2026-09) that a page-by-page fetch is needed
-  // now rather than once it silently starts dropping the tail of the
-  // alphabet — see sofifa_position_reference for the same trap already hit.
-  const allPlayers: Player[] = [];
-  const pageSize = 1000;
-  for (let from = 0; ; from += pageSize) {
-    const { data: page } = await admin
+  const allPlayers: Player[] = await fetchAllPages<Player>((from, to) =>
+    admin
       .from('players')
       .select('*')
+      .eq('is_active', true)
       .order('name', { ascending: true })
-      .range(from, from + pageSize - 1);
-    if (!page || page.length === 0) break;
-    allPlayers.push(...page);
-    if (page.length < pageSize) break;
-  }
+      .order('id', { ascending: true })
+      .range(from, to),
+  );
 
   return (
     <LineupBuilderClient
