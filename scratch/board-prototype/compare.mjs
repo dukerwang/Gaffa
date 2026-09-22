@@ -80,7 +80,7 @@ const VARIANTS = {
 
 function page(kind) {
   const v = VARIANTS[kind];
-  const listings = section(kind, 'Your Listings', `<button class="btn btnSm btnGo">${glyph('plus', 14)}Post</button>`, heads('Interest') + MINE().map(row).join(''));
+  const listings = section(kind, 'Your Listings', `<button class="btn btnSm btnGo">${glyph('plus', 14)}Add</button>`, heads('Interest') + MINE().map(row).join(''));
   const board = section(kind, 'The Board', `${seg()}${posChips()}`, heads('Listed By') + LISTED().map(row).join(''));
   return `<div class="screen d" style="width: 1440px; height: __H__px;">
     <main class="wrap">

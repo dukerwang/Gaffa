@@ -282,22 +282,34 @@ const targetsBody = () => `
   <div class="tgtLive">${liveCard()}</div>
   <div class="tgtRow">${MINE.map(tile).join('')}${roleTile()}</div>`;
 
+const addBtn = `<button class="btn btnGo btnSm btnAddS">${glyph('plus', 14)}Add</button>`;
+
+// Your Targets stays as individual cards (Targets C). Its heading row matches the
+// panel bars beside it in size and height, so the two titles line up.
+const targetsCards = (mobile) => `
+<section class="tgtSec">
+  <div class="secHead"><h2 class="barT">Your Targets</h2><span class="barTools">${mobile ? '' : pips(4, 10)}${addBtn}</span></div>
+  ${mobile ? `<div class="sInst">${pips(4, 10)}</div>` : ''}
+  ${liveCard()}
+  <div class="tiles">${MINE.map(tile).join('')}${roleTile()}</div>
+</section>`;
+
 function boardPage({ mobile, dark, w }) {
   const body = mobile ? `
   ${topbar(true)}${subnav('Board')}
   <main class="wrap">
-    ${panel('Your Targets', postBtn, `<div class="pipsRow">${pips(4, 10)}</div>${targetsBody()}`, 'pTargets')}
-    ${panel('Your Listings', '', T_MINE().map(tRowM).join(''))}
+    ${targetsCards(true)}
+    ${panel('Your Listings', addBtn, T_MINE().map(tRowM).join(''), 'pGapM')}
     ${panel('Wanted From You', '', ibRows())}
     ${panel('The Board', seg([['Listed', 6], ['Wanted', 6]], 'Listed'), `<div class="posRow">${posChips()}</div>${T_LISTED().map(tRowM).join('')}`)}
   </main>` : `
-  ${topbar(false)}${subnav('Board', postBtn)}
+  ${topbar(false)}${subnav('Board')}
   <main class="wrap">
     <div class="topGrid">
-      ${panel('Your Targets', pips(4, 10), targetsBody(), 'pTargets')}
+      ${targetsCards(false)}
       ${panel('Wanted From You', '', ibRows())}
     </div>
-    ${panel('Your Listings', '', tHead('Interest') + T_MINE().map(tRow).join(''), 'pGap')}
+    ${panel('Your Listings', addBtn, tHead('Interest') + T_MINE().map(tRow).join(''), 'pGap')}
     ${panel('The Board', `${seg([['Listed', 6], ['Wanted', 6]], 'Listed')}${posChips()}`, tHead('Listed By') + T_LISTED().map(tRow).join(''), 'pGap')}
   </main>`;
   return screen(mobile, dark, w, body);
@@ -327,7 +339,7 @@ function dialog(title, body, foot, { sheet = false } = {}) {
 const resultRow = (k, name, pos, pl, plName, mv, right, extra = '') => `
 <button class="res${extra}">${fc(k, pos, 'face face-36')}<span class="resTxt"><span class="namerow"><b class="resName">${name}</b>${chip(pos)}</span><span class="resMeta">${badge(pl)}${plName} · ${mv}</span></span><span class="resRight">${right}</span></button>`;
 
-const composerWho = () => dialog('Post', `
+const composerWho = () => dialog('Add', `
   <div class="searchBox">${glyph('search', 18)}<span class="searchV">Ma</span><span class="caret"></span></div>
   <div class="resGroup"><span class="resG">Your Squad</span>
     ${resultRow('manzambi', 'Manzambi', 'CM', 'aston-villa', 'Aston Villa', '€65m', '<span class="resTag">List</span>', ' resOn')}
@@ -540,11 +552,11 @@ export const BOARDS = [
   { file: 'Board.dc.html', title: 'Board', w: 1440, make: () => boardPage({ mobile: false, dark: false, w: 1440 }) },
   { file: 'BoardDark.dc.html', title: 'Board · Dark', w: 1440, make: () => boardPage({ mobile: false, dark: true, w: 1440 }) },
   { file: 'BoardMobile.dc.html', title: 'Board · 390', w: 390, make: () => boardPage({ mobile: true, dark: false, w: 390 }) },
-  { file: 'ComposerWho.dc.html', title: 'Post · Who', w: 600, make: () => composerBoard('who', 600) },
-  { file: 'ComposerListing.dc.html', title: 'Post · Your Player', w: 600, make: () => composerBoard('listing', 600) },
-  { file: 'ComposerNamed.dc.html', title: 'Post · Another Club’s Player', w: 600, make: () => composerBoard('named', 600) },
-  { file: 'ComposerRole.dc.html', title: 'Post · A Position', w: 600, make: () => composerBoard('role', 600) },
-  { file: 'ComposerSheet.dc.html', title: 'Post · 390 Sheet', w: 390, fixedH: 844, make: () => composerSheet(390) },
+  { file: 'ComposerWho.dc.html', title: 'Add · Who', w: 600, make: () => composerBoard('who', 600) },
+  { file: 'ComposerListing.dc.html', title: 'Add · Your Player', w: 600, make: () => composerBoard('listing', 600) },
+  { file: 'ComposerNamed.dc.html', title: 'Add · Another Club’s Player', w: 600, make: () => composerBoard('named', 600) },
+  { file: 'ComposerRole.dc.html', title: 'Add · A Position', w: 600, make: () => composerBoard('role', 600) },
+  { file: 'ComposerSheet.dc.html', title: 'Add · 390 Sheet', w: 390, fixedH: 844, make: () => composerSheet(390) },
   { file: 'Market.dc.html', title: 'Market', w: 1440, make: () => marketPage({ mobile: false, dark: false, w: 1440 }) },
   { file: 'MarketDark.dc.html', title: 'Market · Dark', w: 1440, make: () => marketPage({ mobile: false, dark: true, w: 1440 }) },
   { file: 'MarketMobile.dc.html', title: 'Market · 390', w: 390, make: () => marketPage({ mobile: true, dark: false, w: 390 }) },

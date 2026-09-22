@@ -309,3 +309,11 @@
 /* The three tiles share one grid, so their plates sit on one line whatever each tile's text length. */
 .d .tgtRow { grid-template-rows: 1fr auto; }
 .d .tgtRow .tile { display: grid; grid-row: span 2; grid-template-rows: subgrid; }
+
+/* Your Targets as individual cards, with a heading row that matches the panel bars */
+.d .topGrid { align-items: start; }
+.secHead { display: flex; align-items: center; gap: 16px; height: 60px; margin-bottom: 8px; }
+.secHead .barTools { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.btnAddS { padding: 0 14px 0 11px; }
+.m .secHead { height: 48px; margin: 0 0 4px; }
+.m .pGapM { margin-top: 24px; }

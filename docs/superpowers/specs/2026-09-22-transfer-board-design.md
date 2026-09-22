@@ -27,7 +27,7 @@ Each was chosen by Duke from options in the design session.
    name: "don't love the name, but i won't waste time on it until i can think
    of a better one."
 3. **Tabs:** Market · Auctions · Board · Free Agency · Deals.
-4. **One composer (Post)** for everything. The player you pick decides whether
+4. **One composer (Add)** for everything. The player you pick decides whether
    it becomes a listing or a target.
 5. **The league board has a Listed / Wanted switch**, with a position filter
    that shows both counts for each position.
@@ -66,16 +66,19 @@ workspace; the Board holds everything standing.
 
 1. **Your side of the market:** Your Listings, Your Targets and Wanted From
    You, each item showing its live state (clock, bids, interested clubs,
-   matches). **Post** sits in this area's heading.
+   matches). **Add** sits in the heading of Your Targets and Your Listings;
+   both open the composer, and the Your Listings one starts on your own squad.
+   Your Targets keeps individual cards (the auction card and target tiles);
+   the other sections are panels with the heading in the panel's own top bar.
 2. **The Board:** the Listed / Wanted switch, the position filter with both
    counts, and each view's own filters. Listed rows keep Bid and Offer. Wanted
    rows are statements with no buttons. A wanted row you could fill from your
    squad appears under Wanted From You instead, so where a row sits and which
    buttons it has always agree (DECISIONS 2026-09-10).
 
-## The composer (Post)
+## The composer (Add)
 
-Opened from Post on the Board, or already filled in from a player card, the
+Opened from Add on the Board, or already filled in from a player card, the
 player hub, a Free Agency row or a board row.
 
 **Step 1, Who.** One search across the league's player pool, grouped Your

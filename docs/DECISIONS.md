@@ -635,3 +635,15 @@ Not yet applied app-wide:
 > "i don't know for sure if i want to force every design session to use certain
 > skills, but damn it should know to do so if the specific circumstance
 > requires it."
+
+**Your Targets stays as individual cards.** On seeing it merged into one panel:
+> "it looked so much better as individual cards, now you've pieced them
+> together like a grid."
+
+**The composer button is "Add", and it isn't in the tab row.**
+> "do not put the "post" button there either, i don't like it being called
+> post, just call it add or something better idk."
+
+**Section headings: the title inside the panel's top bar (option 1 of three
+drawn).** Tentative:
+> "okay yeah, probably option 1."
