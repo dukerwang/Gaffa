@@ -136,7 +136,7 @@ never satisfy auction code. Everything above the tables is shared:
 - **`src/lib/transfers/stance.ts`** exports `listingStance` and
   `targetStance`. They stay separate functions because the flags mean opposite
   things, but they live in one module with one test file.
-- **`PostComposer`** replaces `ListingEditor` and the planned `TargetEditor`,
+- **`BoardComposer`** replaces `ListingEditor` and the planned `TargetEditor`,
   calling the existing listings routes and the targets routes from
   `feat/heritage-targets-projections` unchanged. A pure `composerMode(player,
   myTeamId)` returns `listing | named | freeAgent | role`.
@@ -184,7 +184,7 @@ Each step builds and ships on its own:
 
 1. Merge the Targets backend from `feat/heritage-targets-projections`, plus
    migration 168.
-2. Board page and `PostComposer`; `/transfers/listings` redirects to Board.
+2. Board page and `BoardComposer`; `/transfers/listings` redirects to Board.
 3. Market gains Your Move and the board preview.
 4. Remove `ListingEditor` and the Listings client once nothing imports them.
 
