@@ -67,6 +67,8 @@ const COY = [/^How\b/, /\bThat\b/, /\bIt\b/];
 // rejected. Every file an agent auto-loads is watched now. Add new ones here.
 const AGENT_DOCS = [
   'CLAUDE.md',
+  '.claude/skills/gaffa-ui-copy/SKILL.md',
+  'docs/UI_COMPONENTS.md',
   'AGENTS.md',
   'CODEX.md',
   'DESIGN.md',
@@ -85,7 +87,11 @@ const SENTENCE_CASE_RULES = [
   /sentence case for (?:headings|section titles|titles)/i,
   /\bsentence case\b/i,
 ];
-const SENTENCE_CASE_OK = /button|prose|tooltip|empty[- ]state|placeholder|aria|description|sentence case \(|stay sentence|stays sentence|are sentence|is sentence/i;
+// "button" used to be on this list, which let "Buttons are sentence case" through
+// in four agent-loaded files for two weeks after Duke reversed it (DECISIONS
+// 2026-09-09). A line that mentions buttons and sentence case is now flagged
+// unless it also says title case.
+const SENTENCE_CASE_OK = /title case|prose|tooltip|empty[- ]state|placeholder|aria|description|stays? sentence|reversed/i;
 
 function checkDocs() {
   for (const f of AGENT_DOCS) {
@@ -97,8 +103,48 @@ function checkDocs() {
       const hit = SENTENCE_CASE_RULES.find((re) => re.test(line));
       if (!hit) return;
       err(p, i + 1, 'doc-contradiction',
-        `"${line.trim().slice(0, 90)}" contradicts docs/UI_RULES.md rule 1 (headings are title case).`);
+        `"${line.trim().slice(0, 90)}" contradicts docs/UI_RULES.md rule 1 (headings, buttons and labels are title case).`);
     });
+  }
+}
+
+// ── 1b. Nothing inanimate acts (UI_RULES 4a, DECISIONS 2026-09-08) ─────────
+// The complaint Duke repeats most. It lived only in prose, so agents read past
+// it; it is checked at the moment of the write now, in app code and in the
+// prototype HTML that design canvases are built from. Only strings a reader
+// sees are checked: comments, CSS and script bodies are stripped first.
+const AGENCY = [
+  [/\b(?:lets|allows|enables) you\b/i, '"lets you" / "allows you to" is banned. State the action: "View your squad".'],
+  [/\ballows? (?:users?|managers?|clubs?) to\b/i, '"allows ... to" is banned. State the action directly.'],
+  [/\b(?:this|the|that|each|every|your)\s+(?:button|tab|card|page|dialog|modal|panel|board|section|toggle|link|chip|pill|menu|screen|view|rule|clause|filter|list|badge|icon|banner|sheet|drawer|form|field|key|shortcut)s?\s+(?:opens|closes|shows|displays|lets|allows|takes|brings|sends|saves|submits|reveals|hides|invites|ends|fills|tells|gives|keeps|puts|triggers|starts|launches|returns|lists|moves|removes|adds)\b/i,
+    'a UI object is the subject of a verb. Make a person the subject, or use an imperative.'],
+  [/\b(?:Enter|Esc|Escape|Return|Space|Ctrl\+\w+|Cmd\+\w+)\s+(?:opens|closes|returns|quits|submits|saves|selects|toggles|cancels|confirms|dismisses|goes)\b/,
+    'a key is the subject of a verb. Write "Enter to open", not "Enter opens".'],
+  [/\bif it holds\b/i, '"if it holds" is a pseudo-passive tag. Write "projected €34m".'],
+];
+
+/** The text a reader sees: string literals and JSX text in TSX, text nodes in HTML. */
+function readerText(f, src) {
+  if (/\.html?$/.test(f)) {
+    return src
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<!--[\s\S]*?-->/g, ' ')
+      .replace(/<[^>]+>/g, '\n');
+  }
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  const out = [];
+  for (const m of code.matchAll(/'([^'\n]{6,})'|"([^"\n]{6,})"|`([^`]{6,})`|>([^<>{}]{6,})</g)) out.push(m[1] ?? m[2] ?? m[3] ?? m[4]);
+  return out.join('\n');
+}
+
+function checkAgency(f, src) {
+  const text = readerText(f, src);
+  for (const [re, msg] of AGENCY) {
+    for (const m of text.matchAll(new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g'))) {
+      const at = src.indexOf(m[0]);
+      err(f, at > -1 ? lineOf(src, at) : 1, 'inanimate-agency', `"${m[0]}": ${msg}`, m[0]);
+    }
   }
 }
 
@@ -183,7 +229,7 @@ if (process.argv.includes('--hook')) {
   const j = await hookPayload();
   const ti = j.tool_input ?? {};
   const f = ti.file_path ?? j.tool_response?.filePath;
-  if (!f || !/\.(tsx|css)$/.test(f)) process.exit(0);
+  if (!f || !/\.(tsx|css|html?)$/.test(f)) process.exit(0);
   const added = [ti.new_string, ti.content, ...(ti.edits ?? []).map((e) => e.new_string)]
     .filter(Boolean).join('\n');
   ADDED_TEXT = added;
@@ -198,7 +244,7 @@ for (const f of files) {
   if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) continue;
   let src;
   try { src = fs.readFileSync(f, 'utf8'); } catch { continue; }
-  if (f.endsWith('.tsx')) checkTsx(f, src);
+  if (f.endsWith('.tsx') || /\.html?$/.test(f)) { checkTsx(f, src); checkAgency(f, src); }
   if (f.endsWith('.css')) checkCss(f, src);
 }
 

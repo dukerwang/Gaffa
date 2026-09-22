@@ -110,7 +110,7 @@ Everything below this line is **[inferred]**: a description of what the dashboar
 
 **2. Lift only the objects that sit on the anchor.** Cards on the shelf use a shadow and no border (`.card`: `--shadow-sm` plus `--shadow-lg`), because a hairline disappears against green, and they lift 2px on hover. That is still one elevation per object. [code]
 
-**3. Put real imagery on the page.** Player cut-outs on a ground mixed from their position colour (`.plinth`, `color-mix` on `--color-pos-*`), club crests enlarged and faded behind each card (`.watermark`), and club badges in every fixture row. A page of only type and figures reads flat, however well it is set. [code]
+**3. Put real imagery on the page.** Player cut-outs on a ground mixed from their position colour (`.plinth`, `color-mix` on `--color-pos-*`), and club badges in every fixture row. A page of only type and figures reads flat, however well it is set. [code] The dashboard also fades an enlarged crest behind each card (`.watermark`). Don't carry that onto new pages: Duke said on 2026-09-22 that the faded badge "doesn't land right" (see `docs/DECISIONS.md`). [decided]
 
 **4. Give each section head an instrument, not just a title.** The shelf carries a crest stack and status pills. Top Rated carries a Matchweek / Season switch. The fixtures head is an MW number tile with a finished / live / to-come strip. About Gaffa carries a small baseline rule. The heading itself is still a Title Case noun. [code]
 
