@@ -8,7 +8,8 @@
 .screen[data-theme="dark"] ::selection { background: rgba(31,163,95,.32); color: #fff; }
 .screen p, .screen h2, .screen h3 { margin: 0; }
 .screen a { color: inherit; text-decoration: none; cursor: pointer; }
-.screen button { font: inherit; cursor: pointer; }
+/* Zero specificity, so any class that sets a font on a button wins. */
+:where(.screen button) { font: inherit; cursor: pointer; }
 .screen img { display: block; }
 .screen :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .gl { flex-shrink: 0; }

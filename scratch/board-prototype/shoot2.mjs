@@ -1,7 +1,7 @@
 import { chromium } from '/Users/dukewang/Fantasy Futbol/node_modules/playwright/index.mjs';
 import fs from 'node:fs'; import path from 'node:path';
 const HERE = path.dirname(new URL(import.meta.url).pathname);
-const { BOARDS } = await import('./board.mjs');
+const { BOARDS } = await import(process.argv[2] || './board.mjs');
 const files = BOARDS.map(b => [b.file.replace('.dc.html',''), b.w, b.fixedH]);
 const browser = await chromium.launch();
 const heights = {}; const report = {};
@@ -39,5 +39,7 @@ for (const [f,w,fixedH] of files) {
   await page.close();
 }
 await browser.close();
-fs.writeFileSync(path.join(HERE, 'board-heights.json'), JSON.stringify(heights, null, 1));
+const hp2 = path.join(HERE, 'board-heights.json');
+const prev = fs.existsSync(hp2) ? JSON.parse(fs.readFileSync(hp2, 'utf8')) : {};
+fs.writeFileSync(hp2, JSON.stringify({ ...prev, ...heights }, null, 1));
 console.log(JSON.stringify(report, null, 1));
