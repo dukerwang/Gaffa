@@ -209,53 +209,96 @@ const listedMobile = () => `
 
 const postBtn = `<button class="btn btnGo btnPost">${glyph('plus', 14)}Post</button>`;
 
+// ── Option 1: every section is one panel, its heading in the panel's own top bar ──
+const panel = (title, tools, body, cls = '') => `
+<section class="panel ${cls}">
+  <header class="bar"><h2 class="barT">${title}</h2>${tools ? `<span class="barTools">${tools}</span>` : ''}</header>
+  ${body}
+</section>`;
+
+// One row grammar for your listings and the board. Line 1 carries the facts,
+// line 2 the qualifiers: the player's club under his name, the price's kind under the price.
+const T_MINE = () => [
+  { k: 'havertz', name: 'Havertz', pos: 'ST', meta: `${badge('arsenal')}Arsenal · €55m`,
+    who: `${crest('ZFC', 20)}ChelsZ FC lead`, whoSub: '2 bids', terms: 'For sale',
+    price: '€36m', priceK: 'High bid', ends: '1d 06h', live: true, act: ['View', 'quiet'] },
+  { k: 'ndiaye', name: 'Ndiaye', pos: 'LW', meta: `${badge('man-city')}Man City · €55m`,
+    who: `${crest('COYS', 20)}Hayden FC want him`, terms: 'Offers only',
+    price: '€45m', priceK: 'Asking', ends: '', act: ['Edit', 'quiet'] },
+];
+const T_LISTED = () => [
+  { k: 'saliba', name: 'Saliba', pos: 'CB', meta: `<span class="you">${crest('XABI', 12)}Your target</span>`,
+    who: `${crest('PKNG', 20)}Pizzaking’s Club`, terms: 'For sale', price: '€59m', priceK: 'Next bid', ends: '2d 04h', live: true, act: ['Bid', 'go'] },
+  { k: 'hall', name: 'Hall', pos: 'LWB', meta: `<span class="you">${crest('XABI', 12)}Fits your LB target</span>`,
+    who: `${crest('ZFC', 20)}ChelsZ FC`, terms: 'Offers only', price: '€30m', priceK: 'Asking', ends: '', act: ['Offer', 'quiet'] },
+  { k: 'tonali', name: 'Tonali', pos: 'DM', meta: `${badge('spurs')}Spurs · €80m`,
+    who: `${crest('PKNG', 20)}Pizzaking’s Club`, terms: 'For sale · asking €60m', price: '€48m', priceK: 'Floor', ends: '2d 20h', act: ['Bid', 'go'] },
+  { k: 'vandeven', name: 'Van de Ven', pos: 'CB', meta: `${badge('spurs')}Spurs · €50m`,
+    who: `${crest('COYS', 20)}Hayden FC`, terms: 'Release clause only', price: '€70m', priceK: 'Clause', ends: '', act: ['Pay Clause', 'go'] },
+  { k: 'kudus', name: 'Kudus', pos: 'RW', meta: `${badge('spurs')}Spurs · €50m`,
+    who: `${crest('YANG', 20)}tottenyang FC`, terms: 'Wants players', price: '', priceK: '', ends: '', act: ['Offer', 'quiet'] },
+  { k: 'delap', name: 'Delap', pos: 'ST', meta: `${badge('nottingham-forest')}Nott'm Forest · €28m`,
+    who: `${crest('CHAI', 20)}Tea FC`, terms: 'Would loan him out', price: '', priceK: '', ends: '', act: ['Offer', 'quiet'] },
+];
+
+const tHead = (who) => `<div class="rh"><span class="hPlayer">Player</span><span>${who}</span><span>Terms</span><span class="r">Price</span><span class="r">Ends</span><span></span></div>`;
+const tRow = (r) => `
+<a class="rw">
+  <span class="cFace">${fc(r.k, r.pos, 'face face-40')}</span>
+  <span class="pTxt"><span class="namerow"><b class="pName">${r.name}</b>${chip(r.pos)}</span><span class="pMeta">${r.meta}</span></span>
+  <span class="cWho"><span class="whoLine">${r.who}</span>${r.whoSub ? `<span class="whoSub">${r.whoSub}</span>` : ''}</span>
+  <span class="cTerms">${r.terms}</span>
+  <span class="cPrice">${r.price ? `<b>${r.price}</b><span class="pk">${r.priceK}</span>` : '<b class="none">–</b>'}</span>
+  <span class="cEnds${r.live ? ' endsLive' : ''}">${r.ends ? `${r.live ? '<i class="liveDot"></i>' : ''}${r.ends}` : ''}</span>
+  <span class="cAct"><button class="btn btnSm ${r.act[1] === 'go' ? 'btnGo' : 'btnQuiet'}">${r.act[0]}</button></span>
+</a>`;
+// Mobile: the same facts in a stacked row.
+const tRowM = (r) => `
+<a class="rwM">
+  ${fc(r.k, r.pos, 'face face-44')}
+  <span class="pTxt"><span class="namerow"><b class="pName">${r.name}</b>${chip(r.pos)}</span><span class="pMeta">${r.meta}</span><span class="mWho">${r.who}<span class="dot">·</span>${r.terms.split(' · ')[0]}</span></span>
+  <span class="mSide">${r.price ? `<b class="mPrice">${r.price}</b><span class="pk">${r.priceK}</span>` : '<b class="mPrice none">–</b>'}${r.ends ? `<span class="cEnds${r.live ? ' endsLive' : ''}">${r.live ? '<i class="liveDot"></i>' : ''}${r.ends}</span>` : ''}</span>
+  <span class="mAct"><button class="btn btnSm ${r.act[1] === 'go' ? 'btnGo' : 'btnQuiet'}">${r.act[0]}</button></span>
+</a>`;
+
+const COUNT = { CB: 2, LWB: 1, DM: 1, RW: 1, ST: 1 };
+const posChips = () => `<span class="pos">${SPINE.map((p) => {
+  const n = COUNT[p] ?? 0;
+  return `<button class="pch${n ? '' : ' pch0'}${p === 'CB' ? ' pchOn' : ''}" style="--pf: var(--color-pos-${p.toLowerCase()}); --pi: var(--color-pos-${p.toLowerCase()}-on);">${p}${n ? `<span class="pchN">${n}</span>` : ''}</button>`;
+}).join('')}</span>`;
+
+const ibRows = () => INBOX.map((r) => `
+  <div class="ib">
+    <span class="ibCrest">${crest(r.by, 28)}</span>
+    <div class="ibBody">
+      <p class="ibHead">${r.head}</p>
+      <p class="ibTerms">${r.terms[0]}${r.terms[1] ? ` · up to <b class="cash">${r.terms[1]}</b>` : ''}</p>
+      <div class="who">${r.who()}</div>
+      <div class="acts"><button class="btn btnQuiet">${r.acts[0]}</button><button class="btn btnGo">${r.acts[1]}</button></div>
+    </div>
+  </div>`).join('');
+
+const targetsBody = () => `
+  <div class="tgtLive">${liveCard()}</div>
+  <div class="tgtRow">${MINE.map(tile).join('')}${roleTile()}</div>`;
+
 function boardPage({ mobile, dark, w }) {
   const body = mobile ? `
   ${topbar(true)}${subnav('Board')}
   <main class="wrap">
-    <section class="sect">
-      <div class="lock"><h2 class="lockT">Your Targets</h2><span class="lockEnd">${postBtn}</span></div>
-      <div class="sInst">${pips(4, 10)}</div>
-      ${liveCard()}
-      <div class="tiles">${MINE.map(tile).join('')}${roleTile()}</div>
-    </section>
-    <section class="sect">
-      <div class="lock"><h2 class="lockT">Your Listings</h2></div>
-      ${myListings()}
-    </section>
-    <section class="sect">
-      <div class="lock"><h2 class="lockT">Wanted From You</h2></div>
-      ${inbox()}
-    </section>
-    <section class="sect">
-      <div class="lock"><h2 class="lockT">The Board</h2><span class="lockEnd">${seg([['Listed', 6], ['Wanted', 6]], 'Listed')}</span></div>
-      ${chart(true)}
-      ${listedMobile()}
-    </section>
+    ${panel('Your Targets', postBtn, `<div class="pipsRow">${pips(4, 10)}</div>${targetsBody()}`, 'pTargets')}
+    ${panel('Your Listings', '', T_MINE().map(tRowM).join(''))}
+    ${panel('Wanted From You', '', ibRows())}
+    ${panel('The Board', seg([['Listed', 6], ['Wanted', 6]], 'Listed'), `<div class="posRow">${posChips()}</div>${T_LISTED().map(tRowM).join('')}`)}
   </main>` : `
   ${topbar(false)}${subnav('Board', postBtn)}
   <main class="wrap">
     <div class="topGrid">
-      <div class="col">
-        <section class="sect">
-          <div class="lock"><h2 class="lockT">Your Targets</h2><span class="lockInst">${pips(4, 10)}</span></div>
-          ${liveCard()}
-          <div class="tiles">${MINE.map(tile).join('')}${roleTile()}</div>
-        </section>
-      </div>
-      <section class="sect">
-        <div class="lock"><h2 class="lockT">Wanted From You</h2></div>
-        ${inbox()}
-      </section>
+      ${panel('Your Targets', pips(4, 10), targetsBody(), 'pTargets')}
+      ${panel('Wanted From You', '', ibRows())}
     </div>
-    <section class="sect sectGap">
-      <div class="lock"><h2 class="lockT">Your Listings</h2></div>
-      ${myListings()}
-    </section>
-    <section class="sect sectBoard">
-      <div class="lock lockBoard"><h2 class="lockT">The Board</h2>${seg([['Listed', 6], ['Wanted', 6]], 'Listed')}<span class="lockEnd">${chart(false)}</span></div>
-      ${listedDesktop()}
-    </section>
+    ${panel('Your Listings', '', tHead('Interest') + T_MINE().map(tRow).join(''), 'pGap')}
+    ${panel('The Board', `${seg([['Listed', 6], ['Wanted', 6]], 'Listed')}${posChips()}`, tHead('Listed By') + T_LISTED().map(tRow).join(''), 'pGap')}
   </main>`;
   return screen(mobile, dark, w, body);
 }
