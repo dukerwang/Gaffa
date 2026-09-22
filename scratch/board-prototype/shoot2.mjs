@@ -30,6 +30,16 @@ for (const [f,w,fixedH] of files) {
       if (tops.size > 1) wraps.push((el.getAttribute('class') || el.tagName) + ': ' + el.textContent.trim().slice(0, 50));
     });
     issues.push(...wraps.map(w => 'WRAP ' + w));
+    // Text boxes in the same row that intersect each other
+    document.querySelectorAll('.rw, .rwM, .ml, .mv, .ib, .brM').forEach((row) => {
+      const leaves = [...row.querySelectorAll('*')].filter((e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()));
+      const rects = leaves.map((e) => { const g = document.createRange(); g.selectNodeContents(e); return [e, g.getBoundingClientRect()]; });
+      for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
+        const [ea, a] = rects[i], [eb, b] = rects[j];
+        if (ea.contains(eb) || eb.contains(ea)) continue;
+        if (a.width && b.width && a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) issues.push('OVERLAP ' + ea.textContent.trim().slice(0, 24) + ' / ' + eb.textContent.trim().slice(0, 24));
+      }
+    });
     const imgs = [...document.images].filter(i => !i.naturalWidth).map(i => i.src);
     return { h, issues: [...new Set(issues)].slice(0, 20), broken: imgs };
   });

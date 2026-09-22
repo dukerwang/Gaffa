@@ -317,3 +317,50 @@
 .btnAddS { padding: 0 14px 0 11px; }
 .m .secHead { height: 48px; margin: 0 0 4px; }
 .m .pGapM { margin-top: 24px; }
+
+/* ══ Option A (22 Sep): headings on the cream, portraits in the rows ══ */
+.sh { display: flex; align-items: center; gap: 14px; min-height: 52px; margin-bottom: 14px; }
+.shT { font-family: var(--font-serif); font-weight: 700; font-size: 30px; line-height: 1; letter-spacing: -0.03em; white-space: nowrap; }
+.shTools { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.hstack { display: flex; flex-shrink: 0; }
+.sf { position: relative; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: color-mix(in oklab, var(--pos, var(--color-text-muted)) 70%, black); box-shadow: 0 0 0 3px var(--color-bg-primary); flex-shrink: 0; }
+.sf + .sf { margin-left: -11px; }
+.sf img { position: absolute; top: 2%; left: -42%; width: 184%; max-width: none; }
+.sf.faceTall img { top: 0; left: -14%; width: 128%; }
+.sfPos { background: var(--pos); color: var(--pi); font-family: var(--font-label); font-weight: 700; font-size: 12px; }
+.sfCrest { background: var(--color-bg-card); }
+.sfMore { background: var(--color-text-primary); color: var(--color-bg-primary); font-family: var(--font-label); font-weight: 700; font-size: 13px; }
+.blkGap { margin-top: 44px; }
+.d .topGrid { align-items: start; }
+.tgtSec .sh { margin-bottom: 14px; }
+.secHead { display: none; }
+
+/* Rows: every cell centred on the row, every column left-aligned, header and cell alike */
+.rh, .rw { grid-template-columns: 48px minmax(0, 1fr) 220px 190px 104px 96px 124px; }
+.rw { align-items: center; }
+.cAct { align-self: center; margin-left: 12px; }
+.cPrice { align-items: flex-start; }
+.cEnds { text-align: left; }
+.ptile { position: relative; display: block; width: 48px; height: 48px; border-radius: 10px; overflow: hidden; background: color-mix(in oklab, var(--pos) 68%, black); }
+.ptile img { position: absolute; top: 4px; left: 50%; width: 74px; max-width: none; transform: translateX(-50%); }
+.ptile img.ptTall { top: 0; width: 60px; }
+.ptile.faceNone { display: grid; place-items: center; color: #fff; font-family: var(--font-serif); font-weight: 700; font-size: 15px; }
+.rwMine { background: var(--color-green-50); }
+[data-theme="dark"] .rwMine { background: rgba(31,163,95,.08); }
+
+/* Mobile: the same rules */
+.rwM { grid-template-columns: 44px minmax(0, 1fr) 76px; align-items: center; }
+.rwM .ptile { width: 44px; height: 44px; }
+.mSide { align-items: flex-start; }
+.m .sh { min-height: 44px; margin-bottom: 10px; }
+.m .shT { font-size: 25px; }
+.m .sf { width: 32px; height: 32px; }
+.m .sf + .sf { margin-left: -10px; }
+.m .blkGap { margin-top: 32px; }
+.m .hstack .sf:nth-child(n+4) { display: none; }
+
+.mWho { grid-column: 2 / -1; margin-top: -4px; }
+.segRow { margin: -2px 0 12px; }
+.segRow .seg { display: flex; }
+.segRow .segB { flex: 1; height: 36px; }
+.segB { white-space: nowrap; }

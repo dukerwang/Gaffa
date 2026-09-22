@@ -58,6 +58,9 @@ them and getting them wrong. If you change a rule, change it here first.
     Labels and column heads are Archivo Narrow. — `design-2.0/README.md:378`
 11. **Reuse `--color-*` tokens.** No raw hex in component CSS.
 12. **Both themes are first class**, and WCAG AA is a hard requirement in both.
+12a. **Tables: every cell centres on its row, and every column is left-aligned**,
+    header and cell alike, figures and times included. A two-line cell (a name
+    over its club, a price over its kind) centres as a block. — DECISIONS 2026-09-22
 
 ## Process
 

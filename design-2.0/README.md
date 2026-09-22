@@ -479,6 +479,11 @@ and the row still read loose. `align-self: baseline`, not `start`: the values ar
 sizes, so top-aligning trades one misalignment for a subtler one. Objects (a portrait, a
 button) keep the row's centre; type takes the baseline.
 
+> **Superseded 2026-09-22.** This was an agent's rule, not Duke's. Applied to the Board's
+> tables it left every cell riding above the row's centre, and Duke rejected it: cells centre
+> vertically on the row, and every column is left-aligned. See `docs/UI_RULES.md` rule 12a
+> and `docs/DECISIONS.md` 2026-09-22.
+
 **5. `--color-accent` is a fill; `--color-accent-ink` is the text.** `globals.css` already
 said so and the port used the fill token for text anyway — **4.33:1** in dark on every accent
 figure and label. The genuinely missing token was **`--color-on-accent`**, the label *on* an

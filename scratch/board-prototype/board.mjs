@@ -227,9 +227,9 @@ const T_MINE = () => [
     price: '€45m', priceK: 'Asking', ends: '', act: ['Edit', 'quiet'] },
 ];
 const T_LISTED = () => [
-  { k: 'saliba', name: 'Saliba', pos: 'CB', meta: `<span class="you">${crest('XABI', 12)}Your target</span>`,
+  { k: 'saliba', name: 'Saliba', pos: 'CB', mine: true, meta: `<span class="you">${crest('XABI', 12)}Your target</span>`,
     who: `${crest('PKNG', 20)}Pizzaking’s Club`, terms: 'For sale', price: '€59m', priceK: 'Next bid', ends: '2d 04h', live: true, act: ['Bid', 'go'] },
-  { k: 'hall', name: 'Hall', pos: 'LWB', meta: `<span class="you">${crest('XABI', 12)}Fits your LB target</span>`,
+  { k: 'hall', name: 'Hall', pos: 'LWB', mine: true, meta: `<span class="you">${crest('XABI', 12)}Fits your LB target</span>`,
     who: `${crest('ZFC', 20)}ChelsZ FC`, terms: 'Offers only', price: '€30m', priceK: 'Asking', ends: '', act: ['Offer', 'quiet'] },
   { k: 'tonali', name: 'Tonali', pos: 'DM', meta: `${badge('spurs')}Spurs · €80m`,
     who: `${crest('PKNG', 20)}Pizzaking’s Club`, terms: 'For sale · asking €60m', price: '€48m', priceK: 'Floor', ends: '2d 20h', act: ['Bid', 'go'] },
@@ -241,10 +241,16 @@ const T_LISTED = () => [
     who: `${crest('CHAI', 20)}Tea FC`, terms: 'Would loan him out', price: '', priceK: '', ends: '', act: ['Offer', 'quiet'] },
 ];
 
-const tHead = (who) => `<div class="rh"><span class="hPlayer">Player</span><span>${who}</span><span>Terms</span><span class="r">Price</span><span class="r">Ends</span><span></span></div>`;
+// Square portrait on the player's position colour (option A), as on the target tiles.
+const ptile = (k, p, cls = 'ptile') => {
+  const st = `--pos: var(--color-pos-${p.toLowerCase()});`;
+  if (PHOTO[k]?.none) return `<span class="${cls} faceNone" style="${st}">${PHOTO[k].none}</span>`;
+  return `<span class="${cls}" style="${st}"><img class="${PHOTO[k]?.tall ? 'ptTall' : ''}" src="${img(k)}" alt=""></span>`;
+};
+const tHead = (who) => `<div class="rh"><span class="hPlayer">Player</span><span>${who}</span><span>Terms</span><span>Price</span><span>Ends</span><span></span></div>`;
 const tRow = (r) => `
-<a class="rw">
-  <span class="cFace">${fc(r.k, r.pos, 'face face-40')}</span>
+<a class="rw${r.mine ? ' rwMine' : ''}">
+  <span class="cFace">${ptile(r.k, r.pos)}</span>
   <span class="pTxt"><span class="namerow"><b class="pName">${r.name}</b>${chip(r.pos)}</span><span class="pMeta">${r.meta}</span></span>
   <span class="cWho"><span class="whoLine">${r.who}</span>${r.whoSub ? `<span class="whoSub">${r.whoSub}</span>` : ''}</span>
   <span class="cTerms">${r.terms}</span>
@@ -254,10 +260,11 @@ const tRow = (r) => `
 </a>`;
 // Mobile: the same facts in a stacked row.
 const tRowM = (r) => `
-<a class="rwM">
-  ${fc(r.k, r.pos, 'face face-44')}
-  <span class="pTxt"><span class="namerow"><b class="pName">${r.name}</b>${chip(r.pos)}</span><span class="pMeta">${r.meta}</span><span class="mWho">${r.who}<span class="dot">·</span>${r.terms.split(' · ')[0]}</span></span>
+<a class="rwM${r.mine ? ' rwMine' : ''}">
+  ${ptile(r.k, r.pos)}
+  <span class="pTxt"><span class="namerow"><b class="pName">${r.name}</b>${chip(r.pos)}</span><span class="pMeta">${r.meta}</span></span>
   <span class="mSide">${r.price ? `<b class="mPrice">${r.price}</b><span class="pk">${r.priceK}</span>` : '<b class="mPrice none">–</b>'}${r.ends ? `<span class="cEnds${r.live ? ' endsLive' : ''}">${r.live ? '<i class="liveDot"></i>' : ''}${r.ends}</span>` : ''}</span>
+  <span class="mWho">${r.who}<span class="dot">·</span>${r.terms.split(' · ')[0]}</span>
   <span class="mAct"><button class="btn btnSm ${r.act[1] === 'go' ? 'btnGo' : 'btnQuiet'}">${r.act[0]}</button></span>
 </a>`;
 
@@ -282,35 +289,52 @@ const targetsBody = () => `
   <div class="tgtLive">${liveCard()}</div>
   <div class="tgtRow">${MINE.map(tile).join('')}${roleTile()}</div>`;
 
+// Option A heading: stands on the cream, leads with a stack of what the section is about.
+const sface = (k, p) => PHOTO[k]?.none
+  ? `<span class="sf faceNone" style="--pos: var(--color-pos-${p.toLowerCase()});">${PHOTO[k].none}</span>`
+  : `<span class="sf${PHOTO[k]?.tall ? ' faceTall' : ''}" style="--pos: var(--color-pos-${p.toLowerCase()});"><img src="${img(k)}" alt=""></span>`;
+const sdisc = (p) => `<span class="sf sfPos" style="--pos: var(--color-pos-${p.toLowerCase()}); --pi: var(--color-pos-${p.toLowerCase()}-on);">${p}</span>`;
+const screst = (c) => `<span class="sf sfCrest">${crest(c, 24)}</span>`;
+const sh = (title, items, tools = '') => `
+<div class="sh">
+  <span class="hstack">${items.slice(0, 5).join('')}${items.length > 5 ? `<span class="sf sfMore">+${items.length - 5}</span>` : ''}</span>
+  <h2 class="shT">${title}</h2>
+  ${tools ? `<span class="shTools">${tools}</span>` : ''}
+</div>`;
+const tgtStack = () => [sface('saliba', 'CB'), sface('haaland', 'ST'), sface('wirtz', 'AM'), sdisc('LB')];
+const listStack = () => T_MINE().map((r) => sface(r.k, r.pos));
+const boardStack = () => T_LISTED().map((r) => sface(r.k, r.pos));
+const askStack = () => INBOX.map((r) => screst(r.by));
+
 const addBtn = `<button class="btn btnGo btnSm btnAddS">${glyph('plus', 14)}Add</button>`;
 
-// Your Targets stays as individual cards (Targets C). Its heading row matches the
-// panel bars beside it in size and height, so the two titles line up.
 const targetsCards = (mobile) => `
 <section class="tgtSec">
-  <div class="secHead"><h2 class="barT">Your Targets</h2><span class="barTools">${mobile ? '' : pips(4, 10)}${addBtn}</span></div>
+  ${sh('Your Targets', tgtStack(), `${mobile ? '' : pips(4, 10)}${addBtn}`)}
   ${mobile ? `<div class="sInst">${pips(4, 10)}</div>` : ''}
   ${liveCard()}
   <div class="tiles">${MINE.map(tile).join('')}${roleTile()}</div>
 </section>`;
+
+const block = (head, body, cls = '') => `<section class="blk ${cls}">${head}<div class="panel">${body}</div></section>`;
 
 function boardPage({ mobile, dark, w }) {
   const body = mobile ? `
   ${topbar(true)}${subnav('Board')}
   <main class="wrap">
     ${targetsCards(true)}
-    ${panel('Your Listings', addBtn, T_MINE().map(tRowM).join(''), 'pGapM')}
-    ${panel('Wanted From You', '', ibRows())}
-    ${panel('The Board', seg([['Listed', 6], ['Wanted', 6]], 'Listed'), `<div class="posRow">${posChips()}</div>${T_LISTED().map(tRowM).join('')}`)}
+    ${block(sh('Your Listings', listStack(), addBtn), T_MINE().map(tRowM).join(''), 'blkGap')}
+    ${block(sh('Wanted From You', askStack()), ibRows(), 'blkGap')}
+    <section class="blk blkGap">${sh('The Board', boardStack())}<div class="segRow">${seg([['Listed', 6], ['Wanted', 6]], 'Listed')}</div><div class="panel"><div class="posRow">${posChips()}</div>${T_LISTED().map(tRowM).join('')}</div></section>
   </main>` : `
   ${topbar(false)}${subnav('Board')}
   <main class="wrap">
     <div class="topGrid">
       ${targetsCards(false)}
-      ${panel('Wanted From You', '', ibRows())}
+      ${block(sh('Wanted From You', askStack()), ibRows())}
     </div>
-    ${panel('Your Listings', addBtn, tHead('Interest') + T_MINE().map(tRow).join(''), 'pGap')}
-    ${panel('The Board', `${seg([['Listed', 6], ['Wanted', 6]], 'Listed')}${posChips()}`, tHead('Listed By') + T_LISTED().map(tRow).join(''), 'pGap')}
+    ${block(sh('Your Listings', listStack(), addBtn), tHead('Interest') + T_MINE().map(tRow).join(''), 'blkGap')}
+    ${block(sh('The Board', boardStack(), `${seg([['Listed', 6], ['Wanted', 6]], 'Listed')}${posChips()}`), tHead('Listed By') + T_LISTED().map(tRow).join(''), 'blkGap')}
   </main>`;
   return screen(mobile, dark, w, body);
 }

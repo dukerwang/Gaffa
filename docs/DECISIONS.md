@@ -647,3 +647,18 @@ Not yet applied app-wide:
 **Section headings: the title inside the panel's top bar (option 1 of three
 drawn).** Tentative:
 > "okay yeah, probably option 1."
+
+**Tables centre vertically and left-align every column.**
+> "after the player row, everything else is not centered horizontally for some
+> reason, it's floating higher than center, why is that? ... so listed by and
+> terms is left aligned, why the hell is price and ends right aligned? it
+> literally makes zero sense"
+
+This overrides the agent-written baseline rule in `design-2.0/README.md` (item 4)
+and the "figures right" table convention. Now `docs/UI_RULES.md` rule 12a.
+
+**Section headings: a stack of what the section is about, then the title, on
+the cream (option A of two).**
+> "go with A. the score bug thing looks nasty in my opinion."
+
+Supersedes the tentative "heading inside the panel" choice above for the Board.
