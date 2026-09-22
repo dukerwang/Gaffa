@@ -593,3 +593,45 @@ The green strip is not the agreed answer; no header pattern is settled.
 **Archivo Narrow may be on its way out.** Not a decision yet:
 > "i think i'm growing tired of one of the fonts, its the font that the buttons
 > like "add target" are in, i don't think it matches the rest of our fonts"
+
+---
+
+## 2026-09-22 — Transfer Board: Listings and Targets merge
+
+Spec: `docs/superpowers/specs/2026-09-22-transfer-board-design.md`. Chosen from
+options in a design session; the spec lists each choice.
+
+**Market stays the transfers home.**
+> "my original idea for market was as almost like a "transfers home" a page
+> that tells you everything that's going on and leads to more of the
+> subfeatures, like free agency, auctions, listings, etc."
+
+It gains Your Move (every open decision across Transfers). Listings and
+Targets merge into one tab, provisionally called Board:
+> "go with board i guess. don't love the name, but i won't waste time on it
+> until i can think of a better one."
+
+**The merge has to be one feature, not two pages side by side.**
+> "i want both the interface that houses them and the actual code logic, flow
+> and feature process itself to be harmonious and flow together beautifully
+> from a human gaffa user standpoint."
+
+**Every choice should come with how it improves Gaffa.**
+> "if we merge things i would need to know how this changes and how it
+> improves gaffa. but i mean likewise i would want to know that for any other
+> decision too"
+
+**Small lines must earn their space.** Applies app-wide, not just to the Board.
+> "make sure they're actually informative and as least noisy as possible, again
+> i don't want ui elements that take up space but don't contribute anything
+> meaningful in terms of data or appearance. and please make sure they are
+> formatted properly and don't mess with the look of the page"
+
+**Sofia Sans Semi Condensed is the preferred replacement for Archivo Narrow.**
+Not yet applied app-wide:
+> "sofia sans actually looks pretty good to me."
+
+**Skills should load when the work calls for them.**
+> "i don't know for sure if i want to force every design session to use certain
+> skills, but damn it should know to do so if the specific circumstance
+> requires it."
