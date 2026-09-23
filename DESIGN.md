@@ -44,7 +44,7 @@ figures are materials the app is built from; they do not make it a broadsheet. [
 > here, that is this sentence's ghost. It is not what Duke asked for.
 
 * **Ground & Tone**: Warm, bright cream field (`#F8F4EC`) on desktop/mobile paired with deep forest green chrome (`#185B37`). Not vintage/yellow beige, but fresh, readable, and sharp. [code] [decided]
-* **Sports Data Craft**: Visual weight is carried by typography (Newsreader serif display and Hanken Grotesk body and labels) rather than decorative graphics or generic cards. [code]
+* **Sports Data Craft**: Visual weight is carried by typography (Newsreader serif display, Sofia Sans Semi Condensed labels, and Hanken Grotesk body) rather than decorative graphics or generic cards. [code]
 * **Product, Not Costume**: Gaffa is sophisticated product UI for real football managers, not a themed novelty game. [decided]
 
 ---
@@ -71,7 +71,7 @@ All declared in `src/app/globals.css`. Light values under `:root, .g-theme-light
 * **Typography**:
   - Display / Names / Scores: `Newsreader` (`--font-serif`)
   - Body & General UI: `Hanken Grotesk` (`--font-sans`)
-  - Column Heads / Badges / Buttons: `Archivo Narrow` (`--font-condensed`) [code]. Retired by decision on 2026-09-23: new work uses Hanken Grotesk here, and the token is still loaded until an app-wide swap lands. [decided]
+  - Column Heads / Badges / Buttons: `Archivo Narrow` (`--font-condensed`) [code]. Retired by decision on 2026-09-23: new work uses Sofia Sans Semi Condensed here, and the Archivo token is still loaded until an app-wide swap lands. [decided]
   - Numeric Tickers / Stopwatches: `JetBrains Mono` (`--font-mono`) [code]
 * **Motion & Physics**:
   - `--dur-instant: 90ms` · `--dur-fast: 140ms` · `--dur-base: 220ms` · `--dur-slow: 420ms`

@@ -597,5 +597,15 @@ The green strip is not the agreed answer; no header pattern is settled.
 and settled while reviewing the Player Card 2.0 prototype:
 > "we are not using archivo narrow anymore"
 
-New work uses Newsreader, Hanken Grotesk and JetBrains Mono only. The app
-still loads it as `--font-condensed`; swapping that out is a separate change.
+Its replacement is **Sofia Sans Semi Condensed**, picked during the Board
+prototype on 2026-09-22 (recorded on the `docs/board-spec` branch):
+> "sofia sans actually looks pretty good to me."
+
+It takes Archivo's job: labels, column heads and buttons. Newsreader, Hanken
+Grotesk and JetBrains Mono keep theirs. The app still loads Archivo as
+`--font-condensed`; the app-wide swap is a separate change.
+
+> **Correction, 2026-09-23.** An earlier version of this entry, written the same
+> day, said new work should use Hanken Grotesk in Archivo's place. That was an
+> agent's assumption, not Duke's choice: "who told you it swaps with hanken
+> grotesk? i literally picked a font".
