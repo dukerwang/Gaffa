@@ -31,7 +31,7 @@ for (const [f,w,fixedH] of files) {
     });
     issues.push(...wraps.map(w => 'WRAP ' + w));
     // Text boxes in the same row that intersect each other
-    document.querySelectorAll('.rw, .rwM, .ml, .mv, .ib, .brM').forEach((row) => {
+    document.querySelectorAll('.rw, .rwM, .ml, .mv, .ib, .brM, .mvRow, .pvR, .wiR, .cell, .tBody').forEach((row) => {
       const leaves = [...row.querySelectorAll('*')].filter((e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()));
       const rects = leaves.map((e) => { const g = document.createRange(); g.selectNodeContents(e); return [e, g.getBoundingClientRect()]; });
       for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {

@@ -9,19 +9,19 @@ import { MINE, INBOX, liveCard, tile, roleTile, T_MINE, T_LISTED, topbar, subnav
 const HERE = path.dirname(new URL(import.meta.url).pathname);
 const W = 390;
 
-const chev = `<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>`;
+export const chev = `<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>`;
 const addBtn = `<button class="btn btnGo addM">${glyph('plus', 15)}Add</button>`;
 
 // Segmented control under the tabs: three peer views of one page.
-const views = (on) => `<div class="views"><div class="viewsIn">${[['Yours', null], ['Wanted From You', 3], ['Board', 6]].map(([n, c]) => `<button class="vw${n === on ? ' vwOn' : ''}">${n}${c ? `<span class="vwN">${c}</span>` : ''}</button>`).join('')}</div></div>`;
+export const views = (on) => `<div class="views"><div class="viewsIn">${[['Yours', null], ['Wanted From You', 3], ['Board', 6]].map(([n, c]) => `<button class="vw${n === on ? ' vwOn' : ''}">${n}${c ? `<span class="vwN">${c}</span>` : ''}</button>`).join('')}</div></div>`;
 
-const head = (title, stack, tools = '') => `<div class="mh">${stack ? `<span class="hstack">${stack.join('')}</span>` : ''}<h2 class="mhT">${title}</h2>${tools ? `<span class="mhTools">${tools}</span>` : ''}</div>`;
+export const head = (title, stack, tools = '') => `<div class="mh">${stack ? `<span class="hstack">${stack.join('')}</span>` : ''}<h2 class="mhT">${title}</h2>${tools ? `<span class="mhTools">${tools}</span>` : ''}</div>`;
 
 // A list cell: portrait, two lines, a trailing figure, a chevron. The whole cell is the tap target.
-const SUB = {
+export const SUB = {
   havertz: 'Leading · 2 bids', ndiaye: 'Wants him · offers only',
 };
-const cell = (r) => {
+export const cell = (r) => {
   const by = (r.who.match(/<svg[\s\S]*?<\/svg>/) || [''])[0];
   const fact = SUB[r.k] ?? r.terms.split(' · ')[0];
   return `
@@ -43,7 +43,7 @@ const askCell = (r, i, who) => `
   ${chev}
 </a>`;
 
-const group = (inner) => `<div class="grp">${inner}</div>`;
+export const group = (inner) => `<div class="grp">${inner}</div>`;
 
 function yours() {
   return `
@@ -100,7 +100,7 @@ function screen(view, { dark = false, withSheet = false } = {}) {
   </div>`;
 }
 
-const STYLE = ['targets.css', 'board.css'].map((f) => fs.readFileSync(path.join(HERE, f), 'utf8')).join('\n') + `
+export const PHONE_CSS = `
 /* ══ Phone composition ══ */
 .phone { position: relative; }
 .phone .subIn { overflow: hidden; }
@@ -193,6 +193,8 @@ const STYLE = ['targets.css', 'board.css'].map((f) => fs.readFileSync(path.join(
 .shActs { display: grid; gap: 8px; }
 .btn.big { height: 50px; font-size: 17px; width: 100%; }
 `;
+
+const STYLE = ['targets.css', 'board.css'].map((f) => fs.readFileSync(path.join(HERE, f), 'utf8')).join('\n') + PHONE_CSS;
 
 const FONTS = 'https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=Hanken+Grotesk:wght@400;500;600;700&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap';
 function doc(inner, h, title, mode) {
