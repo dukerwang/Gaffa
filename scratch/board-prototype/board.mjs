@@ -20,7 +20,7 @@ const face = (k, p, cls = 'face', opt = {}) => {
   if (opt.none) return `<span class="${cls} faceNone" style="${style}">${opt.none}</span>`;
   return `<span class="${cls}${opt.tall ? ' faceTall' : ''}" style="${style}"><img src="${img(k)}" alt=""></span>`;
 };
-const PHOTO = { delap: { tall: true }, ndiaye: { none: 'ND' } };
+export const PHOTO = { delap: { tall: true }, ndiaye: { none: 'ND' } };
 const fc = (k, p, cls) => face(k, p, cls, PHOTO[k] ?? {});
 
 // ── Data: real Matchday Militia squads; every listing, target, bid and offer is illustrative ──
@@ -52,11 +52,11 @@ const SPINE = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM', 'CM', 'AM', 'LW', 'RW
 const listedN = Object.fromEntries(SPINE.map((p) => [p, LISTED.filter((l) => l.pos === p).length]));
 const wantedN = Object.fromEntries(SPINE.map((p) => [p, WANTED_POS.filter((q) => q === p).length]));
 
-const MINE = [
+export const MINE = [
   { k: 'haaland', name: 'Haaland', pos: 'ST', pl: 'man-city', plName: 'Man City', mv: '€220m', aud: ['eyeOff', 'Only you'], state: 'Not Listed', rival: ['CHAI', 'Tea FC want him too'] },
   { k: 'wirtz', name: 'Wirtz', pos: 'AM', pl: 'liverpool', plName: 'Liverpool', mv: '€100m', aud: ['eye', 'The league'], state: 'Not Listed', rival: ['ZFC', 'ChelsZ FC want him too'] },
 ];
-const INBOX = [
+export const INBOX = [
   { by: 'YANG', head: 'tottenyang FC want Rice', terms: ['Will pay cash', '€95m'],
     who: () => `${fc('rice', 'DM', 'face face-36')}<span class="whoTxt"><span class="namerow"><b class="whoName">Rice</b>${chip('DM')}</span><span class="whoMeta">${glyph('eyeOff', 13)}Only you can see this</span></span>`,
     acts: ['List', 'Offer'] },
@@ -69,21 +69,21 @@ const INBOX = [
 ];
 
 // ── Chrome ────────────────────────────────────────────────────────────────
-const topbar = (mobile) => mobile
+export const topbar = (mobile) => mobile
   ? `<header class="top"><span class="topL">${crest('XABI', 22)}<span class="word">Gaffa</span></span><span class="topR"><span class="bal">€204m</span><button class="iconBtn" aria-label="Notifications">${glyph('bell', 18)}</button><button class="iconBtn" aria-label="Menu">${glyph('menu', 20)}</button></span></header>`
   : `<header class="top"><span class="topL"><span class="word">Gaffa</span><span class="league">Matchday Militia</span></span>
       <nav class="topNav" aria-label="League"><a class="tl">Home</a><a class="tl">Squad${glyph('chev', 12)}</a><a class="tl on">Transfers</a><a class="tl">League${glyph('chev', 12)}</a><a class="tl">Fixtures${glyph('chev', 12)}</a></nav>
       <span class="topR"><span class="bal">€204m</span><button class="iconBtn" aria-label="Notifications">${glyph('bell', 18)}</button>${crest('XABI', 24)}</span></header>`;
 
 // The section tabs double as the page's toolbar: the page action sits at their right.
-const subnav = (active, action = '') => `<nav class="sub" aria-label="Transfer market sections"><div class="subIn">
+export const subnav = (active, action = '') => `<nav class="sub" aria-label="Transfer market sections"><div class="subIn">
   ${[['Market', null], ['Auctions', 4], ['Board', 12], ['Free Agency', 14], ['Deals', 2]].map(([n, c]) => `<a class="si${n === active ? ' on' : ''}">${n}${c != null ? ` <span class="sc">${c}</span>` : ''}</a>`).join('')}
   ${action ? `<span class="subAct">${action}</span>` : ''}</div></nav>`;
 
 const pips = (n, of) => `<span class="cap"><span class="pips" aria-hidden="true">${Array.from({ length: of }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span><span class="capN">${n} of ${of}</span></span>`;
 
 // ── Your Targets (from Targets C) ─────────────────────────────────────────
-const liveCard = () => `
+export const liveCard = () => `
 <article class="live" style="--pos: var(--color-pos-cb);">
   <div class="livePlinth"><img class="crop" src="${img('saliba')}" alt=""></div>
   <div class="liveBody">
@@ -102,7 +102,7 @@ const liveCard = () => `
     <a class="liveLink">View Auction</a>
   </div>
 </article>`;
-const tile = (t) => `
+export const tile = (t) => `
 <a class="tile" style="--pos: var(--color-pos-${t.pos.toLowerCase()});">
   <span class="tPlinth"><img class="tCrop" src="${img(t.k)}" alt=""><span class="tPlate">${t.state}</span></span>
   <span class="tBody">
@@ -112,7 +112,7 @@ const tile = (t) => `
     <span class="tFoot">${crest(t.rival[0], 14)}${t.rival[1]}</span>
   </span>
 </a>`;
-const roleTile = () => `
+export const roleTile = () => `
 <a class="tile" style="--pos: var(--color-pos-lb);">
   <span class="tPlinth tRole"><span class="roleMark">LB</span><span class="tPlate tPlateHot">1 Match</span></span>
   <span class="tBody">
@@ -166,7 +166,7 @@ const chart = (mobile) => `
   </div>
 </div>`;
 
-const seg = (opts, on) => `<span class="seg" role="tablist">${opts.map(([label, n]) => `<button class="segB${label === on ? ' segOn' : ''}" role="tab">${label}${n != null ? ` <span class="segN">${n}</span>` : ''}</button>`).join('')}</span>`;
+export const seg = (opts, on) => `<span class="seg" role="tablist">${opts.map(([label, n]) => `<button class="segB${label === on ? ' segOn' : ''}" role="tab">${label}${n != null ? ` <span class="segN">${n}</span>` : ''}</button>`).join('')}</span>`;
 
 const priceCell = (l) => {
   if (!l.price) return '<span class="lPrice none">–</span>';
@@ -218,15 +218,15 @@ const panel = (title, tools, body, cls = '') => `
 
 // One row grammar for your listings and the board. Line 1 carries the facts,
 // line 2 the qualifiers: the player's club under his name, the price's kind under the price.
-const T_MINE = () => [
+export const T_MINE = () => [
   { k: 'havertz', name: 'Havertz', pos: 'ST', meta: `${badge('arsenal')}Arsenal · €55m`,
-    who: `${crest('ZFC', 20)}ChelsZ FC lead`, whoSub: '2 bids', terms: 'For sale',
+    who: `${crest('ZFC', 20)}ChelsZ FC lead <span class="muted">· 2 bids</span>`, terms: 'For sale',
     price: '€36m', priceK: 'High bid', ends: '1d 06h', live: true, act: ['View', 'quiet'] },
   { k: 'ndiaye', name: 'Ndiaye', pos: 'LW', meta: `${badge('man-city')}Man City · €55m`,
     who: `${crest('COYS', 20)}Hayden FC want him`, terms: 'Offers only',
     price: '€45m', priceK: 'Asking', ends: '', act: ['Edit', 'quiet'] },
 ];
-const T_LISTED = () => [
+export const T_LISTED = () => [
   { k: 'saliba', name: 'Saliba', pos: 'CB', mine: true, meta: `<span class="you">${crest('XABI', 12)}Your target</span>`,
     who: `${crest('PKNG', 20)}Pizzaking’s Club`, terms: 'For sale', price: '€59m', priceK: 'Next bid', ends: '2d 04h', live: true, act: ['Bid', 'go'] },
   { k: 'hall', name: 'Hall', pos: 'LWB', mine: true, meta: `<span class="you">${crest('XABI', 12)}Fits your LB target</span>`,
@@ -242,7 +242,7 @@ const T_LISTED = () => [
 ];
 
 // Square portrait on the player's position colour (option A), as on the target tiles.
-const ptile = (k, p, cls = 'ptile') => {
+export const ptile = (k, p, cls = 'ptile') => {
   const st = `--pos: var(--color-pos-${p.toLowerCase()});`;
   if (PHOTO[k]?.none) return `<span class="${cls} faceNone" style="${st}">${PHOTO[k].none}</span>`;
   return `<span class="${cls}" style="${st}"><img class="${PHOTO[k]?.tall ? 'ptTall' : ''}" src="${img(k)}" alt=""></span>`;
@@ -268,8 +268,8 @@ const tRowM = (r) => `
   <span class="mAct"><button class="btn btnSm ${r.act[1] === 'go' ? 'btnGo' : 'btnQuiet'}">${r.act[0]}</button></span>
 </a>`;
 
-const COUNT = { CB: 2, LWB: 1, DM: 1, RW: 1, ST: 1 };
-const posChips = () => `<span class="pos">${SPINE.map((p) => {
+export const COUNT = { CB: 2, LWB: 1, DM: 1, RW: 1, ST: 1 };
+export const posChips = () => `<span class="pos">${SPINE.map((p) => {
   const n = COUNT[p] ?? 0;
   return `<button class="pch${n ? '' : ' pch0'}${p === 'CB' ? ' pchOn' : ''}" style="--pf: var(--color-pos-${p.toLowerCase()}); --pi: var(--color-pos-${p.toLowerCase()}-on);">${p}${n ? `<span class="pchN">${n}</span>` : ''}</button>`;
 }).join('')}</span>`;
@@ -290,11 +290,11 @@ const targetsBody = () => `
   <div class="tgtRow">${MINE.map(tile).join('')}${roleTile()}</div>`;
 
 // Option A heading: stands on the cream, leads with a stack of what the section is about.
-const sface = (k, p) => PHOTO[k]?.none
+export const sface = (k, p) => PHOTO[k]?.none
   ? `<span class="sf faceNone" style="--pos: var(--color-pos-${p.toLowerCase()});">${PHOTO[k].none}</span>`
   : `<span class="sf${PHOTO[k]?.tall ? ' faceTall' : ''}" style="--pos: var(--color-pos-${p.toLowerCase()});"><img src="${img(k)}" alt=""></span>`;
-const sdisc = (p) => `<span class="sf sfPos" style="--pos: var(--color-pos-${p.toLowerCase()}); --pi: var(--color-pos-${p.toLowerCase()}-on);">${p}</span>`;
-const screst = (c) => `<span class="sf sfCrest">${crest(c, 24)}</span>`;
+export const sdisc = (p) => `<span class="sf sfPos" style="--pos: var(--color-pos-${p.toLowerCase()}); --pi: var(--color-pos-${p.toLowerCase()}-on);">${p}</span>`;
+export const screst = (c) => `<span class="sf sfCrest">${crest(c, 24)}</span>`;
 const sh = (title, items, tools = '') => `
 <div class="sh">
   <span class="hstack">${items.slice(0, 5).join('')}${items.length > 5 ? `<span class="sf sfMore">+${items.length - 5}</span>` : ''}</span>
@@ -586,6 +586,7 @@ export const BOARDS = [
   { file: 'MarketMobile.dc.html', title: 'Market · 390', w: 390, make: () => marketPage({ mobile: true, dark: false, w: 390 }) },
 ];
 
+if (process.argv[1] && process.argv[1].endsWith('board.mjs')) {
 const hp = path.join(HERE, 'board-heights.json');
 const heights = fs.existsSync(hp) ? JSON.parse(fs.readFileSync(hp, 'utf8')) : {};
 for (const b of BOARDS) {
@@ -597,3 +598,4 @@ for (const b of BOARDS) {
   }
 }
 console.log('built', BOARDS.length, 'boards');
+}
