@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
-import { Archivo_Narrow, Hanken_Grotesk, JetBrains_Mono, Newsreader } from 'next/font/google';
+import { Archivo_Narrow, Hanken_Grotesk, JetBrains_Mono, Newsreader, Sofia_Sans_Semi_Condensed } from 'next/font/google';
 import { ThemeProvider } from '@/context/ThemeContext';
 import './globals.css';
 
@@ -40,6 +40,18 @@ const archivoNarrow = Archivo_Narrow({
   style: ['normal', 'italic'],
   display: 'swap',
   variable: '--font-archivo-narrow',
+});
+
+/**
+ * Label face, replacing Archivo Narrow (DECISIONS 2026-09-22, 2026-09-23). Used
+ * by the player card first; the app-wide swap away from `--font-condensed` is a
+ * separate change.
+ */
+const sofiaSansSemiCondensed = Sofia_Sans_Semi_Condensed({
+  subsets: ['latin'],
+  weight: ['500', '600', '700'],
+  display: 'swap',
+  variable: '--font-sofia-sans-semi-condensed',
 });
 
 export const metadata: Metadata = {
@@ -88,7 +100,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${newsreader.variable} ${hankenGrotesk.variable} ${jetbrainsMono.variable} ${archivoNarrow.variable}`}
+      className={`${newsreader.variable} ${hankenGrotesk.variable} ${jetbrainsMono.variable} ${archivoNarrow.variable} ${sofiaSansSemiCondensed.variable}`}
       // The bootstrap script below writes data-theme onto this element before
       // React hydrates — that is the whole point of it, since waiting for
       // hydration would flash the wrong theme. React then compares server HTML

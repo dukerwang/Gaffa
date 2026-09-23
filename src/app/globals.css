@@ -201,6 +201,7 @@
   --font-sans:  var(--font-hanken-grotesk), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; /* body / UI */
   --font-mono:  var(--font-jetbrains-mono), 'Fira Code', ui-monospace, monospace; /* values that tick */
   --font-condensed: var(--font-archivo-narrow), 'Archivo Narrow', 'Arial Narrow', sans-serif; /* labels, columns, buttons */
+  --font-label: var(--font-sofia-sans-semi-condensed), 'Sofia Sans Semi Condensed', var(--font-sans); /* labels, columns, buttons: replaces --font-condensed */
 
   /* Type scale (1rem = 16px) */
   --text-xs:   0.75rem;   /* 12 */
