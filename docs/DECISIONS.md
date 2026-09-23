@@ -590,6 +590,12 @@ The green strip is not the agreed answer; no header pattern is settled.
 **Pill tags read as lazy.** Of "At Auction" and "You want him too":
 > "the "at auction" and "you want him too" button designs are super lazy"
 
-**Archivo Narrow may be on its way out.** Not a decision yet:
+**Archivo Narrow is out** (decided 2026-09-23). It was first raised here:
 > "i think i'm growing tired of one of the fonts, its the font that the buttons
 > like "add target" are in, i don't think it matches the rest of our fonts"
+
+and settled while reviewing the Player Card 2.0 prototype:
+> "we are not using archivo narrow anymore"
+
+New work uses Newsreader, Hanken Grotesk and JetBrains Mono only. The app
+still loads it as `--font-condensed`; swapping that out is a separate change.
