@@ -44,7 +44,7 @@ figures are materials the app is built from; they do not make it a broadsheet. [
 > here, that is this sentence's ghost. It is not what Duke asked for.
 
 * **Ground & Tone**: Warm, bright cream field (`#F8F4EC`) on desktop/mobile paired with deep forest green chrome (`#185B37`). Not vintage/yellow beige, but fresh, readable, and sharp. [code] [decided]
-* **Sports Data Craft**: Visual weight is carried by typography (Newsreader serif display, Archivo Narrow condensed data labels, and Hanken Grotesk body) rather than decorative graphics or generic cards. [code]
+* **Sports Data Craft**: Visual weight is carried by typography (Newsreader serif display, Sofia Sans Semi Condensed labels, and Hanken Grotesk body) rather than decorative graphics or generic cards. [code]
 * **Product, Not Costume**: Gaffa is sophisticated product UI for real football managers, not a themed novelty game. [decided]
 
 ---
@@ -71,7 +71,7 @@ All declared in `src/app/globals.css`. Light values under `:root, .g-theme-light
 * **Typography**:
   - Display / Names / Scores: `Newsreader` (`--font-serif`)
   - Body & General UI: `Hanken Grotesk` (`--font-sans`)
-  - Column Heads / Badges / Buttons: `Archivo Narrow` (`--font-condensed`)
+  - Column Heads / Badges / Buttons: `Archivo Narrow` (`--font-condensed`) [code]. Retired by decision on 2026-09-23: new work uses Sofia Sans Semi Condensed here, and the Archivo token is still loaded until an app-wide swap lands. [decided]
   - Numeric Tickers / Stopwatches: `JetBrains Mono` (`--font-mono`) [code]
 * **Motion & Physics**:
   - `--dur-instant: 90ms` · `--dur-fast: 140ms` · `--dur-base: 220ms` · `--dur-slow: 420ms`
@@ -110,7 +110,7 @@ Everything below this line is **[inferred]**: a description of what the dashboar
 
 **2. Lift only the objects that sit on the anchor.** Cards on the shelf use a shadow and no border (`.card`: `--shadow-sm` plus `--shadow-lg`), because a hairline disappears against green, and they lift 2px on hover. That is still one elevation per object. [code]
 
-**3. Put real imagery on the page.** Player cut-outs on a ground mixed from their position colour (`.plinth`, `color-mix` on `--color-pos-*`), club crests enlarged and faded behind each card (`.watermark`), and club badges in every fixture row. A page of only type and figures reads flat, however well it is set. [code]
+**3. Put real imagery on the page.** Player cut-outs on a ground mixed from their position colour (`.plinth`, `color-mix` on `--color-pos-*`), and club badges in every fixture row. A page of only type and figures reads flat, however well it is set. [code] The dashboard also fades an enlarged crest behind each card (`.watermark`). Don't carry that onto new pages: Duke said on 2026-09-22 that the faded badge "doesn't land right" (see `docs/DECISIONS.md`). [decided]
 
 **4. Give each section head an instrument, not just a title.** The shelf carries a crest stack and status pills. Top Rated carries a Matchweek / Season switch. The fixtures head is an MW number tile with a finished / live / to-come strip. About Gaffa carries a small baseline rule. The heading itself is still a Title Case noun. [code]
 

@@ -10,15 +10,24 @@ them and getting them wrong. If you change a rule, change it here first.
 
 ## Writing
 
-1. **Headings and section titles are title case.** "Record Book", not "Record
-   book". Buttons stay sentence case ("Submit proposal"). Never uppercase
-   button labels. — `f2552ff2`, DECISIONS 2026-09-04
+1. **Headings, section titles, buttons and short labels are title case.**
+   "Record Book", not "Record book". "Save Lineup", not "Save lineup". Running
+   prose (help text, errors, state notices, empty states) stays sentence case.
+   Never uppercase a label in the markup. — DECISIONS 2026-09-04, 2026-09-09
 2. **A heading names the thing beneath it; it does not caption it.**
    "Title-Winning XI", not "The XI That Won It". "League & Cups", not "How It
    Splits". "Previous Meetings", not "Every Meeting". — DECISIONS 2026-09-04
 3. **No eyebrow labels above titles.** No uppercase kicker over a heading.
    — DECISIONS 2026-08-22
 4. **"Club Balance", never "FAAB"** in anything a user reads.
+4a. **Nothing inanimate performs an action.** A key, button, tab, card,
+   dialog, page or rule is never the subject of a verb. Write "Enter to open ·
+   Esc to return" or "Press Enter to open", never "Enter opens it". Write "View
+   your squad", never "This tab lets you view your squad". "Lets you" and
+   "allows you to" are banned outright, and so are status tags like "if it
+   holds" ("projected €34m", not "€34m if it holds"). `check-ui-rules.mjs`
+   catches the common shapes in app code and in prototype HTML.
+   — DECISIONS 2026-09-08
 
 ## Surfaces
 
@@ -46,7 +55,9 @@ them and getting them wrong. If you change a rule, change it here first.
 
 10. **Serif for figures you compare; mono only for figures that tick** —
     countdowns, lot numbers, bid clocks, live money. Settled history is serif.
-    Labels and column heads are Archivo Narrow. — `design-2.0/README.md:378`
+    Labels, column heads and buttons are Sofia Sans Semi Condensed. Archivo
+    Narrow is retired: don't use `--font-condensed` in new work.
+    — DECISIONS 2026-09-22, 2026-09-23
 11. **Reuse `--color-*` tokens.** No raw hex in component CSS.
 12. **Both themes are first class**, and WCAG AA is a hard requirement in both.
 

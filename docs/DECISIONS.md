@@ -203,7 +203,7 @@ not the default for a new page.
 Already true in code since `f2552ff2` (2026-08-19, "section headings switched
 from sentence case to title case"), but `CLAUDE.md` still instructed agents to
 use sentence case, and agents kept following it. That line is now corrected.
-Buttons stay sentence case.
+Buttons stay sentence case. (Reversed 2026-09-09: buttons are title case too.)
 
 **Name things; don't narrate them.**
 > "instead of saying soemthing human like "Title-Winning XI" or "The
@@ -554,3 +554,58 @@ The whole card is the link; secondary destinations are quiet shortcuts.
 What the dashboard does to meet these is described, as agent inference with
 file citations, in `DESIGN.md` § "Composing a Page". Those techniques are not
 decisions; these quotes are.
+
+---
+
+## 2026-09-22 — Targets review: what makes a page read as unfinished
+
+Said while reviewing the Targets prototype. Record of his words; the fixes
+named after each quote are what the prototype did, not rules.
+
+**Every page got the same pitch header.**
+> "i asked to make things more visually appealing like the new dashboard page,
+> and what's happened is now every page claude is designing is using the exact
+> same pitch header."
+
+**Generic HTML headers are an app-wide problem, still unsolved.**
+> "i'm just saying this generic html header problem is an app-wide problem in
+> terms of scope, i'm still trying to figure out how to elevate this for the
+> app so it seems more like an actual production-ready visually appealing app,
+> not an html page."
+
+The green strip is not the agreed answer; no header pattern is settled.
+
+**Wrapped text looks broken.**
+> "anytime when something has to wrap in ui it ends up looking horrible."
+
+**Data lines under headings mostly add clutter.**
+> "you add a lot of these things underneath like "3 approaches . 1 private"
+> that don't always add too much to the page's information while cluttering it."
+
+**The faded badge behind a card doesn't work.**
+> "we keep using this "faded badge" design, like the arsenal badge with saliba
+> - it doesn't look good, it's cool that you're trying to add something cool
+> visually but it doesn't land right.."
+
+**Pill tags read as lazy.** Of "At Auction" and "You want him too":
+> "the "at auction" and "you want him too" button designs are super lazy"
+
+**Archivo Narrow is out** (decided 2026-09-23). It was first raised here:
+> "i think i'm growing tired of one of the fonts, its the font that the buttons
+> like "add target" are in, i don't think it matches the rest of our fonts"
+
+and settled while reviewing the Player Card 2.0 prototype:
+> "we are not using archivo narrow anymore"
+
+Its replacement is **Sofia Sans Semi Condensed**, picked during the Board
+prototype on 2026-09-22 (recorded on the `docs/board-spec` branch):
+> "sofia sans actually looks pretty good to me."
+
+It takes Archivo's job: labels, column heads and buttons. Newsreader, Hanken
+Grotesk and JetBrains Mono keep theirs. The app still loads Archivo as
+`--font-condensed`; the app-wide swap is a separate change.
+
+> **Correction, 2026-09-23.** An earlier version of this entry, written the same
+> day, said new work should use Hanken Grotesk in Archivo's place. That was an
+> agent's assumption, not Duke's choice: "who told you it swaps with hanken
+> grotesk? i literally picked a font".
