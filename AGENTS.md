@@ -33,9 +33,16 @@ coin a named rule, and do not cite one back to Duke as his.
 Work is done when `npm run build` passes. Run it before saying a task is
 complete and before pushing.
 
-`npm test` (vitest, 749 tests, ~4s) uses disposable fixtures and has no
+`npm test` (vitest, 815 tests, ~1.2s) uses disposable fixtures and has no
 production access. Run it, fix failures, and rerun without asking.
+`npm run typecheck` (`tsc --noEmit`, ~3s) checks the full codebase including test
+files; use it for fast pre-flight feedback during turns.
 `npm run check:ui` is likewise free to run at will.
+
+Tests run in a shared Vitest environment with `isolate: false` and automatic mock resets.
+Write tests with zero shared mutable state: never mutate global singletons or process
+state across test files, restore fake timers with `vi.useRealTimers()` in `afterEach`,
+and keep fixtures disposable.
 
 Do not claim a feature is live on Vercel until the build passes.
 

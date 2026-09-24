@@ -12,5 +12,8 @@ export default defineConfig({
         // directories sit beside the route they exercise under src/app/api.
         include: ['src/**/__tests__/**/*.test.ts'],
         environment: 'node',
+        isolate: false,
+        clearMocks: true,
+        restoreMocks: true,
     },
 });
