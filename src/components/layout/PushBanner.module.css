@@ -20,7 +20,7 @@
 }
 
 .title {
-  font-family: var(--font-condensed, sans-serif);
+  font-family: var(--font-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -44,7 +44,7 @@
 }
 
 .turnOnBtn {
-  font-family: var(--font-condensed, sans-serif);
+  font-family: var(--font-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -71,7 +71,7 @@
 }
 
 .dismissBtn {
-  font-family: var(--font-condensed, sans-serif);
+  font-family: var(--font-label);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.02em;

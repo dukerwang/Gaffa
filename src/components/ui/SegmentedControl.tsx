@@ -24,7 +24,7 @@ export interface SegmentedControlProps<T extends string = string> {
  * Gaffa UI Primitive: SegmentedControl
  *
  * Controlled view/filter toggle with accessible tablist keyboard navigation.
- * - Archivo Narrow typography
+ * - Sofia Sans Semi Condensed typography (--font-label)
  * - ArrowLeft / ArrowRight / Home / End keyboard support
  * - Tactile active pill with subtle elevation
  */

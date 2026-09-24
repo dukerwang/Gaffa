@@ -113,7 +113,7 @@
   top: 50%;
   transform: translateY(-50%) rotate(180deg);
   writing-mode: vertical-rl;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-10);
   letter-spacing: 0.10em;
@@ -125,7 +125,7 @@
   display: block;
   text-align: center;
   margin-top: var(--s4);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-10);
   letter-spacing: 0.10em;
@@ -164,7 +164,7 @@
 
 .quad {
   position: absolute;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-10);
   letter-spacing: 0.08em;
@@ -294,7 +294,7 @@
 }
 
 .selLink {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-11);
   letter-spacing: 0.08em;

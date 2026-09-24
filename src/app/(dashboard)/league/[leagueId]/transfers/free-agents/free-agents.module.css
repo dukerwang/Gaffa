@@ -195,7 +195,7 @@
 .newTransferBadge {
   display: inline-block;
   margin-top: var(--s1);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -236,7 +236,7 @@
   border: 1px solid var(--color-accent);
   background: var(--color-accent);
   color: var(--color-on-accent);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -296,7 +296,7 @@
 }
 
 .pos {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-12);
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -355,7 +355,7 @@
    for. They were also 8.5px, under the scale floor. */
 .table thead th {
   text-align: left;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -447,7 +447,7 @@
   border: 1px solid var(--color-accent);
   background: transparent;
   color: var(--color-accent-ink);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   letter-spacing: 0.08em;

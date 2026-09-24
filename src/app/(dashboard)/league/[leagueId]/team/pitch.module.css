@@ -95,7 +95,7 @@
 }
 
 .formationGroupLabel {
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-10);
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -136,7 +136,7 @@
     align-items: center;
     justify-content: center;
     min-height: 30px;
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-12);
     font-weight: 700;
     letter-spacing: 0.05em;
@@ -788,7 +788,7 @@
     color: var(--color-on-accent);
     border: 1px solid var(--color-accent);
     border-radius: var(--r-control);
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-13);
     font-weight: 700;
     letter-spacing: 0.02em;
@@ -923,7 +923,7 @@
    only where it sits: beside the name, left of the spacer, so it belongs to
    the player rather than to the number it used to float against. */
 .rowClub {
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-weight: 500;
     font-size: var(--t-10);
     letter-spacing: 0.05em;
@@ -970,7 +970,7 @@
 /* A loan is a ring, not a hue — the Wire's form-axis rule. The word is right
    there, so the marker only has to say "different kind of thing". */
 .loanTag {
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-10);
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -983,7 +983,7 @@
 }
 
 .agedOutTag {
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-10);
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -1232,7 +1232,7 @@
 }
 
 .capacityStatKey {
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-10);
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -1268,7 +1268,7 @@
     min-height: 34px;
     padding: var(--s1) var(--s3);
     border-radius: var(--r-control);
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-12);
     font-weight: 700;
     letter-spacing: 0.03em;
@@ -1415,7 +1415,7 @@
     position: absolute;
     top: var(--s2);
     left: var(--s2);
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-10);
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -1546,7 +1546,7 @@
 }
 
 .boardLeague {
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-11);
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -1565,7 +1565,7 @@
 }
 
 .fixtureGw {
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-11);
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -1591,7 +1591,7 @@
 
 /* Broadcast tally red, the same --color-live the old masthead used. */
 .fixtureLive {
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-12);
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -1621,7 +1621,7 @@
 }
 
 .fixtureSetting {
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-11);
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -1776,7 +1776,7 @@
 }
 
 .ledgerRound {
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-10);
     font-weight: 700;
     letter-spacing: 0.08em;

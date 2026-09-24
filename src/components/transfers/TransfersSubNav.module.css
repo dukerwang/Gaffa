@@ -11,7 +11,7 @@
 
    Deliberately NOT moved to the condensed face. It carries proper names
    ("Free Agency", "Deals") and is section navigation, not a column head or an
-   axis label — the roles --font-condensed was introduced for. The facet chips
+   axis label, the roles the label face (--font-label) exists for. The facet chips
    below it are a different job and do take it. */
 
 .nav {

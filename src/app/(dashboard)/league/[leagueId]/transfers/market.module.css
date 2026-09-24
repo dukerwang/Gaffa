@@ -101,7 +101,7 @@
 
 .sectMore {
   margin-left: auto;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -180,7 +180,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 800;
   color: var(--color-text-muted);
@@ -236,7 +236,7 @@
   border: 1px solid var(--color-accent);
   background: var(--color-accent);
   color: var(--color-on-accent);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -321,7 +321,7 @@
 .newBadge {
   display: inline-block;
   margin-top: var(--s2);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -384,7 +384,7 @@
   text-align: center;
   background: var(--color-bg-elevated);
   border-top: 1px solid var(--color-border-subtle);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -419,7 +419,7 @@
 .dayToday { background: color-mix(in srgb, var(--color-warning) 7%, transparent); }
 
 .dayLabel {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -493,7 +493,7 @@
    It was --color-defeat, a match-result colour with no dark value, which is two
    different messages on one token as well as 2.20 in dark. */
 .railLive {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -535,7 +535,7 @@
 }
 
 .eventTime {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   letter-spacing: 0.04em;
   color: var(--color-text-muted);

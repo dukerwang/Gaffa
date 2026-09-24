@@ -93,7 +93,7 @@
 
 /* Quality is the headline judgment and the only tier colour on the page. */
 .quality {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-10);
   letter-spacing: 0.09em;
@@ -147,7 +147,7 @@
 
 .headMeta {
   margin-left: auto;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 600;
   font-size: var(--t-11);
   letter-spacing: 0.05em;
@@ -396,7 +396,7 @@
 }
 
 .seasonTab {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-11);
   letter-spacing: 0.08em;

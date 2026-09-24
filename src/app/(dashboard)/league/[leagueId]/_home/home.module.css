@@ -377,7 +377,7 @@
 .meterMarkBehind { composes: meterMark; background: var(--color-danger); }
 .meterAxis { display: flex; justify-content: space-between; margin-top: 3px; }
 .meterAxis span {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   color: var(--color-text-muted);
 }
@@ -509,7 +509,7 @@
   align-items: center;
 }
 .mktHead > span {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -593,7 +593,7 @@
   justify-content: flex-start;
 }
 .mktBidNone {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   color: var(--color-text-muted);
   font-weight: 500;
   font-size: var(--t-13);
@@ -645,7 +645,7 @@
   align-items: center;
   justify-content: flex-start;
   text-align: left;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -687,7 +687,7 @@
 .mktBids {
   height: 16px;
   line-height: 16px;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   letter-spacing: 0.04em;
   color: var(--color-text-muted);
@@ -796,7 +796,7 @@
 }
 .mwScoreDim { composes: mwScore; color: var(--color-text-muted); }
 .mwTag {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -949,7 +949,7 @@
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
 }
-.towBenchSlotLabel { display: block; font-family: var(--font-condensed); font-size: var(--t-10); font-weight: 700; letter-spacing: .08em; color: var(--color-text-muted); }
+.towBenchSlotLabel { display: block; font-family: var(--font-label); font-size: var(--t-10); font-weight: 700; letter-spacing: .08em; color: var(--color-text-muted); }
 .towBenchName { margin-top: var(--s1); font-size: var(--t-12); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .towBenchMeta { margin-top: 2px; font-size: var(--t-10); color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .towBenchPoints { margin-top: var(--s1); font-family: var(--font-serif); font-size: var(--t-13); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -1079,7 +1079,7 @@
   }
   .mktMobileLabel {
     display: block;
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.08em;

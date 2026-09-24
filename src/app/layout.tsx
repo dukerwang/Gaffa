@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
-import { Archivo_Narrow, Hanken_Grotesk, JetBrains_Mono, Newsreader, Sofia_Sans_Semi_Condensed } from 'next/font/google';
+import { Hanken_Grotesk, JetBrains_Mono, Newsreader, Sofia_Sans_Semi_Condensed } from 'next/font/google';
 import { ThemeProvider } from '@/context/ThemeContext';
 import './globals.css';
 
@@ -32,24 +32,14 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 /**
- * Condensed face: column heads, club names in tables, axis labels, buttons.
+ * Label face: column heads, club names in tables, axis labels, buttons.
+ * Replaced Archivo Narrow app-wide (DECISIONS 2026-09-22, 2026-09-23).
  * Newsreader stays the display serif; JetBrains stays on values that tick.
- */
-const archivoNarrow = Archivo_Narrow({
-  subsets: ['latin'],
-  style: ['normal', 'italic'],
-  display: 'swap',
-  variable: '--font-archivo-narrow',
-});
-
-/**
- * Label face, replacing Archivo Narrow (DECISIONS 2026-09-22, 2026-09-23). Used
- * by the player card first; the app-wide swap away from `--font-condensed` is a
- * separate change.
+ * Loaded as the variable font, so any weight a label asks for renders true.
  */
 const sofiaSansSemiCondensed = Sofia_Sans_Semi_Condensed({
   subsets: ['latin'],
-  weight: ['500', '600', '700'],
+  style: ['normal', 'italic'],
   display: 'swap',
   variable: '--font-sofia-sans-semi-condensed',
 });
@@ -100,7 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${newsreader.variable} ${hankenGrotesk.variable} ${jetbrainsMono.variable} ${archivoNarrow.variable} ${sofiaSansSemiCondensed.variable}`}
+      className={`${newsreader.variable} ${hankenGrotesk.variable} ${jetbrainsMono.variable} ${sofiaSansSemiCondensed.variable}`}
       // The bootstrap script below writes data-theme onto this element before
       // React hydrates — that is the whole point of it, since waiting for
       // hydration would flash the wrong theme. React then compares server HTML

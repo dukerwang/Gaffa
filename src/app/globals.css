@@ -5,7 +5,7 @@
 
 /* ============================================================
    Gaffa — Global CSS Design System
-   Cream + forest green. Hanken Grotesk + Archivo Narrow.
+   Cream + forest green. Hanken Grotesk + Sofia Sans Semi Condensed.
 
    Every colour below was generated in OKLCH with hue and chroma held to a
    rule, then verified against ground/sunken/card/inset in both themes. When a
@@ -200,8 +200,7 @@
   --font-serif: var(--font-newsreader), Georgia, 'Times New Roman', serif;   /* display — titles, names, scores */
   --font-sans:  var(--font-hanken-grotesk), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; /* body / UI */
   --font-mono:  var(--font-jetbrains-mono), 'Fira Code', ui-monospace, monospace; /* values that tick */
-  --font-condensed: var(--font-archivo-narrow), 'Archivo Narrow', 'Arial Narrow', sans-serif; /* labels, columns, buttons */
-  --font-label: var(--font-sofia-sans-semi-condensed), 'Sofia Sans Semi Condensed', var(--font-sans); /* labels, columns, buttons: replaces --font-condensed */
+  --font-label: var(--font-sofia-sans-semi-condensed), 'Sofia Sans Semi Condensed', var(--font-sans); /* labels, columns, buttons */
 
   /* Type scale (1rem = 16px) */
   --text-xs:   0.75rem;   /* 12 */
@@ -1108,7 +1107,7 @@ svg {
 /* Labels and axis ticks are the condensed face, not mono: a club name is a
    name. Mono is reserved for values that genuinely tick. */
 .g-label {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-12);
   letter-spacing: .10em;
@@ -1123,7 +1122,7 @@ svg {
    scale floor and at 500, with tracking eased because tracking adds apparent
    size. Same family, same job, one step back. */
 .g-label-quiet {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 500;
   font-size: var(--t-10);
   letter-spacing: .05em;
@@ -1404,7 +1403,7 @@ svg {
 .g-dialog-danger {
   padding: var(--s2) var(--s5);
   border-radius: var(--r-control);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-13);
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -1455,7 +1454,7 @@ svg {
 
 .g-dialog-label {
   display: block;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.14em;

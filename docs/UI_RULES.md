@@ -55,8 +55,9 @@ them and getting them wrong. If you change a rule, change it here first.
 
 10. **Serif for figures you compare; mono only for figures that tick** —
     countdowns, lot numbers, bid clocks, live money. Settled history is serif.
-    Labels, column heads and buttons are Sofia Sans Semi Condensed. Archivo
-    Narrow is retired: don't use `--font-condensed` in new work.
+    Labels, column heads and buttons are Sofia Sans Semi Condensed
+    (`--font-label`). Archivo Narrow is retired and `--font-condensed` no
+    longer exists.
     — DECISIONS 2026-09-22, 2026-09-23
 11. **Reuse `--color-*` tokens.** No raw hex in component CSS.
 12. **Both themes are first class**, and WCAG AA is a hard requirement in both.

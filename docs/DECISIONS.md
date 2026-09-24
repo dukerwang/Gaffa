@@ -602,8 +602,9 @@ prototype on 2026-09-22 (recorded on the `docs/board-spec` branch):
 > "sofia sans actually looks pretty good to me."
 
 It takes Archivo's job: labels, column heads and buttons. Newsreader, Hanken
-Grotesk and JetBrains Mono keep theirs. The app still loads Archivo as
-`--font-condensed`; the app-wide swap is a separate change.
+Grotesk and JetBrains Mono keep theirs. The app-wide swap landed 2026-09-24:
+every label now uses `--font-label`, and `--font-condensed` and the Archivo
+import are gone.
 
 > **Correction, 2026-09-23.** An earlier version of this entry, written the same
 > day, said new work should use Hanken Grotesk in Archivo's place. That was an

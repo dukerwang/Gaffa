@@ -1,5 +1,5 @@
 /* Gaffa UI Primitive: SegmentedControl
-   Accessible tablist/segmented switcher with Archivo Narrow typography.
+   Accessible tablist/segmented switcher with Sofia Sans Semi Condensed typography.
    Follows UI_RULES: elevation declared once, WCAG AA contrast. */
 
 .container {
@@ -25,7 +25,7 @@
   border: none;
   background: transparent;
   color: var(--color-text-secondary);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 600;
   letter-spacing: 0.02em;
   border-radius: calc(var(--r-control) - 2px);

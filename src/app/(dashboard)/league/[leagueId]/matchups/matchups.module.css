@@ -167,7 +167,7 @@
 /* The condensed face: a gameweek number is a column head, not a value that
    ticks. */
 .gwPill {
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-13);
     font-weight: 700;
     letter-spacing: 0.06em;
