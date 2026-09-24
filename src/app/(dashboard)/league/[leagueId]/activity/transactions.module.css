@@ -111,7 +111,7 @@
 
 /* A count belongs to its filter, so it inherits the segment's ink. */
 .segN {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: var(--font-medium);
   letter-spacing: 0.03em;
@@ -190,7 +190,7 @@
 /* One season and no menu: a label, not a dead control. */
 .seasonLabel {
   flex: none;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-12);
   font-weight: var(--font-medium);
   letter-spacing: 0.04em;
@@ -232,7 +232,7 @@
   margin: var(--s6) 0 var(--s1);
 }
 .dayL {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: var(--font-medium);
   letter-spacing: 0.09em;
@@ -242,7 +242,7 @@
 }
 .dayRule { flex: 1; height: 1px; background: var(--color-border-subtle); }
 .dayN {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   letter-spacing: 0.06em;
   color: var(--color-text-muted);
@@ -356,7 +356,7 @@
 .feeIn { color: var(--color-accent-ink); }
 .feeOut { color: var(--color-danger); }
 .feeS {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -370,7 +370,7 @@
 }
 
 .when {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-12);
   letter-spacing: 0.03em;
   color: var(--color-text-muted);

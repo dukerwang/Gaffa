@@ -135,7 +135,7 @@
    Which is exactly why the colours are inks, not fills — see the facet list in
    ListingsClient. */
 .facet {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-12);
   font-weight: 700;
   letter-spacing: 0.05em;

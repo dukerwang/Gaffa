@@ -8,7 +8,7 @@
   justify-content: center;
   padding: 1px var(--s2);
   min-width: 20px;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   line-height: 1.4;

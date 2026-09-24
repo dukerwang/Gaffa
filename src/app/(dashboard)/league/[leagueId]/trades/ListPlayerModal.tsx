@@ -200,7 +200,7 @@ export default function ListPlayerModal({
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-condensed)' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-label)' }}>
               Minimum Bid (€m)
             </label>
             <input
@@ -216,7 +216,7 @@ export default function ListPlayerModal({
                 border: '1px solid var(--color-border)',
                 background: 'var(--color-bg-card)',
                 color: 'var(--color-text-primary)',
-                fontFamily: 'var(--font-condensed)',
+                fontFamily: 'var(--font-label)',
                 fontSize: '15px',
               }}
             />
@@ -226,7 +226,7 @@ export default function ListPlayerModal({
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-condensed)' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-label)' }}>
               Buy Now Price (€m) — Optional
             </label>
             <input
@@ -242,7 +242,7 @@ export default function ListPlayerModal({
                 border: '1px solid var(--color-border)',
                 background: 'var(--color-bg-card)',
                 color: 'var(--color-text-primary)',
-                fontFamily: 'var(--font-condensed)',
+                fontFamily: 'var(--font-label)',
                 fontSize: '15px',
               }}
             />

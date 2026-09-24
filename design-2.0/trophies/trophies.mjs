@@ -332,7 +332,7 @@ function plinth(uid, detail, season) {
   const plate = detail === 'hero'
     ? `<rect x="37" y="159.5" width="46" height="10.5" rx="1" fill="#000" opacity="0.34"/>
        <rect x="37.5" y="160" width="45" height="9.5" rx="1" fill="none" stroke="#fff" stroke-opacity="0.12"/>
-       ${season ? `<text x="60" y="167.5" text-anchor="middle" font-family="'Archivo Narrow','Arial Narrow',sans-serif" font-size="7.2" font-weight="600" letter-spacing="0.4" fill="${M.engrave}" textLength="38" lengthAdjust="spacingAndGlyphs">${season}</text>` : ''}`
+       ${season ? `<text x="60" y="167.5" text-anchor="middle" font-family="'Sofia Sans Semi Condensed','Hanken Grotesk',sans-serif" font-size="7.2" font-weight="600" letter-spacing="0.4" fill="${M.engrave}" textLength="38" lengthAdjust="spacingAndGlyphs">${season}</text>` : ''}`
     : `<rect x="40" y="161" width="40" height="8" rx="1" fill="#000" opacity="0.22"/>`;
   return `<g>
     <path d="M26 150 L94 150 L91 157 L29 157 Z" fill="url(#${uid}-plinth)"/>

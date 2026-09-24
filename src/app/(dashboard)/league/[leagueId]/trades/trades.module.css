@@ -871,7 +871,7 @@
 }
 
 .leagueFeedStatus {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -1184,7 +1184,7 @@
 }
 
 .blockOnIndicator {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 600;
   letter-spacing: 0.04em;

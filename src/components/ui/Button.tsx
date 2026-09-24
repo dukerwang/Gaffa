@@ -28,7 +28,7 @@ export type ButtonProps = BaseButtonProps &
  * Gaffa UI Primitive: Button
  *
  * Unified button control replacing ad-hoc .btn classes across Gaffa.
- * - Archivo Narrow typography
+ * - Sofia Sans Semi Condensed typography (--font-label)
  * - Emil Kowalski active press feedback (--press-scale: 0.97)
  * - Automatic loading spinner slot preserving layout width
  * - Polymorphic support (renders NavigationLink when href is passed)

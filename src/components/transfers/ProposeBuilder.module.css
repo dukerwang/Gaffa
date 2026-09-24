@@ -20,7 +20,7 @@
    - widths and track sizes stayed as they were, converted to px. A column width
      is not spacing and does not belong on that scale.
 
-   Eleven tracked-caps labels moved to --font-condensed, which is the face that
+   Eleven tracked-caps labels moved to the label face (--font-label), the face that
    role was introduced for. Worth flagging for a later pass: eleven of them in
    one dialog is a lot against decision 5's rationing, but they belong to four
    genuinely distinct panels here, so the port left the count alone rather than
@@ -103,7 +103,7 @@
 
 .mode {
   padding: var(--s3) var(--s4);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -149,7 +149,7 @@
   display: flex;
   justify-content: space-between;
   gap: var(--s2);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -381,7 +381,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--r-control);
   background: none;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -412,7 +412,7 @@
   align-items: center;
   gap: var(--s2);
   margin: 2px 0 var(--s2);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -545,7 +545,7 @@
 .gwStat { text-align: center; }
 
 .gwStatLabel {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -643,7 +643,7 @@
 .gwFooter {
   display: flex;
   justify-content: space-between;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -843,7 +843,7 @@
 }
 
 .dirTitle {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -883,7 +883,7 @@
 }
 
 .stageLabel {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -1000,7 +1000,7 @@
 }
 
 .adjustLabel {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -1074,7 +1074,7 @@
 }
 
 .ledgerKicker {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.14em;

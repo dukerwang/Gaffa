@@ -1,6 +1,6 @@
 /* Gaffa UI Primitive: Button
    Enforces UI_RULES.md and DESIGN.md:
-   - Archivo Narrow typography (--font-condensed)
+   - Sofia Sans Semi Condensed typography (--font-label)
    - Border XOR shadow (no dual elevation)
    - Emil Kowalski press scale (--press-scale: 0.97)
    - WCAG AA contrast in both themes
@@ -12,7 +12,7 @@
   justify-content: center;
   gap: var(--s2);
   border-radius: var(--r-control);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 600;
   letter-spacing: 0.02em;
   text-decoration: none;

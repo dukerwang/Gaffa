@@ -217,7 +217,7 @@
 }
 .stand { display: flex; flex-direction: column; align-items: center; flex: none; }
 .plate {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 500;
   font-size: var(--t-10);
   letter-spacing: 0.05em;
@@ -270,7 +270,7 @@
 .boardNameMine { font-weight: 700; }
 
 .boardMgr {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 500;
   font-size: var(--t-10);
   letter-spacing: 0.05em;
@@ -286,7 +286,7 @@
 .pip { color: var(--color-text-secondary); }
 .boardRowMine .pip { color: var(--color-text-primary); }
 .pipYear {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 500;
   font-size: 9.5px;
   letter-spacing: 0.06em;
@@ -344,7 +344,7 @@
 }
 .sep { color: var(--color-text-muted); font-weight: 400; margin: 0 2px; }
 .rivalOf {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 500;
   font-size: var(--t-10);
   letter-spacing: 0.05em;
@@ -427,7 +427,7 @@
 .record:nth-child(n + 3) { border-top: var(--line); }
 
 .recordLabel {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-12);
   letter-spacing: 0.10em;
@@ -476,7 +476,7 @@
 }
 .chaser { display: inline-flex; align-items: baseline; gap: 7px; min-width: 0; }
 .chaserRank {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 500;
   font-size: 9.5px;
   letter-spacing: 0.05em;
@@ -553,7 +553,7 @@
 }
 .fixtureMid { text-align: center; min-width: 260px; }
 .fixtureMeta {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 500;
   font-size: var(--t-10);
   letter-spacing: 0.05em;
@@ -675,7 +675,7 @@
 }
 .meetRow + .meetRow { border-top: var(--line); }
 .meetSeason {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 500;
   font-size: var(--t-11);
   letter-spacing: 0.05em;
@@ -703,7 +703,7 @@
   width: 22px;
   height: 22px;
   border-radius: var(--r-round);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-11);
   letter-spacing: 0.04em;
@@ -720,7 +720,7 @@
 .pills { display: flex; gap: var(--s2); margin-left: auto; flex-wrap: wrap; }
 .pill,
 .pillOn {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-12);
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -823,7 +823,7 @@
   height: 16px;
   padding: 0 5px;
   border-radius: var(--r-control);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-10);
   letter-spacing: 0.06em;
@@ -871,7 +871,7 @@
 .xiCols {
   display: flex;
   gap: var(--s4);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 500;
   font-size: var(--t-10);
   letter-spacing: 0.05em;

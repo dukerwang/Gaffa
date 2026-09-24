@@ -71,7 +71,7 @@ All declared in `src/app/globals.css`. Light values under `:root, .g-theme-light
 * **Typography**:
   - Display / Names / Scores: `Newsreader` (`--font-serif`)
   - Body & General UI: `Hanken Grotesk` (`--font-sans`)
-  - Column Heads / Badges / Buttons: `Archivo Narrow` (`--font-condensed`) [code]. Retired by decision on 2026-09-23: new work uses Sofia Sans Semi Condensed here, and the Archivo token is still loaded until an app-wide swap lands. [decided]
+  - Column Heads / Badges / Buttons: `Sofia Sans Semi Condensed` (`--font-label`) [code]. It replaced Archivo Narrow by decision on 2026-09-23 [decided]; the app-wide swap landed 2026-09-24 and removed `--font-condensed`. [code]
   - Numeric Tickers / Stopwatches: `JetBrains Mono` (`--font-mono`) [code]
 * **Motion & Physics**:
   - `--dur-instant: 90ms` · `--dur-fast: 140ms` · `--dur-base: 220ms` · `--dur-slow: 420ms`

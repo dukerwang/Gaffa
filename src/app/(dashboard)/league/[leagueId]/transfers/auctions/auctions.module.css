@@ -89,7 +89,7 @@
 }
 
 .facet {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-12);
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -278,7 +278,7 @@
 
 /* Provenance is a tag, not a section — the two kinds sort against each other. */
 .src {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -323,7 +323,7 @@
 }
 
 .lotBidNone {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   color: var(--row-ink);
   font-weight: 500;
   font-size: var(--t-13);
@@ -378,7 +378,7 @@
   align-items: center;
   justify-content: flex-start;
   text-align: left;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -426,7 +426,7 @@
 .lotBids {
   height: 16px;
   line-height: 16px;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   letter-spacing: 0.04em;
   color: var(--row-ink);
@@ -447,7 +447,7 @@
   border: 1px solid var(--color-accent);
   background: var(--color-accent);
   color: var(--color-on-accent);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -720,7 +720,7 @@
    the whole job --color-live exists to do; the accent means "yours" and can
    no longer be spent on this. */
 .railLive {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -797,7 +797,7 @@
 
   .lotMobileLabel {
     display: block;
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.08em;

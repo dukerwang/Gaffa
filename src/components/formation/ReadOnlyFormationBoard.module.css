@@ -85,7 +85,7 @@
   right: var(--s3);
   z-index: 2;
   color: color-mix(in srgb, var(--color-pitch-line) 75%, transparent);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-12);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -358,7 +358,7 @@
 }
 
 .nodeEmptyName {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: 10px;
   font-style: italic;
   color: var(--color-pitch-line);
