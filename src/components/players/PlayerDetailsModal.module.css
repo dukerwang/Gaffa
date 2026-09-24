@@ -476,7 +476,12 @@
   height: 471px;
 }
 
+/* The card keeps its full 360px width and is scaled from the corner, so the
+   scaled result fills the 326px box exactly. Letting the wrapper take the
+   box's width instead centred the card inside 326px and then scaled that,
+   which left it 17px off-centre. */
 .fit > * {
+  width: 360px;
   transform: scale(0.9056);
   transform-origin: 0 0;
 }

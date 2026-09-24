@@ -10,6 +10,7 @@ import { type CardBack, fetchBack, getCachedBack } from '@/lib/players/cardCache
 import { seasonLabel, seasonOptions } from '@/lib/players/cardSeason';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { clubBadgePath, clubColor } from '@/lib/clubs/registry';
+import { createClient } from '@/lib/supabase/client';
 import PremiumPlayerCard, { POS_CSS_VAR, type CardSeasonView } from './PremiumPlayerCard';
 import PlayerCardStats from './PlayerCardStats';
 import PlayerCardScouting from './PlayerCardScouting';
@@ -63,6 +64,52 @@ function useIsDesktop(): boolean {
   return desktop;
 }
 
+/**
+ * The viewer's own club in a league, looked up once per league per session
+ * straight from Supabase (RLS-scoped, no route call), so the card can offer
+ * "Make an Offer" on a rival's player and never on the viewer's own.
+ * `undefined` while unknown; `null` when the viewer has no club there.
+ */
+const myTeamByLeague = new Map<string, Promise<string | null>>();
+
+function lookupMyTeam(leagueId: string): Promise<string | null> {
+  const cached = myTeamByLeague.get(leagueId);
+  if (cached) return cached;
+  const supabase = createClient();
+  const promise = supabase.auth
+    .getSession()
+    .then(async ({ data }) => {
+      const userId = data.session?.user.id;
+      if (!userId) return null;
+      const { data: team } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('league_id', leagueId)
+        .eq('user_id', userId)
+        .maybeSingle();
+      return (team as { id: string } | null)?.id ?? null;
+    })
+    .catch(() => null);
+  myTeamByLeague.set(leagueId, promise);
+  return promise;
+}
+
+function useMyTeamId(leagueId: string | undefined): string | null | undefined {
+  const [state, setState] = useState<{ league: string; team: string | null } | null>(null);
+  useEffect(() => {
+    if (!leagueId) return;
+    let active = true;
+    lookupMyTeam(leagueId).then((team) => {
+      if (active) setState({ league: leagueId, team });
+    });
+    return () => {
+      active = false;
+    };
+  }, [leagueId]);
+  if (!leagueId) return null;
+  return state?.league === leagueId ? state.team : undefined;
+}
+
 function CloseIcon() {
   return (
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true">
@@ -97,6 +144,7 @@ function PlayerCardShell({
   const params = useParams();
   const leagueId = params?.leagueId as string | undefined;
   const desktop = useIsDesktop();
+  const myTeamId = useMyTeamId(leagueId);
 
   const [tab, setTab] = useState<Tab>('stats');
   const [season, setSeason] = useState<string | null>(null);
@@ -215,11 +263,21 @@ function PlayerCardShell({
   const tabsRef = useRef<HTMLDivElement>(null);
   const inkRef = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
-    const active = tabsRef.current?.querySelector<HTMLButtonElement>('[aria-selected="true"]');
+    const tabsEl = tabsRef.current;
     const ink = inkRef.current;
-    if (!active || !ink) return;
-    ink.style.width = `${active.offsetWidth}px`;
-    ink.style.transform = `translateX(${active.offsetLeft}px)`;
+    if (!tabsEl || !ink) return;
+    const place = () => {
+      const active = tabsEl.querySelector<HTMLButtonElement>('[aria-selected="true"]');
+      if (!active) return;
+      ink.style.width = `${active.offsetWidth}px`;
+      ink.style.transform = `translateX(${active.offsetLeft}px)`;
+    };
+    place();
+    // The tabs resize when the season menu arrives beside them (after the log
+    // loads) and when the label font swaps in, so the ink follows.
+    const ro = new ResizeObserver(place);
+    ro.observe(tabsEl);
+    return () => ro.disconnect();
   }, [tab, desktop]);
 
   // ── Phone: compact strip once the card has scrolled under the top ────────
@@ -406,6 +464,17 @@ function PlayerCardShell({
           className={styles.ghost}
         >
           Full Profile
+        </NavigationLink>
+      )}
+      {/* The builder's own deep link, as the squad peek and club pages use it.
+          Only on another club's player, and not beside a draft action. */}
+      {leagueId && owner && myTeamId && owner.teamId !== myTeamId && !onPick && !onNominate && (
+        <NavigationLink
+          href={`/league/${leagueId}/transfers/deals?proposeTeam=${owner.teamId}&proposePlayer=${player.id}`}
+          onClick={onClose}
+          className={styles.primary}
+        >
+          Make an Offer
         </NavigationLink>
       )}
       {onPick && (

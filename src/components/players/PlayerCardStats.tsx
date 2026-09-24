@@ -269,8 +269,9 @@ export default function PlayerCardStats({ back, isCurrent, slot, primary, focusG
                     <tr key={`up-${g.gameweek}-${index}`} className={styles.upRow}>
                       <td className={styles.mw}>{g.gameweek}</td>
                       <td>{oppCell}</td>
-                      <td className={styles.when}>{g.date ? <LocalKickoff iso={g.date} /> : '—'}</td>
-                      <td>—</td>
+                      {/* The kickoff takes the Result and Min columns: "Sun 11:30 AM"
+                          doesn't fit a result's width on a phone. */}
+                      <td className={styles.when} colSpan={2}>{g.date ? <LocalKickoff iso={g.date} /> : '—'}</td>
                       <td className={styles.hideNarrow}>—</td>
                       <td className={styles.hideNarrow}>—</td>
                       <td>—</td>
