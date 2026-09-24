@@ -60,7 +60,9 @@ const loadDraftStatsForSeason = unstable_cache(
     const [{ data: playersData }, { data: rankings }, { data: refData }, { data: archives }, { data: seasonClubs }] =
       await Promise.all([
         admin.from('players').select(FULL_PLAYER_SELECT).eq('is_active', true),
-        admin.from('player_rankings').select('*'),
+        admin
+          .from('player_rankings')
+          .select('player_id, overall_rank, position_ranks'),
         admin.from('rating_reference_stats').select('*').eq('season', refSeason),
         admin
           .from('season_player_stats_archive')

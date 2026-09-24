@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Matchup } from '@/types';
+import { createClient } from '@/lib/supabase/client';
 import LiveMatchupCard from './LiveMatchupCard';
 import GameweekSelector from './GameweekSelector';
 import RoundLead from './RoundLead';
@@ -82,6 +83,41 @@ export default function MatchupsClient({
     finalisedGws,
 }: MatchupsClientProps) {
     const [selectedGw, setSelectedGw] = useState<number>(initialGw);
+    const [liveScores, setLiveScores] = useState<Record<string, { score_a: number; score_b: number; status?: Matchup['status'] }>>({});
+
+    // One league-level Realtime channel for the entire view, replacing per-card subscriptions.
+    useEffect(() => {
+        const supabase = createClient();
+        const channel = supabase
+            .channel(`league-matchups:${leagueId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'matchups',
+                    filter: `league_id=eq.${leagueId}`,
+                },
+                (payload) => {
+                    const row = payload.new as { id?: string; score_a?: number; score_b?: number; status?: Matchup['status'] };
+                    if (row?.id && row.score_a !== undefined && row.score_b !== undefined) {
+                        setLiveScores((prev) => ({
+                            ...prev,
+                            [row.id as string]: {
+                                score_a: Number(row.score_a),
+                                score_b: Number(row.score_b),
+                                ...(row.status ? { status: row.status } : {}),
+                            },
+                        }));
+                    }
+                },
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [leagueId]);
 
     // Synchronize browser URL history without full server SSR navigations
     const handleSelectGw = useCallback((newGw: number) => {
@@ -109,10 +145,21 @@ export default function MatchupsClient({
     const finalisedSet = useMemo(() => new Set(finalisedGws), [finalisedGws]);
     const isTargetGwFinalised = finalisedSet.has(selectedGw);
 
-    // Current gameweek's fixtures
+    // Current gameweek's fixtures, overlaying live scores from the single Realtime channel
     const gwMatchups = useMemo(() => {
-        return allMatchups.filter((m) => m.gameweek === selectedGw);
-    }, [allMatchups, selectedGw]);
+        return allMatchups
+            .filter((m) => m.gameweek === selectedGw)
+            .map((m) => {
+                const live = liveScores[m.id];
+                if (!live) return m;
+                return {
+                    ...m,
+                    score_a: live.score_a,
+                    score_b: live.score_b,
+                    ...(live.status ? { status: live.status } : {}),
+                };
+            });
+    }, [allMatchups, selectedGw, liveScores]);
 
     // Featured matchup separation
     const myMatchup = useMemo(() => {
@@ -129,16 +176,23 @@ export default function MatchupsClient({
     // SAFETY: Supabase query includes team_a and team_b foreign key joins
     const completedRows = useMemo(() => {
         return allMatchups
-            .filter((m) => m.status === 'completed')
-            .map((m) => ({
-                team_a_id: m.team_a_id,
-                team_b_id: m.team_b_id,
-                score_a: m.score_a,
-                score_b: m.score_b,
-                team_a: m.team_a ? { team_name: m.team_a.team_name } : null,
-                team_b: m.team_b ? { team_name: m.team_b.team_name } : null,
-            }));
-    }, [allMatchups]);
+            .filter((m) => {
+                const live = liveScores[m.id];
+                const status = live?.status ?? m.status;
+                return status === 'completed';
+            })
+            .map((m) => {
+                const live = liveScores[m.id];
+                return {
+                    team_a_id: m.team_a_id,
+                    team_b_id: m.team_b_id,
+                    score_a: live ? live.score_a : m.score_a,
+                    score_b: live ? live.score_b : m.score_b,
+                    team_a: m.team_a ? { team_name: m.team_a.team_name } : null,
+                    team_b: m.team_b ? { team_name: m.team_b.team_name } : null,
+                };
+            });
+    }, [allMatchups, liveScores]);
 
     // Season records for featured matchup teams
     const myTeamAId = myMatchup?.team_a?.id;

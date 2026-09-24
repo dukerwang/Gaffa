@@ -255,7 +255,9 @@ async function fetchSeasonLeaderboardUncached(
   if (needsRanks.length > 0) {
     const rankMap = new Map<string, any>();
     if (!ctx.archived) {
-      const { data: rankings } = await admin.from('player_rankings').select('*');
+      const { data: rankings } = await admin
+        .from('player_rankings')
+        .select('player_id, overall_rank, position_ranks');
       for (const r of rankings ?? []) rankMap.set((r as any).player_id, r);
     }
     for (const p of needsRanks) {
