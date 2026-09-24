@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import PremiumPlayerCard from '@/components/players/PremiumPlayerCard';
+import { usePlayerCard } from '@/components/players/PlayerCardProvider';
 import ListingEditor from '@/components/transfers/ListingEditor';
 import type { EnrichedPlayer, RosterPlayer, TransfersListing } from '@/lib/transfers/buildTransfersModel';
 import type { SquadEntry } from './ClubClient';
@@ -27,6 +28,9 @@ const ACQ_LABEL: Record<string, string> = {
 };
 
 export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, academyAgeLimit, hold, onAfter }: Props) {
+  // The inline card is the object only; the game log and scouting live in the
+  // opened card, one tap away.
+  const { openPlayer } = usePlayerCard();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [confirmDrop, setConfirmDrop] = useState(false);
@@ -129,7 +133,7 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
 
   return (
     <div>
-      <PremiumPlayerCard player={p} />
+      <PremiumPlayerCard player={p} onOpen={() => openPlayer(p)} />
 
       <section className={`${styles.panel} g-panel`} style={{ marginTop: 16 }}>
         <div className={styles.panelHead}>

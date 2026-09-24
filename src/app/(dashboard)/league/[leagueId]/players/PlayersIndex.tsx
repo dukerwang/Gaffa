@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { QUALITY_LABEL } from '@/lib/outlook/labels';
 import NavigationLink from '@/components/ui/NavigationLink';
 import dynamic from 'next/dynamic';
 import Portrait from '@/components/players/Portrait';
@@ -44,10 +45,6 @@ interface Props {
   shadowMaps: React.ComponentProps<typeof GlobalStatsTableType>['shadowMaps'];
   isSiteAdmin?: boolean;
 }
-
-const QUALITY_LABEL: Record<string, string> = {
-  elite: 'Elite', high: 'High', solid: 'Solid', squad: 'Squad',
-};
 
 const MINUTES_LABEL: Record<string, string> = {
   nailed: 'Nailed',

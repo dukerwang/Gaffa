@@ -1,154 +1,531 @@
 /* ============================================================
-   PlayerDetailsModal — overlay for PremiumPlayerCard
+   PlayerDetailsModal: the player card, opened.
+   Ported from the approved Player Card 2.0 prototype (Claude Design,
+   "Gaffa Player Card 2 Combined", turn 7, 2026-09-23).
+   Desktop: a dialog with the card on a club-colour field and the panel beside
+   it. Phone: a bottom sheet with the card leading.
    ============================================================ */
 
 .overlay {
   position: fixed;
   inset: 0;
-  /* Must clear the transfers Modal and SquadPeek drawer (both z-index 1000) —
-     the player card is opened from on top of both. */
+  /* Clears the transfers Modal and SquadPeek drawer (both z-index 1000): the
+     card is opened from on top of both. */
   z-index: 1100;
-  background: rgba(10, 12, 16, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  /* flex-start, not center: a centred flex child taller than the viewport
-     overflows past BOTH edges and the top becomes unscrollable, which put the
-     "Full profile" link under the card out of reach. `margin: auto` on the box
-     keeps it centred whenever it does fit. */
-  align-items: flex-start;
-  justify-content: center;
-  padding: var(--s4);
-  animation: fadeIn 0.15s ease;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  background: rgba(10, 12, 16, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fadeIn 160ms ease-out;
+  /* Segmented switches and tabs read their track and ink from here, so both
+     themes get a visible selected state. */
+  --pc-track: var(--color-bg-elevated);
+  --pc-ink: var(--color-bg-card);
+}
+
+:global([data-theme='dark']) .overlay {
+  --pc-track: var(--color-bg-inset);
+  --pc-ink: var(--color-bg-elevated);
 }
 
 @keyframes fadeIn {
   from { opacity: 0; }
-  to   { opacity: 1; }
+  to { opacity: 1; }
 }
 
-/* Transparent wrapper — card provides its own background + shadow */
-.box {
-  position: relative;
-  margin: auto;
+.overlayDesktop {
+  display: grid;
+  place-items: center;
+  padding: var(--s6);
+}
+
+.overlaySheet {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--s4);
-  animation: scaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  max-width: 100%;
-  padding: var(--s2);
-}
-
-@keyframes scaleIn {
-  from { transform: scale(0.94); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
-}
-
-.cardScaler {
-  width: 100%;
-  display: flex;
+  align-items: flex-end;
   justify-content: center;
 }
 
-/* ── Optional action buttons below the card ─────────────────── */
+/* The anchor field: the club's colour, taken deep enough that the cream card
+   reads as lifted off it. */
+.dialog,
+.sheet {
+  --field: color-mix(in oklab, var(--team) 46%, #10141B);
+  position: relative;
+  overflow: hidden;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-xl);
+}
 
-.actions {
+.field {
+  position: relative;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(62% 48% at 50% 40%, color-mix(in oklab, var(--team) 42%, transparent), transparent 72%),
+    var(--field);
+}
+
+/* ── Desktop dialog ─────────────────────────────────────────── */
+
+.dialog {
+  width: min(980px, 100%);
+  height: min(600px, 88vh);
+  height: min(600px, 88dvh);
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: 420px minmax(0, 1fr);
+  animation: dialogIn 220ms var(--ease-standard);
+}
+
+@keyframes dialogIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+.panel {
   display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--color-bg-card);
+}
+
+.head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
   gap: var(--s3);
-  width: 360px;
-  max-width: 90vw;
+  padding: 14px 14px 14px 24px;
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
-.actionBtn {
+.body {
   flex: 1;
-  padding: var(--s3) var(--s4);
-  border-radius: var(--r-control);
-  font-family: var(--font-sans);
-  font-size: var(--t-11);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background var(--transition-fast), box-shadow var(--transition-fast);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  /* The overlay is a dark scrim in BOTH themes, so the ghost button's label
-     is inverse ink either way. */
-  color: var(--color-text-inverse);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 24px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
 }
 
-/* --color-accent is the FILL and --color-on-accent is the label on it, which
-   has to invert by theme because dark's accent is the brighter colour: white
-   is 6.4:1 on light's #146B40 and only ~2.5:1 on dark's #1FA35F. The hardcoded
-   #ffffff here was the second half of that bug.
+.view { animation: viewIn 180ms var(--ease-standard); }
 
-   The hover was #1B8350 — the superseded value that LIGHTENS away from the
-   base. globals.css replaced it with #0F5632 so hover moves away from the
-   ground in both themes. */
-.actionBtnPrimary {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  border-color: var(--color-accent);
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ── Tabs ───────────────────────────────────────────────────── */
+
+.tabs {
+  position: relative;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 6px;
+  background: var(--pc-track);
+}
+
+.tab {
+  position: relative;
+  z-index: 1;
+  height: 30px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--r-control);
+  background: transparent;
+  font-family: var(--font-label);
+  font-size: var(--t-15);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 30px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--dur-fast) ease;
+}
+
+.tab[aria-selected='true'] { color: var(--color-text-primary); }
+
+.ink {
+  position: absolute;
+  z-index: 0;
+  top: 3px;
+  left: 0;
+  height: 30px;
+  border-radius: var(--r-control);
+  background: var(--pc-ink);
+  box-shadow: var(--shadow-sm);
+  transition: transform 200ms var(--ease-standard), width 200ms var(--ease-standard);
+}
+
+/* ── Season menu ────────────────────────────────────────────── */
+
+.seasonWrap {
+  position: relative;
+  margin-left: auto;
+}
+
+.seasonBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 9px 0 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--pc-track);
+  font-family: var(--font-label);
+  font-size: var(--t-15);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.seasonBtn svg {
+  color: var(--color-text-muted);
+  transition: transform var(--dur-fast) ease;
+}
+
+.seasonWrap[data-open='true'] .seasonBtn svg { transform: rotate(180deg); }
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  min-width: 220px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--color-bg-card);
+  box-shadow: 0 0 0 1px var(--color-border-subtle), 0 14px 32px -10px rgba(0, 0, 0, 0.35);
+  transform-origin: top right;
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+  transition: opacity 150ms ease, transform 150ms var(--ease-standard);
+}
+
+.seasonWrap[data-open='true'] .menu {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 40px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .actionBtnPrimary:hover {
-    background: var(--color-accent-hover);
-    border-color: var(--color-accent-hover);
-  }
+  .menuItem:hover { background: var(--color-bg-elevated); }
 }
 
-@media (max-width: 768px) {
-  .overlay {
-    padding: var(--s3);
-    /* The card scrolls, so its buttons can land under the home indicator. */
-    padding-bottom: calc(var(--s3) + env(safe-area-inset-bottom, 0px));
-  }
-}
-
-/* Touch targets. Keyed on pointer, not width: an iPad is a wide screen with a
-   coarse pointer, and it is the pointer that decides how big a target needs to
-   be. This modal stays a centred card rather than becoming a bottom sheet —
-   it renders a fixed-aspect trading card that flips in 3D, and a sheet would
-   crop it. */
-@media (pointer: coarse) {
-  .actionBtn,
-  .profileLink a {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
-/* Route through to the player hub. Sits under the card, above any draft or
-   auction action, so the primary action of the surface stays primary. */
-.profileLink {
-  display: flex;
-  justify-content: center;
-  padding-top: var(--s3);
-}
-
-.profileLink a {
-  font-family: var(--font-condensed);
-  font-weight: 600;
+.menuItem i {
+  width: 16px;
+  flex: 0 0 auto;
+  font-style: normal;
   font-size: var(--t-13);
-  letter-spacing: 0.02em;
-  color: var(--color-text-inverse);
-  opacity: 0.86;
-  padding: var(--s2) var(--s4);
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.10);
-  transition: opacity 120ms ease-out, background 120ms ease-out;
+  color: var(--color-accent);
 }
 
-.profileLink a:hover {
+.menuItem b {
+  font-family: var(--font-label);
+  font-size: var(--t-15);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.menuItem em {
+  margin-left: auto;
+  font-style: normal;
+  font-family: var(--font-label);
+  font-size: var(--t-12);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+/* ── Close ──────────────────────────────────────────────────── */
+
+.close {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  margin-left: 4px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .close:hover {
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+  }
+}
+
+/* ── Footer: the owner, the way through to the hub, and the one action this
+   opening context calls for ─────────────────────────────────── */
+
+.foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 12px 16px 12px 24px;
+  border-top: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-card);
+}
+
+.owner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+  min-width: 0;
+  font-size: var(--t-13);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.owner > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.free { color: var(--color-text-muted); }
+
+.ghost,
+.primary {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: var(--r-control);
+  font-family: var(--font-label);
+  font-size: var(--t-15);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-fast) ease;
+}
+
+.ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.primary {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ghost:hover { background: var(--color-bg-elevated); }
+  .primary:hover { background: var(--color-accent-hover); }
+}
+
+/* ── Phone sheet ────────────────────────────────────────────── */
+
+.sheet {
+  width: 100%;
+  max-width: 520px;
+  height: 92vh;
+  height: 92dvh;
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  transition: transform 260ms cubic-bezier(0.32, 0.72, 0, 1);
+  animation: sheetIn 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes sheetIn {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+
+/* Grip and close float over the club-colour field at rest. Once the card has
+   scrolled up under them, the strip fills with the field colour and a compact
+   identity fades in. The whole strip is the drag handle. */
+.chrome {
+  position: absolute;
+  z-index: 6;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 0 16px;
+  touch-action: none;
+  cursor: grab;
+  transition: background 180ms ease;
+}
+
+.chromeSolid {
+  background: var(--field);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+}
+
+.grip {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 36px;
+  height: 4px;
+  margin-left: -18px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.mini {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  color: #fff;
+}
+
+.chromeSolid .mini {
   opacity: 1;
-  background: rgba(255, 255, 255, 0.16);
+  transform: none;
+}
+
+.mini img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.mini b {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini i {
+  font-style: normal;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #fff;
+  font-family: var(--font-label);
+  font-size: var(--t-13);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.closeOnField {
+  margin-left: auto;
+  width: 36px;
+  height: 36px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .closeOnField:hover {
+    background: rgba(255, 255, 255, 0.24);
+    color: #fff;
+  }
+}
+
+/* One scroll container, overscroll contained, and the body locked while the
+   sheet is open: the page behind never scrolls instead of the card. */
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.scroll::-webkit-scrollbar { display: none; }
+
+.sheet .field { padding: 52px 0 26px; }
+
+/* The 360×520 card at the sheet's width: a 326px box, scaled to fit it. */
+.fit {
+  width: 326px;
+  height: 471px;
+}
+
+/* The card keeps its full 360px width and is scaled from the corner, so the
+   scaled result fills the 326px box exactly. Letting the wrapper take the
+   box's width instead centred the card inside 326px and then scaled that,
+   which left it 17px off-centre. */
+.fit > * {
+  width: 360px;
+  transform: scale(0.9056);
+  transform-origin: 0 0;
+}
+
+.tabbar {
+  position: sticky;
+  top: 52px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 10px 16px;
+  background: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.tabbar .tabs { flex: 1; display: flex; }
+.tabbar .tab { flex: 1; }
+.tabbar .seasonWrap { margin-left: 0; }
+.tabbar .seasonBtn { height: 36px; }
+.tabbar .menu { min-width: 200px; }
+
+.sheetBody { padding: 0 16px 24px; }
+
+.sheet .foot { padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
+
+/* Touch targets, keyed on the pointer rather than the width. */
+@media (pointer: coarse) {
+  .tab { height: 40px; line-height: 40px; }
+  .ink { height: 40px; }
+  .seasonBtn { height: 40px; }
+  .close { width: 44px; height: 44px; }
+  .ghost,
+  .primary { height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .dialog,
+  .sheet,
+  .view { animation: none; }
+  .ink,
+  .mini,
+  .chrome,
+  .menu { transition: none; }
+  .sheet { transition: opacity 200ms ease; }
 }

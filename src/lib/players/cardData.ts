@@ -19,6 +19,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
+import { fetchAllPagesOrThrow } from '@/lib/supabase/pagination';
 import {
   getCurrentFplSeason,
   getLatestReferenceStatsSeason,
@@ -34,7 +35,6 @@ import {
   type PerfGroup,
 } from '@/lib/scoring/perfBand';
 import { calculateMatchRating, featExcessFor } from '@/lib/scoring/matchRating';
-import { SPINE } from '@/lib/positions/spine';
 import type {
   GranularPosition,
   OwnerClub,
@@ -319,7 +319,17 @@ function resolveOwnership(
  * Owner crest data for every held player in a league, keyed by player id.
  *
  * List pages call this once and hand the result down, so opening a card costs
- * zero requests. Two queries total regardless of roster size.
+ * zero requests.
+ *
+ * The roster read is paginated, and must stay that way. It is league-wide and
+ * carries an extra row per loan, so a 20-team dynasty at roster 22 plus academy,
+ * IR and loans is inside reach of PostgREST's 1,000-row cap — which truncates
+ * silently. A short read here does not fail loudly: `getOwnershipFor` returns
+ * `null` rather than `undefined` once a league's map exists (cardCache.ts), so
+ * every player past the cut would render as a FREE AGENT on a card, which is a
+ * wrong answer rather than a missing one. `fetchAllPagesOrThrow`, not
+ * `fetchAllPages`, for the same reason: a failed page must not read as "nobody
+ * owns anyone".
  */
 export async function buildLeagueOwnershipMap(
   admin: SupabaseClient,
@@ -327,15 +337,21 @@ export async function buildLeagueOwnershipMap(
 ): Promise<Record<string, PlayerOwnership>> {
   // Run both queries in parallel — roster_entries filters by league_id via an inner
   // join on teams, following the same PostgREST pattern used in matchupProcessor.
-  const [teamsRes, entriesRes] = await Promise.all([
+  const [teamsRes, entries] = await Promise.all([
     admin
       .from('teams')
       .select('id, team_name, abbreviation, crest_config')
       .eq('league_id', leagueId),
-    admin
-      .from('roster_entries')
-      .select('player_id, team_id, status, team:teams!team_id!inner(league_id)')
-      .eq('team.league_id', leagueId),
+    fetchAllPagesOrThrow<{ player_id: string; team_id: string; status: string }>((from, to) =>
+      admin
+        .from('roster_entries')
+        .select('player_id, team_id, status, team:teams!team_id!inner(league_id)')
+        .eq('team.league_id', leagueId)
+        // Ordered on the primary key: rows that tie on the sort can otherwise
+        // shift across a page boundary and be read twice or not at all.
+        .order('id', { ascending: true })
+        .range(from, to),
+    ),
   ]);
 
   const leagueTeams = teamsRes.data;
@@ -344,7 +360,7 @@ export async function buildLeagueOwnershipMap(
   const teamById = new Map(leagueTeams.map((t: any) => [t.id, t]));
 
   const byPlayer = new Map<string, { team_id: string; status: string }[]>();
-  for (const e of entriesRes.data ?? []) {
+  for (const e of entries) {
     const list = byPlayer.get(e.player_id);
     if (list) list.push(e);
     else byPlayer.set(e.player_id, [e]);
@@ -514,13 +530,26 @@ export async function fetchPlayerBack(
   const history = (historyData ?? []) as PlayerSeasonArchive[];
   const stats = (dbStats ?? []) as any[];
   const primaryPos = String((playerRow as any)?.primary_position ?? '').toUpperCase();
-  const positions = Array.from(new Set([
-    ...eligiblePositions(
-      (playerRow as any)?.primary_position,
-      (playerRow as any)?.secondary_positions,
-    ),
-    ...SPINE,
-  ]));
+  // The slots worth scoring are the ones the card can actually select, and that
+  // is the eligible set — nothing wider.
+  //
+  // This used to union the whole 12-position SPINE, which was unreachable work.
+  // The rank chips are the only way to change slot, and `player_rankings`
+  // (migration 033) builds `position_ranks` by unnesting
+  // `primary_position || secondary_positions` — the eligible set exactly. A
+  // caller-supplied `focusPosition` is the other entry point, and it names the
+  // slot an auto-sub filled; auto-sub cover is exact-position only, so that is
+  // eligible too.
+  //
+  // The cost of the union was not small: each extra slot runs two
+  // `calculateMatchRating` passes plus a `buildPerformanceGroups` per played
+  // match, and ships a `perf_by_position` entry carrying four groups of verdict
+  // and evidence prose. Over a 38-game season that was ~836 rating computations
+  // and a few hundred KB per payload to populate nine slots nothing reads.
+  const positions = eligiblePositions(
+    (playerRow as any)?.primary_position,
+    (playerRow as any)?.secondary_positions,
+  );
   // Ref stats for re-scoring secondaries — same source positional ranks use.
   const refStats = (await loadReferenceStats(admin, refSeason)) as RefStatsMap;
 

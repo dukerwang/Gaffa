@@ -18,7 +18,7 @@ import {
   getOwnershipFor,
   prefetchPlayerCard,
   primeFront,
-  warmImages,
+  warmPortraitPhotos,
 } from '@/lib/players/cardCache';
 
 const PlayerDetailsModal = dynamic(() => import('./PlayerDetailsModal'), { ssr: false });
@@ -64,15 +64,30 @@ interface PlayerCardContextValue {
    */
   openPlayerById: (playerId: string, options?: OpenPlayerOptions) => void;
   /** Warms photo + payloads on hover/focus so the click has nothing to wait on. */
-  prefetchPlayer: (player: { id: string; photo_url?: string | null }) => void;
+  prefetchPlayer: (player: {
+    id: string;
+    photo_url?: string | null;
+    photo_version?: string | null;
+  }) => void;
+  /** Cancels a prefetch queued by `prefetchPlayer` but not yet fired. */
+  cancelPrefetch: (playerId: string) => void;
   /** Seeds the cache with server-hydrated rows. Safe to call on every render. */
   primePlayers: (players: Player[]) => void;
   closePlayer: () => void;
-  /** True while `openPlayerById` is resolving a cold player. */
-  isResolving: boolean;
 }
 
 const PlayerCardContext = createContext<PlayerCardContextValue | null>(null);
+
+/**
+ * `isResolving` lives in its own context, not in the value above.
+ *
+ * It flips twice on every cold `openPlayerById`, and the actions context is
+ * consumed by the biggest tables in the app — the stats table, the pitch, the
+ * draft board. Carrying a status flag in the same object re-rendered all of
+ * them to animate one spinner. The actions object is now stable for the life of
+ * a league; only the handful of components that read the flag re-render.
+ */
+const PlayerCardStatusContext = createContext<boolean>(false);
 
 /** How many list photos to pre-decode when a page primes its rows. */
 const WARM_PHOTO_COUNT = 24;
@@ -150,7 +165,7 @@ export function PlayerCardProvider({ children }: { children: React.ReactNode }) 
   );
 
   const prefetchPlayer = useCallback(
-    (target: { id: string; photo_url?: string | null }) => {
+    (target: { id: string; photo_url?: string | null; photo_version?: string | null }) => {
       // A brush-past shouldn't cost a request; a deliberate hover should.
       if (hoverTimers.current.has(target.id)) return;
       const timer = setTimeout(() => {
@@ -163,10 +178,27 @@ export function PlayerCardProvider({ children }: { children: React.ReactNode }) 
     [leagueId],
   );
 
+  /**
+   * Cancels a pending prefetch when the pointer leaves before the 80ms timer
+   * fires. Without this the timer always fired, so sweeping a cursor down a
+   * long table queued a request per row regardless of intent — the timer was
+   * doing nothing but delaying them.
+   */
+  const cancelPrefetch = useCallback((playerId: string) => {
+    const timer = hoverTimers.current.get(playerId);
+    if (timer === undefined) return;
+    clearTimeout(timer);
+    hoverTimers.current.delete(playerId);
+  }, []);
+
   const primePlayers = useCallback(
     (players: Player[]) => {
       for (const p of players) primeFront(p, leagueId);
-      warmImages(players.slice(0, WARM_PHOTO_COUNT).map((p) => p.photo_url));
+      // The URL warmed has to be the one the row will actually request, or the
+      // warm is dead weight and the bytes get downloaded twice: `decodedImages`
+      // is keyed on the exact string, and a list row renders through `Portrait`,
+      // which asks for the versioned square cut-out.
+      warmPortraitPhotos(players.slice(0, WARM_PHOTO_COUNT));
     },
     [leagueId],
   );
@@ -180,22 +212,37 @@ export function PlayerCardProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const value = useMemo<PlayerCardContextValue>(
-    () => ({ openPlayer, openPlayerById, prefetchPlayer, primePlayers, closePlayer, isResolving }),
-    [openPlayer, openPlayerById, prefetchPlayer, primePlayers, closePlayer, isResolving],
+    () => ({
+      openPlayer,
+      openPlayerById,
+      prefetchPlayer,
+      cancelPrefetch,
+      primePlayers,
+      closePlayer,
+    }),
+    [openPlayer, openPlayerById, prefetchPlayer, cancelPrefetch, primePlayers, closePlayer],
   );
 
   return (
     <PlayerCardContext.Provider value={value}>
-      {children}
-      <PlayerDetailsModal
-        player={player}
-        ownership={ownership}
-        onClose={closePlayer}
-        onPick={actions.onPick}
-        onNominate={actions.onNominate}
-        focusGameweek={focusGameweek}
-        focusPosition={focusPosition}
-      />
+      <PlayerCardStatusContext.Provider value={isResolving}>
+        {children}
+        {/* Mounted only while a player is open. Rendering it unconditionally
+            pulled the card chunk — and everything it statically imports — into
+            every dashboard route whether or not a card was ever opened, which
+            also made the speculative import() in prefetchPlayer a no-op. */}
+        {player && (
+          <PlayerDetailsModal
+            player={player}
+            ownership={ownership}
+            onClose={closePlayer}
+            onPick={actions.onPick}
+            onNominate={actions.onNominate}
+            focusGameweek={focusGameweek}
+            focusPosition={focusPosition}
+          />
+        )}
+      </PlayerCardStatusContext.Provider>
     </PlayerCardContext.Provider>
   );
 }
@@ -208,6 +255,11 @@ export function usePlayerCard(): PlayerCardContextValue {
   return ctx;
 }
 
+/** True while `openPlayerById` is resolving a cold player. */
+export function usePlayerCardResolving(): boolean {
+  return useContext(PlayerCardStatusContext);
+}
+
 /**
  * Convenience props for any clickable player row/tile. Spread onto the element
  * to get prefetch-on-intent for free:
@@ -215,11 +267,16 @@ export function usePlayerCard(): PlayerCardContextValue {
  *   <tr {...playerHoverProps(prefetchPlayer, player)} onClick={...}>
  */
 export function playerHoverProps(
-  prefetch: (p: { id: string; photo_url?: string | null }) => void,
-  player: { id: string; photo_url?: string | null },
+  prefetch: (p: { id: string; photo_url?: string | null; photo_version?: string | null }) => void,
+  player: { id: string; photo_url?: string | null; photo_version?: string | null },
+  cancel?: (playerId: string) => void,
 ) {
   return {
     onPointerEnter: () => prefetch(player),
     onFocus: () => prefetch(player),
+    // Optional so existing call sites keep compiling, but pass it: without a
+    // cancel the 80ms delay only postpones the request, it never avoids it.
+    onPointerLeave: () => cancel?.(player.id),
+    onBlur: () => cancel?.(player.id),
   };
 }
