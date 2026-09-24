@@ -54,7 +54,8 @@ export default function ResponsiveModal({
 
     const onKey = (e: KeyboardEvent) => {
       // If a nested layer like squad peek is open, defer to it
-      if (document.body.dataset.squadPeekOpen) return;
+      // The player card and squad peek open above this; Escape is theirs first.
+      if (document.body.dataset.squadPeekOpen || document.body.dataset.playerCardOpen) return;
       if (e.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKey);

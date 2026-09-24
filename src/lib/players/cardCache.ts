@@ -190,6 +190,16 @@ function backKey(playerId: string, leagueId?: string | null, season?: string | n
   return `${cacheKey(playerId, leagueId)}|${season ?? ''}|v5`;
 }
 
+/** Bump to republish every archived season's cached log after a backfill. */
+const ARCHIVE_LOG_VERSION = '1';
+
+/**
+ * Seasons known to be archived, learned from the `history` of any back payload
+ * (the archive table only holds completed seasons). Only these are fetched in
+ * the edge-cacheable shape.
+ */
+const archivedSeasons = new Set<string>();
+
 export function getCachedBack(
   playerId: string,
   leagueId?: string | null,
@@ -215,8 +225,13 @@ export function fetchBack(
   if (existing) return existing;
 
   const params = new URLSearchParams();
-  if (leagueId) params.set('leagueId', leagueId);
+  // An archived season is cached at the edge (see the log route). Its payload
+  // doesn't depend on the league, so leaving leagueId off lets every league
+  // share one cached copy.
+  const archived = season != null && archivedSeasons.has(season);
+  if (leagueId && !archived) params.set('leagueId', leagueId);
   if (season) params.set('season', season);
+  if (archived) params.set('v', ARCHIVE_LOG_VERSION);
   const query = params.size > 0 ? `?${params}` : '';
   const promise = fetch(`/api/players/${playerId}/log${query}`)
     .then((r) => (r.ok ? r.json() : null))
@@ -231,6 +246,7 @@ export function fetchBack(
         history: data.history ?? [],
         season: data.season ?? null,
       };
+      for (const h of back.history) if (h.season) archivedSeasons.add(h.season);
       setBack(key, back);
       return back;
     })
