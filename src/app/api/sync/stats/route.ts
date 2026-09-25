@@ -11,7 +11,13 @@
  * truth for the scoring engine.
  */
 
-import { calculateMatchRating, mapFplLiveToRawStats } from '@/lib/scoring/engine';
+import {
+  calculateMatchRating,
+  calculateShadowPillar1Rating,
+  defaultElementTypeForPosition,
+  mapFplLiveToRawStats,
+  resolveEngineVersionForGameweek,
+} from '@/lib/scoring/engine';
 import { applyIctImputation, isIctBlockAbsent } from '@/lib/scoring/ictImputation';
 import { loadReferenceStats } from '@/lib/scoring/matchups';
 import { featExcessFor } from '@/lib/scoring/matchRating';
@@ -230,7 +236,7 @@ async function syncFplLiveRatings(
     teamFixtures[f.team_a].push(f.id);
   });
 
-  // 4. Bulk lookup players to avoid N+1 queries
+  // 4. Bulk lookup players and FPL element_type to avoid N+1 queries
   const fplIds = elements.map(el => el.id);
   const { data: dbPlayers } = await supabase
     .from('players')
@@ -239,6 +245,64 @@ async function syncFplLiveRatings(
   
   const playerMap = new Map();
   dbPlayers?.forEach(p => playerMap.set(p.fpl_id, p));
+
+  const elementTypeMap = new Map<number, 1 | 2 | 3 | 4>();
+  try {
+    const bootRes = await fetch(`${FPL_BASE}/bootstrap-static/`, {
+      headers: { 'User-Agent': 'FantasyFutbol/1.0' },
+      next: { revalidate: 0 },
+    });
+    if (bootRes.ok) {
+      const bootData = await bootRes.json();
+      for (const el of (bootData.elements ?? []) as any[]) {
+        if (el.id && (el.element_type === 1 || el.element_type === 2 || el.element_type === 3 || el.element_type === 4)) {
+          elementTypeMap.set(el.id, el.element_type);
+        }
+      }
+    }
+  } catch {
+    // Non-fatal: falls back to defaultElementTypeForPosition(primary_position)
+  }
+
+  // Preserve any FotMob progressive/aerial fields already attached to this GW's rows
+  const { data: existingGwStats } = await supabase
+    .from('player_stats')
+    .select('player_id, match_id, stats')
+    .eq('season', fplSeason)
+    .eq('gameweek', gameweek);
+  const existingStatsByPlayerMatch = new Map<string, Record<string, any>>();
+  existingGwStats?.forEach((row: any) => {
+    if (row.stats && typeof row.stats === 'object') {
+      existingStatsByPlayerMatch.set(`${row.player_id}:${row.match_id}`, row.stats);
+    }
+  });
+
+  const engineVersion = resolveEngineVersionForGameweek(fplSeason, gameweek);
+
+  const enrichAndScore = (
+    rawStats: ReturnType<typeof mapFplLiveToRawStats>,
+    fplId: number,
+    playerId: string,
+    fixtureId: number,
+    pos: GranularPosition,
+  ) => {
+    const prev = existingStatsByPlayerMatch.get(`${playerId}:${fixtureId}`);
+    if (prev) {
+      if (prev.line_breaking_passes !== undefined) rawStats.line_breaking_passes = prev.line_breaking_passes;
+      if (prev.passes_into_final_third !== undefined) rawStats.passes_into_final_third = prev.passes_into_final_third;
+      if (prev.aerials_won !== undefined) rawStats.aerials_won = prev.aerials_won;
+      if (prev.aerials_lost !== undefined) rawStats.aerials_lost = prev.aerials_lost;
+    }
+    rawStats.engine_version = engineVersion;
+    rawStats.fpl_element_type = elementTypeMap.get(fplId) ?? defaultElementTypeForPosition(pos);
+    rawStats.fixture_minutes = 90;
+
+    const scored = calculateMatchRating(rawStats, pos, refStats as any);
+    const shadowP1 = calculateShadowPillar1Rating(rawStats, pos, refStats as any);
+    rawStats.shadow_v3_pillar1_rating = shadowP1.rating;
+    rawStats.shadow_v3_pillar1_points = shadowP1.fantasyPoints;
+    return scored;
+  };
 
   let saved = 0;
 
@@ -292,24 +356,6 @@ async function syncFplLiveRatings(
               minutes: fixtureMinutes,
               goals_scored: findExplain('goals_scored') ?? 0,
               assists: findExplain('assists') ?? 0,
-              // `explain` only itemises stats that SCORED POINTS for that
-              // position, so a stat worth nothing there is absent entirely and
-              // `?? 0` invents a zero rather than reporting one. Three fields
-              // are affected, and all three fed the scoring engine as zeroes:
-              //
-              //   saves           1 pt per 3, so 1- and 2-save games are absent
-              //   goals_conceded  -1 per 2 and only for GK/DEF, so a single
-              //                   goal is absent for them and EVERY goal is
-              //                   absent for MID/FWD (mean read 0.21 against a
-              //                   mean xGC of 1.23, which handed midfielders an
-              //                   xgcOutperf bonus scaled to how many chances
-              //                   the opposition created)
-              //   clean_sheets    0 pts for a forward, so absent for FWD
-              //
-              // Fall back to the gameweek total on `el.stats`, apportioned by
-              // minutes exactly as bps and the defensive counts below are.
-              // Clean sheets are a per-match flag rather than a count, so they
-              // take the gameweek value as-is.
               clean_sheets: findExplain('clean_sheets') ?? (el.stats.clean_sheets ?? 0),
               goals_conceded:
                 findExplain('goals_conceded') ?? Math.round((el.stats.goals_conceded ?? 0) * ratio),
@@ -321,9 +367,6 @@ async function syncFplLiveRatings(
               own_goals: findExplain('own_goals') ?? 0,
               bonus: findExplain('bonus') ?? 0,
               bps: Math.round((el.stats.bps ?? 0) * ratio),
-              // Distribute non-point GW-aggregate stats by minute ratio.
-              // FPL only itemises point-bearing stats in `explain`; ICT/xG and
-              // the granular defensive counts are GW totals on `el.stats`.
               influence: (parseFloat(el.stats.influence) * ratio).toString(),
               creativity: (parseFloat(el.stats.creativity) * ratio).toString(),
               threat: (parseFloat(el.stats.threat) * ratio).toString(),
@@ -331,7 +374,6 @@ async function syncFplLiveRatings(
               expected_goals: (parseFloat(el.stats.expected_goals) * ratio).toString(),
               expected_assists: (parseFloat(el.stats.expected_assists) * ratio).toString(),
               expected_goals_conceded: (parseFloat(el.stats.expected_goals_conceded) * ratio).toString(),
-              // Granular defensive (25/26+) — also GW totals; allocate by minute ratio.
               tackles: Math.round((el.stats.tackles ?? 0) * ratio),
               clearances_blocks_interceptions: Math.round((el.stats.clearances_blocks_interceptions ?? 0) * ratio),
               recoveries: Math.round((el.stats.recoveries ?? 0) * ratio),
@@ -342,12 +384,8 @@ async function syncFplLiveRatings(
             const rawStats = ictAbsent
               ? applyIctImputation(mapped, dbPlayer.primary_position)
               : mapped;
-            // Calculate using the official promoted V2 scoring engine
-            const v2 = calculateMatchRating(
-              rawStats,
-              dbPlayer.primary_position as GranularPosition,
-              refStats as any
-            );
+            const pos = dbPlayer.primary_position as GranularPosition;
+            const scored = enrichAndScore(rawStats, el.id, dbPlayer.id, fixtureId, pos);
 
             const { error } = await supabase.from('player_stats').upsert(
               {
@@ -356,15 +394,15 @@ async function syncFplLiveRatings(
                 gameweek,
                 season: fplSeason,
                 stats: rawStats,
-                fantasy_points: v2.fantasyPoints,
-                match_rating: v2.rating,
+                fantasy_points: scored.fantasyPoints,
+                match_rating: scored.rating,
                 // The explanation, banded, snapshotted alongside the score it
                 // explains — see migration 140. Bands only, never scores.
                 perf: buildPerformanceGroups(
-                  v2.breakdown,
-                  dbPlayer.primary_position as GranularPosition,
+                  scored.breakdown,
+                  pos,
                   rawStats,
-                  featExcessFor(rawStats, dbPlayer.primary_position as GranularPosition),
+                  featExcessFor(rawStats, pos),
                 ),
               },
               { onConflict: 'player_id,season,match_id' },
@@ -375,11 +413,8 @@ async function syncFplLiveRatings(
           // Fallback for players who didn't play (DNP)
           const fixtureId = playerFixIds[0] || (gameweek * SYNTHETIC_MATCH_ID_FLOOR + el.id);
           const rawStats = mapFplLiveToRawStats(el.stats);
-          const v2 = calculateMatchRating(
-            rawStats,
-            dbPlayer.primary_position as GranularPosition,
-            refStats as any
-          );
+          const pos = dbPlayer.primary_position as GranularPosition;
+          const scored = enrichAndScore(rawStats, el.id, dbPlayer.id, fixtureId, pos);
 
           // Clear stale placeholders only. A real fixture row here means an
           // earlier sync recorded an appearance FPL is momentarily not
@@ -400,13 +435,13 @@ async function syncFplLiveRatings(
               gameweek,
               season: fplSeason,
               stats: rawStats,
-              fantasy_points: v2.fantasyPoints,
-              match_rating: v2.rating,
+              fantasy_points: scored.fantasyPoints,
+              match_rating: scored.rating,
               perf: buildPerformanceGroups(
-                v2.breakdown,
-                dbPlayer.primary_position as GranularPosition,
+                scored.breakdown,
+                pos,
                 rawStats,
-                featExcessFor(rawStats, dbPlayer.primary_position as GranularPosition),
+                featExcessFor(rawStats, pos),
               ),
             },
             { onConflict: 'player_id,season,match_id' },

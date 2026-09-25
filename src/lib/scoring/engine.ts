@@ -11,7 +11,11 @@ import type { RawStats } from '@/types';
 // ── Re-exports from the Match Rating Engine ─────────────────────────────
 export {
   calculateMatchRating,
+  calculateShadowPillar1Rating,
   DEFAULT_REFERENCE_STATS,
+  V3_FIRST_GW,
+  resolveEngineVersionForGameweek,
+  defaultElementTypeForPosition,
 } from './matchRating';
 
 // ── Legacy: Map FPL live stats to RawStats ──────────────────────────────

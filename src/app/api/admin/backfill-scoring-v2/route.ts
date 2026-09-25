@@ -21,7 +21,13 @@
  * Runtime: long-running; allow up to 5 minutes.
  */
 
-import { calculateMatchRating, mapFplLiveToRawStats } from '@/lib/scoring/engine';
+import {
+  calculateMatchRating,
+  calculateShadowPillar1Rating,
+  defaultElementTypeForPosition,
+  mapFplLiveToRawStats,
+  resolveEngineVersionForGameweek,
+} from '@/lib/scoring/engine';
 import { calculateTeamScore, loadReferenceStats } from '@/lib/scoring/matchups';
 import { normalizeMatchupLineup } from '@/lib/lineups/normalizeMatchupLineup';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -33,14 +39,24 @@ export const maxDuration = 300;
 
 const FPL_BASE = 'https://fantasy.premierleague.com/api';
 
-async function fetchCompletedGws(): Promise<number[]> {
+async function fetchBootstrapInfo(): Promise<{
+  completedGws: number[];
+  elementTypeMap: Map<number, 1 | 2 | 3 | 4>;
+}> {
   const res = await fetch(`${FPL_BASE}/bootstrap-static/`, {
     headers: { 'User-Agent': 'FantasyFutbol/1.0' },
     next: { revalidate: 0 },
   });
   if (!res.ok) throw new Error(`bootstrap-static error: ${res.status}`);
   const data = await res.json();
-  return (data.events ?? []).filter((e: any) => e.finished).map((e: any) => e.id as number);
+  const completedGws = (data.events ?? []).filter((e: any) => e.finished).map((e: any) => e.id as number);
+  const elementTypeMap = new Map<number, 1 | 2 | 3 | 4>();
+  for (const el of (data.elements ?? []) as any[]) {
+    if (el.id && (el.element_type === 1 || el.element_type === 2 || el.element_type === 3 || el.element_type === 4)) {
+      elementTypeMap.set(el.id, el.element_type);
+    }
+  }
+  return { completedGws, elementTypeMap };
 }
 
 async function fetchGwLive(gw: number): Promise<FplLivePlayerStats[]> {
@@ -88,7 +104,7 @@ export async function POST(req: NextRequest) {
   const refStatsSeason = await getLatestReferenceStatsSeason(supabase);
   const refStats = await loadReferenceStats(supabase, refStatsSeason);
 
-  const allCompleted = await fetchCompletedGws();
+  const { completedGws: allCompleted, elementTypeMap } = await fetchBootstrapInfo();
   const targetGws = allCompleted
     .filter((gw) => gw >= fromArg && (toArg === 0 || gw <= toArg))
     .sort((a, b) => a - b);
@@ -122,6 +138,7 @@ export async function POST(req: NextRequest) {
     let matchupsUpdated = 0;
     let statsErrors = 0;
     let matchupErrors = 0;
+    const engineVersion = resolveEngineVersionForGameweek(fplSeason, gameweek);
 
     // ── 1. player_stats v2 backfill ────────────────────────────────────
     if (doStats) {
@@ -134,13 +151,18 @@ export async function POST(req: NextRequest) {
           const dbPlayer = playerByFplId.get(el.id);
           if (!dbPlayer) return;
           const playerFixIds = teamFixtures[dbPlayer.pl_team_id ?? 0] ?? [];
+          const pos = dbPlayer.primary_position as GranularPosition;
 
           const writeOne = async (fixtureId: number, rawStats: RawStats) => {
-            const v2 = calculateMatchRating(
-              rawStats,
-              dbPlayer.primary_position as GranularPosition,
-              refStats as any,
-            );
+            rawStats.engine_version = engineVersion;
+            rawStats.fpl_element_type = elementTypeMap.get(el.id) ?? defaultElementTypeForPosition(pos);
+            rawStats.fixture_minutes = 90;
+
+            const v2 = calculateMatchRating(rawStats, pos, refStats as any);
+            const shadowP1 = calculateShadowPillar1Rating(rawStats, pos, refStats as any);
+            rawStats.shadow_v3_pillar1_rating = shadowP1.rating;
+            rawStats.shadow_v3_pillar1_points = shadowP1.fantasyPoints;
+
             const payload = {
               stats: rawStats,
               fantasy_points_v2: v2.fantasyPoints,

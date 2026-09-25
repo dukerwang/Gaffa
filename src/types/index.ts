@@ -335,6 +335,16 @@ export interface RawStats {
    * are retained for breakdown UI and historical compatibility.
    */
   fpl_def_contrib?: number;
+  // Gaffa V3 Scoring Engine fields
+  engine_version?: 'v2' | 'v3';
+  fpl_element_type?: number; // 1 = GK, 2 = DEF, 3 = MID, 4 = FWD
+  fixture_minutes?: number;
+  line_breaking_passes?: number;
+  passes_into_final_third?: number;
+  aerials_won?: number;
+  aerials_lost?: number;
+  shadow_v3_pillar1_rating?: number;
+  shadow_v3_pillar1_points?: number;
 }
 
 export interface DraftPick {
@@ -455,7 +465,10 @@ export interface ComponentRefStats {
 }
 
 /** Per-component median/stddev for sigmoid normalization. */
-export type ReferenceStats = Record<RatingComponent, ComponentRefStats>;
+export type ReferenceStats = Record<RatingComponent, ComponentRefStats> & {
+  match_impact_v3?: ComponentRefStats;
+  defensive_work?: ComponentRefStats;
+};
 
 // ============================================================
 // Tournament Types (Phase 15)
