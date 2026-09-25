@@ -10,7 +10,16 @@
 
 import { describe, it, expect } from 'vitest';
 import { calculateMatchRating, DEFAULT_REFERENCE_STATS } from '../matchRating';
-import { attachLineupSlotScores, scoreAppearanceAtSlot, type MatchupPlayerDetail } from '../matchups';
+import {
+    applyCountedPoints,
+    applySubsToLineup,
+    attachLineupSlotScores,
+    calculateTeamScore,
+    emptyTeamScoreDetail,
+    scoreAppearanceAtSlot,
+    type MatchupPlayerDetail,
+    type PlayerScoreRecord,
+} from '../matchups';
 import { CASES } from './fixtures';
 
 const oop = CASES.find((c) => c.name === 'oop-striker-at-cb')!;
@@ -159,5 +168,58 @@ describe('Szoboszlai GW1 — AM stored vs RB slot', () => {
         const expectedRb = calculateMatchRating(stats, 'RB', DEFAULT_REFERENCE_STATS, 'AM');
         expect(detailMap.subbedIn.points).toBe(expectedRb.fantasyPoints);
         expect(detailMap.subbedIn.rating).toBe(calculateMatchRating(stats, 'RB', DEFAULT_REFERENCE_STATS).rating);
+    });
+});
+
+describe('applyCountedPoints', () => {
+    // Matheus Cunha, GW5 2026-27: the sync scored him as an AM (27.61), the
+    // SoFIFA sync later moved his primary to LW, and the matchup scorer rated
+    // him at his LW slot (32.81). attachLineupSlotScores keeps the stored
+    // figure at a primary slot, so the chip read 27.61 under a 32.81 total.
+    const stats = { ...oop.stats, minutes_played: 90 };
+    const asAm = calculateMatchRating(stats, 'AM');
+    const refStats = DEFAULT_REFERENCE_STATS;
+
+    it('pins every fielded player to the points calculateTeamScore counted', () => {
+        const lineup = {
+            starters: [
+                { player_id: 'cunha', slot: 'LW' },
+                { player_id: 'blank', slot: 'ST' },
+            ],
+            bench: [{ player_id: 'sub', slot: 'ATT' }],
+        };
+        const record = new Map<string, PlayerScoreRecord>([
+            ['cunha', { fixtures: [{ minutes: 90, fantasyPoints: asAm.fantasyPoints, stats }] }],
+            ['blank', { fixtures: [{ minutes: 0, fantasyPoints: 0, stats: { ...stats, minutes_played: 0 } }] }],
+            ['sub', { fixtures: [{ minutes: 90, fantasyPoints: asAm.fantasyPoints, stats }] }],
+        ]);
+        const positions = new Map([['cunha', ['LW']], ['blank', ['ST']], ['sub', ['ST']]]);
+        const detail = emptyTeamScoreDetail();
+        const total = calculateTeamScore(lineup, record, positions, new Map(), refStats, true, new Set(), detail);
+
+        const detailMap: Record<string, MatchupPlayerDetail> = {
+            cunha: { points: asAm.fantasyPoints, rating: asAm.rating, stats, perf: [], primaryPosition: 'LW' },
+            blank: { points: 0, rating: null, stats: { ...stats, minutes_played: 0 } },
+            sub: { points: asAm.fantasyPoints, rating: asAm.rating, stats },
+        };
+        const effective = applySubsToLineup(lineup, detail);
+        attachLineupSlotScores(detailMap, [effective], { cunha: 'LW', blank: 'ST', sub: 'ST' }, refStats);
+        // The bug: a primary-slot starter still shows the stale stored figure.
+        expect(detailMap.cunha.bySlot?.LW.points).toBe(asAm.fantasyPoints);
+
+        applyCountedPoints(detailMap, [detail], refStats);
+
+        const atLw = calculateMatchRating(stats, 'LW', refStats);
+        expect(atLw.fantasyPoints).not.toBe(asAm.fantasyPoints);
+        expect(detailMap.cunha.bySlot?.LW).toEqual({ points: atLw.fantasyPoints, rating: atLw.rating });
+        expect(detailMap.cunha.points).toBe(atLw.fantasyPoints);
+        // The stored block banded the AM game; it has to be rebuilt at LW.
+        expect(detailMap.cunha.perf).toBeNull();
+
+        const shownSum = effective.starters.reduce(
+            (sum, s) => sum + (detailMap[s.player_id].bySlot?.[s.slot]?.points ?? detailMap[s.player_id].points),
+            0,
+        );
+        expect(shownSum).toBeCloseTo(total, 2);
     });
 });
