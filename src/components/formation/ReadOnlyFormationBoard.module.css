@@ -357,6 +357,20 @@
   box-shadow: none;
 }
 
+.slotButton { gap: 3px; }
+
+.slotButton:hover .emptyPortraitWrap {
+  background: color-mix(in srgb, var(--color-pitch-line) 14%, transparent);
+}
+
+.emptyPlus {
+  font-family: var(--font-condensed);
+  font-size: var(--t-20);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-pitch-line);
+}
+
 .nodeEmptyName {
   font-family: var(--font-label);
   font-size: 10px;

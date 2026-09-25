@@ -1,0 +1,395 @@
+/* ==========================================================
+   Lineup Builder.
+
+   Composed from the same parts as the dashboard (DESIGN.md § 3b): a green
+   shelf under the topbar, cards that rise out of its bottom edge on a shadow
+   rather than a border, and one dark block for the action. The pitch is the
+   shipped ReadOnlyFormationBoard, not a second one. Formation pills mirror the
+   lineup page's. Every colour is a token, so both themes follow.
+   ========================================================== */
+
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-bottom: var(--s16);
+}
+
+/* ---------- the shelf ---------- */
+.shelf {
+  --shelf-a: var(--color-topbar);
+  --shelf-b: color-mix(in oklab, var(--color-topbar) 94%, white);
+  --shelf-ink: var(--color-text-inverse);
+  --shelf-soft: color-mix(in oklab, var(--color-text-inverse) 68%, var(--color-topbar));
+  position: relative;
+  margin-top: calc(var(--space-8) * -1);
+  padding: var(--s8) 0 96px;
+  color: var(--shelf-ink);
+  border-image: repeating-linear-gradient(90deg, var(--shelf-a) 0 36px, var(--shelf-b) 36px 72px) fill 0 / 0 / 0 100vmax;
+}
+
+.shelfInner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'tile title pills';
+  align-items: end;
+  gap: var(--s6);
+}
+
+.tile {
+  grid-area: tile;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+}
+.tileFigure {
+  font-family: var(--font-serif);
+  font-size: var(--t-25);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.tileOf {
+  margin-top: 2px;
+  font-family: var(--font-condensed);
+  font-size: var(--t-10);
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.shelfTitle { grid-area: title; min-width: 0; }
+.shelfH {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--t-40);
+  line-height: 1;
+  letter-spacing: -0.034em;
+  color: var(--shelf-ink);
+}
+.shelfSub { font-size: var(--t-13); color: var(--shelf-soft); margin-top: var(--s2); }
+
+.pills { grid-area: pills; display: flex; flex-wrap: wrap; gap: var(--s2); padding-bottom: 2px; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 var(--s3);
+  border-radius: var(--r-pill);
+  background: color-mix(in oklab, var(--shelf-ink) 12%, transparent);
+  color: var(--shelf-ink);
+  font-family: var(--font-condensed);
+  font-size: var(--t-12);
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ---------- workspace ---------- */
+.workspace {
+  position: relative;
+  margin-top: -66px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-areas:
+    'board formation'
+    'board details'
+    'board share';
+  grid-template-rows: auto auto 1fr;
+  gap: var(--s5);
+  align-items: start;
+}
+
+.card {
+  border-radius: 14px;
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-sm), var(--shadow-lg);
+  min-width: 0;
+}
+.formationCard { grid-area: formation; padding: var(--s4); }
+.detailsCard { grid-area: details; padding: var(--s4); display: flex; flex-direction: column; gap: var(--s4); }
+.boardCard { grid-area: board; padding: var(--s3); }
+
+.cardH {
+  margin: 0 0 var(--s3);
+  font-family: var(--font-serif);
+  font-size: var(--t-20);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+.detailsCard .cardH { margin-bottom: 0; }
+
+/* ---------- formation pills (as on the lineup page) ---------- */
+.formationGroups { display: flex; flex-direction: column; gap: var(--s3); }
+.formationGroup { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+.formationGroupLabel {
+  flex: 0 0 48px;
+  font-family: var(--font-condensed);
+  font-size: var(--t-10);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.formationPills { display: flex; gap: var(--s1); flex-wrap: wrap; }
+.formationPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: var(--s1) var(--s3);
+  font-family: var(--font-condensed);
+  font-size: var(--t-12);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--r-control);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
+}
+@media (hover: hover) and (pointer: fine) {
+  .formationPill:hover { border-color: var(--color-accent); color: var(--color-text-primary); }
+}
+.formationPillActive,
+.formationPillActive:hover {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border-color: var(--color-accent);
+}
+
+/* ---------- details ---------- */
+.field { display: flex; flex-direction: column; gap: var(--s1); }
+.input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--s3);
+  font-family: var(--font-sans);
+  font-size: var(--t-15);
+  color: var(--color-text-primary);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-control);
+}
+.input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* ---------- the dark block ---------- */
+.shareCard {
+  grid-area: share;
+  --ink: var(--color-text-inverse);
+  --ink-soft: color-mix(in oklab, var(--color-text-inverse) 68%, var(--color-topbar));
+  padding: var(--s5) var(--s4);
+  border-radius: 14px;
+  background: var(--color-topbar);
+  color: var(--ink);
+  min-width: 0;
+}
+.shareH {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-20);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.shareP { margin: var(--s2) 0 var(--s4); font-size: var(--t-13); line-height: 1.5; color: var(--ink-soft); }
+.shareActions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+.sharePrimary,
+.shareSecondary {
+  min-height: 40px;
+  padding: 0 var(--s4);
+  border-radius: var(--r-control);
+  font-family: var(--font-condensed);
+  font-size: var(--t-13);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.sharePrimary { grid-column: 1 / -1; background: var(--ink); color: var(--color-topbar); border: 1px solid var(--ink); }
+.shareSecondary { background: transparent; color: var(--ink); border: 1px solid color-mix(in oklab, var(--ink) 40%, transparent); }
+.sharePrimary:disabled,
+.shareSecondary:disabled { opacity: 0.4; cursor: not-allowed; }
+.notice { min-height: 1.4em; margin: var(--s3) 0 0; font-size: var(--t-12); font-weight: 600; color: var(--ink); }
+
+/* ---------- player picker ---------- */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s4);
+  background: rgba(0, 0, 0, 0.55);
+}
+.modalShell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  max-height: 85dvh;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-sm), var(--shadow-lg);
+}
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s4);
+}
+.modalTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-20);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+.modalHeaderActions { display: flex; align-items: center; gap: var(--s2); }
+.textBtn {
+  min-height: 34px;
+  padding: 0 var(--s3);
+  font-family: var(--font-condensed);
+  font-size: var(--t-13);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-control);
+  cursor: pointer;
+}
+.closeBtn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  font-size: var(--t-17);
+  line-height: 1;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--r-control);
+  cursor: pointer;
+}
+.searchSection { display: flex; flex-direction: column; gap: var(--s3); padding: 0 var(--s4) var(--s3); }
+.searchRow { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.searchRow .input { flex: 1 1 180px; width: auto; }
+.searchRow .clubSelect { flex: 0 1 180px; }
+.filterTabs { display: flex; gap: var(--s1); overflow-x: auto; }
+
+.playerList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 var(--s2) var(--s2);
+  border-top: 1px solid var(--color-border-subtle);
+}
+.playerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--s2) var(--s3);
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border-subtle);
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+@media (hover: hover) and (pointer: fine) {
+  .playerRow:hover { background: var(--color-bg-secondary); }
+}
+.playerRowActive { background: var(--color-tint-accent); }
+.playerInfo { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+.playerText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.playerName {
+  font-family: var(--font-serif);
+  font-size: var(--t-15);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.playerClub { font-size: var(--t-12); color: var(--color-text-muted); }
+.playerTags { display: flex; align-items: center; gap: var(--s2); flex: none; }
+.assignedTag {
+  padding: 2px var(--s2);
+  font-family: var(--font-condensed);
+  font-size: var(--t-11);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+  border-radius: var(--r-control);
+}
+.emptyList { padding: var(--s8) var(--s4); text-align: center; color: var(--color-text-muted); }
+.listNote { padding: var(--s3); text-align: center; font-size: var(--t-12); color: var(--color-text-muted); }
+
+/* ---------- mobile: one column, composed for the thumb ---------- */
+@media (max-width: 900px) {
+  .shelf { margin-top: calc(var(--space-4) * -1); padding: 18px 0 66px; }
+  .shelfInner {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: 'tile title' 'pills pills';
+    gap: var(--s3) var(--s4);
+    align-items: center;
+  }
+  .tile { width: 52px; height: 52px; }
+  .shelfH { font-size: 29px; letter-spacing: -0.032em; }
+  .shelfSub { font-size: var(--t-12); margin-top: 6px; }
+  .pill { height: 26px; padding: 0 10px; font-size: var(--t-11); }
+
+  .workspace {
+    margin-top: -44px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'formation' 'board' 'details' 'share';
+    grid-template-rows: none;
+    gap: var(--s4);
+  }
+  .formationGroup { align-items: flex-start; }
+  .formationPill { min-height: 36px; }
+  .input, .sharePrimary, .shareSecondary { min-height: 44px; }
+}
+
+@media (max-width: 640px) {
+  .modalBackdrop { align-items: flex-end; padding: 0; }
+  .modalShell {
+    max-width: 100%;
+    max-height: 88vh;
+    max-height: 88dvh;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .playerRow { min-height: 60px; }
+  .closeBtn { width: 44px; height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .formationPill { transition: none; }
+}
