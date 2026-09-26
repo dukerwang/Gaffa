@@ -331,7 +331,7 @@ function lineupsSplit(m, state, mobile, H = 800) {
     const both = o.view !== 'single';
     const seg = `<div class="segRow"><span class="seg"><button class="segB${both ? ' segOn' : ''}">Both</button><button class="segB${both ? '' : ' segOn'}">${crest(mineS.k, 14)}${tname(mineS.k)}</button><button class="segB">${crest(oth.k, 14)}${tname(oth.k)}</button></span></div>`;
     const body = both
-      ? `<div class="board"><div class="mbGrid">${miniHalf(m.A, state)}${miniHalf(m.B, state)}</div></div><p class="lsHint">Tap a club for its full pitch and bench</p>`
+      ? `<div class="board">${col(mineS)}</div><div class="board lsNext">${col(oth)}</div><p class="lsHint">Turn your phone sideways for the two halves side by side</p>`
       : `<div class="board">${col(mineS)}</div><p class="lsHint">Swipe the pitch to switch clubs</p>`;
     return `<section class="blk"><div class="sh"><h2 class="shT">Lineups</h2></div>${seg}${body}</section>`;
   }
@@ -432,4 +432,14 @@ export function matchPage2({ state, mobile, dark, w, variant }) {
   if (state === 'upcoming') body = `${sb}<div class="stl">${h2hBlock(m, state)}</div><div class="stl">${duo}</div>`;
   else body = `${sb}<div class="stl">${momentumBlock(m, state, mobile)}</div><div class="stl">${duo}</div>${state === 'final' ? `<div class="stl">${h2hBlock(m, state)}</div>` : ''}`;
   return `<div class="screen ${mobile ? 'm' : 'd'}" ${dark ? 'data-theme="dark"' : ''} style="width: ${w}px; height: __H__px;">${topbar(mobile)}<main class="wrap">${matchBar(m, state, mobile)}${body}</main></div>`;
+}
+
+// A phone turned sideways: both halves side by side, phone-sized chips.
+export function landscapeLineups({ w, dark }) {
+  const m = GW5[0];
+  const col = (side) => {
+    const s = sideAt(side, null);
+    return `<div class="lsCol"><div class="lsHead">${crest(side.k, 20)}<b>${tname(side.k)}</b><span class="lbl">${side.formation}</span><span class="lsScore">${fmt(s.score)}</span></div>${halfPitch(side, 'final', true, 690, false)}${benchOne(side, 'final', true)}</div>`;
+  };
+  return `<div class="screen m land" ${dark ? 'data-theme="dark"' : ''} style="width: ${w}px; height: __H__px;"><main class="wrap" style="padding: 12px 16px 24px;"><div class="sh"><h2 class="shT">Lineups</h2></div><div class="board lsGrid">${col(m.A)}${col(m.B)}</div></main></div>`;
 }

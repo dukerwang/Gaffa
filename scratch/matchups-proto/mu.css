@@ -842,3 +842,8 @@
 .mnN { max-width: 50px; font-size: 8.5px; letter-spacing: -.01em; }
 .mn .pts { font-size: 8.5px; padding: 0 2px; letter-spacing: -.02em; }
 .m .shSum { grid-template-columns: minmax(0, 1fr) 50px; padding: 0 14px; }
+
+.lsNext { margin-top: 12px; }
+.land .lsGrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.land .lsGrid .lsCol + .lsCol { border-left: 1px solid var(--color-border); }
+.land .bnChips { gap: 6px; }

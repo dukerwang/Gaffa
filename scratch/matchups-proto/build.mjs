@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LIGHT, DARK, setMode, resetCrests, USED } from './lib.mjs';
-import { roundPage2 as roundPage, matchPage2 as matchPage } from './pages2.mjs';
+import { roundPage2 as roundPage, matchPage2 as matchPage, landscapeLineups } from './pages2.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const STYLE = fs.readFileSync(path.join(HERE, 'mu.css'), 'utf8');
@@ -22,9 +22,10 @@ export const BOARDS = [
   { file: 'MatchFinalDark.dc.html', title: 'Matchup · Final · Dark', w: 1440, page: 'm', make: () => matchPage({ state: 'final', dark: true, w: 1440 }) },
   { file: 'MatchLive.dc.html', title: 'Matchup · Live (Sun 13:00)', w: 1440, page: 'm', make: () => matchPage({ state: 'live', w: 1440 }) },
   { file: 'MatchUpcoming.dc.html', title: 'Matchup · Gameweek 6 · Upcoming', w: 1440, page: 'm', make: () => matchPage({ state: 'upcoming', w: 1440 }) },
-  { file: 'MatchFinalPhone.dc.html', title: 'Final · 390 · One Pitch', w: 390, page: 'm', make: () => matchPage({ state: 'final', mobile: true, w: 390 }) },
+  { file: 'MatchFinalPhone.dc.html', title: 'Final · 390 · Both Clubs', w: 390, page: 'm', make: () => matchPage({ state: 'final', mobile: true, w: 390 }) },
   { file: 'MatchFinalPhoneTheirs.dc.html', title: 'Final · 390 · One Club', w: 390, page: 'm', make: () => matchPage({ state: 'final', mobile: true, w: 390, variant: 'single' }) },
   { file: 'MatchFinalPhoneDark.dc.html', title: 'Final · 390 · Dark', w: 390, page: 'm', make: () => matchPage({ state: 'final', mobile: true, dark: true, w: 390 }) },
+  { file: 'MatchLandscape.dc.html', title: 'Phone Sideways · Lineups', w: 844, page: 'm', make: () => landscapeLineups({ w: 844 }) },
   { file: 'MatchLivePhone.dc.html', title: 'Live · 390', w: 390, page: 'm', make: () => matchPage({ state: 'live', mobile: true, w: 390 }) },
 ];
 

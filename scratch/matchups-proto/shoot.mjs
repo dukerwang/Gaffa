@@ -8,7 +8,7 @@ const browser = await chromium.launch();
 const heights = fs.existsSync(path.join(HERE, 'heights.json')) ? JSON.parse(fs.readFileSync(path.join(HERE, 'heights.json'), 'utf8')) : {};
 const report = {};
 for (const f of files) {
-  const w = /Phone/.test(f) ? 390 : 1440;
+  const w = /Landscape/.test(f) ? 844 : /Phone/.test(f) ? 390 : 1440;
   const page = await browser.newPage({ viewport: { width: w, height: 900 }, deviceScaleFactor: 1 });
   await page.goto('file://' + path.join(HERE, 'preview', f));
   await page.waitForTimeout(1200);
