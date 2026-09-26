@@ -5,18 +5,18 @@ import {
 } from './model.mjs';
 import { crest, tname, glyph, chip, portrait, face, ptsBadge, ukTime, badgeSrc, photoSrc } from './lib.mjs';
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-const bold = (s) => esc(s).replace(/\*\*(?:p:[^:]+:)?([^*]+)\*\*/g, '<b>$1</b>').replace(/'/g, '’');
+export const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+export const bold = (s) => esc(s).replace(/\*\*(?:p:[^:]+:)?([^*]+)\*\*/g, '<b>$1</b>').replace(/'/g, '’');
 
 // ── Chrome ────────────────────────────────────────────────────────────────
-const topbar = (mobile) => mobile
+export const topbar = (mobile) => mobile
   ? `<header class="top"><span class="topL">${crest('NTX', 20)}<span class="word">Gaffa</span></span><span class="topR"><span class="bal">€204m</span><button class="iconBtn" aria-label="Notifications">${glyph('bell', 18)}</button><button class="iconBtn" aria-label="Menu">${glyph('menu', 20)}</button></span></header>`
   : `<header class="top"><span class="topL"><span class="word">Gaffa</span><span class="league">Matchday Militia</span></span>
       <nav class="topNav" aria-label="League"><a class="tl">Home</a><a class="tl">Squad${glyph('chev', 12)}</a><a class="tl">Transfers</a><a class="tl">League${glyph('chev', 12)}</a><a class="tl on">Fixtures${glyph('chev', 12)}</a></nav>
       <span class="topR"><span class="bal">€204m</span><button class="iconBtn" aria-label="Notifications">${glyph('bell', 18)}</button>${crest('NTX', 24)}</span></header>`;
 
 // ── The season ribbon: your result every gameweek, and the way between them ─
-function ribbon(sel, mobile, liveGw) {
+export function ribbon(sel, mobile, liveGw) {
   const f = Object.fromEntries(form(ME, 5).map((x) => [x.gw, x]));
   const cells = [];
   for (let gw = 1; gw <= 38; gw++) {
@@ -35,7 +35,7 @@ function ribbon(sel, mobile, liveGw) {
   const rec = recordOf(ME, 5);
   return `<div class="rib">${mobile ? '' : `<span class="ribK"><b>${ordinal(rec.rank)} · ${rec.pts} pts</b><span>W${rec.W} D${rec.D} L${rec.L}</span></span>`}<div class="ribCells">${cells.join('')}</div></div>`;
 }
-function gwBar(gw, mobile, liveGw) {
+export function gwBar(gw, mobile, liveGw) {
   return `<nav class="gwb" aria-label="Gameweeks">
     <span class="gwbName">Gameweeks</span>
     <span class="gwbStep"><button class="arw" aria-label="Previous gameweek">${glyph('left', 18)}</button><button class="gwSel" aria-label="Choose a gameweek">Gameweek ${gw}${glyph('chev', 14)}</button><button class="arw" aria-label="Next gameweek">${glyph('right', 18)}</button></span>
@@ -49,9 +49,9 @@ function inkStyle(a, b) {
   if (!reach) return 'display: none;';
   return a > b ? `right: 50%; width: ${reach}%;` : `left: 50%; width: ${reach}%;`;
 }
-const axisDark = (a, b) => `<div class="hxAxis" aria-hidden="true"><span class="hxBand"></span><span class="hxInk" style="${inkStyle(a, b)}"></span><span class="hxTick"></span></div>`;
-const axisLight = (a, b) => `<div class="ax" aria-hidden="true"><span class="axBand"></span><span class="axInk" style="${inkStyle(a, b)}"></span><span class="axTick"></span></div>`;
-function verdict(a, b, mineSide, done) {
+export const axisDark = (a, b) => `<div class="hxAxis" aria-hidden="true"><span class="hxBand"></span><span class="hxInk" style="${inkStyle(a, b)}"></span><span class="hxTick"></span></div>`;
+export const axisLight = (a, b) => `<div class="ax" aria-hidden="true"><span class="axBand"></span><span class="axInk" style="${inkStyle(a, b)}"></span><span class="axTick"></span></div>`;
+export function verdict(a, b, mineSide, done) {
   const m = Math.abs(a - b);
   if (m <= DRAW) return `${done ? 'Drawn' : 'Level'}, <b>${fmt(m)}</b> apart`;
   const aLeads = a > b;
@@ -62,11 +62,11 @@ function verdict(a, b, mineSide, done) {
   return `${done ? '' : 'Ahead by '}<b>${fmt(m)}</b>`;
 }
 
-const ticks = (played) => `<span class="ticks" aria-label="${played} of 11 played">${Array.from({ length: 11 }, (_, i) => `<i${i < played ? '' : ' class="to"'}></i>`).join('')}</span>`;
-const formDots = (k, upto, cls = 'frm') => `<span class="${cls}">${form(k, upto).slice(-5).map((x) => `<i class="${cls === 'frm' ? x.r : `res ${x.r}`}">${x.r}</i>`).join('')}</span>`;
+export const ticks = (played) => `<span class="ticks" aria-label="${played} of 11 played">${Array.from({ length: 11 }, (_, i) => `<i${i < played ? '' : ' class="to"'}></i>`).join('')}</span>`;
+export const formDots = (k, upto, cls = 'frm') => `<span class="${cls}">${form(k, upto).slice(-5).map((x) => `<i class="${cls === 'frm' ? x.r : `res ${x.r}`}">${x.r}</i>`).join('')}</span>`;
 
 // ── The scoreboard (round hero and matchup head) ─────────────────────────
-function scoreboard(o) {
+export function scoreboard(o) {
   const { m, state, big, mobile, gw } = o;
   const kA = m.A.k, kB = m.B.k;
   const mine = kA === ME ? 'A' : kB === ME ? 'B' : null;
@@ -162,7 +162,7 @@ function fixtureRow(m, state, mobile) {
   return `<a class="fxRow">${side(kA, sA)}${vA}${mid}${vB}${side(kB, sB, true)}</a>`;
 }
 
-const cstack = (ks, size = 22) => `<span class="cstack">${ks.map((k) => `<span>${crest(k, size)}</span>`).join('')}</span>`;
+export const cstack = (ks, size = 22) => `<span class="cstack">${ks.map((k) => `<span>${crest(k, size)}</span>`).join('')}</span>`;
 
 // ── Top performers ───────────────────────────────────────────────────────
 function performers(list, season) {
@@ -228,7 +228,7 @@ export function roundPage({ state, mobile, dark, w }) {
 }
 
 // ═══ Matchup page ════════════════════════════════════════════════════════
-function matchBar(m, state, mobile) {
+export function matchBar(m, state, mobile) {
   const ties = state === 'upcoming'
     ? SCHEDULE[6].map(([a, b]) => ({ a, b, on: a === m.A.k }))
     : GW5.map((t) => { const now = state === 'live' ? LIVE_NOW : null; return { a: t.A.k, b: t.B.k, va: sideAt(t.A, now).score, vb: sideAt(t.B, now).score, on: t === m }; });
@@ -306,7 +306,7 @@ function runningScoreBlock(m, state, mobile) {
 }
 
 // ── Match report ─────────────────────────────────────────────────────────
-function reportBlock(m, state) {
+export function reportBlock(m, state) {
   if (state === 'live') {
     const tp = stillToPlay(m, LIVE_NOW);
     const rows = tp.map((s) => `<div class="mrCol"><span class="mrColH">${glyph('clock', 14)}${ukTime(s.t)}</span>
@@ -323,13 +323,13 @@ function reportBlock(m, state) {
 }
 
 // ── The pitch chip ───────────────────────────────────────────────────────
-function playStatus(p, state) {
+export function playStatus(p, state) {
   if (state === 'upcoming') return 'pend';
   const own = p.subIn ? p.replaced : p;
   if (state === 'live' && !finishedAt(own.fixture, LIVE_NOW)) return 'pend';
   return p.mins > 0 || p.subIn ? 'played' : 'dnp';
 }
-function pitchChip(p, state, size = 'cmp', withRating = true) {
+export function pitchChip(p, state, size = 'cmp', withRating = true) {
   const st = playStatus(p, state);
   const badge = st === 'pend' ? '<span class="pts pts-pend">–</span>' : st === 'dnp' ? '<span class="pts pts-dnp">DNP</span>' : ptsBadge(p.pts);
   const fx = p.fixture;
@@ -342,15 +342,15 @@ function pitchChip(p, state, size = 'cmp', withRating = true) {
 }
 
 // Lateral order inside a line: left-sided slots first
-const LAT = { LB: 0, LWB: 0, LW: 0, CB: 1, DM: 1, CM: 1, AM: 1, ST: 1, GK: 1, RB: 2, RWB: 2, RW: 2 };
-const ORDER = ['GK', 'DEF', 'WBZ', 'DMZ', 'CMZ', 'AMZ', 'ATT'];
-function lines(side) {
+export const LAT = { LB: 0, LWB: 0, LW: 0, CB: 1, DM: 1, CM: 1, AM: 1, ST: 1, GK: 1, RB: 2, RWB: 2, RW: 2 };
+export const ORDER = ['GK', 'DEF', 'WBZ', 'DMZ', 'CMZ', 'AMZ', 'ATT'];
+export function lines(side) {
   const z = {};
   for (const p of side.starters) (z[zoneOf(p.slot)] ??= []).push(p);
   for (const k in z) z[k].sort((a, b) => LAT[a.slot] - LAT[b.slot]);
   return z;
 }
-function spread(zone, n, z) {
+export function spread(zone, n, z) {
   if (zone === 'WBZ' && n === 2) return [12, 88];
   if (zone === 'CMZ' && n === 2 && z.DMZ?.length === 1) return [29, 71];
   if (zone === 'ATT' && n === 3) return [22, 50, 78];
@@ -397,7 +397,7 @@ function pitchV(m, state, H) {
 }
 // The shipped two half-pitches, kept: each club's half, attacking up.
 const FLEX = { ATT: 1.22, AMZ: 1.52, CMZ: 1.05, DMZ: 1.05, WBZ: 1.05, DEF: 1.22, GK: 0.85 };
-function halves(m, state, mobile) {
+export function halves(m, state, mobile) {
   const half = (side) => {
     const z = lines(side);
     const zones = ORDER.slice().reverse().filter((k) => z[k]);
@@ -416,7 +416,7 @@ function halves(m, state, mobile) {
   return `<div class="phGrid">${half(m.A)}${half(m.B)}</div>`;
 }
 
-function benches(m, state, mobile) {
+export function benches(m, state, mobile) {
   const b = (side) => {
     const now = state === 'live' ? LIVE_NOW : null;
     const s = state === 'upcoming' ? null : sideAt(side, now);
@@ -447,9 +447,9 @@ function lineupsBlock(m, state, mobile, variant) {
 }
 
 // ── Points breakdown ─────────────────────────────────────────────────────
-const BAND = { poor: 'bPoor', low: 'bLow', mid: 'bMid', good: 'bGood', best: 'bBest', elite: 'bBest', supreme: 'bBest' };
-const sig = (perf) => `<span class="sig ramp" aria-hidden="true">${perf.map((g) => `<i class="${BAND[g.band] ?? 'bMid'}" style="height: ${Math.round(3 + g.width / 100 * 13)}px;"></i>`).join('')}</span>`;
-function perfBlock(p) {
+export const BAND = { poor: 'bPoor', low: 'bLow', mid: 'bMid', good: 'bGood', best: 'bBest', elite: 'bBest', supreme: 'bBest' };
+export const sig = (perf) => `<span class="sig ramp" aria-hidden="true">${perf.map((g) => `<i class="${BAND[g.band] ?? 'bMid'}" style="height: ${Math.round(3 + g.width / 100 * 13)}px;"></i>`).join('')}</span>`;
+export function perfBlock(p) {
   return `<div class="pb ramp">${p.perf.map((g) => `<div class="pbRow ${BAND[g.band] ?? 'bMid'}"><span class="pbL">${g.label}</span><span class="pbTr"><span class="pbBar"><span class="pbInk" style="width: ${g.width}%;"></span></span><span class="pbTick"></span></span><span class="pbV">${g.verdict}</span>${g.evidence || g.rank ? `<span class="pbEv">${[g.evidence, g.rank].filter(Boolean).join(' · ')}</span>` : ''}</div>`).join('')}<p class="pbNote">Centre line is the median for ${/^[AEIOU]/.test(p.slot) ? 'an' : 'a'} ${p.slot}</p></div>`;
 }
 function breakdownPanel(side, state, openName) {
@@ -478,7 +478,7 @@ function breakdownBlock(m, state, mobile) {
 }
 
 // ── Head-to-head ─────────────────────────────────────────────────────────
-function h2hBlock(m, state) {
+export function h2hBlock(m, state) {
   const [x, y] = [m.A.k, m.B.k];
   const meets = RESULTS.filter(([, a, , b]) => (a === x && b === y) || (a === y && b === x));
   const mine = x === ME ? x : y, oth = mine === x ? y : x;

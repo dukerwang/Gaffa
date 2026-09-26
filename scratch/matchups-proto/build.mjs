@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LIGHT, DARK, setMode, resetCrests, USED } from './lib.mjs';
-import { roundPage, matchPage } from './pages.mjs';
+import { roundPage2 as roundPage, matchPage2 as matchPage } from './pages2.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const STYLE = fs.readFileSync(path.join(HERE, 'mu.css'), 'utf8');
@@ -19,7 +19,7 @@ export const BOARDS = [
   { file: 'RoundLivePhone.dc.html', title: 'Live · 390', w: 390, page: 'r', make: () => roundPage({ state: 'live', mobile: true, w: 390 }) },
   { file: 'RoundUpcomingPhone.dc.html', title: 'Upcoming · 390', w: 390, page: 'r', make: () => roundPage({ state: 'upcoming', mobile: true, w: 390 }) },
   { file: 'MatchFinal.dc.html', title: 'Matchup · Final · One Pitch', w: 1440, page: 'm', make: () => matchPage({ state: 'final', w: 1440 }) },
-  { file: 'MatchFinalHalves.dc.html', title: 'Matchup · Final · Two Halves (as shipped)', w: 1440, page: 'm', make: () => matchPage({ state: 'final', w: 1440, variant: 'halves' }) },
+  { file: 'MatchFinalHalves.dc.html', title: 'Matchup · Final · Two Half-Pitches', w: 1440, page: 'm', make: () => matchPage({ state: 'final', w: 1440, variant: 'halves' }) },
   { file: 'MatchFinalDark.dc.html', title: 'Matchup · Final · Dark', w: 1440, page: 'm', make: () => matchPage({ state: 'final', dark: true, w: 1440 }) },
   { file: 'MatchLive.dc.html', title: 'Matchup · Live (Sun 13:00)', w: 1440, page: 'm', make: () => matchPage({ state: 'live', w: 1440 }) },
   { file: 'MatchUpcoming.dc.html', title: 'Matchup · Gameweek 6 · Upcoming', w: 1440, page: 'm', make: () => matchPage({ state: 'upcoming', w: 1440 }) },

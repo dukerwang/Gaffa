@@ -29,7 +29,12 @@ TEAMS.NTX.crest ??= DATA.find((m) => m.b.id === TEAMS.NTX.id).b.crest;
 // A club's colour for the scoreboard ground. A near-black primary gives no
 // identity once it is darkened further, so fall back to the secondary.
 function lum(hex) { const n = parseInt(hex.slice(1), 16); const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; }
-for (const t of Object.values(TEAMS)) t.color = lum(t.crest.primaryColor) < 0.03 ? t.crest.secondaryColor : t.crest.primaryColor;
+// A club's identity colour: the first of primary / icon / secondary that is
+// neither near-black nor near-white, so it still reads as a colour when mixed.
+for (const t of Object.values(TEAMS)) {
+  const c = t.crest;
+  t.color = [c.primaryColor, c.iconColor, c.secondaryColor].find((h) => { const l = lum(h); return l > 0.035 && l < 0.6; }) ?? c.primaryColor;
+}
 
 // ── Results, GW1–5, exactly as stored ────────────────────────────────────
 export const RESULTS = [
@@ -172,8 +177,9 @@ export function sideAt(s, now) {
 }
 
 // Kickoff slots across both sides, and what each side banked in each.
-export function runningScore(m) {
+export function runningScore(m, times = []) {
   const slots = new Map();
+  for (const t of times) slots.set(t, { t, A: 0, B: 0, whoA: [], whoB: [] });
   const add = (fx, key, v, who) => {
     if (!fx) return;
     const t = fx.kickoffTime;
@@ -223,3 +229,22 @@ export const SEASON_TOP = [
 
 export const ptsBand = (v) => (v >= 29 ? 'elite' : v >= 15.8 ? 'good' : v >= 5.6 ? 'fair' : v >= 2 ? 'below' : v > 0 ? 'weak' : 'bad');
 export const fmt = (v) => Number(v).toFixed(2);
+
+// Every kickoff slot in the round, so all fixtures share one clock.
+export const ROUND_SLOTS = [...new Set(GW5.flatMap((m) => runningScore(m).map((s) => s.t)))].sort((a, b) => Date.parse(a) - Date.parse(b));
+
+// A side's points by line of the team, as the matchup counted them.
+export const LINE_OF = { GK: 'Goalkeeper', DEF: 'Defence', WBZ: 'Defence', DMZ: 'Midfield', CMZ: 'Midfield', AMZ: 'Midfield', ATT: 'Attack' };
+export const LINES = ['Goalkeeper', 'Defence', 'Midfield', 'Attack'];
+export function byLine(side) {
+  const out = Object.fromEntries(LINES.map((l) => [l, []]));
+  for (const p of side.starters) out[LINE_OF[zoneOf(p.slot)]].push(p);
+  return out;
+}
+
+// Every starter's points across the round, for the spread.
+export function roundAll() {
+  const all = [];
+  for (const m of GW5) for (const s of [m.A, m.B]) for (const p of s.starters) all.push({ ...p, owner: s.k });
+  return all;
+}
