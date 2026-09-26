@@ -7,7 +7,7 @@ import {
 import { crest, tname, glyph, chip, portrait, face, ptsBadge, ukTime } from './lib.mjs';
 import {
   esc, bold, topbar, gwBar, scoreboard, matchBar, reportBlock, playStatus, pitchChip, lines, spread, benches,
-  perfBlock, h2hBlock, halves, ticks, BAND, ORDER, LAT,
+  perfBlock, h2hBlock, halves, halfPitch, benchOne, ticks, BAND, ORDER, LAT,
 } from './pages.mjs';
 
 const slotDone = (t, now) => now == null || Date.parse(t) + 115 * 60000 <= now;
@@ -140,7 +140,6 @@ function recordsBlock(mobile) {
     <div class="rrLeft"><p class="rrLead2">${lead}</p>
       <div class="rrFigs"><span><b>${fmt(top[1])}</b>Highest Score</span><span><b>${fmt(Math.abs(close[2] - close[4]))}</b>Closest Match</span><span><b>${fmt(season[1])}</b>Season High</span></div></div>
     <div class="rrBars">
-      <span class="rrSeasonLine" style="left: calc(186px + (100% - 274px) * ${season[1] / 240});"><span>Season High</span></span>
       ${scores.slice().reverse().map(([k, v]) => `<div class="rrBar${k === ME ? ' rrBarMe' : ''}">${crest(k, 18)}<span class="rrBarN">${tname(k)}</span><span class="rrBarT"><i style="width: ${(v / 240) * 100}%;"></i></span><b>${fmt(v)}</b></div>`).join('')}
     </div>
   </div></section>`;
@@ -190,7 +189,7 @@ function tableBlock(state) {
   const rows = tableWithMove(upto);
   const roundRes = (k) => { const f = form(k, 5).find((x) => x.gw === 5); return f ? `<span class="res ${f.r}" title="${f.r} ${fmt(f.my)}–${fmt(f.opp)}">${f.r}</span>` : '<span></span>'; };
   const mv = (n) => (n > 0 ? `<span class="stMv stUp">${glyph('up', 11)}${n}</span>` : n < 0 ? `<span class="stMv stDn">${glyph('down', 11)}${-n}</span>` : `<span class="stMv stEq">–</span>`);
-  return `<section class="blk"><div class="sh"><h2 class="shT">Standings</h2><span class="shTools"><span class="seg"><button class="segB">Before</button><button class="segB segOn">After</button></span></span></div>
+  return `<section class="blk"><div class="sh"><h2 class="shT">Standings</h2></div>
     <div class="panel"><div class="tbH lbl"><span>#</span><span></span><span></span><span>Club</span><span>GW5</span><span>W-D-L</span><span>Pts</span></div>
     ${rows.map((r) => `<a class="tbR${r.k === ME ? ' stMine' : ''}"><span class="stRk">${r.rank}</span>${mv(r.move)}${crest(r.k, 18)}<span class="stName">${tname(r.k)}</span>${roundRes(r.k)}<span class="stNum">${r.W}-${r.D}-${r.L}</span><span class="stPts">${r.pts}</span></a>`).join('')}
     <div class="stFoot"><span>Arrows show movement this round</span><a class="quiet">Full Table${glyph('right', 13)}</a></div></div></section>`;
@@ -318,15 +317,34 @@ function benchesStacked(m, state, mobile) {
   return benches(m, state, mobile).replace('class="bnRow"', 'class="bnRow bnStack"');
 }
 
+// Each club's own half, both attacking up, each bench under its own half.
+function lineupsSplit(m, state, mobile, H = 800) {
+  const now = state === 'live' ? LIVE_NOW : null;
+  const col = (side) => {
+    const s = state === 'upcoming' ? null : sideAt(side, now);
+    return `<div class="lsCol"><div class="lsHead">${crest(side.k, 22)}<b>${tname(side.k)}</b><span class="lbl">${side.formation}</span>${s ? `<span class="lsScore">${fmt(s.score)}</span>` : ''}</div>${halfPitch(side, state, mobile, H, false)}${benchOne(side, state, mobile)}</div>`;
+  };
+  const keyNode = `<span class="lnKey">${[0, 2, 5.6, 15.8, 29].map((v) => ptsBadge(v)).join('')}</span>`;
+  if (mobile) {
+    const mineS = m.A.k === ME ? m.A : m.B, oth = mineS === m.A ? m.B : m.A;
+    const shown = o.theirs ? oth : mineS;
+    return `<section class="blk"><div class="sh"><h2 class="shT">Lineups</h2></div>
+      <div class="segRow"><span class="seg"><button class="segB${o.theirs ? '' : ' segOn'}">${crest(mineS.k, 14)}${tname(mineS.k)}</button><button class="segB${o.theirs ? ' segOn' : ''}">${crest(oth.k, 14)}${tname(oth.k)}</button></span></div>
+      <div class="board">${col(shown)}</div><p class="lsHint">Swipe the pitch to switch sides</p></section>`;
+  }
+  return `<section class="blk"><div class="sh"><h2 class="shT">Lineups</h2><span class="shTools">${keyNode}</span></div>
+    <div class="board lsGrid">${col(m.A)}${col(m.B)}</div></section>`;
+}
+const o = { theirs: false };
+
 export function matchPage2({ state, mobile, dark, w, variant }) {
   const m = state === 'upcoming' ? GW6 : GW5[0];
   const sb = scoreboard({ m, state, big: true, mobile, gw: m.gw });
-  const right = state === 'upcoming'
-    ? teamSheets(m, state, mobile)
-    : `${teamSheets(m, state, mobile)}<div class="stl">${reportBlock(m, state)}</div>`;
-  const duo = mobile
-    ? `${lineupsV(m, state, mobile, variant)}<div class="stl">${right}</div>`
-    : `<div class="duo${variant === 'halves' ? ' duoWide' : ''}"><div>${lineupsV(m, state, mobile, variant)}</div><div>${right}</div></div>`;
+  o.theirs = variant === 'theirs';
+  const sheets = state === 'upcoming' || mobile
+    ? `${teamSheets(m, state, mobile)}${state === 'upcoming' ? '' : `<div class="stl">${reportBlock(m, state)}</div>`}`
+    : `<div class="story2"><div>${teamSheets(m, state, mobile)}</div><div>${reportBlock(m, state)}</div></div>`;
+  const duo = `${lineupsSplit(m, state, mobile, mobile ? 640 : 820)}<div class="stl">${sheets}</div>`;
   let body;
   if (state === 'upcoming') body = `${sb}<div class="stl">${h2hBlock(m, state)}</div><div class="stl">${duo}</div>`;
   else body = `${sb}<div class="stl">${momentumBlock(m, state, mobile)}</div><div class="stl">${duo}</div>${state === 'final' ? `<div class="stl">${h2hBlock(m, state)}</div>` : ''}`;

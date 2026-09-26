@@ -396,27 +396,34 @@ function pitchV(m, state, H) {
   return `<div class="pv" style="height: ${H}px;"><div class="pvLines"><span class="pvHalf"></span><span class="pvCircle"></span><span class="pvBox pvBoxT"></span><span class="pvBox pvBoxB"></span></div>${nodes.join('')}</div>`;
 }
 // The shipped two half-pitches, kept: each club's half, attacking up.
-const FLEX = { ATT: 1.22, AMZ: 1.52, CMZ: 1.05, DMZ: 1.05, WBZ: 1.05, DEF: 1.22, GK: 0.85 };
-export function halves(m, state, mobile) {
+const FLEX = { ATT: 1.1, AMZ: 1.52, CMZ: 1.05, DMZ: 1.05, WBZ: 1.05, DEF: 1.22, GK: 1.15 };
+export function halfPitch(side, state, mobile, H = mobile ? 660 : 880, label = true) {
+  return halves({ A: side, B: side }, state, mobile, H, label, true);
+}
+export function halves(m, state, mobile, Hopt, label = true, single = false) {
   const half = (side) => {
     const z = lines(side);
     const zones = ORDER.slice().reverse().filter((k) => z[k]);
     const tot = zones.reduce((s, k) => s + FLEX[k], 0);
     let acc = 0;
-    const H = mobile ? 660 : 880, top = mobile ? 64 : 84, bot = mobile ? 56 : 84;
+    const H = Hopt ?? (mobile ? 660 : 880), top = mobile ? 50 : 56, bot = mobile ? 62 : 96;
     const nodes = [];
     for (const zone of zones) {
       const c = acc + FLEX[zone] / 2; acc += FLEX[zone];
       const yy = top + (H - top - bot) * (c / tot);
       const xs = spread(zone, z[zone].length, z);
-      z[zone].forEach((p, i) => nodes.push(`<span class="paP" style="left: ${xs[i]}%; top: ${yy}px;">${pitchChip(p, state, mobile ? 'xs' : 'md', false)}</span>`));
+      z[zone].forEach((p, i) => nodes.push(`<span class="paP" style="left: ${xs[i]}%; top: ${yy}px;">${pitchChip(p, state, mobile ? 'xs' : 'cmp', false)}</span>`));
     }
-    return `<div class="ph"><div class="phField${mobile ? ' phM' : ''}"><span class="phTop"></span><span class="phCircle"></span><span class="phBox"></span><span class="phGoal"></span><span class="phLabel">${crest(side.k, 18)}${tname(side.k)}</span>${nodes.join('')}</div></div>`;
+    return `<div class="ph"><div class="phField${mobile ? ' phM' : ''}" style="height: ${H}px;"><span class="phTop"></span><span class="phCircle"></span><span class="phBox"></span><span class="phGoal"></span>${label ? `<span class="phLabel">${crest(side.k, 18)}${tname(side.k)}</span>` : ''}${nodes.join('')}</div></div>`;
   };
+  if (single) return half(m.A);
   return `<div class="phGrid">${half(m.A)}${half(m.B)}</div>`;
 }
 
-export function benches(m, state, mobile) {
+export function benchOne(side, state, mobile) {
+  return benches({ A: side, B: side }, state, mobile, true);
+}
+export function benches(m, state, mobile, single = false) {
   const b = (side) => {
     const now = state === 'live' ? LIVE_NOW : null;
     const s = state === 'upcoming' ? null : sideAt(side, now);
@@ -428,6 +435,7 @@ export function benches(m, state, mobile) {
     }).join('');
     return `<div class="bnSide"><div class="bnH">${crest(side.k, 18)}<span class="bnT">Bench</span>${s ? `<span class="bnBonus">Bench Bonus <b>+${fmt(s.bench)}</b></span>` : `<span class="bnBonus">25% of each unused player’s points</span>`}</div><div class="bnChips">${chips}</div></div>`;
   };
+  if (single) return b(m.A);
   return `<div class="bnRow">${b(m.A)}${b(m.B)}</div>`;
 }
 
