@@ -5,6 +5,7 @@ import {
   finishedAt, sideAt, runningScore, stillToPlay, ROUND_SLOTS, byLine, LINES, roundAll, SEASON_TOP, fmt, res,
 } from './model.mjs';
 import { crest, tname, glyph, chip, portrait, face, ptsBadge, ukTime } from './lib.mjs';
+import { sig } from './pages.mjs';
 import {
   esc, bold, topbar, gwBar, scoreboard, matchBar, reportBlock, playStatus, pitchChip, lines, spread, benches,
   perfBlock, h2hBlock, halves, halfPitch, benchOne, ticks, BAND, ORDER, LAT,
@@ -327,24 +328,106 @@ function lineupsSplit(m, state, mobile, H = 800) {
   const keyNode = `<span class="lnKey">${[0, 2, 5.6, 15.8, 29].map((v) => ptsBadge(v)).join('')}</span>`;
   if (mobile) {
     const mineS = m.A.k === ME ? m.A : m.B, oth = mineS === m.A ? m.B : m.A;
-    const shown = o.theirs ? oth : mineS;
-    return `<section class="blk"><div class="sh"><h2 class="shT">Lineups</h2></div>
-      <div class="segRow"><span class="seg"><button class="segB${o.theirs ? '' : ' segOn'}">${crest(mineS.k, 14)}${tname(mineS.k)}</button><button class="segB${o.theirs ? ' segOn' : ''}">${crest(oth.k, 14)}${tname(oth.k)}</button></span></div>
-      <div class="board">${col(shown)}</div><p class="lsHint">Swipe the pitch to switch sides</p></section>`;
+    const both = o.view !== 'single';
+    const seg = `<div class="segRow"><span class="seg"><button class="segB${both ? ' segOn' : ''}">Both</button><button class="segB${both ? '' : ' segOn'}">${crest(mineS.k, 14)}${tname(mineS.k)}</button><button class="segB">${crest(oth.k, 14)}${tname(oth.k)}</button></span></div>`;
+    const body = both
+      ? `<div class="board"><div class="mbGrid">${miniHalf(m.A, state)}${miniHalf(m.B, state)}</div></div><p class="lsHint">Tap a club for its full pitch and bench</p>`
+      : `<div class="board">${col(mineS)}</div><p class="lsHint">Swipe the pitch to switch clubs</p>`;
+    return `<section class="blk"><div class="sh"><h2 class="shT">Lineups</h2></div>${seg}${body}</section>`;
   }
   return `<section class="blk"><div class="sh"><h2 class="shT">Lineups</h2><span class="shTools">${keyNode}</span></div>
     <div class="board lsGrid">${col(m.A)}${col(m.B)}</div></section>`;
 }
-const o = { theirs: false };
+const o = { view: 'both' };
+
+// Both squads at once on a phone: each club's half at glance size.
+const MFLEX = { ATT: 1.1, AMZ: 1.3, CMZ: 1, DMZ: 1, WBZ: 1, DEF: 1.15, GK: 1.05 };
+function miniHalf(side, state) {
+  const now = state === 'live' ? LIVE_NOW : null;
+  const s = state === 'upcoming' ? null : sideAt(side, now);
+  const z = lines(side);
+  const zones = ORDER.slice().reverse().filter((k) => z[k]);
+  const tot = zones.reduce((t, k) => t + MFLEX[k], 0);
+  const H = 390, top = 26, bot = 30;
+  let acc = 0;
+  const nodes = [];
+  for (const zone of zones) {
+    const c = acc + MFLEX[zone] / 2; acc += MFLEX[zone];
+    const yy = top + (H - top - bot) * (c / tot);
+    const xs = spread(zone, z[zone].length, z).map((v) => 50 + (v - 50) * 1.04);
+    z[zone].forEach((p, i) => {
+      const st = playStatus(p, state);
+      const badge = st === 'pend' ? '<span class="pts pts-pend">–</span>' : st === 'dnp' ? '<span class="pts pts-dnp">DNP</span>' : ptsBadge(p.pts);
+      nodes.push(`<span class="paP" style="left: ${xs[i]}%; top: ${yy}px;"><button class="mn${st === 'dnp' ? ' chDnp' : st === 'pend' ? ' chPend' : ''}" aria-label="${p.name}, ${p.slot}">${face(p, 30)}<span class="mnN">${p.name.replace(/^[A-Z]\./, '')}</span>${badge}</button></span>`);
+    });
+  }
+  return `<div class="mbCol"><div class="mbHead">${crest(side.k, 16)}<b>${tname(side.k)}</b>${s ? `<span>${fmt(s.score)}</span>` : ''}</div><div class="ph mbPh"><div class="phField" style="height: ${H}px;"><span class="phTop"></span><span class="phCircle"></span><span class="phBox"></span><span class="phGoal"></span>${nodes.join('')}</div></div></div>`;
+}
+
+// ── Line totals: where the matchup was won and lost ──────────────────────
+function lineTotals(m, state, mobile) {
+  const now = state === 'live' ? LIVE_NOW : null;
+  const LA = byLine(m.A), LB = byLine(m.B);
+  const cnt = (p) => (playStatus(p, state) === 'played' ? p.pts : 0);
+  const sum = (arr) => arr.reduce((t, p) => t + cnt(p), 0);
+  const sA = sideAt(m.A, now), sB = sideAt(m.B, now);
+  const rows = [...LINES.map((l) => [l, sum(LA[l]), sum(LB[l])]), ['Bench Bonus', sA.bench, sB.bench]];
+  const max = Math.max(...rows.flatMap((r) => [r[1], r[2]]), 1);
+  const row = ([l, a, b]) => {
+    const d = a - b;
+    return `<div class="ltR"><span class="ltL">${l}</span><span class="ltV">${fmt(a)}</span><span class="ltBar"><i style="right: 50%; width: ${(a / max) * 50}%; background: ${TEAMS[m.A.k].color};"></i><i style="left: 50%; width: ${(b / max) * 50}%; background: ${TEAMS[m.B.k].color};"></i></span><span class="ltV">${fmt(b)}</span><span class="ltD${Math.abs(d) < 0.005 ? '' : d > 0 ? ' ltDa' : ' ltDb'}">${crest(d >= 0 ? m.A.k : m.B.k, 12)}${fmt(Math.abs(d))}</span></div>`;
+  };
+  return `<section class="blk"><div class="sh"><h2 class="shT">Line Totals</h2></div><div class="panel">
+    <div class="ltH"><span></span><span class="ltHc">${crest(m.A.k, 16)}</span><span></span><span class="ltHc">${crest(m.B.k, 16)}</span><span class="lbl">Edge</span></div>
+    ${rows.map(row).join('')}
+    <div class="ltR ltTot"><span class="ltL">Total</span><span class="ltV">${fmt(sA.score)}</span><span></span><span class="ltV">${fmt(sB.score)}</span><span class="ltD">${crest(sA.score >= sB.score ? m.A.k : m.B.k, 12)}${fmt(Math.abs(sA.score - sB.score))}</span></div></div></section>`;
+}
+
+// ── One team sheet per club ──────────────────────────────────────────────
+function teamSheet(side, state, mobile, openName) {
+  const now = state === 'live' ? LIVE_NOW : null;
+  const up = state === 'upcoming';
+  const s = up ? null : sideAt(side, now);
+  const L = byLine(side);
+  const row = (p) => {
+    const st = playStatus(p, state);
+    const fx = p.fixture;
+    const sub = st === 'pend' ? `${fx.opponent} · ${ukTime(fx.kickoffTime)}` : st === 'dnp' ? 'Did not play · no bench cover' : (p.subIn ? `On for ${p.replaced.name} · ` : '') + p.stats;
+    const pts = st === 'pend' ? '<span class="shP shP0">–</span>' : `<span class="shP${st === 'dnp' ? ' shP0' : ''}">${fmt(st === 'dnp' ? 0 : p.pts)}</span>`;
+    const open = p.name === openName && p.perf && st === 'played';
+    return `<div class="shE${open ? ' shOpen' : ''}"><div class="shRow" role="button" tabindex="0" aria-expanded="${open}">${chip(p.slot)}${portrait(p, 'sm', false)}<span class="shTx"><b>${p.name}${p.subIn ? glyph('up', 12) : ''}</b><span>${esc(sub)}</span></span>${p.perf && st === 'played' ? sig(p.perf) : '<span></span>'}${pts}</div>${open ? perfBlock(p) : ''}</div>`;
+  };
+  const line = (l) => {
+    const sub = L[l].reduce((t, p) => t + (playStatus(p, state) === 'played' ? p.pts : 0), 0);
+    return `<div class="shLine"><div class="shLH"><span>${l}</span>${up ? '' : `<b>${fmt(sub)}</b>`}</div>${L[l].map(row).join('')}</div>`;
+  };
+  const bench = side.bench.map((b) => {
+    const st = up || (state === 'live' && !finishedAt(b.fixture, LIVE_NOW)) ? 'pend' : b.mins > 0 ? 'played' : 'dnp';
+    const txt = st === 'pend' ? `${b.fixture.opponent} · ${ukTime(b.fixture.kickoffTime)}` : st === 'dnp' ? 'Did not play' : b.subOut ? 'Came on as an auto-sub' : `${fmt(b.pts)} pts × 25%`;
+    return `<div class="shE"><div class="shRow">${chip(b.pos)}${portrait({ ...b, slot: b.pos }, 'sm', false)}<span class="shTx"><b>${b.name}</b><span>${b.benchSlot} · ${txt}</span></span><span></span><span class="shP${st === 'played' ? '' : ' shP0'}">${st === 'played' ? '+' + fmt(b.credit) : '–'}</span></div></div>`;
+  }).join('');
+  return `<div class="panel shPanel"><div class="shHead">${crest(side.k, 24)}<span class="shName">${tname(side.k)}</span><span class="lbl">${side.formation}</span>${s ? `<span class="shTot">${fmt(s.score)}</span>` : ''}</div>
+    ${LINES.map(line).join('')}
+    <div class="shLine"><div class="shLH"><span>Bench</span>${s ? `<b>+${fmt(s.bench)}</b>` : ''}</div>${bench}</div>
+    ${s ? `<div class="shSum"><span>Starting XI</span><b>${fmt(s.xi)}</b></div><div class="shSum"><span>Bench Bonus</span><b>${fmt(s.bench)}</b></div><div class="shSum shTotal"><span>Total</span><b>${fmt(s.score)}</b></div>` : ''}</div>`;
+}
+function teamSheetsBlock(m, state, mobile) {
+  if (mobile) {
+    const mineS = m.A.k === ME ? m.A : m.B, oth = mineS === m.A ? m.B : m.A;
+    return `<section class="blk"><div class="sh"><h2 class="shT">Team Sheets</h2></div><div class="segRow"><span class="seg"><button class="segB segOn">${crest(mineS.k, 14)}${tname(mineS.k)}</button><button class="segB">${crest(oth.k, 14)}${tname(oth.k)}</button></span></div>${teamSheet(mineS, state, mobile, 'Cunha')}</section>`;
+  }
+  return `<section class="blk"><div class="sh"><h2 class="shT">Team Sheets</h2></div><div class="bdGrid">${teamSheet(m.A, state, mobile, 'Cunha')}${teamSheet(m.B, state, mobile, 'Isak')}</div></section>`;
+}
 
 export function matchPage2({ state, mobile, dark, w, variant }) {
   const m = state === 'upcoming' ? GW6 : GW5[0];
   const sb = scoreboard({ m, state, big: true, mobile, gw: m.gw });
-  o.theirs = variant === 'theirs';
-  const sheets = state === 'upcoming' || mobile
-    ? `${teamSheets(m, state, mobile)}${state === 'upcoming' ? '' : `<div class="stl">${reportBlock(m, state)}</div>`}`
-    : `<div class="story2"><div>${teamSheets(m, state, mobile)}</div><div>${reportBlock(m, state)}</div></div>`;
-  const duo = `${lineupsSplit(m, state, mobile, mobile ? 640 : 820)}<div class="stl">${sheets}</div>`;
+  o.view = variant === 'single' ? 'single' : 'both';
+  const lineups = lineupsSplit(m, state, mobile, mobile ? 640 : 820);
+  const mid = state === 'upcoming' ? ''
+    : mobile ? `<div class="stl">${lineTotals(m, state, mobile)}</div><div class="stl">${reportBlock(m, state)}</div>`
+    : `<div class="stl"><div class="story2"><div>${lineTotals(m, state, mobile)}</div><div>${reportBlock(m, state)}</div></div></div>`;
+  const duo = `${lineups}${mid}<div class="stl">${teamSheetsBlock(m, state, mobile)}</div>`;
   let body;
   if (state === 'upcoming') body = `${sb}<div class="stl">${h2hBlock(m, state)}</div><div class="stl">${duo}</div>`;
   else body = `${sb}<div class="stl">${momentumBlock(m, state, mobile)}</div><div class="stl">${duo}</div>${state === 'final' ? `<div class="stl">${h2hBlock(m, state)}</div>` : ''}`;

@@ -36,6 +36,13 @@ export function ribbon(sel, mobile, liveGw) {
   return `<div class="rib">${mobile ? '' : `<span class="ribK"><b>${ordinal(rec.rank)} · ${rec.pts} pts</b><span>W${rec.W} D${rec.D} L${rec.L}</span></span>`}<div class="ribCells">${cells.join('')}</div></div>`;
 }
 export function gwBar(gw, mobile, liveGw) {
+  const sub = gw === 6 ? 'Deadline Sat 10 Oct, 11:00' : liveGw ? 'Live · Fri 18 – Sun 20 Sep' : 'Final · Fri 18 – Sun 20 Sep';
+  if (mobile) {
+    return `<nav class="gwb gwbM" aria-label="Gameweeks">
+    <span class="gwbStepM"><button class="arwM" aria-label="Previous gameweek">${glyph('left', 20)}</button><button class="gwSelM" aria-label="Choose a gameweek"><span class="gwSelT">Gameweek ${gw}${glyph('chev', 14)}</span><span class="gwSelS${liveGw ? ' gwSelLive' : ''}">${sub}</span></button><button class="arwM" aria-label="Next gameweek">${glyph('right', 20)}</button></span>
+    ${ribbon(gw, mobile, liveGw)}
+  </nav>`;
+  }
   return `<nav class="gwb" aria-label="Gameweeks">
     <span class="gwbName">Gameweeks</span>
     <span class="gwbStep"><button class="arw" aria-label="Previous gameweek">${glyph('left', 18)}</button><button class="gwSel" aria-label="Choose a gameweek">Gameweek ${gw}${glyph('chev', 14)}</button><button class="arw" aria-label="Next gameweek">${glyph('right', 18)}</button></span>

@@ -23,7 +23,7 @@ export const BOARDS = [
   { file: 'MatchLive.dc.html', title: 'Matchup · Live (Sun 13:00)', w: 1440, page: 'm', make: () => matchPage({ state: 'live', w: 1440 }) },
   { file: 'MatchUpcoming.dc.html', title: 'Matchup · Gameweek 6 · Upcoming', w: 1440, page: 'm', make: () => matchPage({ state: 'upcoming', w: 1440 }) },
   { file: 'MatchFinalPhone.dc.html', title: 'Final · 390 · One Pitch', w: 390, page: 'm', make: () => matchPage({ state: 'final', mobile: true, w: 390 }) },
-  { file: 'MatchFinalPhoneTheirs.dc.html', title: 'Final · 390 · Their XI', w: 390, page: 'm', make: () => matchPage({ state: 'final', mobile: true, w: 390, variant: 'theirs' }) },
+  { file: 'MatchFinalPhoneTheirs.dc.html', title: 'Final · 390 · One Club', w: 390, page: 'm', make: () => matchPage({ state: 'final', mobile: true, w: 390, variant: 'single' }) },
   { file: 'MatchFinalPhoneDark.dc.html', title: 'Final · 390 · Dark', w: 390, page: 'm', make: () => matchPage({ state: 'final', mobile: true, dark: true, w: 390 }) },
   { file: 'MatchLivePhone.dc.html', title: 'Live · 390', w: 390, page: 'm', make: () => matchPage({ state: 'live', mobile: true, w: 390 }) },
 ];
