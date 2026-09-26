@@ -847,3 +847,7 @@
 .land .lsGrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .land .lsGrid .lsCol + .lsCol { border-left: 1px solid var(--color-border); }
 .land .bnChips { gap: 6px; }
+
+.mmMore { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 48px; padding: 0 16px; border: 0; border-top: 1px solid var(--color-border-subtle); background: transparent; text-align: left; }
+.mmMore > span:first-child { font-size: 13px; color: var(--color-text-secondary); white-space: nowrap; }
+.mmMoreB { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-label); font-weight: 600; font-size: 14px; color: var(--color-accent-ink, var(--color-accent)); white-space: nowrap; }

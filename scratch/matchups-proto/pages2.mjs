@@ -247,7 +247,13 @@ function momentumBlock(m, state, mobile) {
     return `<div class="ml${i === turn ? ' mlTurn' : ''}${fut ? ' mlFut' : ''}"><span class="mlT">${ukTime(s.t)}</span><span class="mlLead">${i === turn ? 'Lead Changed' : lead}</span>${row('A')}${row('B')}</div>`;
   };
   const key = `<span class="fsKey"><span><i style="background: ${TEAMS[m.A.k].color};"></i>${tname(m.A.k)} ahead</span><span><i class="fsKeyBand"></i>Draw band</span><span><i style="background: ${TEAMS[m.B.k].color};"></i>${tname(m.B.k)} ahead</span></span>`;
-  return `<section class="blk"><div class="sh"><h2 class="shT">Momentum</h2><span class="shTools">${mobile ? '' : key}</span></div>
+  if (mobile) {
+    const endM = rs[last].cumA - rs[last].cumB;
+    const summary = turn >= 0 ? `Lead changed ${ukTime(rs[turn].t)}` : now ? `${rs.length - last - 1} kickoffs to come` : `${Math.abs(endM) <= DRAW ? 'Level' : tname(endM > 0 ? m.A.k : m.B.k) + ' led'} throughout`;
+    return `<section class="blk"><div class="sh"><h2 class="shT">Momentum</h2></div>
+    <div class="panel"><div class="mmChart">${svg}</div><button class="mmMore" aria-expanded="false"><span>${summary}</span><span class="mmMoreB">Show Kickoffs${glyph('chev', 14)}</span></button></div></section>`;
+  }
+  return `<section class="blk"><div class="sh"><h2 class="shT">Momentum</h2><span class="shTools">${key}</span></div>
     <div class="panel"><div class="mmChart">${svg}</div><div class="mmLanes" style="grid-template-columns: repeat(${slots.length}, minmax(0, 1fr));">${rs.map(lane).join('')}</div></div></section>`;
 }
 
@@ -328,12 +334,8 @@ function lineupsSplit(m, state, mobile, H = 800) {
   const keyNode = `<span class="lnKey">${[0, 2, 5.6, 15.8, 29].map((v) => ptsBadge(v)).join('')}</span>`;
   if (mobile) {
     const mineS = m.A.k === ME ? m.A : m.B, oth = mineS === m.A ? m.B : m.A;
-    const both = o.view !== 'single';
-    const seg = `<div class="segRow"><span class="seg"><button class="segB${both ? ' segOn' : ''}">Both</button><button class="segB${both ? '' : ' segOn'}">${crest(mineS.k, 14)}${tname(mineS.k)}</button><button class="segB">${crest(oth.k, 14)}${tname(oth.k)}</button></span></div>`;
-    const body = both
-      ? `<div class="board">${col(mineS)}</div><div class="board lsNext">${col(oth)}</div><p class="lsHint">Turn your phone sideways for the two halves side by side</p>`
-      : `<div class="board">${col(mineS)}</div><p class="lsHint">Swipe the pitch to switch clubs</p>`;
-    return `<section class="blk"><div class="sh"><h2 class="shT">Lineups</h2></div>${seg}${body}</section>`;
+    const body = `<div class="board">${col(mineS)}</div><div class="board lsNext">${col(oth)}</div><p class="lsHint">Turn your phone sideways for the two halves side by side</p>`;
+    return `<section class="blk"><div class="sh"><h2 class="shT">Lineups</h2></div>${body}</section>`;
   }
   return `<section class="blk"><div class="sh"><h2 class="shT">Lineups</h2><span class="shTools">${keyNode}</span></div>
     <div class="board lsGrid">${col(m.A)}${col(m.B)}</div></section>`;
