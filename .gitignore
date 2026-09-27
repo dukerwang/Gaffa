@@ -69,3 +69,6 @@ tmp-chrome-profile/
 .codex/
 packages/*/node_modules
 scratch/hub-design/gaffa-player-hub.html
+
+# FotMob scrape cache (scripts/scrape_fotmob_season.ts). Local data, tens of MB.
+.fotmob-cache/
