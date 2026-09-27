@@ -1,0 +1,128 @@
+{
+  "engine": "v3",
+  "season": "2025-26",
+  "generated": "2026-09-27",
+  "source": "player_stats 2025-26 + FotMob scrape, appearances of 45+ minutes",
+  "method": "median and population stddev per position; wide defenders pooled, LW/RW pooled (as scripts/recompute_reference_stats.mjs)",
+  "components": {
+    "defensive": {
+      "AM": {
+        "median": 4.2,
+        "stddev": 5.7655,
+        "n": 489
+      },
+      "CB": {
+        "median": 5.9,
+        "stddev": 9.3087,
+        "n": 1700
+      },
+      "CM": {
+        "median": 6.199999999999999,
+        "stddev": 7.0578,
+        "n": 665
+      },
+      "DM": {
+        "median": 8.25,
+        "stddev": 9.821,
+        "n": 1161
+      },
+      "LB": {
+        "median": 9.15,
+        "stddev": 9.958,
+        "n": 1563
+      },
+      "LW": {
+        "median": 3.6377906976744185,
+        "stddev": 5.2573,
+        "n": 1328
+      },
+      "LWB": {
+        "median": 9.15,
+        "stddev": 9.958,
+        "n": 1563
+      },
+      "RB": {
+        "median": 9.15,
+        "stddev": 9.958,
+        "n": 1563
+      },
+      "RW": {
+        "median": 3.6377906976744185,
+        "stddev": 5.2573,
+        "n": 1328
+      },
+      "RWB": {
+        "median": 9.15,
+        "stddev": 9.958,
+        "n": 1563
+      },
+      "ST": {
+        "median": 2.55,
+        "stddev": 5.5926,
+        "n": 822
+      }
+    },
+    "match_impact": {
+      "AM": {
+        "median": 12.666666666666666,
+        "stddev": 7.1557,
+        "n": 489
+      },
+      "CB": {
+        "median": 12.333333333333334,
+        "stddev": 10.048,
+        "n": 1700
+      },
+      "CM": {
+        "median": 14.666666666666666,
+        "stddev": 6.8744,
+        "n": 665
+      },
+      "DM": {
+        "median": 15.666666666666666,
+        "stddev": 6.7128,
+        "n": 1161
+      },
+      "GK": {
+        "median": 13.666666666666666,
+        "stddev": 10.3047,
+        "n": 762
+      },
+      "LB": {
+        "median": 11.666666666666666,
+        "stddev": 10.4181,
+        "n": 1563
+      },
+      "LW": {
+        "median": 9.466666666666667,
+        "stddev": 6.3924,
+        "n": 1328
+      },
+      "LWB": {
+        "median": 11.666666666666666,
+        "stddev": 10.4181,
+        "n": 1563
+      },
+      "RB": {
+        "median": 11.666666666666666,
+        "stddev": 10.4181,
+        "n": 1563
+      },
+      "RW": {
+        "median": 9.466666666666667,
+        "stddev": 6.3924,
+        "n": 1328
+      },
+      "RWB": {
+        "median": 11.666666666666666,
+        "stddev": 10.4181,
+        "n": 1563
+      },
+      "ST": {
+        "median": 6,
+        "stddev": 4.8648,
+        "n": 822
+      }
+    }
+  }
+}

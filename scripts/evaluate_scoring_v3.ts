@@ -64,19 +64,20 @@ interface Step {
 }
 const STEPS: Step[] = [
   { key: 'v2', label: 'V2', version: 'v2', fields: [], recompute: [] },
-  { key: 'goal', label: 'Goal BPS fix', version: 'v3', fields: ['penalty_goals'], recompute: ['match_impact'], options: { substituteScaling: false } },
+  { key: 'goal', label: 'Goal BPS fix', version: 'v3', fields: ['penalty_goals'], recompute: ['match_impact'], options: { substituteScaling: false, v3References: false } },
   {
     key: 'lbp', label: '+ Line-breaking passes', version: 'v3', fields: ['penalty_goals', 'line_breaking_passes'],
-    recompute: ['match_impact'], options: { substituteScaling: false },
+    recompute: ['match_impact'], options: { substituteScaling: false, v3References: false },
   },
   {
     key: 'aerial', label: '+ Net aerial duels', version: 'v3',
     fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
-    options: { substituteScaling: false },
+    options: { substituteScaling: false, v3References: false },
   },
   {
     key: 'subs', label: '+ Substitute scoring', version: 'v3',
     fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
+    options: { v3References: false },
   },
 ];
 
@@ -88,6 +89,7 @@ const EXPERIMENTS: Step[] = [
     // the BPS copy from Match Impact.
     key: 'csbps', label: 'Exp: clean sheet out of BPS', version: 'v3',
     fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
+    options: { v3References: false },
     adjust: (st) => {
       if (st.fpl_element_type !== 1 && st.fpl_element_type !== 2) return st;
       const cs = st.clean_sheet && st.minutes_played >= 60 ? 12 : 0;
@@ -179,21 +181,63 @@ async function main() {
     defensive: (st, pos) => defensiveRawInput(st, pos, pos).defensiveRaw,
   };
   const refs = {} as Record<StepKey, RefMap>;
+  // The last adopted (non-experimental) step is V3 as it stands; --write-v3-refs saves its references.
+  const FINAL = [...STEPS].reverse().find((s) => !s.adjust)!.key;
+  const recomputedFor: Partial<Record<StepKey, Set<string>>> = {};
+  const refSample: Record<string, { n: number; ties: number; below: number }> = {};
   for (const step of STEPS) refs[step.key] = JSON.parse(JSON.stringify(v2Ref));
   for (const comp of ['match_impact', 'defensive'] as Component[]) {
-    console.log(`\n${comp} reference, median / stddev (V2 as stored, then recomputed per step)`);
+    console.log(`\n${comp} reference, median / stddev (V2 as stored, then recomputed per step; * = input unchanged, stored V2 kept)`);
     console.log('pos ' + ['stored', ...STEPS.map((s) => s.key)].map((h) => h.padStart(15)).join(''));
     for (const pos of POSITIONS) {
       const sample = apps.filter((r) => pool(pos).includes(r.players.primary_position) && r.stats.minutes_played >= 45);
       const cells = [`${v2Ref[pos][comp].median.toFixed(2)} / ${v2Ref[pos][comp].stddev.toFixed(2)}`];
+      const v2Raw = sample.map((r) => rawInput[comp](statsFor(r, STEPS[0]), r.players.primary_position));
       for (const step of STEPS) {
         const raw = sample.map((r) => rawInput[comp](statsFor(r, step), r.players.primary_position, step.options));
+        // Recompute only where the step actually changed this input; otherwise
+        // the stored V2 reference stays, so an unchanged input scores exactly as in V2.
+        const changed = raw.some((x, i) => Math.abs(x - v2Raw[i]) > 1e-9);
         const recomputed = { median: median(raw), stddev: Number(pstdev(raw).toFixed(4)) };
-        if (step.recompute.includes(comp)) refs[step.key][pos][comp] = recomputed;
-        cells.push(`${recomputed.median.toFixed(2)} / ${recomputed.stddev.toFixed(2)}`);
+        if (step.recompute.includes(comp) && changed) {
+          refs[step.key][pos][comp] = recomputed;
+          (recomputedFor[step.key] ??= new Set()).add(`${comp}:${pos}`);
+          if (step.key === FINAL) {
+            const ties = raw.filter((x) => Math.abs(x - recomputed.median) < 1e-9).length / raw.length;
+            const below = raw.filter((x) => x < recomputed.median - 1e-9).length / raw.length;
+            refSample[`${comp}:${pos}`] = { n: raw.length, ties, below };
+          }
+        }
+        cells.push(`${recomputed.median.toFixed(2)} / ${recomputed.stddev.toFixed(2)}${step.recompute.includes(comp) && !changed ? '*' : ' '}`);
       }
-      console.log(`${pos.padEnd(4)}${cells.map((c) => c.padStart(15)).join('')}   n=${sample.length}`);
+      console.log(`${pos.padEnd(4)}${cells.map((c) => c.padStart(16)).join('')}   n=${sample.length}`);
     }
+  }
+
+  // Reference sample check for V3 as it stands: a large share of values tied
+  // exactly at the median means the median can jump by a whole step.
+  console.log(`\nV3 (${FINAL}) references recomputed: ${[...(recomputedFor[FINAL] ?? [])].length}; share of sample tied at the median:`);
+  console.log('  ' + Object.entries(refSample).map(([k, v]) => `${k} ${(100 * v.ties).toFixed(1)}%`).join(', '));
+  for (const [k, v] of Object.entries(refSample).filter(([, v]) => v.ties >= 0.03)) {
+    console.log(`  ${k}: ${(100 * v.below).toFixed(1)}% of the sample sits below the median value and ${(100 * (v.below + v.ties)).toFixed(1)}% at or below it`);
+  }
+
+  const V3_REF_FILE = 'src/lib/scoring/v3ReferenceStats.json';
+  if (process.argv.includes('--write-v3-refs')) {
+    const components: Record<string, Record<string, { median: number; stddev: number; n: number }>> = {};
+    for (const key of [...(recomputedFor[FINAL] ?? [])].sort()) {
+      const [comp, pos] = key.split(':') as [Component, GranularPosition];
+      (components[comp] ??= {})[pos] = { ...refs[FINAL][pos][comp], n: refSample[key].n };
+    }
+    writeFileSync(V3_REF_FILE, JSON.stringify({
+      engine: 'v3',
+      season,
+      generated: new Date().toISOString().slice(0, 10),
+      source: `player_stats ${season} + FotMob scrape, appearances of 45+ minutes`,
+      method: 'median and population stddev per position; wide defenders pooled, LW/RW pooled (as scripts/recompute_reference_stats.mjs)',
+      components,
+    }, null, 2) + '\n');
+    console.log(`Wrote ${V3_REF_FILE}`);
   }
 
   interface Line {
@@ -232,6 +276,17 @@ async function main() {
     }
     lines.set(r.player_id, line);
   }
+
+  // The checked-in V3 references must reproduce the final column exactly.
+  const finalStep = STEPS.find((s) => s.key === FINAL)!;
+  const mismatches = apps.filter((r) => {
+    const pos = r.players.primary_position as GranularPosition;
+    const withFile = calculateMatchRating(statsFor(r, finalStep), pos, v2Ref, pos, { ...finalStep.options, v3References: true }).fantasyPoints;
+    return Math.abs(withFile - calculateMatchRating(statsFor(r, finalStep), pos, refs[FINAL], pos, finalStep.options).fantasyPoints) > 1e-9;
+  }).length;
+  console.log(mismatches
+    ? `\nWARNING: ${V3_REF_FILE} does not reproduce the '${FINAL}' column for ${mismatches} appearances. Rerun with --write-v3-refs.`
+    : `\n${V3_REF_FILE} reproduces the '${FINAL}' column exactly.`);
 
   console.log('\nMean points per appearance');
   console.log('pos      n' + STEPS.map((s) => s.key.padStart(8)).join(''));

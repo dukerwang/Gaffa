@@ -23,6 +23,7 @@ import type {
     ReferenceStats,
     ComponentRefStats,
 } from '@/types';
+import v3ReferenceStats from './v3ReferenceStats.json';
 
 // Define ComponentScores type as it's used in the new code
 type ComponentScores = Record<RatingComponent, number>;
@@ -131,6 +132,29 @@ const PAR_COMPOSITE = (4.0 - 1.0) / 9.0;
 export interface EngineOptions {
     /** false scores a V3 row without the substitute rule. */
     substituteScaling?: boolean;
+    /** false scores a V3 row against the references passed in, not v3ReferenceStats.json. */
+    v3References?: boolean;
+}
+
+/**
+ * V3 changes the raw input of Match Impact and Defensive, so those two are
+ * normalized against V3's own references: v3ReferenceStats.json, written by
+ * `scripts/evaluate_scoring_v3.ts --write-v3-refs` from the same data the
+ * review leaderboard shows. It lists only the positions whose input V3
+ * actually changed; everything else keeps the references passed in (V2's
+ * rows from rating_reference_stats). V2 rows never read the file.
+ */
+type V3RefFile = { components: Partial<Record<RatingComponent, Partial<Record<GranularPosition, ComponentRefStats>>>> };
+const V3_REFERENCES = (v3ReferenceStats as V3RefFile).components;
+
+function withV3References(ref: ReferenceStats, position: GranularPosition, stats: RawStats, options?: EngineOptions): ReferenceStats {
+    if (stats.engine_version !== 'v3' || options?.v3References === false) return ref;
+    let out = ref;
+    for (const [comp, byPos] of Object.entries(V3_REFERENCES) as [RatingComponent, Partial<Record<GranularPosition, ComponentRefStats>>][]) {
+        const r = byPos[position];
+        if (r) out = { ...out, [comp]: { median: r.median, stddev: r.stddev } };
+    }
+    return out;
 }
 
 function minutesFraction(stats: RawStats, options?: EngineOptions): number {
@@ -377,12 +401,13 @@ function computeComponentScores(
     primaryPosition?: GranularPosition,
     options?: EngineOptions,
 ) {
-    const ref = refStats[position]
+    const baseRef = refStats[position]
         ?? (position === 'LWB' ? refStats.LB : undefined)
         ?? (position === 'RWB' ? refStats.RB : undefined)
         ?? refStats.CM
         ?? DEFAULT_REFERENCE_STATS[position]
         ?? DEFAULT_REFERENCE_STATS.CM;
+    const ref = withV3References(baseRef, position, stats, options);
     const f = minutesFraction(stats, options);
     const volRef = (c: RatingComponent) => referenceForMinutes(ref[c], f);
 

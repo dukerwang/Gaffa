@@ -44,12 +44,14 @@ describe('V3 goal BPS strip', () => {
         expect(matchImpactRawInput(s, 'ST')).toBe(60 - 24 - 9);
     });
 
+    // These compare formulas, so both sides use the same references (V3 rows
+    // otherwise read v3ReferenceStats.json; see v3References.test.ts).
     it('leaves a game without goals identical to V2', () => {
         const positions: GranularPosition[] = ['GK', 'CB', 'LB', 'DM', 'CM', 'AM', 'LW', 'ST'];
         for (const pos of positions) {
             const base = stats({ assists: 1, bps: 30, influence: 25, creativity: 20, threat: 15 });
             const v2 = calculateMatchRating(base, pos);
-            const v3 = calculateMatchRating({ ...base, engine_version: 'v3', fpl_element_type: 3 }, pos);
+            const v3 = calculateMatchRating({ ...base, engine_version: 'v3', fpl_element_type: 3 }, pos, undefined, undefined, { v3References: false });
             expect(v3.rating).toBe(v2.rating);
             expect(v3.fantasyPoints).toBe(v2.fantasyPoints);
         }
@@ -96,7 +98,7 @@ describe('V3 substitute scoring', () => {
 
     it('changes nothing at 90 minutes', () => {
         const s = stats({ ...quiet, bps: 20, influence: 25, creativity: 20, threat: 15, assists: 1 });
-        const a = calculateMatchRating({ ...s, engine_version: 'v3', fpl_element_type: 3 }, 'CM');
+        const a = calculateMatchRating({ ...s, engine_version: 'v3', fpl_element_type: 3 }, 'CM', undefined, undefined, { v3References: false });
         expect(matchImpactRawInput({ ...s, engine_version: 'v3', fpl_element_type: 3 }, 'CM')).toBe(20 - 9);
         expect(a.fantasyPoints).toBe(calculateMatchRating(s, 'CM').fantasyPoints);
     });
