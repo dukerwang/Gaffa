@@ -76,6 +76,39 @@ export function getPositionGroup(pos: GranularPosition): PositionGroup {
     return 'ATT'; // LW, RW, ST
 }
 
+/**
+ * BPS points FPL awards per goal, keyed by FPL element type (1 GK, 2 DEF,
+ * 3 MID, 4 FWD). V2 strips a flat 12 for everyone, which leaves 6 BPS of every
+ * midfielder's goal and 12 of every forward's inside Match Impact, on top of
+ * the goal Goal Involvement already scores. V3 strips what FPL actually paid.
+ */
+export const BPS_PER_GOAL: Record<1 | 2 | 3 | 4, number> = { 1: 12, 2: 12, 3: 18, 4: 24 };
+const BPS_PER_ASSIST = 9;
+
+/**
+ * Best guess at FPL's element type when a row doesn't record one. Wingers
+ * default to MID because FPL lists most of them there; only ST maps to FWD.
+ */
+export function fallbackElementType(pos: GranularPosition): 1 | 2 | 3 | 4 {
+    const group = getPositionGroup(pos);
+    if (group === 'GK') return 1;
+    if (group === 'DEF') return 2;
+    return pos === 'ST' ? 4 : 3;
+}
+
+/**
+ * Match Impact's raw input: BPS with the goal and assist BPS removed, so the
+ * component reflects everything BPS measures except the goals and assists
+ * Goal Involvement already scores. Exported so reference-stats scripts
+ * compute the median and stddev from this exact formula rather than a copy.
+ */
+export function matchImpactRawInput(stats: RawStats, position: GranularPosition): number {
+    const perGoal = stats.engine_version === 'v3'
+        ? BPS_PER_GOAL[stats.fpl_element_type ?? fallbackElementType(position)]
+        : 12;
+    return Math.max(0, (stats.bps ?? 0) - stats.goals * perGoal - stats.assists * BPS_PER_ASSIST);
+}
+
 // Helper to normalize position for FLEX_CONFIG and POSITION_WEIGHTS lookup
 function normalizePosition(pos: GranularPosition): GranularPosition {
     // This function ensures that if a specific granular position isn't in the config,
@@ -180,13 +213,12 @@ function computeComponentScores(
         ?? DEFAULT_REFERENCE_STATS.CM;
 
     // 1. Match Impact (BPS)
-    //    Subtract estimated goal/assist contribution to avoid double-counting
-    //    with the Goal Involvement component.  BPS awards roughly +12 per goal
-    //    and +9 per assist internally; we strip that out so Match Impact purely
-    //    reflects non-goal contributions (tackles, passing, positioning, etc.).
+    //    Subtract the goal/assist contribution to avoid double-counting with
+    //    the Goal Involvement component, so Match Impact reflects non-goal
+    //    contributions (tackles, passing, positioning, etc.). See
+    //    matchImpactRawInput for how much each goal strips under V2 and V3.
     const rawBps = stats.bps ?? 0;
-    const goalAssistBps = stats.goals * 12 + stats.assists * 9;
-    const adjustedBps = Math.max(0, rawBps - goalAssistBps);
+    const adjustedBps = matchImpactRawInput(stats, primaryPosition ?? position);
 
     const matchImpact: ComponentResult = {
         score: sigmoidNormalize(adjustedBps, ref.match_impact.median, ref.match_impact.stddev),

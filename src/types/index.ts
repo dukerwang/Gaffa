@@ -335,6 +335,18 @@ export interface RawStats {
    * are retained for breakdown UI and historical compatibility.
    */
   fpl_def_contrib?: number;
+  /**
+   * Scoring engine that produced this row. Absent means V2, so every row
+   * written before V3 existed keeps scoring exactly as it was published.
+   */
+  engine_version?: 'v2' | 'v3';
+  /**
+   * FPL's own position bucket for the player in the season this match was
+   * played: 1 GK, 2 DEF, 3 MID, 4 FWD. BPS pays a goal by this bucket, not by
+   * our tactical position, so the V3 goal strip reads it. Recorded per row
+   * because FPL can reclassify a player between seasons.
+   */
+  fpl_element_type?: 1 | 2 | 3 | 4;
 }
 
 export interface DraftPick {
