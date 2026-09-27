@@ -15,13 +15,11 @@
  * stddev). The script recomputes V2's match_impact the same way and prints it
  * beside the stored value, so any gap in method shows up before it is trusted.
  *
- * FPL element types. FPL reassigns player ids every season, and
- * `players.fpl_id` holds the current season's id. The season's own element
- * type comes from vaastav/Fantasy-Premier-League's players_raw.csv, joined on
- * FPL's stable per-player `code` via the current bootstrap.
+ * FPL element types come from the season's own player list, resolved by
+ * scripts/lib/fplSeasonPlayers.ts.
  */
 import { createClient } from '@supabase/supabase-js';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import {
   calculateMatchRating,
   DEFAULT_REFERENCE_STATS,
@@ -30,6 +28,8 @@ import {
 } from '../src/lib/scoring/matchRating';
 import { CLUB_BY_SLUG, clubByFplCode } from '../src/lib/clubs/registry';
 import type { GranularPosition, RawStats, ReferenceStats } from '../src/types';
+import { resolveSeasonPlayers, type ElementType } from './lib/fplSeasonPlayers';
+import { fetchAll } from './lib/fetchAll';
 
 for (const line of existsSync('.env.local') ? readFileSync('.env.local', 'utf8').split('\n') : []) {
   const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
@@ -41,67 +41,8 @@ const OUT_DIR = 'scratch/v3_eval';
 const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM', 'CM', 'AM', 'LW', 'RW', 'ST'];
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
-type ElementType = 1 | 2 | 3 | 4;
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-
-function parseCsv(text: string): Record<string, string>[] {
-  const rows: string[][] = [];
-  let row: string[] = [], field = '', quoted = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (quoted) {
-      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
-      else if (c === '"') quoted = false;
-      else field += c;
-    } else if (c === '"') quoted = true;
-    else if (c === ',') { row.push(field); field = ''; }
-    else if (c === '\n') { row.push(field.replace(/\r$/, '')); rows.push(row); row = []; field = ''; }
-    else field += c;
-  }
-  if (field || row.length) { row.push(field); rows.push(row); }
-  const [head, ...body] = rows;
-  return body.filter((r) => r.length === head.length).map((r) => Object.fromEntries(head.map((h, i) => [h, r[i]])));
-}
-
-async function fetchAll<T>(build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
-  const out: T[] = [];
-  for (let from = 0; ; from += 1000) {
-    const { data, error } = await build(from, from + 999);
-    if (error) throw error;
-    out.push(...(data ?? []));
-    if (!data || data.length < 1000) return out;
-  }
-}
-
-async function loadSeasonElementTypes(): Promise<{
-  byCurrentFplId: Map<number, { et: ElementType; teamCode: number }>;
-  bySeasonId: Map<number, { et: ElementType; teamCode: number; webName: string }>;
-}> {
-  mkdirSync(OUT_DIR, { recursive: true });
-  const cache = `${OUT_DIR}/players_raw_${season}.csv`;
-  if (!existsSync(cache)) {
-    const url = `https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data/${season}/players_raw.csv`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`players_raw.csv for ${season}: HTTP ${res.status}`);
-    writeFileSync(cache, await res.text());
-  }
-  const seasonRows = parseCsv(readFileSync(cache, 'utf8'));
-  const byCode = new Map<number, { et: ElementType; teamCode: number }>();
-  const bySeasonId = new Map<number, { et: ElementType; teamCode: number; webName: string }>();
-  for (const r of seasonRows) {
-    const v = { et: Number(r.element_type) as ElementType, teamCode: Number(r.team_code) };
-    byCode.set(Number(r.code), v);
-    bySeasonId.set(Number(r.id), { ...v, webName: r.web_name });
-  }
-  const boot = await (await fetch('https://fantasy.premierleague.com/api/bootstrap-static/')).json();
-  const byCurrentFplId = new Map<number, { et: ElementType; teamCode: number }>();
-  for (const el of boot.elements) {
-    const hit = byCode.get(el.code);
-    if (hit) byCurrentFplId.set(el.id, hit);
-  }
-  return { byCurrentFplId, bySeasonId };
-}
 
 const median = (a: number[]) => {
   if (!a.length) return 0;
@@ -126,7 +67,6 @@ async function main() {
   }
   console.log(`${season}: ${refRows.length} stored reference rows`);
 
-  const { byCurrentFplId, bySeasonId } = await loadSeasonElementTypes();
 
   const rows = await fetchAll<any>((f, t) => supabase.from('player_stats')
     .select('id, player_id, gameweek, stats, players!inner(web_name, primary_position, fpl_id)')
@@ -135,34 +75,18 @@ async function main() {
     .select('player_id, club_slug').eq('season', season).order('player_id').range(f, t));
   const clubOf = new Map<string, string>(clubRows.map((r) => [r.player_id, r.club_slug]));
 
-  // Element type per player: FPL's stable code when the player is still in
-  // FPL. A player who has left has no current id (or a stale one), so match
-  // him by name in the season's list, using his club that season to break
-  // ties. Anything still unmatched falls back to a position-based guess.
-  const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
-  const seasonByName = new Map<string, { et: ElementType; teamCode: number }[]>();
-  for (const v of bySeasonId.values()) {
-    const k = norm(v.webName);
-    seasonByName.set(k, [...(seasonByName.get(k) ?? []), v]);
-  }
-  const etSource = { code: 0, name: 0, fallback: 0 };
-  const fallbackNames: string[] = [];
+  // Season identity per player (see scripts/lib/fplSeasonPlayers.ts); a
+  // player it can't resolve falls back to a position-based element type.
+  const withMinutes = rows.filter((r) => (r.stats?.minutes_played ?? 0) > 0);
+  const ids = await resolveSeasonPlayers(season, withMinutes.map((r) => ({
+    player_id: r.player_id, web_name: r.players.web_name, fpl_id: r.players.fpl_id, club_slug: clubOf.get(r.player_id),
+  })), OUT_DIR);
   const playerMeta = new Map<string, { et: ElementType; teamCode?: number }>();
-  for (const r of rows) {
-    if (playerMeta.has(r.player_id) || !((r.stats?.minutes_played ?? 0) > 0)) continue;
-    const p = r.players;
-    const byCode = p.fpl_id != null ? byCurrentFplId.get(p.fpl_id) : undefined;
-    if (byCode) { playerMeta.set(r.player_id, byCode); etSource.code++; continue; }
-    const clubCode = CLUB_BY_SLUG.get(clubOf.get(r.player_id) ?? '')?.fplCode;
-    const named = seasonByName.get(norm(p.web_name)) ?? [];
-    const hit = named.length === 1 ? named[0] : named.find((v) => v.teamCode === clubCode);
-    if (hit) { playerMeta.set(r.player_id, hit); etSource.name++; continue; }
-    playerMeta.set(r.player_id, { et: fallbackElementType(p.primary_position) });
-    etSource.fallback++;
-    fallbackNames.push(p.web_name);
+  for (const r of withMinutes) {
+    playerMeta.set(r.player_id, ids.byPlayer.get(r.player_id) ?? { et: fallbackElementType(r.players.primary_position) });
   }
-  console.log(`Element types for players with minutes: ${etSource.code} by FPL code, ${etSource.name} by name, ${etSource.fallback} guessed from position`);
-  if (fallbackNames.length) console.log(`  guessed: ${fallbackNames.join(', ')}`);
+  console.log(`Element types for players with minutes: ${ids.viaCode} by FPL code, ${ids.viaName} by name, ${ids.unresolved.length} guessed from position`);
+  if (ids.unresolved.length) console.log(`  guessed: ${ids.unresolved.join(', ')}`);
 
   const apps = rows.filter((r) => (r.stats?.minutes_played ?? 0) > 0 && POSITIONS.includes(r.players.primary_position));
   const withEt = (r: any, version: 'v2' | 'v3'): RawStats =>
