@@ -221,7 +221,11 @@ async function main() {
   const board = all.map((l) => ({ ...l, rank_v2: r2.get(l.player_id)!, rank_v3: r3.get(l.player_id)! }))
     .sort((a, b) => a.rank_v3 - b.rank_v3);
   const out = `${OUT_DIR}/leaderboard_${season}.json`;
-  writeFileSync(out, JSON.stringify({ season, generated: new Date().toISOString(), players: board }, null, 1));
+  const positions = POSITIONS.filter((p) => perApp[p]).map((p) => ({
+    pos: p, apps: perApp[p].v2.length,
+    v2: +mean(perApp[p].v2).toFixed(2), v3: +mean(perApp[p].v3).toFixed(2),
+  }));
+  writeFileSync(out, JSON.stringify({ season, generated: new Date().toISOString(), positions, players: board }, null, 1));
   console.log(`\nTop 20 under V3 (V2 rank in brackets)`);
   for (const l of board.slice(0, 20)) {
     console.log(`${String(l.rank_v3).padStart(3)} [${String(l.rank_v2).padStart(3)}] ${l.name.padEnd(16)} ${l.pos.padEnd(3)} ${l.club.padEnd(4)} ${l.v2.toFixed(0).padStart(5)} → ${l.v3.toFixed(0).padStart(5)}`);
