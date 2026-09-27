@@ -225,6 +225,94 @@ interface ComponentResult {
     z?: number;
 }
 
+/**
+ * Defensive's raw input, before sigmoid normalization. Exported so
+ * reference-stats scripts compute the median and stddev from this exact
+ * formula rather than a copy.
+ */
+export function defensiveRawInput(
+    stats: RawStats,
+    position: GranularPosition,
+    primaryPosition?: GranularPosition,
+) {
+    const gc = stats.goals_conceded;
+    const xgc = stats.expected_goals_conceded ?? 0;
+    const posGroup = getPositionGroup(position);
+    let csBonus = 0;
+    if (stats.clean_sheet && stats.minutes_played >= 60) {
+        let baseCs = 0;
+        if (position === 'GK') {
+            baseCs = 16; // Elevated Clean Sheet bonus for GK under Strategy A.4
+        } else if (posGroup === 'DEF' || position === 'DM') {
+            baseCs = 12; // Full bonus for DEF and DM
+        } else if (position === 'CM') {
+            baseCs = 4; // Reduced bonus for CM
+        }
+        
+        // Option B: Capped CS strictly for AM playing at CB/LB/RB
+        if (primaryPosition && primaryPosition === 'AM' && ['CB', 'LB', 'RB'].includes(position)) {
+            csBonus = 0;
+        } else {
+            csBonus = baseCs;
+        }
+    }
+    const canGetCS = csBonus > 0;
+    const xgcOutperf = Math.max(0, xgc - gc) * 5;
+    const gcPenalty = Math.max(0, gc - xgc) * 5;
+
+    const tackles = Math.max(0, stats.fpl_tackles ?? 0);
+    const cbi = Math.max(0, stats.fpl_cbi ?? 0);
+    const recoveries = Math.max(0, stats.fpl_recoveries ?? 0);
+    const dc = Math.max(0, stats.fpl_def_contrib ?? 0);
+
+    let defActionsRaw: number;
+    if (position === 'GK') {
+        defActionsRaw = recoveries * 0.4;
+    } else if (position === 'CB') {
+        defActionsRaw = tackles + cbi * 0.5;
+    } else {
+        // Symmetric 0.5x recoveries for all outfield positions to reward active
+        // defending (tackles + cbi) and prevent low-block recovery farming.
+        defActionsRaw = (tackles + cbi) + recoveries * 0.5;
+    }
+
+    // V3: net aerial duels (won minus lost), each counted like one clearance,
+    // block or interception at this position, so 0.5 for a CB and 1
+    // elsewhere. FPL doesn't count aerial duels (a won header only registers
+    // if it happens to be a clearance), and a lost header is a failure
+    // nothing else in the score sees. Positions that weight Defensive at 0
+    // (AM, LW, RW, ST) are unaffected.
+    if (stats.engine_version === 'v3' && position !== 'GK') {
+        const aerialNet = (stats.aerials_won ?? 0) - (stats.aerials_lost ?? 0);
+        defActionsRaw += aerialNet * (position === 'CB' ? 0.5 : 1);
+    }
+
+    let defensiveRaw: number;
+    if (position === 'GK') {
+        // Weighted toward "did he concede fewer than the chances warranted"
+        // rather than "did the clean sheet survive". The clean sheet used to be
+        // worth +20 with saves capped at +4 on top, which made the component a
+        // switch: across 193 clean sheets in 2025-26 keeper ratings moved by a
+        // standard deviation of 0.21, one routine save and eight outstanding
+        // ones both landing on ~8.65. Now the shutout is worth GK_CLEAN_SHEET
+        // and the saves that earned it carry up to GK_CLEAN_SHEET_SAVE_CAP.
+        let gkCsVal = 0;
+        const sv = Math.max(0, stats.saves ?? 0);
+        if (stats.clean_sheet && canGetCS) {
+            gkCsVal = GK_CLEAN_SHEET + Math.min(GK_CLEAN_SHEET_SAVE_CAP, sv * 1.0);
+        }
+        const xgcDiff = Math.max(-2.5, Math.min(2.5, xgc - gc));
+        let zeroSavePenalty = 0;
+        if (!stats.clean_sheet && sv === 0 && gc >= 1) {
+            zeroSavePenalty = 4.5 * gc;
+        }
+        defensiveRaw = defActionsRaw + gkCsVal - gc * GK_GOAL_CONCEDED + xgcDiff * GK_XGC_DIFF - zeroSavePenalty;
+    } else {
+        defensiveRaw = defActionsRaw + csBonus + xgcOutperf - gcPenalty;
+    }
+    return { defensiveRaw, canGetCS, gc, xgc, tackles, cbi, recoveries, dc };
+}
+
 function computeComponentScores(
     stats: RawStats,
     position: GranularPosition,
@@ -293,70 +381,8 @@ function computeComponentScores(
     //      + xGC outperformance bonus (defense kept goals below the chance quality)
     //      − GC penalty (defense let goals through above the chance quality)
     //      + clean-sheet bonus (position-weighted: GK/DEF/DM full, CM half, AM/ATT 0)
-    const gc = stats.goals_conceded;
-    const xgc = stats.expected_goals_conceded ?? 0;
-    const posGroup = getPositionGroup(position);
-    let csBonus = 0;
-    if (stats.clean_sheet && stats.minutes_played >= 60) {
-        let baseCs = 0;
-        if (position === 'GK') {
-            baseCs = 16; // Elevated Clean Sheet bonus for GK under Strategy A.4
-        } else if (posGroup === 'DEF' || position === 'DM') {
-            baseCs = 12; // Full bonus for DEF and DM
-        } else if (position === 'CM') {
-            baseCs = 4; // Reduced bonus for CM
-        }
-        
-        // Option B: Capped CS strictly for AM playing at CB/LB/RB
-        if (primaryPosition && primaryPosition === 'AM' && ['CB', 'LB', 'RB'].includes(position)) {
-            csBonus = 0;
-        } else {
-            csBonus = baseCs;
-        }
-    }
-    const canGetCS = csBonus > 0;
-    const xgcOutperf = Math.max(0, xgc - gc) * 5;
-    const gcPenalty = Math.max(0, gc - xgc) * 5;
-
-    const tackles = Math.max(0, stats.fpl_tackles ?? 0);
-    const cbi = Math.max(0, stats.fpl_cbi ?? 0);
-    const recoveries = Math.max(0, stats.fpl_recoveries ?? 0);
-    const dc = Math.max(0, stats.fpl_def_contrib ?? 0);
-
-    let defActionsRaw: number;
-    if (position === 'GK') {
-        defActionsRaw = recoveries * 0.4;
-    } else if (position === 'CB') {
-        defActionsRaw = tackles + cbi * 0.5;
-    } else {
-        // Symmetric 0.5x recoveries for all outfield positions to reward active
-        // defending (tackles + cbi) and prevent low-block recovery farming.
-        defActionsRaw = (tackles + cbi) + recoveries * 0.5;
-    }
-
-    let defensiveRaw: number;
-    if (position === 'GK') {
-        // Weighted toward "did he concede fewer than the chances warranted"
-        // rather than "did the clean sheet survive". The clean sheet used to be
-        // worth +20 with saves capped at +4 on top, which made the component a
-        // switch: across 193 clean sheets in 2025-26 keeper ratings moved by a
-        // standard deviation of 0.21, one routine save and eight outstanding
-        // ones both landing on ~8.65. Now the shutout is worth GK_CLEAN_SHEET
-        // and the saves that earned it carry up to GK_CLEAN_SHEET_SAVE_CAP.
-        let gkCsVal = 0;
-        const sv = Math.max(0, stats.saves ?? 0);
-        if (stats.clean_sheet && canGetCS) {
-            gkCsVal = GK_CLEAN_SHEET + Math.min(GK_CLEAN_SHEET_SAVE_CAP, sv * 1.0);
-        }
-        const xgcDiff = Math.max(-2.5, Math.min(2.5, xgc - gc));
-        let zeroSavePenalty = 0;
-        if (!stats.clean_sheet && sv === 0 && gc >= 1) {
-            zeroSavePenalty = 4.5 * gc;
-        }
-        defensiveRaw = defActionsRaw + gkCsVal - gc * GK_GOAL_CONCEDED + xgcDiff * GK_XGC_DIFF - zeroSavePenalty;
-    } else {
-        defensiveRaw = defActionsRaw + csBonus + xgcOutperf - gcPenalty;
-    }
+    const { defensiveRaw, canGetCS, gc, xgc, tackles, cbi, recoveries, dc } =
+        defensiveRawInput(stats, position, primaryPosition);
 
     const defensive: ComponentResult = {
         score: sigmoidNormalize(defensiveRaw, ref.defensive.median, ref.defensive.stddev),

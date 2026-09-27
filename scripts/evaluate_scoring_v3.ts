@@ -15,12 +15,12 @@
  *
  * References. Each step is normalized against reference stats computed from
  * its own formulas. V2 uses the stored `rating_reference_stats` rows, as
- * production does. The V3 steps change only Match Impact's raw input, so they
- * use the same rows with match_impact recomputed per position, using the
+ * production does. A V3 step uses the same rows with the components it
+ * changes (listed in its `recompute`) recomputed per position, using the
  * method of scripts/recompute_reference_stats.mjs (appearances of 45+
  * minutes, wide defenders pooled, LW/RW pooled, median and population
- * stddev). The script also recomputes V2's match_impact the same way and
- * prints it beside the stored value, so any gap in method shows up before it
+ * stddev). The script also recomputes V2's references the same way and
+ * prints them beside the stored values, so any gap in method shows up before it
  * is trusted.
  *
  * FPL element types come from the season's own player list, resolved by
@@ -31,6 +31,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import {
   calculateMatchRating,
   DEFAULT_REFERENCE_STATS,
+  defensiveRawInput,
   fallbackElementType,
   matchImpactRawInput,
 } from '../src/lib/scoring/matchRating';
@@ -50,12 +51,18 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp';
-interface Step { key: StepKey; label: string; version: 'v2' | 'v3'; fields: (keyof RawStats)[] }
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial';
+type Component = 'match_impact' | 'defensive';
+/** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
+interface Step { key: StepKey; label: string; version: 'v2' | 'v3'; fields: (keyof RawStats)[]; recompute: Component[] }
 const STEPS: Step[] = [
-  { key: 'v2', label: 'V2', version: 'v2', fields: [] },
-  { key: 'goal', label: 'Goal BPS fix', version: 'v3', fields: ['penalty_goals'] },
-  { key: 'lbp', label: '+ Line-breaking passes', version: 'v3', fields: ['penalty_goals', 'line_breaking_passes'] },
+  { key: 'v2', label: 'V2', version: 'v2', fields: [], recompute: [] },
+  { key: 'goal', label: 'Goal BPS fix', version: 'v3', fields: ['penalty_goals'], recompute: ['match_impact'] },
+  { key: 'lbp', label: '+ Line-breaking passes', version: 'v3', fields: ['penalty_goals', 'line_breaking_passes'], recompute: ['match_impact'] },
+  {
+    key: 'aerial', label: '+ Net aerial duels', version: 'v3',
+    fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
+  },
 ];
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -111,7 +118,14 @@ async function main() {
     .map((r: any) => [`${r.player_id}:${r.match_id}`, r]));
   const fotmobFields = (r: any): Partial<RawStats> => {
     const f = fotmob.get(`${r.player_id}:${r.match_id}`);
-    return f ? { penalty_goals: f.penalty_goals, line_breaking_passes: f.stats['Line breaking passes']?.value ?? 0 } : {};
+    if (!f) return {};
+    const aerialWon = f.stats['Aerial duels won']?.value ?? 0;
+    return {
+      penalty_goals: f.penalty_goals,
+      line_breaking_passes: f.stats['Line breaking passes']?.value ?? 0,
+      aerials_won: aerialWon,
+      aerials_lost: (f.stats['Aerial duels won']?.total ?? 0) - aerialWon,
+    };
   };
   const statsFor = (r: any, step: Step): RawStats => {
     const extra = fotmobFields(r) as Record<string, unknown>;
@@ -119,28 +133,34 @@ async function main() {
     return { ...r.stats, ...picked, engine_version: step.version, fpl_element_type: playerMeta.get(r.player_id)!.et };
   };
 
-  // References per step: V2's stored rows, with match_impact recomputed for V3 steps.
+  // References per step: V2's stored rows, with the components a step changes recomputed.
   const pool = (pos: GranularPosition): GranularPosition[] =>
     WIDE_DEF.includes(pos) ? WIDE_DEF : pos === 'LW' || pos === 'RW' ? ['LW', 'RW'] : [pos];
+  const rawInput: Record<Component, (s: RawStats, pos: GranularPosition) => number> = {
+    match_impact: (st, pos) => matchImpactRawInput(st, pos),
+    defensive: (st, pos) => defensiveRawInput(st, pos, pos).defensiveRaw,
+  };
   const refs = {} as Record<StepKey, RefMap>;
   for (const step of STEPS) refs[step.key] = JSON.parse(JSON.stringify(v2Ref));
-  console.log('\nMatch Impact reference, median / stddev (V2 as stored, then recomputed per step)');
-  console.log('pos ' + ['stored', ...STEPS.map((s) => s.key)].map((h) => h.padStart(15)).join(''));
-  for (const pos of POSITIONS) {
-    const sample = apps.filter((r) => pool(pos).includes(r.players.primary_position) && r.stats.minutes_played >= 45);
-    const cells = [`${v2Ref[pos].match_impact.median.toFixed(2)} / ${v2Ref[pos].match_impact.stddev.toFixed(2)}`];
-    for (const step of STEPS) {
-      const raw = sample.map((r) => matchImpactRawInput(statsFor(r, step), r.players.primary_position));
-      const recomputed = { median: median(raw), stddev: Number(pstdev(raw).toFixed(4)) };
-      if (step.version === 'v3') refs[step.key][pos].match_impact = recomputed;
-      cells.push(`${recomputed.median.toFixed(2)} / ${recomputed.stddev.toFixed(2)}`);
+  for (const comp of ['match_impact', 'defensive'] as Component[]) {
+    console.log(`\n${comp} reference, median / stddev (V2 as stored, then recomputed per step)`);
+    console.log('pos ' + ['stored', ...STEPS.map((s) => s.key)].map((h) => h.padStart(15)).join(''));
+    for (const pos of POSITIONS) {
+      const sample = apps.filter((r) => pool(pos).includes(r.players.primary_position) && r.stats.minutes_played >= 45);
+      const cells = [`${v2Ref[pos][comp].median.toFixed(2)} / ${v2Ref[pos][comp].stddev.toFixed(2)}`];
+      for (const step of STEPS) {
+        const raw = sample.map((r) => rawInput[comp](statsFor(r, step), r.players.primary_position));
+        const recomputed = { median: median(raw), stddev: Number(pstdev(raw).toFixed(4)) };
+        if (step.recompute.includes(comp)) refs[step.key][pos][comp] = recomputed;
+        cells.push(`${recomputed.median.toFixed(2)} / ${recomputed.stddev.toFixed(2)}`);
+      }
+      console.log(`${pos.padEnd(4)}${cells.map((c) => c.padStart(15)).join('')}   n=${sample.length}`);
     }
-    console.log(`${pos.padEnd(4)}${cells.map((c) => c.padStart(15)).join('')}   n=${sample.length}`);
   }
 
   interface Line {
     player_id: string; name: string; pos: GranularPosition; club: string; et: ElementType;
-    apps: number; minutes: number; goals: number; assists: number; lbp: number;
+    apps: number; minutes: number; goals: number; assists: number; lbp: number; aerialNet: number;
     pts: Record<StepKey, number>;
   }
   const lines = new Map<string, Line>();
@@ -152,12 +172,14 @@ async function main() {
     const line = lines.get(r.player_id) ?? {
       player_id: r.player_id, name: r.players.web_name, pos, et: meta.et,
       club: (slug && CLUB_BY_SLUG.get(slug)?.shortName) ?? '—',
-      apps: 0, minutes: 0, goals: 0, assists: 0, lbp: 0, pts: { v2: 0, goal: 0, lbp: 0 },
+      apps: 0, minutes: 0, goals: 0, assists: 0, lbp: 0, aerialNet: 0, pts: { v2: 0, goal: 0, lbp: 0, aerial: 0 },
     };
     line.apps++; line.minutes += r.stats.minutes_played;
     line.goals += r.stats.goals ?? 0; line.assists += r.stats.assists ?? 0;
-    line.lbp += fotmobFields(r).line_breaking_passes ?? 0;
-    perApp[pos] ??= { v2: [], goal: [], lbp: [] };
+    const extra = fotmobFields(r);
+    line.lbp += extra.line_breaking_passes ?? 0;
+    line.aerialNet += (extra.aerials_won ?? 0) - (extra.aerials_lost ?? 0);
+    perApp[pos] ??= { v2: [], goal: [], lbp: [], aerial: [] };
     for (const step of STEPS) {
       const pts = calculateMatchRating(statsFor(r, step), pos, refs[step.key], pos).fantasyPoints;
       line.pts[step.key] += pts;
@@ -176,6 +198,7 @@ async function main() {
   const all = [...lines.values()].map((l) => ({
     ...l,
     lbp90: +(l.minutes ? (l.lbp * 90) / l.minutes : 0).toFixed(2),
+    aerial90: +(l.minutes ? (l.aerialNet * 90) / l.minutes : 0).toFixed(2),
     pts: Object.fromEntries(STEPS.map((s) => [s.key, +l.pts[s.key].toFixed(1)])) as Record<StepKey, number>,
   }));
   const ranks = Object.fromEntries(STEPS.map((s) => [s.key,
@@ -197,7 +220,7 @@ async function main() {
   console.log('\nTop 25 after all steps: points and rank at each step');
   for (const l of board.slice(0, 25)) {
     console.log(`${l.name.padEnd(16)} ${l.pos.padEnd(3)} ${l.club.padEnd(4)} ` +
-      STEPS.map((s) => `${l.pts[s.key].toFixed(0).padStart(5)} #${String(l.rank[s.key]).padEnd(4)}`).join(' ') + `  lbp/90 ${l.lbp90}`);
+      STEPS.map((s) => `${l.pts[s.key].toFixed(0).padStart(5)} #${String(l.rank[s.key]).padEnd(4)}`).join(' ') + `  lbp/90 ${l.lbp90}  aerial net/90 ${l.aerial90}`);
   }
   console.log(`\nWrote ${board.length} players to ${out}`);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateMatchRating, matchImpactRawInput } from '../matchRating';
+import { calculateMatchRating, defensiveRawInput, matchImpactRawInput } from '../matchRating';
 import type { GranularPosition, RawStats } from '@/types';
 
 function stats(overrides: Partial<RawStats>): RawStats {
@@ -68,6 +68,26 @@ describe('V3 goal BPS strip', () => {
     it('never treats more goals as penalties than were scored', () => {
         const s = stats({ goals: 1, penalty_goals: 2, bps: 60, engine_version: 'v3', fpl_element_type: 3 });
         expect(matchImpactRawInput(s, 'CM')).toBe(60 - 12);
+    });
+});
+
+describe('V3 net aerial duels', () => {
+    const base = { fpl_tackles: 2, fpl_cbi: 4, fpl_recoveries: 4, goals_conceded: 1, expected_goals_conceded: 1 };
+
+    it('counts each net aerial like a clearance/block/interception: 0.5 for CB, 1 elsewhere', () => {
+        const v2cb = defensiveRawInput(stats(base), 'CB').defensiveRaw;
+        const v3cb = defensiveRawInput(stats({ ...base, engine_version: 'v3', aerials_won: 5, aerials_lost: 1 }), 'CB').defensiveRaw;
+        expect(v3cb - v2cb).toBeCloseTo(2);
+        const v2dm = defensiveRawInput(stats(base), 'DM').defensiveRaw;
+        const v3dm = defensiveRawInput(stats({ ...base, engine_version: 'v3', aerials_won: 1, aerials_lost: 3 }), 'DM').defensiveRaw;
+        expect(v3dm - v2dm).toBeCloseTo(-2);
+    });
+
+    it('leaves keepers and V2 rows alone', () => {
+        const gk = defensiveRawInput(stats({ ...base, engine_version: 'v3', aerials_won: 4 }), 'GK').defensiveRaw;
+        expect(gk).toBe(defensiveRawInput(stats(base), 'GK').defensiveRaw);
+        const v2 = defensiveRawInput(stats({ ...base, aerials_won: 4 }), 'CB').defensiveRaw;
+        expect(v2).toBe(defensiveRawInput(stats(base), 'CB').defensiveRaw);
     });
 });
 

@@ -354,6 +354,9 @@ export interface RawStats {
   penalty_goals?: number;
   /** FotMob "Line breaking passes": completed passes that bypass an opposition line. */
   line_breaking_passes?: number;
+  /** FotMob aerial duels won and lost. */
+  aerials_won?: number;
+  aerials_lost?: number;
 }
 
 export interface DraftPick {
