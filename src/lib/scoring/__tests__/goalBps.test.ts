@@ -91,6 +91,42 @@ describe('V3 net aerial duels', () => {
     });
 });
 
+describe('V3 substitute scoring', () => {
+    const quiet = { bps: 6, influence: 4, creativity: 3, threat: 2, fpl_tackles: 1, fpl_recoveries: 1 };
+
+    it('changes nothing at 90 minutes', () => {
+        const s = stats({ ...quiet, bps: 20, influence: 25, creativity: 20, threat: 15, assists: 1 });
+        const a = calculateMatchRating({ ...s, engine_version: 'v3', fpl_element_type: 3 }, 'CM');
+        expect(matchImpactRawInput({ ...s, engine_version: 'v3', fpl_element_type: 3 }, 'CM')).toBe(20 - 9);
+        expect(a.fantasyPoints).toBe(calculateMatchRating(s, 'CM').fantasyPoints);
+    });
+
+    it('credits a busy 25-minute cameo more than V2 does', () => {
+        const busy = stats({ minutes_played: 25, bps: 12, influence: 14, creativity: 12, threat: 10, fpl_tackles: 2, fpl_recoveries: 3 });
+        const v2 = calculateMatchRating(busy, 'CM').fantasyPoints;
+        const v3 = calculateMatchRating({ ...busy, engine_version: 'v3', fpl_element_type: 3 }, 'CM').fantasyPoints;
+        expect(v3).toBeGreaterThan(v2);
+    });
+
+    it('keeps a quiet cameo below a quiet full match', () => {
+        const cameo = calculateMatchRating(stats({ ...quiet, minutes_played: 12, bps: 3, engine_version: 'v3', fpl_element_type: 3 }), 'CM');
+        const full = calculateMatchRating(stats({ ...quiet, bps: 12, influence: 12, creativity: 10, threat: 6, engine_version: 'v3', fpl_element_type: 3 }), 'CM');
+        expect(cameo.fantasyPoints).toBeLessThan(full.fantasyPoints);
+    });
+
+    it('spreads the flat appearance BPS over the minutes played', () => {
+        // 30 minutes: FPL paid 3 for appearing; V3 counts 6 x 30/90 = 2 of it.
+        const s = stats({ minutes_played: 30, bps: 10, engine_version: 'v3', fpl_element_type: 3 });
+        expect(matchImpactRawInput(s, 'CM')).toBeCloseTo(9);
+    });
+
+    it('leaves the goal itself alone', () => {
+        const goal = stats({ minutes_played: 15, goals: 1, bps: 30, engine_version: 'v3', fpl_element_type: 4 });
+        const gi = (r: ReturnType<typeof calculateMatchRating>) => r.breakdown.find((b) => b.key === 'goal_involvement')!.score;
+        expect(gi(calculateMatchRating(goal, 'ST'))).toBe(gi(calculateMatchRating({ ...goal, minutes_played: 90 }, 'ST')));
+    });
+});
+
 describe('V3 line-breaking passes', () => {
     it('adds one third of a BPS per line-breaking pass', () => {
         const s = stats({ bps: 20, line_breaking_passes: 9, engine_version: 'v3', fpl_element_type: 3 });

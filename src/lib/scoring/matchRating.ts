@@ -21,6 +21,7 @@ import type {
     RatingComponent,
     PositionGroup,
     ReferenceStats,
+    ComponentRefStats,
 } from '@/types';
 
 // Define ComponentScores type as it's used in the new code
@@ -101,6 +102,62 @@ const BPS_PER_ASSIST = 9;
 export const BPS_PER_LINE_BREAKING_PASS = 1 / 3;
 
 /**
+ * V3 substitute scoring. Gaffa's volume components (Match Impact, Influence,
+ * Creativity, Threat, Defensive) are totals, and V2 measures every appearance
+ * against the median of a full match, so a sub who plays 25 minutes well still
+ * reads as far below par. V3 does two things, both keyed on the share of a
+ * full match played, f = minutes / 90:
+ *
+ * 1. Volume is judged against the minutes played: the reference median scales
+ *    by f and the stddev by sqrt f (counts vary with the square root of time).
+ * 2. Each volume score is pulled toward par by sqrt f, the weight a short
+ *    appearance carries as evidence. Par is the score where points start
+ *    (PAR_COMPOSITE), so a sub who did little stays near nothing rather than
+ *    near an average starter.
+ *
+ * Goals, assists, finishing and saves are events, not volume, and are left
+ * alone: a goal is worth the same off the bench. At 90 minutes f = 1 and
+ * nothing changes. V2 rows always use f = 1.
+ */
+const VOLUME_COMPONENTS: RatingComponent[] = ['match_impact', 'influence', 'creativity', 'threat', 'defensive'];
+
+/** Composite at which the scoring rating reaches 4.0, where fantasy points start (see calculateFantasyPoints). */
+const PAR_COMPOSITE = (4.0 - 1.0) / 9.0;
+
+/**
+ * Switches for evaluating V3 one change at a time (scripts/evaluate_scoring_v3.ts).
+ * Production never passes them, so every V3 change applies.
+ */
+export interface EngineOptions {
+    /** false scores a V3 row without the substitute rule. */
+    substituteScaling?: boolean;
+}
+
+function minutesFraction(stats: RawStats, options?: EngineOptions): number {
+    if (stats.engine_version !== 'v3' || options?.substituteScaling === false) return 1;
+    return Math.min(Math.max(stats.minutes_played, 0), 90) / 90;
+}
+
+/** A full-match reference rescaled to the minutes played. */
+function referenceForMinutes(ref: ComponentRefStats, f: number): ComponentRefStats {
+    return f === 1 ? ref : { median: ref.median * f, stddev: ref.stddev * Math.sqrt(f) };
+}
+
+/**
+ * FPL's BPS pays a flat 3 for playing anywhere from 1 to 60 minutes, which
+ * reads as a lot of output for a short cameo once volume is judged against
+ * the minutes played. V3 replaces it with the full-match 6 spread over the
+ * minutes played (6 x f). Over 60 minutes FPL pays 6, already close to in
+ * proportion, and it is left alone: spreading it would also shift the
+ * reference for everyone taken off after the hour.
+ */
+function appearanceBpsAdjustment(stats: RawStats, options?: EngineOptions): number {
+    if (stats.engine_version !== 'v3' || options?.substituteScaling === false) return 0;
+    if (stats.minutes_played > 60) return 0;
+    return 6 * minutesFraction(stats, options) - 3;
+}
+
+/**
  * Best guess at FPL's element type when a row doesn't record one. Wingers
  * default to MID because FPL lists most of them there; only ST maps to FWD.
  */
@@ -121,7 +178,7 @@ export function fallbackElementType(pos: GranularPosition): 1 | 2 | 3 | 4 {
  * V3 rows need penalty_goals and line_breaking_passes from the FotMob sync; a
  * missing value counts as zero.
  */
-export function matchImpactRawInput(stats: RawStats, position: GranularPosition): number {
+export function matchImpactRawInput(stats: RawStats, position: GranularPosition, options?: EngineOptions): number {
     const bps = stats.bps ?? 0;
     if (stats.engine_version !== 'v3') {
         return Math.max(0, bps - stats.goals * 12 - stats.assists * BPS_PER_ASSIST);
@@ -132,7 +189,7 @@ export function matchImpactRawInput(stats: RawStats, position: GranularPosition)
     // Floor the BPS part before adding passes, so a strip that overshoots a
     // low BPS can't cancel passing that happened.
     const lineBreaking = (stats.line_breaking_passes ?? 0) * BPS_PER_LINE_BREAKING_PASS;
-    return Math.max(0, bps - goalBps - stats.assists * BPS_PER_ASSIST) + lineBreaking;
+    return Math.max(0, bps + appearanceBpsAdjustment(stats, options) - goalBps - stats.assists * BPS_PER_ASSIST) + lineBreaking;
 }
 
 // Helper to normalize position for FLEX_CONFIG and POSITION_WEIGHTS lookup
@@ -318,6 +375,7 @@ function computeComponentScores(
     position: GranularPosition,
     refStats: Record<GranularPosition, ReferenceStats>,
     primaryPosition?: GranularPosition,
+    options?: EngineOptions,
 ) {
     const ref = refStats[position]
         ?? (position === 'LWB' ? refStats.LB : undefined)
@@ -325,6 +383,8 @@ function computeComponentScores(
         ?? refStats.CM
         ?? DEFAULT_REFERENCE_STATS[position]
         ?? DEFAULT_REFERENCE_STATS.CM;
+    const f = minutesFraction(stats, options);
+    const volRef = (c: RatingComponent) => referenceForMinutes(ref[c], f);
 
     // 1. Match Impact (BPS)
     //    Subtract the goal/assist contribution to avoid double-counting with
@@ -332,17 +392,17 @@ function computeComponentScores(
     //    contributions (tackles, passing, positioning, etc.). See
     //    matchImpactRawInput for how much each goal strips under V2 and V3.
     const rawBps = stats.bps ?? 0;
-    const adjustedBps = matchImpactRawInput(stats, primaryPosition ?? position);
+    const adjustedBps = matchImpactRawInput(stats, primaryPosition ?? position, options);
 
     const matchImpact: ComponentResult = {
-        score: sigmoidNormalize(adjustedBps, ref.match_impact.median, ref.match_impact.stddev),
+        score: sigmoidNormalize(adjustedBps, volRef('match_impact').median, volRef('match_impact').stddev),
         detail: `BPS: ${rawBps} (adj: ${adjustedBps})`,
     };
 
     // 2. Influence
     const infl = stats.influence ?? 0;
     const influence: ComponentResult = {
-        score: sigmoidNormalize(infl, ref.influence.median, ref.influence.stddev),
+        score: sigmoidNormalize(infl, volRef('influence').median, volRef('influence').stddev),
         detail: `${infl.toFixed(1)}`,
     };
 
@@ -350,7 +410,7 @@ function computeComponentScores(
     const crea = stats.creativity ?? 0;
     const creaZ = computeZScore(crea, ref.creativity.median, ref.creativity.stddev);
     const creativity: ComponentResult = {
-        score: sigmoidNormalize(crea, ref.creativity.median, ref.creativity.stddev),
+        score: sigmoidNormalize(crea, volRef('creativity').median, volRef('creativity').stddev),
         detail: `${crea.toFixed(1)}`,
         z: creaZ,
     };
@@ -358,7 +418,7 @@ function computeComponentScores(
     // 4. Threat
     const thr = stats.threat ?? 0;
     const threat: ComponentResult = {
-        score: sigmoidNormalize(thr, ref.threat.median, ref.threat.stddev),
+        score: sigmoidNormalize(thr, volRef('threat').median, volRef('threat').stddev),
         detail: `${thr.toFixed(1)}`,
     };
 
@@ -385,7 +445,7 @@ function computeComponentScores(
         defensiveRawInput(stats, position, primaryPosition);
 
     const defensive: ComponentResult = {
-        score: sigmoidNormalize(defensiveRaw, ref.defensive.median, ref.defensive.stddev),
+        score: sigmoidNormalize(defensiveRaw, volRef('defensive').median, volRef('defensive').stddev),
         detail: position === 'GK'
             ? (stats.clean_sheet && canGetCS)
                 ? `CS, R ${recoveries}`
@@ -859,6 +919,7 @@ export function calculateMatchRating(
     position: GranularPosition,
     refStats: Record<GranularPosition, ReferenceStats> = DEFAULT_REFERENCE_STATS,
     primaryPosition?: GranularPosition,
+    options?: EngineOptions,
 ): MatchRating {
     // Player didn't play → zero rating
     if (stats.minutes_played === 0) {
@@ -866,11 +927,13 @@ export function calculateMatchRating(
     }
 
     // Step 1: Normalize each component to 0-1 via sigmoid
-    const components = computeComponentScores(stats, position, refStats, primaryPosition);
+    const components = computeComponentScores(stats, position, refStats, primaryPosition, options);
 
     const scores: ComponentScores = {} as ComponentScores;
+    const evidence = Math.sqrt(minutesFraction(stats, options));
     for (const [k, v] of Object.entries(components)) {
-        scores[k as RatingComponent] = v.score;
+        const key = k as RatingComponent;
+        scores[key] = VOLUME_COMPONENTS.includes(key) ? PAR_COMPOSITE + (v.score - PAR_COMPOSITE) * evidence : v.score;
     }
 
     // Step 2: Weighted composite

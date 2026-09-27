@@ -32,6 +32,7 @@ import {
   calculateMatchRating,
   DEFAULT_REFERENCE_STATS,
   defensiveRawInput,
+  type EngineOptions,
   fallbackElementType,
   matchImpactRawInput,
 } from '../src/lib/scoring/matchRating';
@@ -51,20 +52,30 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'csbps';
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'csbps';
 type Component = 'match_impact' | 'defensive';
 /** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
 interface Step {
   key: StepKey; label: string; version: 'v2' | 'v3'; fields: (keyof RawStats)[]; recompute: Component[];
   /** Experimental steps change an input here instead of in the engine, until one is adopted. */
   adjust?: (s: RawStats) => RawStats;
+  /** Engine switches; a step leaves off the V3 changes that come after it. */
+  options?: EngineOptions;
 }
 const STEPS: Step[] = [
   { key: 'v2', label: 'V2', version: 'v2', fields: [], recompute: [] },
-  { key: 'goal', label: 'Goal BPS fix', version: 'v3', fields: ['penalty_goals'], recompute: ['match_impact'] },
-  { key: 'lbp', label: '+ Line-breaking passes', version: 'v3', fields: ['penalty_goals', 'line_breaking_passes'], recompute: ['match_impact'] },
+  { key: 'goal', label: 'Goal BPS fix', version: 'v3', fields: ['penalty_goals'], recompute: ['match_impact'], options: { substituteScaling: false } },
+  {
+    key: 'lbp', label: '+ Line-breaking passes', version: 'v3', fields: ['penalty_goals', 'line_breaking_passes'],
+    recompute: ['match_impact'], options: { substituteScaling: false },
+  },
   {
     key: 'aerial', label: '+ Net aerial duels', version: 'v3',
+    fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
+    options: { substituteScaling: false },
+  },
+  {
+    key: 'subs', label: '+ Substitute scoring', version: 'v3',
     fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
   },
 ];
@@ -163,8 +174,8 @@ async function main() {
   // References per step: V2's stored rows, with the components a step changes recomputed.
   const pool = (pos: GranularPosition): GranularPosition[] =>
     WIDE_DEF.includes(pos) ? WIDE_DEF : pos === 'LW' || pos === 'RW' ? ['LW', 'RW'] : [pos];
-  const rawInput: Record<Component, (s: RawStats, pos: GranularPosition) => number> = {
-    match_impact: (st, pos) => matchImpactRawInput(st, pos),
+  const rawInput: Record<Component, (s: RawStats, pos: GranularPosition, o?: EngineOptions) => number> = {
+    match_impact: (st, pos, o) => matchImpactRawInput(st, pos, o),
     defensive: (st, pos) => defensiveRawInput(st, pos, pos).defensiveRaw,
   };
   const refs = {} as Record<StepKey, RefMap>;
@@ -176,7 +187,7 @@ async function main() {
       const sample = apps.filter((r) => pool(pos).includes(r.players.primary_position) && r.stats.minutes_played >= 45);
       const cells = [`${v2Ref[pos][comp].median.toFixed(2)} / ${v2Ref[pos][comp].stddev.toFixed(2)}`];
       for (const step of STEPS) {
-        const raw = sample.map((r) => rawInput[comp](statsFor(r, step), r.players.primary_position));
+        const raw = sample.map((r) => rawInput[comp](statsFor(r, step), r.players.primary_position, step.options));
         const recomputed = { median: median(raw), stddev: Number(pstdev(raw).toFixed(4)) };
         if (step.recompute.includes(comp)) refs[step.key][pos][comp] = recomputed;
         cells.push(`${recomputed.median.toFixed(2)} / ${recomputed.stddev.toFixed(2)}`);
@@ -214,7 +225,7 @@ async function main() {
     const gcGroup = GC_GROUP[pos];
     const gcKey = Math.min(r.stats.goals_conceded ?? 0, 3);
     for (const step of STEPS) {
-      const pts = calculateMatchRating(statsFor(r, step), pos, refs[step.key], pos).fantasyPoints;
+      const pts = calculateMatchRating(statsFor(r, step), pos, refs[step.key], pos, step.options).fantasyPoints;
       line.pts[step.key] += pts;
       perApp[pos][step.key].push(pts);
       if (gcGroup && r.stats.minutes_played >= 80) ((gcAgg[gcGroup] ??= {})[gcKey] ??= {} as Record<StepKey, number[]>)[step.key] = [...(gcAgg[gcGroup][gcKey][step.key] ?? []), pts];
