@@ -22,28 +22,6 @@ import type {
     PositionGroup,
     ReferenceStats,
 } from '@/types';
-import fotmobCenteringRates from './fotmobCenteringRates.json';
-
-/**
- * First gameweek of the 2026-27 season scored under Gaffa Scoring Engine V3.
- * All appearances in earlier seasons (e.g. 2025-26) and 2026-27 GW1–5 stay under V2.
- */
-export const V3_FIRST_GW = 6;
-export const V3_CUTOVER_SEASON = '2026-27';
-
-export function resolveEngineVersionForGameweek(
-    season: string,
-    gameweek: number,
-): 'v2' | 'v3' {
-    if (season > V3_CUTOVER_SEASON) return 'v3';
-    if (season === V3_CUTOVER_SEASON && gameweek >= V3_FIRST_GW) return 'v3';
-    return 'v2';
-}
-
-export function defaultElementTypeForPosition(pos: GranularPosition): number {
-    const g = getPositionGroup(pos);
-    return g === 'GK' ? 1 : g === 'DEF' ? 2 : g === 'MID' ? 3 : 4;
-}
 
 // Define ComponentScores type as it's used in the new code
 type ComponentScores = Record<RatingComponent, number>;
@@ -71,12 +49,6 @@ export const FLEX_CONFIG = {
     ST: { flex: 0.25, components: ['threat', 'goal_involvement', 'finishing'] },
 } satisfies Record<GranularPosition, { flex: number; components: RatingComponent[] }>;
 
-export const V3_FLEX_CONFIG: Record<GranularPosition, { flex: number; components: RatingComponent[] }> = {
-    ...FLEX_CONFIG,
-    CB: { flex: 0.25, components: ['defensive', 'match_impact', 'influence', 'goal_involvement'] },
-    CM: { flex: 0.25, components: ['match_impact', 'creativity', 'influence', 'defensive'] },
-};
-
 //                                                                                                       Σ = 1.00
 export const POSITION_WEIGHTS = {
     GK: { match_impact: 0.14, influence: 0.06, creativity: 0.00, threat: 0.00, defensive: 0.38, goal_involvement: 0.00, finishing: 0.00, save_score: 0.22 },
@@ -92,11 +64,6 @@ export const POSITION_WEIGHTS = {
     RW: { match_impact: 0.15, influence: 0.05, creativity: 0.05, threat: 0.10, defensive: 0.00, goal_involvement: 0.15, finishing: 0.25, save_score: 0.00 },
     ST: { match_impact: 0.15, influence: 0.10, creativity: 0.10, threat: 0.15, defensive: 0.00, goal_involvement: 0.15, finishing: 0.10, save_score: 0.00 },
 } satisfies Record<GranularPosition, Record<RatingComponent, number>>;
-
-export const V3_POSITION_WEIGHTS: Record<GranularPosition, Record<RatingComponent, number>> = {
-    ...POSITION_WEIGHTS,
-    CB: { match_impact: 0.25, influence: 0.10, creativity: 0.05, threat: 0.00, defensive: 0.30, goal_involvement: 0.05, finishing: 0.00, save_score: 0.00 },
-};
 
 // ════════════════════════════════════════════════════════════════════════════
 // Position Group Mapping
@@ -204,9 +171,7 @@ function computeComponentScores(
     position: GranularPosition,
     refStats: Record<GranularPosition, ReferenceStats>,
     primaryPosition?: GranularPosition,
-    pillar1Shadow = false,
 ) {
-    const isV3 = stats.engine_version === 'v3' || pillar1Shadow;
     const ref = refStats[position]
         ?? (position === 'LWB' ? refStats.LB : undefined)
         ?? (position === 'RWB' ? refStats.RB : undefined)
@@ -214,49 +179,22 @@ function computeComponentScores(
         ?? DEFAULT_REFERENCE_STATS[position]
         ?? DEFAULT_REFERENCE_STATS.CM;
 
-    const defaultRefForPos = DEFAULT_REFERENCE_STATS[position] ?? DEFAULT_REFERENCE_STATS.CM;
-    const miV3Ref = ref.match_impact_v3 ?? defaultRefForPos.match_impact_v3 ?? ref.match_impact;
-    const defWorkRef = ref.defensive_work ?? defaultRefForPos.defensive_work ?? ref.defensive;
-
-    const m = stats.minutes_played ?? 0;
-    const rates = (fotmobCenteringRates.ratesPerMinute as Record<string, { lbpPerMin: number; pftPerMin: number; netAdPerMin: number }>)[position]
-        ?? { lbpPerMin: 0, pftPerMin: 0, netAdPerMin: 0 };
-
-    const deltaLbp = (pillar1Shadow && stats.line_breaking_passes !== undefined)
-        ? (stats.line_breaking_passes - rates.lbpPerMin * m) * fotmobCenteringRates.weights.lineBreakingPassBps
-        : 0;
-    const deltaPft = (pillar1Shadow && stats.passes_into_final_third !== undefined)
-        ? (stats.passes_into_final_third - rates.pftPerMin * m) * fotmobCenteringRates.weights.finalThirdPassInfluence
-        : 0;
-    const deltaNetAd = (pillar1Shadow && stats.aerials_won !== undefined && stats.aerials_lost !== undefined)
-        ? ((stats.aerials_won - stats.aerials_lost) - rates.netAdPerMin * m) * fotmobCenteringRates.weights.netAerialDefensive
-        : 0;
-
     // 1. Match Impact (BPS)
+    //    Subtract estimated goal/assist contribution to avoid double-counting
+    //    with the Goal Involvement component.  BPS awards roughly +12 per goal
+    //    and +9 per assist internally; we strip that out so Match Impact purely
+    //    reflects non-goal contributions (tackles, passing, positioning, etc.).
     const rawBps = stats.bps ?? 0;
-    let adjustedBps: number;
-    let miNormRef = ref.match_impact;
-    if (isV3) {
-        const elType = stats.fpl_element_type ?? defaultElementTypeForPosition(primaryPosition ?? position);
-        const goalBpsUnit = elType <= 2 ? 12 : elType === 3 ? 18 : 24;
-        const goalAssistBps = stats.goals * goalBpsUnit + stats.assists * 9;
-        const defCsGcBps = elType === 2
-            ? (((stats.clean_sheet && m >= 60) ? 12 : 0) - (stats.goals_conceded ?? 0) * 4)
-            : 0;
-        adjustedBps = Math.max(0, rawBps - goalAssistBps - defCsGcBps + deltaLbp);
-        miNormRef = miV3Ref;
-    } else {
-        const goalAssistBps = stats.goals * 12 + stats.assists * 9;
-        adjustedBps = Math.max(0, rawBps - goalAssistBps);
-    }
+    const goalAssistBps = stats.goals * 12 + stats.assists * 9;
+    const adjustedBps = Math.max(0, rawBps - goalAssistBps);
 
     const matchImpact: ComponentResult = {
-        score: sigmoidNormalize(adjustedBps, miNormRef.median, miNormRef.stddev),
-        detail: `BPS: ${rawBps} (adj: ${Math.round(adjustedBps)})`,
+        score: sigmoidNormalize(adjustedBps, ref.match_impact.median, ref.match_impact.stddev),
+        detail: `BPS: ${rawBps} (adj: ${adjustedBps})`,
     };
 
     // 2. Influence
-    const infl = Math.max(0, (stats.influence ?? 0) + deltaPft);
+    const infl = stats.influence ?? 0;
     const influence: ComponentResult = {
         score: sigmoidNormalize(infl, ref.influence.median, ref.influence.stddev),
         detail: `${infl.toFixed(1)}`,
@@ -279,6 +217,24 @@ function computeComponentScores(
     };
 
     // 5. Defensive Score
+    //    Primary signal: FPL `defensive_contribution` — a position-weighted
+    //    defensive action count provided directly by the FPL API (25/26+).
+    //      DEF: tackles + CBI
+    //      MID/FWD: tackles + CBI + recoveries
+    //      GK: 0 (use save_score instead)
+    //
+    //    Position-specific adjustments:
+    //      - CB: clearance volume is nerfed (clearances are largely positional
+    //        and lopsided in mid-block teams). We rebuild the raw input from
+    //        components: tackles + CBI * 0.5, dropping FPL's flat DC for CBs.
+    //      - Full-backs (LB/RB/LWB/RWB): FPL's DEF bucket excludes recoveries,
+    //        but FBs do recover the ball routinely. Add recoveries * 0.5 on top.
+    //      - DM/CM/AM/LW/RW/ST: FPL DC already includes recoveries; use directly.
+    //
+    //    Outcome modifiers (added on top of the activity signal):
+    //      + xGC outperformance bonus (defense kept goals below the chance quality)
+    //      − GC penalty (defense let goals through above the chance quality)
+    //      + clean-sheet bonus (position-weighted: GK/DEF/DM full, CM half, AM/ATT 0)
     const gc = stats.goals_conceded;
     const xgc = stats.expected_goals_conceded ?? 0;
     const posGroup = getPositionGroup(position);
@@ -313,17 +269,22 @@ function computeComponentScores(
     if (position === 'GK') {
         defActionsRaw = recoveries * 0.4;
     } else if (position === 'CB') {
-        defActionsRaw = isV3
-            ? tackles + cbi * 0.5 + recoveries * 0.5
-            : tackles + cbi * 0.5;
+        defActionsRaw = tackles + cbi * 0.5;
     } else {
         // Symmetric 0.5x recoveries for all outfield positions to reward active
         // defending (tackles + cbi) and prevent low-block recovery farming.
         defActionsRaw = (tackles + cbi) + recoveries * 0.5;
     }
 
-    let defensiveScore: number;
+    let defensiveRaw: number;
     if (position === 'GK') {
+        // Weighted toward "did he concede fewer than the chances warranted"
+        // rather than "did the clean sheet survive". The clean sheet used to be
+        // worth +20 with saves capped at +4 on top, which made the component a
+        // switch: across 193 clean sheets in 2025-26 keeper ratings moved by a
+        // standard deviation of 0.21, one routine save and eight outstanding
+        // ones both landing on ~8.65. Now the shutout is worth GK_CLEAN_SHEET
+        // and the saves that earned it carry up to GK_CLEAN_SHEET_SAVE_CAP.
         let gkCsVal = 0;
         const sv = Math.max(0, stats.saves ?? 0);
         if (stats.clean_sheet && canGetCS) {
@@ -334,25 +295,13 @@ function computeComponentScores(
         if (!stats.clean_sheet && sv === 0 && gc >= 1) {
             zeroSavePenalty = 4.5 * gc;
         }
-        const defensiveRaw = defActionsRaw + gkCsVal - gc * GK_GOAL_CONCEDED + xgcDiff * GK_XGC_DIFF - zeroSavePenalty;
-        defensiveScore = sigmoidNormalize(defensiveRaw, ref.defensive.median, ref.defensive.stddev);
-    } else if (isV3 && (posGroup === 'DEF' || position === 'DM')) {
-        // V3: Normalize pure defensive work against defensive_work reference stats,
-        // then apply the clean-sheet offset in z-space: sigmoid(z_work + c_pos).
-        const defWorkRaw = defActionsRaw + deltaNetAd + xgcOutperf - gcPenalty;
-        const zWork = computeZScore(defWorkRaw, defWorkRef.median, defWorkRef.stddev);
-        const cPos = (stats.clean_sheet && canGetCS)
-            ? (position === 'CB' ? 1.70 : position === 'DM' ? 1.05 : 1.32)
-            : 0;
-        defensiveScore = 1 / (1 + Math.exp(-(zWork + cPos)));
+        defensiveRaw = defActionsRaw + gkCsVal - gc * GK_GOAL_CONCEDED + xgcDiff * GK_XGC_DIFF - zeroSavePenalty;
     } else {
-        const defNormRef = isV3 ? defWorkRef : ref.defensive;
-        const defensiveRaw = defActionsRaw + deltaNetAd + csBonus + xgcOutperf - gcPenalty;
-        defensiveScore = sigmoidNormalize(defensiveRaw, defNormRef.median, defNormRef.stddev);
+        defensiveRaw = defActionsRaw + csBonus + xgcOutperf - gcPenalty;
     }
 
     const defensive: ComponentResult = {
-        score: defensiveScore,
+        score: sigmoidNormalize(defensiveRaw, ref.defensive.median, ref.defensive.stddev),
         detail: position === 'GK'
             ? (stats.clean_sheet && canGetCS)
                 ? `CS, R ${recoveries}`
@@ -365,6 +314,10 @@ function computeComponentScores(
 
 
     // 7. Goal Involvement  (goals × 6 + assists × 4 — mirrors on-pitch impact)
+    //    Uses a GLOBAL (cross-position) stddev so that 1 goal / 1 assist have the
+    //    same fantasy value regardless of the scorer's position.  Position-specific
+    //    normalization here creates the paradox where a LWB assist outscores a ST
+    //    2-goal game because assists are rarer for LWBs.
     const g = stats.goals;
     const a = stats.assists;
     const goalInvRaw = g * 6 + a * 4;
@@ -384,6 +337,8 @@ function computeComponentScores(
     const xaOutperf = a - xa;
     const finInput = xgOutperf + (xaOutperf * 0.5);
 
+    // Finishing also uses a global stddev: V2's per-position ST value (0.47) was
+    // 3× wider than V1's (0.15), massively deflating clinical strikers like Haaland.
     const finishing: ComponentResult = {
         score: sigmoidNormalize(finInput, GLOBAL_FINISHING_MEDIAN, GLOBAL_FINISHING_STDDEV),
         detail: `${xgOutperf >= 0 ? '+' : ''}${xgOutperf.toFixed(2)} vs xG, ${xaOutperf >= 0 ? '+' : ''}${xaOutperf.toFixed(2)} vs xA`,
@@ -406,6 +361,11 @@ function computeComponentScores(
         const saveVolRaw = sv * 2.5 + psav * 6;
         const saveVolScore = sigmoidNormalize(saveVolRaw, ref.save_score.median, ref.save_score.stddev);
         const savePctScore = sigmoidNormalize(matchSavePct, 0.70, 0.15);
+
+        // No clean-sheet floor. This used to read
+        // `if (clean_sheet) scoreVal = Math.max(scoreVal, 0.86)`, which overrode
+        // the very thing the component measures — a keeper who touched nothing
+        // scored the same here as one who made eight saves to earn the shutout.
         const scoreVal = saveVolScore * 0.45 + savePctScore * 0.55;
 
         saveScore = {
@@ -434,14 +394,11 @@ function computeComponentScores(
 
 export function applyPositionWeights(
     scores: ComponentScores,
-    position: GranularPosition,
-    isV3 = false,
+    position: GranularPosition
 ) {
     const normalizedPos = normalizePosition(position);
-    const weightTable = isV3 ? V3_POSITION_WEIGHTS : POSITION_WEIGHTS;
-    const flexTable = isV3 ? V3_FLEX_CONFIG : FLEX_CONFIG;
-    const weights = weightTable[normalizedPos] || weightTable.CM;
-    const flexConfig = flexTable[normalizedPos] || flexTable.CM;
+    const weights = POSITION_WEIGHTS[normalizedPos] || POSITION_WEIGHTS.CM;
+    const flexConfig = FLEX_CONFIG[normalizedPos] || FLEX_CONFIG.CM;
 
     let maxScore = -1;
     let maxComponent: RatingComponent | '' = '';
@@ -730,7 +687,6 @@ export const GK_XGC_DIFF = 2.5;
  * far that the leaderboard stops distinguishing keepers at all.
  */
 export const GK_CURVE_SCALE = 0.84;
-export const V3_GK_CURVE_SCALE = 0.85;
 
 export function calculateFantasyPoints(rating: number, minutesPlayed: number): number {
     if (minutesPlayed === 0 || rating === 0) return 0;
@@ -761,7 +717,6 @@ function makeRef(
     mi: [number, number], inf: [number, number], cre: [number, number],
     thr: [number, number], def: [number, number], 
     gi: [number, number], fin: [number, number], sav: [number, number],
-    miV3?: [number, number], defWork?: [number, number],
 ): ReferenceStats {
     return {
         match_impact: { median: mi[0], stddev: mi[1] },
@@ -772,8 +727,6 @@ function makeRef(
         goal_involvement: { median: gi[0], stddev: gi[1] },
         finishing: { median: fin[0], stddev: fin[1] },
         save_score: { median: sav[0], stddev: sav[1] },
-        ...(miV3 ? { match_impact_v3: { median: miV3[0], stddev: miV3[1] } } : {}),
-        ...(defWork ? { defensive_work: { median: defWork[0], stddev: defWork[1] } } : {}),
     };
 }
 
@@ -789,42 +742,47 @@ function makeRef(
 //   - The 12-position taxonomy changes
 //
 // Values below were generated from 2025-26 FPL live data (GW1-35, minutes>=45).
-//                 match_impact   influence      creativity     threat         defensive       goal_invol     finishing       save_score       match_impact_v3   defensive_work
+//                 match_impact   influence      creativity     threat         defensive       goal_invol     finishing       save_score
 export const DEFAULT_REFERENCE_STATS = {
-    GK:  makeRef([12.00, 10.17], [21.00, 12.42], [ 0.00,  2.08], [ 0.00,  1.29], [ 2.950, 16.416], [0.00, 0.33], [ 0.000, 0.04], [ 7.500,  5.429], [12.00, 10.1770], [3.90, 10.6710]),
-    CB:  makeRef([10.00,  9.84], [20.00, 11.85], [ 1.40,  6.41], [ 2.00, 10.33], [ 8.80,  9.19], [0.00, 1.55], [-0.010, 0.22], [0.00, 1.00], [15.00,  5.0218], [6.65,  5.6163]),
-    LB:  makeRef([10.00,  9.86], [14.80, 10.64], [ 8.30, 12.79], [ 2.00,  8.82], [12.45,  9.79], [0.00, 1.66], [-0.020, 0.22], [0.00, 1.00], [13.00,  6.0609], [7.65,  6.3814]),
-    RB:  makeRef([10.00,  9.86], [14.80, 10.64], [ 8.30, 12.79], [ 2.00,  8.82], [12.45,  9.79], [0.00, 1.66], [-0.020, 0.22], [0.00, 1.00], [13.00,  6.0345], [8.30,  6.5056]),
-    LWB: makeRef([10.00,  9.86], [14.80, 10.64], [ 8.30, 12.79], [ 2.00,  8.82], [12.45,  9.79], [0.00, 1.66], [-0.020, 0.22], [0.00, 1.00], [14.00,  6.7317], [7.75,  5.6987]),
-    RWB: makeRef([10.00,  9.86], [14.80, 10.64], [ 8.30, 12.79], [ 2.00,  8.82], [12.45,  9.79], [0.00, 1.66], [-0.020, 0.22], [0.00, 1.00], [13.00,  5.8335], [6.90,  5.2505]),
-    DM:  makeRef([14.00,  6.57], [13.40, 12.96], [10.50, 13.26], [ 2.00,  9.62], [18.30,  7.44], [0.00, 2.06], [-0.025, 0.28], [0.00, 1.00], [14.00,  6.1030], [7.45,  6.0772]),
-    CM:  makeRef([13.00,  6.71], [12.00, 14.24], [15.00, 15.81], [ 6.00, 11.59], [14.50,  5.60], [0.00, 2.46], [-0.045, 0.32], [0.00, 1.00], [13.00,  6.2785], [6.10,  6.8318]),
-    AM:  makeRef([12.00,  7.69], [11.20, 19.28], [17.10, 19.55], [12.00, 15.09], [11.50,  5.49], [0.00, 3.40], [-0.065, 0.45], [0.00, 1.00], [11.00,  6.4539], [4.70,  5.5126]),
-    LW:  makeRef([10.00,  7.02], [ 9.60, 16.12], [15.20, 15.29], [14.00, 15.63], [10.60,  4.95], [0.00, 2.91], [-0.065, 0.39], [0.00, 1.00], [ 9.00,  6.1565], [4.15,  5.0686]),
-    RW:  makeRef([10.00,  7.02], [ 9.60, 16.12], [15.20, 15.29], [14.00, 15.63], [10.60,  4.95], [0.00, 2.91], [-0.065, 0.39], [0.00, 1.00], [ 9.00,  6.1565], [4.15,  5.0686]),
-    ST:  makeRef([ 6.00,  9.21], [ 6.80, 20.62], [ 6.10,  9.30], [19.00, 21.93], [ 9.00,  4.29], [0.00, 3.77], [-0.050, 0.47], [0.00, 1.00], [ 5.00,  4.7820], [3.25,  5.0617]),
+    GK:  makeRef([12.00, 10.17], [21.00, 12.42], [ 0.00,  2.08], [ 0.00,  1.29], [ 2.950, 16.416], [0.00, 0.33], [ 0.000, 0.04], [ 7.500,  5.429]),
+    CB:  makeRef([10.00,  9.84], [20.00, 11.85], [ 1.40,  6.41], [ 2.00, 10.33], [ 8.80,  9.19], [0.00, 1.55], [-0.010, 0.22], [0.00, 1.00]),
+    LB:  makeRef([10.00,  9.86], [14.80, 10.64], [ 8.30, 12.79], [ 2.00,  8.82], [12.45,  9.79], [0.00, 1.66], [-0.020, 0.22], [0.00, 1.00]),
+    RB:  makeRef([10.00,  9.86], [14.80, 10.64], [ 8.30, 12.79], [ 2.00,  8.82], [12.45,  9.79], [0.00, 1.66], [-0.020, 0.22], [0.00, 1.00]),
+    LWB: makeRef([10.00,  9.86], [14.80, 10.64], [ 8.30, 12.79], [ 2.00,  8.82], [12.45,  9.79], [0.00, 1.66], [-0.020, 0.22], [0.00, 1.00]),
+    RWB: makeRef([10.00,  9.86], [14.80, 10.64], [ 8.30, 12.79], [ 2.00,  8.82], [12.45,  9.79], [0.00, 1.66], [-0.020, 0.22], [0.00, 1.00]),
+    DM:  makeRef([14.00,  6.57], [13.40, 12.96], [10.50, 13.26], [ 2.00,  9.62], [18.30,  7.44], [0.00, 2.06], [-0.025, 0.28], [0.00, 1.00]),
+    CM:  makeRef([13.00,  6.71], [12.00, 14.24], [15.00, 15.81], [ 6.00, 11.59], [14.50,  5.60], [0.00, 2.46], [-0.045, 0.32], [0.00, 1.00]),
+    AM:  makeRef([12.00,  7.69], [11.20, 19.28], [17.10, 19.55], [12.00, 15.09], [11.50,  5.49], [0.00, 3.40], [-0.065, 0.45], [0.00, 1.00]),
+    LW:  makeRef([10.00,  7.02], [ 9.60, 16.12], [15.20, 15.29], [14.00, 15.63], [10.60,  4.95], [0.00, 2.91], [-0.065, 0.39], [0.00, 1.00]),
+    RW:  makeRef([10.00,  7.02], [ 9.60, 16.12], [15.20, 15.29], [14.00, 15.63], [10.60,  4.95], [0.00, 2.91], [-0.065, 0.39], [0.00, 1.00]),
+    ST:  makeRef([ 6.00,  9.21], [ 6.80, 20.62], [ 6.10,  9.30], [19.00, 21.93], [ 9.00,  4.29], [0.00, 3.77], [-0.050, 0.47], [0.00, 1.00]),
 } satisfies Record<GranularPosition, ReferenceStats>;
 
 // ════════════════════════════════════════════════════════════════════════════
 // Main Entry Point
 // ════════════════════════════════════════════════════════════════════════════
 
-function calculateMatchRatingInternal(
+/**
+ * Calculate a 1-10 match rating and curved fantasy points for a single
+ * player's match stats.
+ *
+ * @param stats     Raw match stats (must include FPL live fields)
+ * @param position  The granular position the player was deployed in
+ * @param refStats  Per-position-group reference medians/stddevs
+ */
+export function calculateMatchRating(
     stats: RawStats,
     position: GranularPosition,
     refStats: Record<GranularPosition, ReferenceStats> = DEFAULT_REFERENCE_STATS,
     primaryPosition?: GranularPosition,
-    pillar1Shadow = false,
 ): MatchRating {
     // Player didn't play → zero rating
     if (stats.minutes_played === 0) {
         return { rating: 0, fantasyPoints: 0, position, breakdown: [] };
     }
 
-    const isV3 = stats.engine_version === 'v3' || pillar1Shadow;
-
     // Step 1: Normalize each component to 0-1 via sigmoid
-    const components = computeComponentScores(stats, position, refStats, primaryPosition, pillar1Shadow);
+    const components = computeComponentScores(stats, position, refStats, primaryPosition);
 
     const scores: ComponentScores = {} as ComponentScores;
     for (const [k, v] of Object.entries(components)) {
@@ -832,13 +790,33 @@ function calculateMatchRatingInternal(
     }
 
     // Step 2: Weighted composite
-    const { composite, breakdown } = applyPositionWeights(scores, position, isV3);
+    const { composite, breakdown } = applyPositionWeights(scores, position);
 
     // Add detail to breakdown
     for (const item of breakdown) {
         item.detail = components[item.key as RatingComponent].detail;
     }
 
+    // Rare-feat excess — continuous, in units of "one more goal" / "one more
+    // step of elite creation". Paid as flat points after the curve, never as a
+    // composite bump; see featPointsBonus for why.
+    //
+    // The goal-involvement trigger stays gated on the position actually
+    // weighting the component, so a GK's stray goal — goal_involvement is
+    // weight-0 for GK, the only position where it is — never pays on a stat
+    // that isn't part of his rating.
+    //
+    // Both triggers stay gated on the position actually weighting the relevant
+    // component. The design spec proposed dropping the creativity gate on the
+    // grounds that an absolute bar excludes keepers on the merits — measured,
+    // the highest GK creativity in all of 2025-26 was ~20 against a bar of 90.
+    // The golden suite rejected that, correctly: "a component weighted 0.00 for
+    // a position must never move that position's score" is a structural
+    // guarantee, and resting it on "the data says it cannot happen" is strictly
+    // weaker than resting it on "the code says it cannot". The gate also costs
+    // nothing — every outfield position weights creativity above zero, so GK is
+    // the only thing it excludes, and the centre-back over-firing this change
+    // exists to fix was caused by the z-score threshold, not by the gate.
     const featExcess = featExcessFor(stats, position);
 
     // Step 3: Display rating (Fotmob-calibrated scale for UI). Deliberately
@@ -852,12 +830,31 @@ function calculateMatchRatingInternal(
     let fantasyPoints = calculateFantasyPoints(scoringRating, stats.minutes_played);
 
     // Keeper curve output is scaled so the two positions bank the same points on
-    // average — see GK_CURVE_SCALE / V3_GK_CURVE_SCALE.
+    // average — see GK_CURVE_SCALE.
     if (position === 'GK') {
-        fantasyPoints *= isV3 ? V3_GK_CURVE_SCALE : GK_CURVE_SCALE;
+        fantasyPoints *= GK_CURVE_SCALE;
     }
 
+    // The feat bonus lands AFTER GK_CURVE_SCALE and BEFORE the OOP penalty.
+    // After the keeper scale is moot in practice (a keeper triggers neither
+    // feat) but stated so it needn't be re-derived; before the OOP penalty is
+    // deliberate, so an out-of-position player's whole output is discounted
+    // consistently rather than the bonus escaping the discount.
     fantasyPoints += featPointsBonus(featExcess);
+
+    // There is no appearance credit, for any position. Turning out is not an
+    // achievement, so a game below the curve's 5.5 display-rating threshold
+    // is worth nothing rather than a small amount.
+    //
+    // Keepers used to be the exception, holding a 2.5 credit nobody else had.
+    // That inverted the two scales against each other: a keeper who did nothing
+    // banked 2.5 while a better-rated outfielder banked zero — GW1 2026-27 had
+    // Roefs (4.65 rating) out-scoring Rice (6.16) 2.50 to 1.23. Removing the
+    // keeper credit closes that gap to 0.38 without touching anyone else's
+    // score. Extending the credit to everyone would close it by exactly the
+    // same amount, since a constant added to all positions changes no relative
+    // standing — it would just inflate every total by 2.5 an appearance and
+    // reverse the no-participation-points rule as a side effect.
 
     // Out-of-Position (OOP) penalty:
     // If a player's primary role is a midfielder or attacker (DM, CM, AM, LW, RW, ST)
@@ -876,26 +873,4 @@ function calculateMatchRatingInternal(
         position,
         breakdown,
     };
-}
-
-export function calculateMatchRating(
-    stats: RawStats,
-    position: GranularPosition,
-    refStats: Record<GranularPosition, ReferenceStats> = DEFAULT_REFERENCE_STATS,
-    primaryPosition?: GranularPosition,
-): MatchRating {
-    return calculateMatchRatingInternal(stats, position, refStats, primaryPosition, false);
-}
-
-/**
- * Computes the Pillar 1 shadow score (V3 + centered FotMob line-breaking passes,
- * passes into final third, and net aerial duels) for storage on `stats` JSON.
- */
-export function calculateShadowPillar1Rating(
-    stats: RawStats,
-    position: GranularPosition,
-    refStats: Record<GranularPosition, ReferenceStats> = DEFAULT_REFERENCE_STATS,
-    primaryPosition?: GranularPosition,
-): MatchRating {
-    return calculateMatchRatingInternal(stats, position, refStats, primaryPosition, true);
 }

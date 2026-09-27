@@ -35,7 +35,6 @@ const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const force = args.includes('--force');
 const clonePrior = args.includes('--clone-prior');
-const v3Only = args.includes('--v3-only');
 const seasonArg = args.find((a) => a.startsWith('--season='))?.split('=')[1]
   ?? (() => {
     const idx = args.indexOf('--season');
@@ -66,20 +65,16 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
 const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM', 'CM', 'AM', 'LW', 'RW', 'ST'];
-const V3_COMPONENTS = ['match_impact_v3', 'defensive_work'];
-const ALL_COMPONENTS = [
+const COMPONENTS = [
   'match_impact',
-  'match_impact_v3',
   'influence',
   'creativity',
   'threat',
   'defensive',
-  'defensive_work',
   'goal_involvement',
   'finishing',
   'save_score',
 ];
-const COMPONENTS = v3Only ? V3_COMPONENTS : ALL_COMPONENTS;
 const FPL_BASE = 'https://fantasy.premierleague.com/api';
 const FETCH_HEADERS = { 'User-Agent': 'FantasyFutbol/1.0' };
 
@@ -88,13 +83,6 @@ function positionGroup(pos) {
   if (['CB', 'LB', 'RB', 'LWB', 'RWB'].includes(pos)) return 'DEF';
   if (['DM', 'CM', 'AM'].includes(pos)) return 'MID';
   return 'ATT';
-}
-
-function defaultElementType(pos) {
-  if (pos === 'GK') return 1;
-  if (['CB', 'LB', 'RB', 'LWB', 'RWB'].includes(pos)) return 2;
-  if (pos === 'ST') return 4;
-  return 3;
 }
 
 // Keep in step with src/lib/scoring/matchRating.ts. Duplicated rather than
@@ -121,8 +109,17 @@ function defensiveRawInput(s, pos) {
   const tackles = Math.max(0, s.tackles ?? 0);
   const cbi = Math.max(0, s.clearances_blocks_interceptions ?? 0);
   const recoveries = Math.max(0, s.recoveries ?? 0);
+  const dc = Math.max(0, s.defensive_contribution ?? 0);
 
   if (pos === 'GK') {
+    // Must mirror the GK branch of computeComponentScores in
+    // src/lib/scoring/matchRating.ts exactly. It did not: this returned
+    // `recoveries*0.5 + cbi*0.5 + 16 - gc*4.0` while the engine computed
+    // something else entirely, so the median and stddev written here were
+    // derived from a formula the sigmoid never sees. The stored stddev came out
+    // at 10.72 against the engine's true 17.18, making the curve ~60% too steep
+    // for keepers and forcing their scores toward the extremes. If the engine's
+    // GK constants move, move them here too.
     const sv = Math.max(0, s.saves ?? 0);
     const cleanSheetHere = cleanSheet && minutes >= 60;
     const gkCsVal = cleanSheetHere ? GK_CLEAN_SHEET + Math.min(GK_CLEAN_SHEET_SAVE_CAP, sv) : 0;
@@ -139,43 +136,6 @@ function defensiveRawInput(s, pos) {
   else defActionsRaw = (tackles + cbi) + recoveries * 0.5;
 
   return defActionsRaw + csBonus + xgcOutperf - gcPenalty;
-}
-
-function defensiveWorkRawInput(s, pos) {
-  if (pos === 'GK') {
-    return defensiveRawInput(s, pos);
-  }
-  const gc = s.goals_conceded ?? 0;
-  const xgc = parseFloat(s.expected_goals_conceded) || 0;
-  const tackles = Math.max(0, s.tackles ?? 0);
-  const cbi = Math.max(0, s.clearances_blocks_interceptions ?? 0);
-  const recoveries = Math.max(0, s.recoveries ?? 0);
-  const xgcOutperf = Math.max(0, xgc - gc) * 5;
-  const gcPenalty = Math.max(0, gc - xgc) * 5;
-  const defActionsRaw = pos === 'CB'
-    ? tackles + cbi * 0.5 + recoveries * 0.5
-    : (tackles + cbi) + recoveries * 0.5;
-  return defActionsRaw + xgcOutperf - gcPenalty;
-}
-
-function matchImpactV3RawInput(s, pos, elType) {
-  const goals = s.goals_scored ?? 0;
-  const assists = s.assists ?? 0;
-  const bps = s.bps ?? 0;
-  const minutes = s.minutes ?? 0;
-  const cleanSheet = (s.clean_sheets ?? 0) > 0;
-  const gc = s.goals_conceded ?? 0;
-  const resolvedType = elType ?? defaultElementType(pos);
-  const bpsPerGoal = (resolvedType === 1 || resolvedType === 2) ? 12 : resolvedType === 3 ? 18 : 24;
-  let csBpsStrip = 0;
-  if (resolvedType === 2) {
-    if (cleanSheet && minutes >= 60) {
-      csBpsStrip = 12;
-    } else if (gc > 0) {
-      csBpsStrip = -4 * gc;
-    }
-  }
-  return Math.max(-5, bps - goals * bpsPerGoal - assists * 9 - csBpsStrip);
 }
 
 function saveScoreRaw(s) {
@@ -317,7 +277,7 @@ async function main() {
   console.log(`Loaded ${fplToPos.size} players with primary_position`);
 
   const buckets = Object.fromEntries(
-    POSITIONS.map((p) => [p, Object.fromEntries(ALL_COMPONENTS.map((c) => [c, []]))]),
+    POSITIONS.map((p) => [p, Object.fromEntries(COMPONENTS.map((c) => [c, []]))]),
   );
 
   for (const gw of completed) {
@@ -384,12 +344,10 @@ async function main() {
         const xa = parseFloat(fixtureFplStats.expected_assists) || 0;
 
         buckets[pos].match_impact.push(adjBps);
-        buckets[pos].match_impact_v3.push(matchImpactV3RawInput(fixtureFplStats, pos));
         buckets[pos].influence.push(parseFloat(fixtureFplStats.influence) || 0);
         buckets[pos].creativity.push(parseFloat(fixtureFplStats.creativity) || 0);
         buckets[pos].threat.push(parseFloat(fixtureFplStats.threat) || 0);
         buckets[pos].defensive.push(defensiveRawInput(fixtureFplStats, pos));
-        buckets[pos].defensive_work.push(defensiveWorkRawInput(fixtureFplStats, pos));
         buckets[pos].goal_involvement.push(goals * 6 + assists * 4);
         buckets[pos].finishing.push((goals - xg) + (assists - xa) * 0.5);
         buckets[pos].save_score.push(pos === 'GK' ? saveScoreRaw(fixtureFplStats) : 0);
@@ -407,7 +365,8 @@ async function main() {
     if (pos === 'LW' || pos === 'RW') {
       return [...buckets.LW[comp], ...buckets.RW[comp]];
     }
-    if (!V3_COMPONENTS.includes(comp) && (pos === 'LB' || pos === 'RB' || pos === 'LWB' || pos === 'RWB')) {
+    // Fully merge all Wide Defenders (Fullbacks & Wingbacks) into a single unified benchmark pool
+    if (pos === 'LB' || pos === 'RB' || pos === 'LWB' || pos === 'RWB') {
       return [...buckets.LB[comp], ...buckets.RB[comp], ...buckets.LWB[comp], ...buckets.RWB[comp]];
     }
     return buckets[pos][comp];
@@ -436,22 +395,12 @@ async function main() {
     return;
   }
 
-  if (v3Only) {
-    console.log(`\nDeleting existing V3-only rows (${V3_COMPONENTS.join(', ')}) for season ${season}...`);
-    const { error: delErr } = await supabase
-      .from('rating_reference_stats')
-      .delete()
-      .eq('season', season)
-      .in('component', V3_COMPONENTS);
-    if (delErr) throw new Error(`Delete failed: ${delErr.message}`);
-  } else {
-    console.log(`\nDeleting existing rows for season ${season}...`);
-    const { error: delErr } = await supabase
-      .from('rating_reference_stats')
-      .delete()
-      .eq('season', season);
-    if (delErr) throw new Error(`Delete failed: ${delErr.message}`);
-  }
+  console.log(`\nDeleting existing rows for season ${season}...`);
+  const { error: delErr } = await supabase
+    .from('rating_reference_stats')
+    .delete()
+    .eq('season', season);
+  if (delErr) throw new Error(`Delete failed: ${delErr.message}`);
 
   console.log(`Inserting ${rows.length} rows...`);
   const { error: insErr } = await supabase
