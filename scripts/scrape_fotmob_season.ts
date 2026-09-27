@@ -11,7 +11,8 @@
  *                                 fetches only matches not already cached
  *   matched.json                  one row per appearance found in both
  *                                 sources: player_id, FPL fixture, gameweek,
- *                                 and every FotMob stat for that match
+ *                                 penalty goals, and every FotMob stat for
+ *                                 that match
  *
  * Joining. A FotMob match maps to an FPL fixture by its two clubs (the pair
  * is unique within a season). A FotMob player maps to a Gaffa appearance in
@@ -20,7 +21,7 @@
  */
 import { createClient } from '@supabase/supabase-js';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { fetchFotmobFixtures, fetchFotmobMatch, type FotmobMatch } from '../src/lib/fotmob/matchDetails';
+import { FOTMOB_MATCH_SCHEMA, fetchFotmobFixtures, fetchFotmobMatch, type FotmobMatch } from '../src/lib/fotmob/matchDetails';
 import { resolveClub } from '../src/lib/clubs/registry';
 import { resolveSeasonPlayers } from './lib/fplSeasonPlayers';
 import { fetchAll } from './lib/fetchAll';
@@ -39,7 +40,11 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function scrape(): Promise<FotmobMatch[]> {
   mkdirSync(`${DIR}/matches`, { recursive: true });
   const fixtures = (await fetchFotmobFixtures(season)).filter((f) => f.finished);
-  const todo = fixtures.filter((f) => !existsSync(`${DIR}/matches/${f.matchId}.json`));
+  const cached = (id: number) => {
+    const file = `${DIR}/matches/${id}.json`;
+    return existsSync(file) && JSON.parse(readFileSync(file, 'utf8')).schema === FOTMOB_MATCH_SCHEMA;
+  };
+  const todo = fixtures.filter((f) => !cached(f.matchId));
   console.log(`${season}: ${fixtures.length} finished matches, ${fixtures.length - todo.length} cached, ${todo.length} to fetch`);
   const failed: number[] = [];
   const t0 = Date.now();
@@ -114,6 +119,7 @@ async function main() {
       matched.push({
         player_id: app.player_id, match_id: fx.fpl_fixture_id, gameweek: fx.gameweek,
         fotmob_match_id: match.matchId, fotmob_player_id: p.fotmobId, opta_id: p.optaId,
+        goals_fpl: app.stats.goals ?? 0, penalty_goals: p.penaltyGoals,
         minutes_fpl: app.stats.minutes_played, minutes_fotmob: mins, stats: p.stats,
       });
     }

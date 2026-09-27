@@ -77,13 +77,28 @@ export function getPositionGroup(pos: GranularPosition): PositionGroup {
 }
 
 /**
- * BPS points FPL awards per goal, keyed by FPL element type (1 GK, 2 DEF,
- * 3 MID, 4 FWD). V2 strips a flat 12 for everyone, which leaves 6 BPS of every
- * midfielder's goal and 12 of every forward's inside Match Impact, on top of
- * the goal Goal Involvement already scores. V3 strips what FPL actually paid.
+ * BPS points FPL awards per open-play goal, keyed by FPL element type (1 GK,
+ * 2 DEF, 3 MID, 4 FWD). A penalty goal earns 12 at every position (since
+ * 2025-26). V2 strips a flat 12 for every goal, which leaves up to 6 BPS of a
+ * midfielder's goal and 12 of a forward's inside Match Impact, on top of the
+ * goal Goal Involvement already scores. V3 strips what FPL actually paid.
  */
 export const BPS_PER_GOAL: Record<1 | 2 | 3 | 4, number> = { 1: 12, 2: 12, 3: 18, 4: 24 };
+const BPS_PER_PENALTY_GOAL = 12;
 const BPS_PER_ASSIST = 9;
+
+/**
+ * V3 adds line-breaking passes to Match Impact at the rate FPL's BPS pays for
+ * clearances, blocks and interceptions in 2026-27: 1 per 3. Breaking an
+ * opponent's line with the ball counts the same as breaking up their play
+ * without it. BPS already pays for pass completion and key passes, but not for
+ * passing forward through a line, which is what this adds.
+ *
+ * Match Impact is normalized per position, so the reference stats absorb the
+ * average: a player moves only by passing through lines more or less often
+ * than others at his position.
+ */
+export const BPS_PER_LINE_BREAKING_PASS = 1 / 3;
 
 /**
  * Best guess at FPL's element type when a row doesn't record one. Wingers
@@ -99,14 +114,25 @@ export function fallbackElementType(pos: GranularPosition): 1 | 2 | 3 | 4 {
 /**
  * Match Impact's raw input: BPS with the goal and assist BPS removed, so the
  * component reflects everything BPS measures except the goals and assists
- * Goal Involvement already scores. Exported so reference-stats scripts
- * compute the median and stddev from this exact formula rather than a copy.
+ * Goal Involvement already scores. V3 also adds line-breaking passes. Exported
+ * so reference-stats scripts compute the median and stddev from this exact
+ * formula rather than a copy.
+ *
+ * V3 rows need penalty_goals and line_breaking_passes from the FotMob sync; a
+ * missing value counts as zero.
  */
 export function matchImpactRawInput(stats: RawStats, position: GranularPosition): number {
-    const perGoal = stats.engine_version === 'v3'
-        ? BPS_PER_GOAL[stats.fpl_element_type ?? fallbackElementType(position)]
-        : 12;
-    return Math.max(0, (stats.bps ?? 0) - stats.goals * perGoal - stats.assists * BPS_PER_ASSIST);
+    const bps = stats.bps ?? 0;
+    if (stats.engine_version !== 'v3') {
+        return Math.max(0, bps - stats.goals * 12 - stats.assists * BPS_PER_ASSIST);
+    }
+    const penalties = Math.min(stats.penalty_goals ?? 0, stats.goals);
+    const perGoal = BPS_PER_GOAL[stats.fpl_element_type ?? fallbackElementType(position)];
+    const goalBps = (stats.goals - penalties) * perGoal + penalties * BPS_PER_PENALTY_GOAL;
+    // Floor the BPS part before adding passes, so a strip that overshoots a
+    // low BPS can't cancel passing that happened.
+    const lineBreaking = (stats.line_breaking_passes ?? 0) * BPS_PER_LINE_BREAKING_PASS;
+    return Math.max(0, bps - goalBps - stats.assists * BPS_PER_ASSIST) + lineBreaking;
 }
 
 // Helper to normalize position for FLEX_CONFIG and POSITION_WEIGHTS lookup

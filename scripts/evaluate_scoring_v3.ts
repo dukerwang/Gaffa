@@ -1,19 +1,27 @@
 /**
- * Scores a whole season under V2 and V3 side by side, from the stats already
- * stored in `player_stats`, and writes a per-player leaderboard.
+ * Scores a whole season under V2 and under each V3 step in turn, from the
+ * stats stored in `player_stats` plus the FotMob scrape, and writes a
+ * per-player leaderboard with one column per step.
  *
  *   node_modules/.bin/tsx scripts/evaluate_scoring_v3.ts [--season=2025-26]
  *
+ * Needs .fotmob-cache/<season>/matched.json (scripts/scrape_fotmob_season.ts).
  * Read-only against the database. Output: scratch/v3_eval/leaderboard_<season>.json
  *
- * V3 references. Each engine version is normalized against reference stats
- * computed from its own formulas. V2 uses the stored `rating_reference_stats`
- * rows, as production does. V3 changes only Match Impact's raw input, so V3
- * uses the same rows with match_impact recomputed per position, using the
+ * Steps. Each step adds one change to the one before, so a column shows the
+ * effect of everything up to and including that change. A step's FotMob
+ * fields are merged into each appearance's stats; fields a step doesn't list
+ * are left out, which the engine counts as zero.
+ *
+ * References. Each step is normalized against reference stats computed from
+ * its own formulas. V2 uses the stored `rating_reference_stats` rows, as
+ * production does. The V3 steps change only Match Impact's raw input, so they
+ * use the same rows with match_impact recomputed per position, using the
  * method of scripts/recompute_reference_stats.mjs (appearances of 45+
  * minutes, wide defenders pooled, LW/RW pooled, median and population
- * stddev). The script recomputes V2's match_impact the same way and prints it
- * beside the stored value, so any gap in method shows up before it is trusted.
+ * stddev). The script also recomputes V2's match_impact the same way and
+ * prints it beside the stored value, so any gap in method shows up before it
+ * is trusted.
  *
  * FPL element types come from the season's own player list, resolved by
  * scripts/lib/fplSeasonPlayers.ts.
@@ -42,6 +50,14 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
+type StepKey = 'v2' | 'goal' | 'lbp';
+interface Step { key: StepKey; label: string; version: 'v2' | 'v3'; fields: (keyof RawStats)[] }
+const STEPS: Step[] = [
+  { key: 'v2', label: 'V2', version: 'v2', fields: [] },
+  { key: 'goal', label: 'Goal BPS fix', version: 'v3', fields: ['penalty_goals'] },
+  { key: 'lbp', label: '+ Line-breaking passes', version: 'v3', fields: ['penalty_goals', 'line_breaking_passes'] },
+];
+
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 const median = (a: number[]) => {
@@ -67,9 +83,8 @@ async function main() {
   }
   console.log(`${season}: ${refRows.length} stored reference rows`);
 
-
   const rows = await fetchAll<any>((f, t) => supabase.from('player_stats')
-    .select('id, player_id, gameweek, stats, players!inner(web_name, primary_position, fpl_id)')
+    .select('id, player_id, match_id, gameweek, stats, players!inner(web_name, primary_position, fpl_id)')
     .eq('season', season).order('id').range(f, t));
   const clubRows = await fetchAll<any>((f, t) => supabase.from('player_season_clubs')
     .select('player_id, club_slug').eq('season', season).order('player_id').range(f, t));
@@ -89,70 +104,100 @@ async function main() {
   if (ids.unresolved.length) console.log(`  guessed: ${ids.unresolved.join(', ')}`);
 
   const apps = rows.filter((r) => (r.stats?.minutes_played ?? 0) > 0 && POSITIONS.includes(r.players.primary_position));
-  const withEt = (r: any, version: 'v2' | 'v3'): RawStats =>
-    ({ ...r.stats, engine_version: version, fpl_element_type: playerMeta.get(r.player_id)!.et });
 
-  // V3 reference: V2's rows with match_impact recomputed from the V3 formula.
+  const fotmobFile = `.fotmob-cache/${season}/matched.json`;
+  if (!existsSync(fotmobFile)) throw new Error(`${fotmobFile} missing: run scripts/scrape_fotmob_season.ts first`);
+  const fotmob = new Map<string, any>(JSON.parse(readFileSync(fotmobFile, 'utf8')).rows
+    .map((r: any) => [`${r.player_id}:${r.match_id}`, r]));
+  const fotmobFields = (r: any): Partial<RawStats> => {
+    const f = fotmob.get(`${r.player_id}:${r.match_id}`);
+    return f ? { penalty_goals: f.penalty_goals, line_breaking_passes: f.stats['Line breaking passes']?.value ?? 0 } : {};
+  };
+  const statsFor = (r: any, step: Step): RawStats => {
+    const extra = fotmobFields(r) as Record<string, unknown>;
+    const picked = Object.fromEntries(step.fields.filter((k) => k in extra).map((k) => [k, extra[k]]));
+    return { ...r.stats, ...picked, engine_version: step.version, fpl_element_type: playerMeta.get(r.player_id)!.et };
+  };
+
+  // References per step: V2's stored rows, with match_impact recomputed for V3 steps.
   const pool = (pos: GranularPosition): GranularPosition[] =>
     WIDE_DEF.includes(pos) ? WIDE_DEF : pos === 'LW' || pos === 'RW' ? ['LW', 'RW'] : [pos];
-  const v3Ref: RefMap = JSON.parse(JSON.stringify(v2Ref));
-  console.log('\nMatch Impact reference (median / stddev)');
-  console.log('pos   stored V2        recomputed V2    recomputed V3     n');
+  const refs = {} as Record<StepKey, RefMap>;
+  for (const step of STEPS) refs[step.key] = JSON.parse(JSON.stringify(v2Ref));
+  console.log('\nMatch Impact reference, median / stddev (V2 as stored, then recomputed per step)');
+  console.log('pos ' + ['stored', ...STEPS.map((s) => s.key)].map((h) => h.padStart(15)).join(''));
   for (const pos of POSITIONS) {
     const sample = apps.filter((r) => pool(pos).includes(r.players.primary_position) && r.stats.minutes_played >= 45);
-    const v2Raw = sample.map((r) => matchImpactRawInput(withEt(r, 'v2'), r.players.primary_position));
-    const v3Raw = sample.map((r) => matchImpactRawInput(withEt(r, 'v3'), r.players.primary_position));
-    v3Ref[pos].match_impact = { median: median(v3Raw), stddev: Number(pstdev(v3Raw).toFixed(4)) };
-    const s = v2Ref[pos].match_impact;
-    console.log(`${pos.padEnd(4)}  ${s.median.toFixed(2).padStart(6)} / ${s.stddev.toFixed(2).padStart(5)}   ` +
-      `${median(v2Raw).toFixed(2).padStart(6)} / ${pstdev(v2Raw).toFixed(2).padStart(5)}   ` +
-      `${median(v3Raw).toFixed(2).padStart(6)} / ${pstdev(v3Raw).toFixed(2).padStart(5)}   ${sample.length}`);
+    const cells = [`${v2Ref[pos].match_impact.median.toFixed(2)} / ${v2Ref[pos].match_impact.stddev.toFixed(2)}`];
+    for (const step of STEPS) {
+      const raw = sample.map((r) => matchImpactRawInput(statsFor(r, step), r.players.primary_position));
+      const recomputed = { median: median(raw), stddev: Number(pstdev(raw).toFixed(4)) };
+      if (step.version === 'v3') refs[step.key][pos].match_impact = recomputed;
+      cells.push(`${recomputed.median.toFixed(2)} / ${recomputed.stddev.toFixed(2)}`);
+    }
+    console.log(`${pos.padEnd(4)}${cells.map((c) => c.padStart(15)).join('')}   n=${sample.length}`);
   }
 
-  interface Line { player_id: string; name: string; pos: GranularPosition; club: string; et: ElementType; apps: number; minutes: number; goals: number; assists: number; v2: number; v3: number }
+  interface Line {
+    player_id: string; name: string; pos: GranularPosition; club: string; et: ElementType;
+    apps: number; minutes: number; goals: number; assists: number; lbp: number;
+    pts: Record<StepKey, number>;
+  }
   const lines = new Map<string, Line>();
-  const perApp: Record<string, { v2: number[]; v3: number[] }> = {};
+  const perApp = {} as Record<string, Record<StepKey, number[]>>;
   for (const r of apps) {
     const pos = r.players.primary_position as GranularPosition;
-    const v2 = calculateMatchRating(withEt(r, 'v2'), pos, v2Ref, pos).fantasyPoints;
-    const v3 = calculateMatchRating(withEt(r, 'v3'), pos, v3Ref, pos).fantasyPoints;
-    (perApp[pos] ??= { v2: [], v3: [] }).v2.push(v2);
-    perApp[pos].v3.push(v3);
     const meta = playerMeta.get(r.player_id)!;
     const slug = clubOf.get(r.player_id) ?? clubByFplCode(meta.teamCode)?.slug;
     const line = lines.get(r.player_id) ?? {
       player_id: r.player_id, name: r.players.web_name, pos, et: meta.et,
       club: (slug && CLUB_BY_SLUG.get(slug)?.shortName) ?? '—',
-      apps: 0, minutes: 0, goals: 0, assists: 0, v2: 0, v3: 0,
+      apps: 0, minutes: 0, goals: 0, assists: 0, lbp: 0, pts: { v2: 0, goal: 0, lbp: 0 },
     };
     line.apps++; line.minutes += r.stats.minutes_played;
     line.goals += r.stats.goals ?? 0; line.assists += r.stats.assists ?? 0;
-    line.v2 += v2; line.v3 += v3;
+    line.lbp += fotmobFields(r).line_breaking_passes ?? 0;
+    perApp[pos] ??= { v2: [], goal: [], lbp: [] };
+    for (const step of STEPS) {
+      const pts = calculateMatchRating(statsFor(r, step), pos, refs[step.key], pos).fantasyPoints;
+      line.pts[step.key] += pts;
+      perApp[pos][step.key].push(pts);
+    }
     lines.set(r.player_id, line);
   }
 
   console.log('\nMean points per appearance');
-  console.log('pos      n     V2     V3   change');
+  console.log('pos      n' + STEPS.map((s) => s.key.padStart(8)).join(''));
   for (const pos of POSITIONS) {
     const a = perApp[pos];
-    if (!a) continue;
-    console.log(`${pos.padEnd(4)} ${String(a.v2.length).padStart(5)}  ${mean(a.v2).toFixed(2).padStart(5)}  ${mean(a.v3).toFixed(2).padStart(5)}  ${(mean(a.v3) - mean(a.v2)).toFixed(2).padStart(6)}`);
+    if (a) console.log(`${pos.padEnd(4)} ${String(a.v2.length).padStart(5)}` + STEPS.map((s) => mean(a[s.key]).toFixed(2).padStart(8)).join(''));
   }
 
-  const all = [...lines.values()].map((l) => ({ ...l, v2: +l.v2.toFixed(1), v3: +l.v3.toFixed(1) }));
-  const rankBy = (k: 'v2' | 'v3') => new Map([...all].sort((a, b) => b[k] - a[k]).map((l, i) => [l.player_id, i + 1]));
-  const r2 = rankBy('v2'), r3 = rankBy('v3');
-  const board = all.map((l) => ({ ...l, rank_v2: r2.get(l.player_id)!, rank_v3: r3.get(l.player_id)! }))
-    .sort((a, b) => a.rank_v3 - b.rank_v3);
-  const out = `${OUT_DIR}/leaderboard_${season}.json`;
+  const all = [...lines.values()].map((l) => ({
+    ...l,
+    lbp90: +(l.minutes ? (l.lbp * 90) / l.minutes : 0).toFixed(2),
+    pts: Object.fromEntries(STEPS.map((s) => [s.key, +l.pts[s.key].toFixed(1)])) as Record<StepKey, number>,
+  }));
+  const ranks = Object.fromEntries(STEPS.map((s) => [s.key,
+    new Map([...all].sort((a, b) => b.pts[s.key] - a.pts[s.key]).map((l, i) => [l.player_id, i + 1]))])) as Record<StepKey, Map<string, number>>;
+  const last = STEPS[STEPS.length - 1].key;
+  const board = all
+    .map((l) => ({ ...l, rank: Object.fromEntries(STEPS.map((s) => [s.key, ranks[s.key].get(l.player_id)!])) as Record<StepKey, number> }))
+    .sort((a, b) => a.rank[last] - b.rank[last]);
   const positions = POSITIONS.filter((p) => perApp[p]).map((p) => ({
     pos: p, apps: perApp[p].v2.length,
-    v2: +mean(perApp[p].v2).toFixed(2), v3: +mean(perApp[p].v3).toFixed(2),
+    ...Object.fromEntries(STEPS.map((s) => [s.key, +mean(perApp[p][s.key]).toFixed(2)])),
   }));
-  writeFileSync(out, JSON.stringify({ season, generated: new Date().toISOString(), positions, players: board }, null, 1));
-  console.log(`\nTop 20 under V3 (V2 rank in brackets)`);
-  for (const l of board.slice(0, 20)) {
-    console.log(`${String(l.rank_v3).padStart(3)} [${String(l.rank_v2).padStart(3)}] ${l.name.padEnd(16)} ${l.pos.padEnd(3)} ${l.club.padEnd(4)} ${l.v2.toFixed(0).padStart(5)} → ${l.v3.toFixed(0).padStart(5)}`);
+  const out = `${OUT_DIR}/leaderboard_${season}.json`;
+  writeFileSync(out, JSON.stringify({
+    season, generated: new Date().toISOString(),
+    steps: STEPS.map(({ key, label }) => ({ key, label })), positions, players: board,
+  }, null, 1));
+
+  console.log('\nTop 25 after all steps: points and rank at each step');
+  for (const l of board.slice(0, 25)) {
+    console.log(`${l.name.padEnd(16)} ${l.pos.padEnd(3)} ${l.club.padEnd(4)} ` +
+      STEPS.map((s) => `${l.pts[s.key].toFixed(0).padStart(5)} #${String(l.rank[s.key]).padEnd(4)}`).join(' ') + `  lbp/90 ${l.lbp90}`);
   }
   console.log(`\nWrote ${board.length} players to ${out}`);
 }

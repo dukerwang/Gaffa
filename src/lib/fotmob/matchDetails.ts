@@ -14,7 +14,14 @@
  *
  * `optaId` on each player equals FPL's per-player `code`, which is how
  * FotMob rows join to FPL rows without name matching.
+ *
+ * Penalty goals come from the match shot map. FPL's data doesn't mark which
+ * goals were penalties, and since 2025-26 BPS pays a penalty goal 12 for
+ * every position, so the V3 goal strip needs to know.
  */
+
+/** Bump when FotmobMatch gains a field, so cached matches are fetched again. */
+export const FOTMOB_MATCH_SCHEMA = 2;
 
 const HEADERS = {
   'User-Agent':
@@ -42,11 +49,14 @@ export interface FotmobPlayerMatch {
   name: string;
   teamId: number;
   isGoalkeeper: boolean;
+  /** Penalty goals scored, from the shot map (own goals excluded). */
+  penaltyGoals: number;
   /** Stats keyed by FotMob's display title, e.g. "Line breaking passes". */
   stats: Record<string, FotmobStat>;
 }
 
 export interface FotmobMatch {
+  schema: number;
   matchId: number;
   round: number;
   utcTime: string;
@@ -102,15 +112,23 @@ function parseMatch(payload: any, expectedId: number): FotmobMatch {
   const general = payload?.general;
   const got = Number(general?.matchId);
   if (got !== expectedId) throw new Error(`FotMob returned match ${got} for ${expectedId}`);
+  const penaltyGoals = new Map<number, number>();
+  for (const shot of payload?.content?.shotmap?.shots ?? []) {
+    if (shot?.eventType === 'Goal' && shot?.situation === 'Penalty' && !shot?.isOwnGoal) {
+      penaltyGoals.set(Number(shot.playerId), (penaltyGoals.get(Number(shot.playerId)) ?? 0) + 1);
+    }
+  }
   const players = Object.values<any>(payload?.content?.playerStats ?? {}).map((p) => ({
     fotmobId: Number(p.id),
     optaId: p.optaId != null && p.optaId !== '' ? Number(p.optaId) : null,
     name: String(p.name),
     teamId: Number(p.teamId),
     isGoalkeeper: p.isGoalkeeper === true,
+    penaltyGoals: penaltyGoals.get(Number(p.id)) ?? 0,
     stats: flattenStats(p.stats),
   }));
   return {
+    schema: FOTMOB_MATCH_SCHEMA,
     matchId: got,
     round: Number(general.matchRound),
     utcTime: String(general.matchTimeUTCDate ?? ''),

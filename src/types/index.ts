@@ -347,6 +347,13 @@ export interface RawStats {
    * because FPL can reclassify a player between seasons.
    */
   fpl_element_type?: 1 | 2 | 3 | 4;
+  /**
+   * Goals from penalties, counted from FotMob's shot map. FPL doesn't mark
+   * them, and since 2025-26 BPS pays a penalty goal 12 at every position.
+   */
+  penalty_goals?: number;
+  /** FotMob "Line breaking passes": completed passes that bypass an opposition line. */
+  line_breaking_passes?: number;
 }
 
 export interface DraftPick {
