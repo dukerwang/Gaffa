@@ -51,10 +51,14 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial';
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'csbps';
 type Component = 'match_impact' | 'defensive';
 /** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
-interface Step { key: StepKey; label: string; version: 'v2' | 'v3'; fields: (keyof RawStats)[]; recompute: Component[] }
+interface Step {
+  key: StepKey; label: string; version: 'v2' | 'v3'; fields: (keyof RawStats)[]; recompute: Component[];
+  /** Experimental steps change an input here instead of in the engine, until one is adopted. */
+  adjust?: (s: RawStats) => RawStats;
+}
 const STEPS: Step[] = [
   { key: 'v2', label: 'V2', version: 'v2', fields: [], recompute: [] },
   { key: 'goal', label: 'Goal BPS fix', version: 'v3', fields: ['penalty_goals'], recompute: ['match_impact'] },
@@ -64,6 +68,28 @@ const STEPS: Step[] = [
     fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
   },
 ];
+
+// Experimental steps, run with --try=<key>[,<key>]. Each builds on the last step above.
+const EXPERIMENTS: Step[] = [
+  {
+    // FPL's BPS pays keepers and defenders +12 for a clean sheet (60+ min) and
+    // -4 per goal conceded. Defensive scores both outcomes too, so this removes
+    // the BPS copy from Match Impact.
+    key: 'csbps', label: 'Exp: clean sheet out of BPS', version: 'v3',
+    fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
+    adjust: (st) => {
+      if (st.fpl_element_type !== 1 && st.fpl_element_type !== 2) return st;
+      const cs = st.clean_sheet && st.minutes_played >= 60 ? 12 : 0;
+      return { ...st, bps: (st.bps ?? 0) - cs + 4 * (st.goals_conceded ?? 0) };
+    },
+  },
+];
+const tried = (process.argv.find((a) => a.startsWith('--try='))?.split('=')[1] ?? '').split(',').filter(Boolean);
+for (const key of tried) {
+  const exp = EXPERIMENTS.find((e) => e.key === key);
+  if (!exp) throw new Error(`Unknown experiment ${key}; known: ${EXPERIMENTS.map((e) => e.key).join(', ')}`);
+  STEPS.push(exp);
+}
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
@@ -130,7 +156,8 @@ async function main() {
   const statsFor = (r: any, step: Step): RawStats => {
     const extra = fotmobFields(r) as Record<string, unknown>;
     const picked = Object.fromEntries(step.fields.filter((k) => k in extra).map((k) => [k, extra[k]]));
-    return { ...r.stats, ...picked, engine_version: step.version, fpl_element_type: playerMeta.get(r.player_id)!.et };
+    const st: RawStats = { ...r.stats, ...picked, engine_version: step.version, fpl_element_type: playerMeta.get(r.player_id)!.et };
+    return step.adjust ? step.adjust(st) : st;
   };
 
   // References per step: V2's stored rows, with the components a step changes recomputed.
@@ -164,6 +191,9 @@ async function main() {
     pts: Record<StepKey, number>;
   }
   const lines = new Map<string, Line>();
+  // Mean points by goals conceded (0, 1, 2, 3+), 80+ minutes, for positions scored on defending.
+  const GC_GROUP: Partial<Record<GranularPosition, string>> = { GK: 'GK', CB: 'CB', LB: 'FB', RB: 'FB', LWB: 'FB', RWB: 'FB', DM: 'DM' };
+  const gcAgg: Record<string, Record<number, Record<StepKey, number[]>>> = {};
   const perApp = {} as Record<string, Record<StepKey, number[]>>;
   for (const r of apps) {
     const pos = r.players.primary_position as GranularPosition;
@@ -172,18 +202,22 @@ async function main() {
     const line = lines.get(r.player_id) ?? {
       player_id: r.player_id, name: r.players.web_name, pos, et: meta.et,
       club: (slug && CLUB_BY_SLUG.get(slug)?.shortName) ?? '—',
-      apps: 0, minutes: 0, goals: 0, assists: 0, lbp: 0, aerialNet: 0, pts: { v2: 0, goal: 0, lbp: 0, aerial: 0 },
+      apps: 0, minutes: 0, goals: 0, assists: 0, lbp: 0, aerialNet: 0,
+      pts: Object.fromEntries(STEPS.map((s) => [s.key, 0])) as Record<StepKey, number>,
     };
     line.apps++; line.minutes += r.stats.minutes_played;
     line.goals += r.stats.goals ?? 0; line.assists += r.stats.assists ?? 0;
     const extra = fotmobFields(r);
     line.lbp += extra.line_breaking_passes ?? 0;
     line.aerialNet += (extra.aerials_won ?? 0) - (extra.aerials_lost ?? 0);
-    perApp[pos] ??= { v2: [], goal: [], lbp: [], aerial: [] };
+    perApp[pos] ??= Object.fromEntries(STEPS.map((s) => [s.key, []])) as unknown as Record<StepKey, number[]>;
+    const gcGroup = GC_GROUP[pos];
+    const gcKey = Math.min(r.stats.goals_conceded ?? 0, 3);
     for (const step of STEPS) {
       const pts = calculateMatchRating(statsFor(r, step), pos, refs[step.key], pos).fantasyPoints;
       line.pts[step.key] += pts;
       perApp[pos][step.key].push(pts);
+      if (gcGroup && r.stats.minutes_played >= 80) ((gcAgg[gcGroup] ??= {})[gcKey] ??= {} as Record<StepKey, number[]>)[step.key] = [...(gcAgg[gcGroup][gcKey][step.key] ?? []), pts];
     }
     lines.set(r.player_id, line);
   }
@@ -211,10 +245,17 @@ async function main() {
     pos: p, apps: perApp[p].v2.length,
     ...Object.fromEntries(STEPS.map((s) => [s.key, +mean(perApp[p][s.key]).toFixed(2)])),
   }));
+  console.log('\nMean points by goals conceded, 80+ minutes');
+  console.log('group gc ' + STEPS.map((s) => s.key.padStart(8)).join(''));
+  const gcTable = Object.entries(gcAgg).flatMap(([group, byGc]) => Object.entries(byGc).map(([gc, bySteps]) => ({
+    group, gc: Number(gc), n: bySteps.v2.length,
+    ...Object.fromEntries(STEPS.map((s) => [s.key, +mean(bySteps[s.key]).toFixed(1)])),
+  })));
+  for (const row of gcTable) console.log(`${row.group.padEnd(5)} ${row.gc === 3 ? '3+' : row.gc}  ` + STEPS.map((s) => String((row as any)[s.key]).padStart(8)).join(''));
   const out = `${OUT_DIR}/leaderboard_${season}.json`;
   writeFileSync(out, JSON.stringify({
     season, generated: new Date().toISOString(),
-    steps: STEPS.map(({ key, label }) => ({ key, label })), positions, players: board,
+    steps: STEPS.map(({ key, label }) => ({ key, label })), positions, gcTable, players: board,
   }, null, 1));
 
   console.log('\nTop 25 after all steps: points and rank at each step');
