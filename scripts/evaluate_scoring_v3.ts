@@ -250,6 +250,8 @@ async function main() {
   const GC_GROUP: Partial<Record<GranularPosition, string>> = { GK: 'GK', CB: 'CB', LB: 'FB', RB: 'FB', LWB: 'FB', RWB: 'FB', DM: 'DM' };
   const gcAgg: Record<string, Record<number, Record<StepKey, number[]>>> = {};
   const perApp = {} as Record<string, Record<StepKey, number[]>>;
+  // Starts: FPL doesn't record who started, so 60+ minutes stands in for it.
+  const perStart = {} as Record<string, Record<StepKey, number[]>>;
   for (const r of apps) {
     const pos = r.players.primary_position as GranularPosition;
     const meta = playerMeta.get(r.player_id)!;
@@ -272,6 +274,7 @@ async function main() {
       const pts = calculateMatchRating(statsFor(r, step), pos, refs[step.key], pos, step.options).fantasyPoints;
       line.pts[step.key] += pts;
       perApp[pos][step.key].push(pts);
+      if (r.stats.minutes_played >= 60) ((perStart[pos] ??= {} as Record<StepKey, number[]>)[step.key] ??= []).push(pts);
       if (gcGroup && r.stats.minutes_played >= 80) ((gcAgg[gcGroup] ??= {})[gcKey] ??= {} as Record<StepKey, number[]>)[step.key] = [...(gcAgg[gcGroup][gcKey][step.key] ?? []), pts];
     }
     lines.set(r.player_id, line);
@@ -308,9 +311,13 @@ async function main() {
     .map((l) => ({ ...l, rank: Object.fromEntries(STEPS.map((s) => [s.key, ranks[s.key].get(l.player_id)!])) as Record<StepKey, number> }))
     .sort((a, b) => a.rank[last] - b.rank[last]);
   const positions = POSITIONS.filter((p) => perApp[p]).map((p) => ({
-    pos: p, apps: perApp[p].v2.length,
+    pos: p, apps: perApp[p].v2.length, starts: perStart[p]?.v2.length ?? 0,
     ...Object.fromEntries(STEPS.map((s) => [s.key, +mean(perApp[p][s.key]).toFixed(2)])),
+    startPpg: Object.fromEntries(STEPS.map((s) => [s.key, +mean(perStart[p]?.[s.key] ?? []).toFixed(2)])),
   }));
+  console.log('\nPoints per start (60+ min) by position');
+  console.log('pos  starts' + STEPS.map((s) => s.key.padStart(8)).join(''));
+  for (const p of positions) console.log(`${p.pos.padEnd(4)} ${String(p.starts).padStart(6)}` + STEPS.map((s) => (p.startPpg as any)[s.key].toFixed(2).padStart(8)).join(''));
   console.log('\nMean points by goals conceded, 80+ minutes');
   console.log('group gc ' + STEPS.map((s) => s.key.padStart(8)).join(''));
   const gcTable = Object.entries(gcAgg).flatMap(([group, byGc]) => Object.entries(byGc).map(([gc, bySteps]) => ({
