@@ -357,6 +357,8 @@ export interface RawStats {
   /** FotMob aerial duels won and lost. */
   aerials_won?: number;
   aerials_lost?: number;
+  /** V3 row whose player FotMob didn't list for this match; FotMob fields read as zero. */
+  fotmob_missing?: boolean;
 }
 
 export interface DraftPick {

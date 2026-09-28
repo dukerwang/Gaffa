@@ -26,6 +26,7 @@ import { calculateTeamScore, loadReferenceStats } from '@/lib/scoring/matchups';
 import { normalizeMatchupLineup } from '@/lib/lineups/normalizeMatchupLineup';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentFplSeason, getLatestReferenceStatsSeason } from '@/lib/season/currentSeason';
+import { engineVersionFor } from '@/lib/scoring/engineVersion';
 import type { GranularPosition, FplLivePlayerStats, RawStats } from '@/types';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -89,8 +90,14 @@ export async function POST(req: NextRequest) {
   const refStats = await loadReferenceStats(supabase, refStatsSeason);
 
   const allCompleted = await fetchCompletedGws();
+  // This route rebuilds rows from FPL's live payload alone, which has none of
+  // the FotMob fields a V3 gameweek is scored with, so it would quietly turn
+  // V3 rows back into V2. V3 gameweeks are re-synced through
+  // /api/sync/stats?mode=fpl_live&gw=N instead.
+  const v3Skipped = allCompleted.filter((gw) => engineVersionFor(fplSeason, gw) === 'v3');
   const targetGws = allCompleted
     .filter((gw) => gw >= fromArg && (toArg === 0 || gw <= toArg))
+    .filter((gw) => engineVersionFor(fplSeason, gw) === 'v2')
     .sort((a, b) => a - b);
 
   const summary: {
@@ -293,6 +300,7 @@ export async function POST(req: NextRequest) {
     season: fplSeason,
     refStatsSeason,
     gameweeks: targetGws,
+    ...(v3Skipped.length ? { v3Skipped, v3Note: 'V3 gameweeks skipped; re-sync them via /api/sync/stats?mode=fpl_live&gw=N' } : {}),
     summary,
   });
 }

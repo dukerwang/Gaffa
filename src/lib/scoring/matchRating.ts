@@ -946,6 +946,27 @@ export function calculateMatchRating(
     primaryPosition?: GranularPosition,
     options?: EngineOptions,
 ): MatchRating {
+    const scored = scoreAppearance(stats, position, refStats, primaryPosition, options);
+    // The substitute rule exists so a sub who played well isn't measured
+    // against a full match of volume; it must never lower a score. A goal or
+    // assist also drives most of a short appearance's BPS, Influence and
+    // Threat, which the rule pulls toward par, so without this a cameo goal
+    // (6 minutes, 17 points under V2) would drop to about 7. Score the
+    // appearance both ways and keep the higher.
+    if (stats.engine_version !== 'v3' || options?.substituteScaling === false || minutesFraction(stats, options) >= 1) {
+        return scored;
+    }
+    const fullMatch = scoreAppearance(stats, position, refStats, primaryPosition, { ...options, substituteScaling: false });
+    return fullMatch.fantasyPoints > scored.fantasyPoints ? fullMatch : scored;
+}
+
+function scoreAppearance(
+    stats: RawStats,
+    position: GranularPosition,
+    refStats: Record<GranularPosition, ReferenceStats>,
+    primaryPosition: GranularPosition | undefined,
+    options: EngineOptions | undefined,
+): MatchRating {
     // Player didn't play → zero rating
     if (stats.minutes_played === 0) {
         return { rating: 0, fantasyPoints: 0, position, breakdown: [] };

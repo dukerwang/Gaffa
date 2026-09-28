@@ -19,8 +19,11 @@ import { buildPerformanceGroups } from '@/lib/scoring/perfBand';
 import { resolveAllStalledGameweeks, processMatchupsForGameweek } from '@/lib/scoring/matchupProcessor';
 import { getCurrentFplSeason, getLatestReferenceStatsSeason } from '@/lib/season/currentSeason';
 import { snapshotCurrentFplFixtures } from '@/lib/fixtures/upsertFixtures';
+import { engineVersionFor } from '@/lib/scoring/engineVersion';
+import { appearanceKey, fetchGameweekEnrichment, withV3Fields, type GameweekEnrichment } from '@/lib/fotmob/gameweekEnrichment';
+import { slugMapFromBootstrapTeams } from '@/lib/clubs/registry';
 import { recomputePositionRanks, type RecomputeResult } from '@/lib/stats/seasonStats';
-import type { GranularPosition, FplLivePlayerStats } from '@/types';
+import type { GranularPosition, FplLivePlayerStats, RawStats } from '@/types';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -230,6 +233,41 @@ async function syncFplLiveRatings(
     teamFixtures[f.team_a].push(f.id);
   });
 
+  // V3 gameweeks need four fields FPL doesn't provide (penalty goals,
+  // line-breaking passes, aerial duels won and lost), fetched from FotMob for
+  // every fixture that has kicked off, plus each player's FPL element type for
+  // the goal BPS strip. V2 gameweeks skip all of this.
+  const engineVersion = engineVersionFor(fplSeason, gameweek);
+  let enrichment: GameweekEnrichment | null = null;
+  const elementInfo = new Map<number, { code: number; elementType: 1 | 2 | 3 | 4 }>();
+  if (engineVersion === 'v3') {
+    const bootRes = await fetch(`${FPL_BASE}/bootstrap-static/`, {
+      headers: { 'User-Agent': 'FantasyFutbol/1.0' },
+      next: { revalidate: 0 },
+    });
+    if (!bootRes.ok) {
+      return NextResponse.json({ error: `FPL bootstrap error: ${bootRes.status}` }, { status: 502 });
+    }
+    const boot = await bootRes.json();
+    for (const e of boot.elements as { id: number; code: number; element_type: 1 | 2 | 3 | 4 }[]) {
+      elementInfo.set(e.id, { code: e.code, elementType: e.element_type });
+    }
+    const slugOf = slugMapFromBootstrapTeams(boot.teams);
+    const now = Date.now();
+    const started = (fixtures as FplFixtureRaw[])
+      .filter((f) => f.kickoff_time && Date.parse(f.kickoff_time) <= now)
+      .map((f) => ({ fplFixtureId: f.id, homeSlug: slugOf.get(f.team_h) ?? '', awaySlug: slugOf.get(f.team_a) ?? '' }));
+    enrichment = await fetchGameweekEnrichment(fplSeason, started);
+  }
+
+  /** Marks a row with the gameweek's engine and, for V3, adds the FotMob fields. */
+  const withEngineFields = (rawStats: RawStats, fplId: number, fixtureId: number): RawStats => {
+    if (engineVersion !== 'v3') return rawStats;
+    const info = elementInfo.get(fplId);
+    const fotmob = info ? enrichment?.byAppearance.get(appearanceKey(fixtureId, info.code)) : undefined;
+    return withV3Fields(rawStats, info?.elementType, fotmob);
+  };
+
   // 4. Bulk lookup players to avoid N+1 queries
   const fplIds = elements.map(el => el.id);
   const { data: dbPlayers } = await supabase
@@ -339,10 +377,12 @@ async function syncFplLiveRatings(
             };
 
             const mapped = mapFplLiveToRawStats(fixtureFplStats);
-            const rawStats = ictAbsent
-              ? applyIctImputation(mapped, dbPlayer.primary_position)
-              : mapped;
-            // Calculate using the official promoted V2 scoring engine
+            const rawStats = withEngineFields(
+              ictAbsent ? applyIctImputation(mapped, dbPlayer.primary_position) : mapped,
+              el.id,
+              fixtureId,
+            );
+            // The engine scores the row as V2 or V3 from rawStats.engine_version.
             const v2 = calculateMatchRating(
               rawStats,
               dbPlayer.primary_position as GranularPosition,
@@ -374,7 +414,7 @@ async function syncFplLiveRatings(
         } else {
           // Fallback for players who didn't play (DNP)
           const fixtureId = playerFixIds[0] || (gameweek * SYNTHETIC_MATCH_ID_FLOOR + el.id);
-          const rawStats = mapFplLiveToRawStats(el.stats);
+          const rawStats = withEngineFields(mapFplLiveToRawStats(el.stats), el.id, fixtureId);
           const v2 = calculateMatchRating(
             rawStats,
             dbPlayer.primary_position as GranularPosition,
@@ -444,11 +484,24 @@ async function syncFplLiveRatings(
     console.error('processMatchupsForGameweek (live pass) failed:', err);
   }
 
+  // A V3 gameweek isn't final until every fixture's FotMob match loaded:
+  // without it, line-breaking passes, aerial duels and penalty goals read as
+  // zero. Leaving final_synced_at unset keeps matchups provisional and lets the
+  // next scheduled pass (08:15 and 09:15 UTC) try again. A player FotMob
+  // doesn't list in a match that did load (rare, usually a short cameo) is
+  // scored without the fields and marked fotmob_missing; that alone doesn't
+  // hold the gameweek.
+  const fotmobFailures = enrichment?.fixtures.filter((f) => !f.ok) ?? [];
+  const holdForFotmob = engineVersion === 'v3' && fotmobFailures.length > 0;
+  if (holdForFotmob) {
+    console.error(`FotMob incomplete for GW${gameweek}; not finalising:`, fotmobFailures);
+  }
+
   // Mark the post-lockdown pass BEFORE resolving. resolveAllStalledGameweeks
   // refuses to lock a gameweek that has not had one, so the ordering here is
   // what guarantees matchups are settled against reviewed stats rather than
   // whatever the last in-play sync happened to write.
-  if (isFinished) {
+  if (isFinished && !holdForFotmob) {
     const now = new Date().toISOString();
     await supabase.from('gameweek_sync_state').upsert(
       { season: fplSeason, gameweek, final_synced_at: now, updated_at: now },
@@ -460,7 +513,17 @@ async function syncFplLiveRatings(
   // This catches GWs that were left as 'live' once getCurrentGameweekWindow() rolled forward.
   const resolution = await resolveAllStalledGameweeks();
 
-  return NextResponse.json({ ok: true, mode: 'fpl_live', gameweek, saved, resolution, positionRanks });
+  return NextResponse.json({
+    ok: true, mode: 'fpl_live', gameweek, engineVersion, saved, resolution, positionRanks,
+    ...(enrichment ? {
+      fotmob: {
+        fixtures: enrichment.fixtures.length,
+        failed: fotmobFailures,
+        appearances: enrichment.byAppearance.size,
+        finalisationHeld: holdForFotmob && isFinished,
+      },
+    } : {}),
+  });
 }
 
 // tryResolveGameweekIfFinished replaced by resolveAllStalledGameweeks in matchupProcessor.ts

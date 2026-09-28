@@ -122,6 +122,16 @@ describe('V3 substitute scoring', () => {
         expect(matchImpactRawInput(s, 'CM')).toBeCloseTo(9);
     });
 
+    it('never scores a sub below the same appearance judged against a full match', () => {
+        // A 6-minute goal: the goal drives most of the BPS, Influence and Threat.
+        const cameo = stats({ minutes_played: 6, goals: 1, bps: 24, influence: 38.4, creativity: 2.3, threat: 33, expected_goals: 0.35 });
+        const v3 = { ...cameo, engine_version: 'v3' as const, fpl_element_type: 3 as const };
+        const withRule = calculateMatchRating(v3, 'CM');
+        const fullMatch = calculateMatchRating(v3, 'CM', undefined, undefined, { substituteScaling: false });
+        expect(withRule.fantasyPoints).toBeGreaterThanOrEqual(fullMatch.fantasyPoints);
+        expect(withRule.fantasyPoints).toBeGreaterThan(12);
+    });
+
     it('leaves the goal itself alone', () => {
         const goal = stats({ minutes_played: 15, goals: 1, bps: 30, engine_version: 'v3', fpl_element_type: 4 });
         const gi = (r: ReturnType<typeof calculateMatchRating>) => r.breakdown.find((b) => b.key === 'goal_involvement')!.score;
