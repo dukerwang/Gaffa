@@ -34,7 +34,10 @@ export async function proxy(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup');
   const isApiRoute = pathname.startsWith('/api/');
   const isGoogleVerification = pathname.startsWith('/google') && pathname.endsWith('.html');
-  const isPublicRoute = pathname === '/terms' || pathname === '/privacy' || pathname.startsWith('/share');
+  // `/` is the public home and `/guide` is the rules it links to; both render
+  // for visitors as well as managers.
+  const isPublicRoute =
+    pathname === '/terms' || pathname === '/privacy' || pathname === '/guide' || pathname.startsWith('/share');
   const isAuthCallback = pathname.startsWith('/auth/callback');
 
   // Redirect unauthenticated users away from protected routes (API routes handle their own auth)
