@@ -7,7 +7,8 @@ import { getCurrentFplSeason } from '@/lib/season/currentSeason';
 import { buildDashboardModel } from '@/lib/dashboard/buildDashboardModel';
 import LeagueCard from './LeagueCard';
 import TopRated from './TopRated';
-import FirstRun from './FirstRun';
+import { loadShowcase } from '@/lib/publicHome/loadShowcase';
+import PublicHome from '@/components/home/PublicHome';
 import { AboutGaffa, Doors, Matchweek, Shelf } from './Sections';
 import styles from './dashboard.module.css';
 
@@ -29,11 +30,20 @@ export default async function DashboardPage() {
   const fixturesPromise = fpl.displayGw ? getGameweekFixtures(fpl.displayGw) : Promise.resolve([]);
   const model = await buildDashboardModel(admin, user.id, fpl, fixturesPromise, season);
 
+  // No clubs yet: the same front page a visitor sees, with the actions going
+  // straight to create and join.
   if (model.cards.length === 0) {
+    const settledGw = fpl.isFinished && !fpl.isLive ? fpl.currentGw : fpl.currentGw - 1;
+    const showcase = await loadShowcase(season, settledGw);
     return (
-      <div className={styles.page}>
-        <FirstRun model={model} />
-      </div>
+      <PublicHome
+        showcase={showcase}
+        fixtures={model.fixtures}
+        gameweek={model.gameweek}
+        nextDeadline={model.nextDeadline}
+        season={season}
+        signedIn
+      />
     );
   }
 
