@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import {
+    DELETE_BLOCKED_MESSAGE,
+    LEAVABLE_LEAGUE_STATUS,
+    LEAVE_BLOCKED_MESSAGE,
+    canLeaveLeague,
+} from '@/lib/leagues/leaveGuard';
 
 export async function POST(
     req: NextRequest,
@@ -18,7 +24,7 @@ export async function POST(
         // Verify league & roles
         const { data: league, error: leagueErr } = await admin
             .from('leagues')
-            .select('*')
+            .select('id, commissioner_id, status')
             .eq('id', leagueId)
             .single();
 
@@ -28,16 +34,34 @@ export async function POST(
 
         const isCommissioner = league.commissioner_id === user.id;
 
+        // Both branches below are hard deletes that cascade through every
+        // table keyed on the league or the team. After the draft starts that
+        // is published history, so only a league still in setup may go.
+        if (!canLeaveLeague(league.status)) {
+            return NextResponse.json(
+                { error: isCommissioner ? DELETE_BLOCKED_MESSAGE : LEAVE_BLOCKED_MESSAGE },
+                { status: 409 }
+            );
+        }
+
         if (isCommissioner) {
             // Commissioner action: DELETE the entire league.
             // Thanks to ON DELETE CASCADE on all foreign keys, this will automatically wipe:
             // - teams, league_members, drafted players, waiver claims, transactions, etc.
-            const { error: deleteErr } = await admin
+            // The status filter repeats the guard in the same statement, so a
+            // draft that starts between the read above and this delete still
+            // stops it.
+            const { data: deleted, error: deleteErr } = await admin
                 .from('leagues')
                 .delete()
-                .eq('id', leagueId);
+                .eq('id', leagueId)
+                .eq('status', LEAVABLE_LEAGUE_STATUS)
+                .select('id');
 
             if (deleteErr) throw deleteErr;
+            if (!deleted || deleted.length === 0) {
+                return NextResponse.json({ error: DELETE_BLOCKED_MESSAGE }, { status: 409 });
+            }
 
             return NextResponse.json({ success: true, action: 'deleted' });
         } else {

@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { resolvePrefs } from '@/lib/notifications/prefs';
 import { isSiteAdminEmail } from '@/lib/auth/siteAdmin';
 import SettingsClient from '@/components/settings/SettingsClient';
+import { canLeaveLeague } from '@/lib/leagues/leaveGuard';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,7 @@ export default async function LeagueSettingsPage({ params }: Props) {
   const admin = createAdminClient();
   const { data: league } = await admin
     .from('leagues')
-    .select('id, name, commissioner_id')
+    .select('id, name, commissioner_id, status')
     .eq('id', leagueId)
     .single();
 
@@ -51,6 +52,7 @@ export default async function LeagueSettingsPage({ params }: Props) {
       leagueId={leagueId}
       leagueName={league.name}
       isCommissioner={league.commissioner_id === user.id}
+      canLeave={canLeaveLeague(league.status)}
       isSiteAdmin={isSiteAdminEmail(user.email)}
       initialPrefs={resolvePrefs(profile?.notification_prefs)}
     />

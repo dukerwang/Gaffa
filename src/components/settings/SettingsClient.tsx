@@ -7,6 +7,7 @@ import { Icon } from '@/components/ui/Icon';
 import NotificationsToggle from '@/components/layout/NotificationsToggle';
 import LeaveLeagueButton from '@/components/settings/LeaveLeagueButton';
 import PlatformAdminSection from '@/components/settings/PlatformAdminSection';
+import { DELETE_BLOCKED_MESSAGE, LEAVE_BLOCKED_MESSAGE } from '@/lib/leagues/leaveGuard';
 import {
   KIND_LABELS,
   NOTIFICATION_KINDS,
@@ -21,6 +22,8 @@ interface Props {
   leagueId?: string | null;
   leagueName?: string | null;
   isCommissioner?: boolean;
+  /** False once the draft has started: leaving or deleting would erase results. */
+  canLeave?: boolean;
   isSiteAdmin?: boolean;
   initialPrefs: NotificationPrefs;
 }
@@ -29,6 +32,7 @@ export default function SettingsClient({
   leagueId = null,
   leagueName = null,
   isCommissioner = false,
+  canLeave = false,
   isSiteAdmin = false,
   initialPrefs,
 }: Props) {
@@ -175,7 +179,13 @@ export default function SettingsClient({
               </Link>
             )}
             <div className={styles.dangerWrap}>
-              <LeaveLeagueButton leagueId={leagueId} isCommissioner={isCommissioner} />
+              {canLeave ? (
+                <LeaveLeagueButton leagueId={leagueId} isCommissioner={isCommissioner} />
+              ) : (
+                <p className={styles.dangerNote}>
+                  {isCommissioner ? DELETE_BLOCKED_MESSAGE : LEAVE_BLOCKED_MESSAGE}
+                </p>
+              )}
             </div>
           </div>
         </section>
