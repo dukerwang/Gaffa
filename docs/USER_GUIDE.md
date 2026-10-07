@@ -123,7 +123,7 @@ A commissioner can't leave a league that has drafted until they hand the role to
 
 ## 3. The Draft
 
-A league drafts **once**, before its first season. After that your squad carries forward forever and changes through auctions, trades and loans — there are no future drafts.
+A dynasty league drafts **once**, before its first season (a redraft league drafts every season; see Redraft Leagues). After that your squad carries forward forever and changes through auctions, trades and loans — there are no future drafts.
 
 - The league needs **at least 4 managers**.
 - The commissioner sets or randomises the order, and either starts immediately or **schedules** it. Everyone gets an email and an in-app notice, and it auto-starts at that time — or auto-cancels and tells the commissioner if there still aren't 4 managers.
@@ -570,6 +570,8 @@ Once every gameweek and cup tie is complete, the commissioner triggers the reset
 ## Redraft Leagues
 
 Everything above describes a **dynasty** league, Gaffa's main format, where your squad carries over forever. When a league is created, the commissioner can choose **Redraft** instead: the format most fantasy players already know, where every season is its own competition.
+
+**Every season starts with a draft.** At the end of a season the league's results go into its history, as in dynasty. Then every squad is cleared, every Club Balance goes back to the league's budget, and the league waits for its next draft. The draft order is shuffled at random, and the commissioner can still change it or schedule the draft from the lobby. A new manager can join while the league waits. When the draft finishes, the season's schedule and cups are built. The cups are seeded from last season's final table.
 
 A redraft league plays the same game: the same positions, scoring, lineups, auto-subs, matchups, draw band and cups. You still trade, use IR, and sign free agents in open auctions from your Club Balance. What it leaves out is everything that only pays off over several seasons:
 

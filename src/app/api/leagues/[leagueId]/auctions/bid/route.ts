@@ -11,6 +11,7 @@ import { notifyAuctionResolution, type AuctionResolutionResult } from '@/lib/auc
 import { countBuybackSlots, DEFAULT_ROSTER_SIZE, UNCOUNTED_ROSTER_STATUSES } from '@/lib/roster/capacity';
 import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
 import { FEATURE_OFF_MESSAGE, freeAgentMinimumBid, leagueFeatures } from '@/lib/leagues/features';
+import { canBidInStatus } from '@/lib/leagues/status';
 
 import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/academyEligibility';
 
@@ -98,7 +99,7 @@ export async function POST(req: NextRequest, { params }: Props) {
   // League settings for roster/academy validations
   const { data: league } = await admin
     .from('leagues')
-    .select('roster_size, taxi_size, taxi_age_limit, roster_locked, previous_season, current_season, season, is_dynasty')
+    .select('roster_size, taxi_size, taxi_age_limit, roster_locked, previous_season, current_season, season, is_dynasty, status')
     .eq('id', leagueId)
     .single();
 
@@ -148,6 +149,15 @@ export async function POST(req: NextRequest, { params }: Props) {
   if (league.roster_locked) {
     return NextResponse.json(
       { error: 'Rosters are locked during the offseason. Auction bids are not allowed until the new season begins.' },
+      { status: 403 },
+    );
+  }
+
+  // No free agents before squads exist: a league waiting for its draft (or a
+  // redraft league between seasons) builds them in the draft, not at auction.
+  if (!canBidInStatus(league.status)) {
+    return NextResponse.json(
+      { error: 'Free agents open once the draft has finished.' },
       { status: 403 },
     );
   }

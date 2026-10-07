@@ -60,6 +60,8 @@ export function leagueFixture(options: FixtureOptions = {}): Tables {
       {
         id: LEAGUE_ID,
         name: 'Test League',
+        status: 'active',
+        is_dynasty: true,
         roster_size: 22,
         taxi_size: 3,
         taxi_age_limit: 21,
