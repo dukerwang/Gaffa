@@ -16,6 +16,7 @@
  */
 
 import { effectiveSlots } from '@/lib/facilities/facilities';
+import { freeAgentMinimumBid } from '@/lib/leagues/features';
 import type { createAdminClient } from '@/lib/supabase/admin';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import {
@@ -159,6 +160,7 @@ export interface TransfersLeague {
   max_loan_outs: number | null;
   max_loan_ins: number | null;
   free_agent_bid_floor: number | null;
+  is_dynasty: boolean | null;
 }
 
 export interface TransfersTeam {
@@ -302,7 +304,7 @@ export async function buildTransfersModel(
       .from('leagues')
       .select(`id, name, roster_size, taxi_size, taxi_age_limit, status, roster_locked,
                total_gameweeks, current_season, previous_season, loan_slot_buyback_fee,
-               loan_bonus_cap_default, max_loan_outs, max_loan_ins, free_agent_bid_floor`)
+               loan_bonus_cap_default, max_loan_outs, max_loan_ins, free_agent_bid_floor, is_dynasty`)
       .eq('id', leagueId)
       .single(),
     admin
@@ -526,7 +528,7 @@ export async function buildTransfersModel(
         : null,
       bid_count: a.bid_count ?? 0,
       bids: Array.isArray(a.bids) ? a.bids : [],
-      minimum_bid: listing ? listing.min_bid : Math.floor(marketValue * freeAgentBidFloor),
+      minimum_bid: listing ? listing.min_bid : freeAgentMinimumBid(marketValue, league, freeAgentBidFloor),
       first_bid_at: a.first_bid_at,
       expires_at: a.expires_at,
       opens_at: a.opens_at ?? null,

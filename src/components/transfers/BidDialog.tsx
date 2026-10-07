@@ -15,6 +15,7 @@ import styles from './BidDialog.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { isAcademyEligible, type AcademyCapacity } from '@/lib/transfers/academyEligibility';
 import { getPushAvailability, subscribeToPush, type PushAvailability } from '@/lib/push/subscribe';
+import { freeAgentMinimumBid } from '@/lib/leagues/features';
 
 
 /**
@@ -49,6 +50,8 @@ interface Props {
   rosterFull: boolean;
   myRoster: RosterPlayer[];
   bidFloor?: number;
+  /** Redraft league: free agents open at a flat €1m rather than a share of market value. */
+  redraft?: boolean;
   /** This club's academy occupancy — offer proactive routing whenever there's room. */
   academy: AcademyCapacity;
   onDone: () => void;
@@ -70,6 +73,7 @@ export default function BidDialog({
   rosterFull,
   myRoster,
   bidFloor = 0.5,
+  redraft = false,
   academy,
   onDone,
 }: Props) {
@@ -86,9 +90,10 @@ export default function BidDialog({
     // should only reach this in 'clause' mode for one of those, which reads
     // `clause` below instead, but the fallback still has to be a real number.
     if (listing) return listing.min_bid ?? listing.buy_now_price ?? 0;
-    if (auction) return auction.minimum_bid ?? Math.floor((Number(player.market_value) || 0) * bidFloor);
-    return Math.floor((Number(player.market_value) || 0) * bidFloor);
-  }, [standing, listing, auction, player.market_value, bidFloor]);
+    const format = { is_dynasty: !redraft };
+    if (auction) return auction.minimum_bid ?? freeAgentMinimumBid(player.market_value, format, bidFloor);
+    return freeAgentMinimumBid(player.market_value, format, bidFloor);
+  }, [standing, listing, auction, player.market_value, bidFloor, redraft]);
 
   const clause = listing?.buy_now_price ?? null;
   const opening = mode === 'clause' && clause != null ? clause : floor;

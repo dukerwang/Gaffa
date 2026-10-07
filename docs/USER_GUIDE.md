@@ -567,6 +567,23 @@ Once every gameweek and cup tie is complete, the commissioner triggers the reset
 
 ---
 
+## Redraft Leagues
+
+Everything above describes a **dynasty** league, Gaffa's main format, where your squad carries over forever. When a league is created, the commissioner can choose **Redraft** instead: the format most fantasy players already know, where every season is its own competition.
+
+A redraft league plays the same game: the same positions, scoring, lineups, auto-subs, matchups, draw band and cups. You still trade, use IR, and sign free agents in open auctions from your Club Balance. What it leaves out is everything that only pays off over several seasons:
+
+- **No academy, loans or Club Facilities.** They're bets on future seasons.
+- **No listings.** You can't put your own players up for sale. Trade them with other clubs instead.
+- **No severance.** Dropping a player is free, because swapping players in and out is how redraft is played.
+- **No retained list.** A player who leaves the Premier League simply comes off your squad. His place is free, and there's no compensation and no decision to make.
+- **No Match Revenue or prizes.** Your Club Balance is for signing free agents.
+- **Every free agent opens at €1m**, whatever his market value. The recommended Club Balance is **€100m**.
+
+**Why money matters less here.** A simulation of full redraft seasons on last season's real points found that, with a snake draft, the draft decides most of a season and the money spent on free agents changes very little: even doubling one club's budget moved it by a handful of points. So in redraft the budget is a fair way to settle who gets a player two clubs both want, the way it works on other fantasy platforms. It isn't the strategic resource it is in dynasty. A floor tied to market value would only make prices follow Transfermarkt instead of points, which is the wrong signal for a one-season league.
+
+---
+
 ## 15. History
 
 The permanent record book: final standings and podium for every past season, each cup's winner, and all-time records such as the highest single-gameweek score ever posted in the league.

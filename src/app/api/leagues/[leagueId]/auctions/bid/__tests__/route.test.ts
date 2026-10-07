@@ -295,6 +295,26 @@ describe('the free-agent floor', () => {
   });
 });
 
+describe('a redraft league', () => {
+  function redraft(marketValue = 40) {
+    const tables = leagueFixture({ marketValue });
+    Object.assign(tables.leagues[0], { is_dynasty: false, taxi_size: 0 });
+    return setup(tables);
+  }
+
+  it('opens every free agent at a flat €1m, whatever his market value', async () => {
+    redraft(40);
+    expect((await bid({ playerId: PLAYER_ID, bidAmount: 1 })).status).toBe(200);
+  });
+
+  it('refuses academy routing, because redraft has no academy', async () => {
+    redraft();
+    const res = await bid({ playerId: PLAYER_ID, bidAmount: 5, sendToAcademy: true });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("Redraft leagues don't have an academy.");
+  });
+});
+
 describe("a manager's listing", () => {
   function withListing(extra: Record<string, unknown>) {
     const tables = leagueFixture({ marketValue: 40 });
