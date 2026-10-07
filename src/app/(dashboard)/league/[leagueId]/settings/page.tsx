@@ -55,14 +55,24 @@ export default async function LeagueSettingsPage({ params }: Props) {
   // apply once the draft has started; before it, managers leave themselves.
   let commissionerClubs: CommissionerClub[] | null = null;
   if (isCommissioner && started) {
-    const { data: clubs } = await admin
-      .from('teams')
-      .select('id, team_name, user_id, user:users(username)')
-      .eq('league_id', leagueId)
-      .order('team_name');
+    const [{ data: clubs }, { data: members }] = await Promise.all([
+      admin
+        .from('teams')
+        .select('id, team_name, user_id, user:users(username)')
+        .eq('league_id', leagueId)
+        .order('team_name'),
+      admin.from('league_members').select('user_id, last_active_at').eq('league_id', leagueId),
+    ]);
+    const lastActive = new Map((members ?? []).map((m) => [m.user_id, m.last_active_at as string | null]));
     commissionerClubs = (clubs ?? []).map((c) => {
       const u = (Array.isArray(c.user) ? c.user[0] : c.user) as { username?: string } | null;
-      return { teamId: c.id, teamName: c.team_name, userId: c.user_id, managerName: u?.username ?? null };
+      return {
+        teamId: c.id,
+        teamName: c.team_name,
+        userId: c.user_id,
+        managerName: u?.username ?? null,
+        lastActiveAt: c.user_id ? lastActive.get(c.user_id) ?? null : null,
+      };
     });
   }
 
