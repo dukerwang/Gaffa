@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { canJoinWithNewClub } from '@/lib/leagues/status';
 
 export async function GET(req: NextRequest) {
   const supabase = await createServerClient();
@@ -45,6 +46,8 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     openClub,
+    /** Joining creates a new club (before the first draft, or between redraft seasons). */
+    newClubOpen: canJoinWithNewClub(league),
     name: league.name,
     maxTeams: league.max_teams,
     currentTeams: count ?? 0,

@@ -14,6 +14,8 @@ interface LeaguePreview {
   status: 'setup' | 'drafting' | 'active' | 'completed' | 'offseason' | 'pre_draft';
   /** After the draft, the Caretaker club a newcomer would take over. */
   openClub: { teamName: string } | null;
+  /** Joining creates a new club: before the first draft, or between redraft seasons. */
+  newClubOpen: boolean;
 }
 
 export default function JoinLeagueForm() {
@@ -42,9 +44,10 @@ export default function JoinLeagueForm() {
   }, [inviteCode]);
 
   // After the draft, the only way in is taking over a Caretaker club.
+  // A Caretaker club is filled before anyone gets a new one.
   const takeover = preview && preview.status !== 'setup' ? preview.openClub : null;
   const isFull = preview && !takeover ? preview.currentTeams >= preview.maxTeams : false;
-  const isClosed = preview ? preview.status !== 'setup' && !takeover : false;
+  const isClosed = preview ? !takeover && !preview.newClubOpen : false;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

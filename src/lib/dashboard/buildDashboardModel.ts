@@ -23,6 +23,7 @@ import { resolveClub } from '@/lib/clubs/registry';
 import { isDrawMargin } from '@/lib/scoring/drawBand';
 import { resolveEffectiveLineupFromMatchups } from '@/lib/lineups/carryForward';
 import { getCrestColor, getInitials } from '@/app/(dashboard)/dashboard/crest';
+import { isAwaitingDraft } from '@/lib/leagues/status';
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -443,7 +444,7 @@ export async function buildDashboardModel(
         },
       };
     }
-    if (league.status === 'setup') {
+    if (isAwaitingDraft(league.status)) {
       return {
         ...base,
         kind: 'setup' as const,
