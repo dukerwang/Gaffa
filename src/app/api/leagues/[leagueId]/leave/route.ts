@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import {
+    COMMISSIONER_LEAVE_BLOCKED_MESSAGE,
     DELETE_BLOCKED_MESSAGE,
     LEAVABLE_LEAGUE_STATUS,
-    LEAVE_BLOCKED_MESSAGE,
     canLeaveLeague,
 } from '@/lib/leagues/leaveGuard';
+import { handClubToCaretaker } from '@/lib/leagues/caretaker';
 
 export async function POST(
     req: NextRequest,
@@ -34,20 +35,39 @@ export async function POST(
 
         const isCommissioner = league.commissioner_id === user.id;
 
-        // Both branches below are hard deletes that cascade through every
-        // table keyed on the league or the team. After the draft starts that
-        // is published history, so only a league still in setup may go.
+        // After the draft, results are published history: the league can't be
+        // deleted, and a manager who leaves hands the club to the Caretaker.
         if (!canLeaveLeague(league.status)) {
-            return NextResponse.json(
-                { error: isCommissioner ? DELETE_BLOCKED_MESSAGE : LEAVE_BLOCKED_MESSAGE },
-                { status: 409 }
-            );
+            if (isCommissioner) {
+                return NextResponse.json({ error: COMMISSIONER_LEAVE_BLOCKED_MESSAGE }, { status: 409 });
+            }
+
+            const { data: myTeam } = await admin
+                .from('teams')
+                .select('id')
+                .eq('league_id', leagueId)
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+            if (myTeam) {
+                await handClubToCaretaker(admin, myTeam.id);
+            } else {
+                // A member without a club (shouldn't happen after the draft):
+                // only the membership row is left to clear.
+                const { error: memberErr } = await admin
+                    .from('league_members')
+                    .delete()
+                    .eq('league_id', leagueId)
+                    .eq('user_id', user.id);
+                if (memberErr) throw memberErr;
+            }
+
+            return NextResponse.json({ success: true, action: 'handed_to_caretaker' });
         }
 
         if (isCommissioner) {
-            // Commissioner action: DELETE the entire league.
-            // Thanks to ON DELETE CASCADE on all foreign keys, this will automatically wipe:
-            // - teams, league_members, drafted players, waiver claims, transactions, etc.
+            // Commissioner action before the draft: DELETE the entire league.
+            // ON DELETE CASCADE wipes teams, league_members, transactions, etc.
             // The status filter repeats the guard in the same statement, so a
             // draft that starts between the read above and this delete still
             // stops it.
@@ -64,28 +84,27 @@ export async function POST(
             }
 
             return NextResponse.json({ success: true, action: 'deleted' });
-        } else {
-            // Member action: Leave the league.
-            // 1. Delete their team (cascades to their roster, claims, etc)
-            const { error: teamErr } = await admin
-                .from('teams')
-                .delete()
-                .eq('league_id', leagueId)
-                .eq('user_id', user.id);
-
-            if (teamErr) throw teamErr;
-
-            // 2. Remove from league_members
-            const { error: memberErr } = await admin
-                .from('league_members')
-                .delete()
-                .eq('league_id', leagueId)
-                .eq('user_id', user.id);
-
-            if (memberErr) throw memberErr;
-
-            return NextResponse.json({ success: true, action: 'left' });
         }
+
+        // Member action before the draft: nothing has been played, so the
+        // club goes with them.
+        const { error: teamErr } = await admin
+            .from('teams')
+            .delete()
+            .eq('league_id', leagueId)
+            .eq('user_id', user.id);
+
+        if (teamErr) throw teamErr;
+
+        const { error: memberErr } = await admin
+            .from('league_members')
+            .delete()
+            .eq('league_id', leagueId)
+            .eq('user_id', user.id);
+
+        if (memberErr) throw memberErr;
+
+        return NextResponse.json({ success: true, action: 'left' });
 
     } catch (error: any) {
         console.error('Leave/Delete league error:', error);

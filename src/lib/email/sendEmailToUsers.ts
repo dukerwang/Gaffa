@@ -10,7 +10,8 @@ import { getLeagueName, withLeagueSubjectPrefix } from '@/lib/leagues/leagueName
 export async function sendEmailToUsers(
   admin: SupabaseClient,
   params: {
-    userIds: string[];
+    /** null entries (Caretaker clubs, which have no manager) are skipped. */
+    userIds: (string | null)[];
     kind: NotificationKind;
     subject: string;
     html: string;

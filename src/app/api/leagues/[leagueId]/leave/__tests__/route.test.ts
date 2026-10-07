@@ -1,16 +1,19 @@
 /**
- * The leave route: a member leaving, or the commissioner deleting the league.
+ * The leave route.
  *
- * Both are hard deletes that cascade through every table keyed on the league
- * or the team, so once the draft starts they would erase published results.
- * Only a league still in `setup` may be left or deleted. The fake does not
- * cascade, so these tests assert on the deletes the handler issued.
+ * Before the draft (`setup`), leaving deletes the member's club and a
+ * commissioner leaving deletes the league: nothing has been played.
+ *
+ * After it, both deletes would cascade through published results, so a member
+ * who leaves hands the club to the Caretaker (hand_club_to_caretaker_rpc) and a
+ * commissioner is refused until they hand the role on. The fake does not
+ * cascade, so these tests assert on the deletes and RPCs the handler issued.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createFakeSupabase, createFakeServerClient, type FakeClient, type Tables } from '@/test/supabaseFake';
 import { LEAGUE_ID, MY_TEAM_ID, OTHER_USER_ID, USER_ID, leagueFixture } from '@/test/leagueFixture';
-import { DELETE_BLOCKED_MESSAGE, LEAVE_BLOCKED_MESSAGE } from '@/lib/leagues/leaveGuard';
+import { COMMISSIONER_LEAVE_BLOCKED_MESSAGE, DELETE_BLOCKED_MESSAGE } from '@/lib/leagues/leaveGuard';
 
 const state = vi.hoisted(() => ({
   user: null as { id: string } | null,
@@ -35,7 +38,19 @@ function setup(status: string, commissionerId = OTHER_USER_ID): Tables {
     { league_id: LEAGUE_ID, user_id: USER_ID },
     { league_id: LEAGUE_ID, user_id: OTHER_USER_ID },
   ];
-  admin = createFakeSupabase(tables, {});
+  admin = createFakeSupabase(tables, {
+    rpc: {
+      // Stands in for migration 169: the club stays, its manager goes.
+      hand_club_to_caretaker_rpc: ({ p_team_id }) => {
+        const team = tables.teams.find((t) => t.id === p_team_id)!;
+        const former = team.user_id;
+        team.user_id = null;
+        team.caretaker_since = '2026-10-07T00:00:00Z';
+        tables.league_members = tables.league_members.filter((m) => m.user_id !== former);
+        return { already_caretaker: false, former_user_id: former };
+      },
+    },
+  });
   state.admin = admin;
   return tables;
 }
@@ -61,18 +76,21 @@ describe('member leaving', () => {
   });
 
   it.each(['drafting', 'active', 'offseason', 'pre_draft', 'completed'])(
-    'refuses in a %s league and deletes nothing',
+    'hands the club to the Caretaker in a %s league and deletes nothing',
     async (status) => {
       const tables = setup(status);
       const res = await leave();
-      expect(res).toEqual({ status: 409, body: { error: LEAVE_BLOCKED_MESSAGE } });
+      expect(res).toEqual({ status: 200, body: { success: true, action: 'handed_to_caretaker' } });
       expect(deletes()).toEqual([]);
-      expect(tables.teams.find((t) => t.id === MY_TEAM_ID)).toBeDefined();
+      const club = tables.teams.find((t) => t.id === MY_TEAM_ID);
+      expect(club).toBeDefined();
+      expect(club!.user_id).toBeNull();
+      expect(admin.__rpcCalls).toEqual([{ name: 'hand_club_to_caretaker_rpc', args: { p_team_id: MY_TEAM_ID } }]);
     },
   );
 });
 
-describe('commissioner deleting the league', () => {
+describe('commissioner leaving', () => {
   it('deletes the league while it is in setup', async () => {
     const tables = setup('setup', USER_ID);
     const res = await leave();
@@ -81,13 +99,15 @@ describe('commissioner deleting the league', () => {
   });
 
   it.each(['drafting', 'active', 'offseason', 'pre_draft', 'completed'])(
-    'refuses in a %s league and deletes nothing',
+    'is refused in a %s league until the role is handed on',
     async (status) => {
       const tables = setup(status, USER_ID);
       const res = await leave();
-      expect(res).toEqual({ status: 409, body: { error: DELETE_BLOCKED_MESSAGE } });
+      expect(res).toEqual({ status: 409, body: { error: COMMISSIONER_LEAVE_BLOCKED_MESSAGE } });
       expect(deletes()).toEqual([]);
+      expect(admin.__rpcCalls).toEqual([]);
       expect(tables.leagues).toHaveLength(1);
+      expect(tables.teams.find((t) => t.id === MY_TEAM_ID)!.user_id).toBe(USER_ID);
     },
   );
 

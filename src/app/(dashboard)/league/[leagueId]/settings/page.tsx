@@ -5,6 +5,7 @@ import { resolvePrefs } from '@/lib/notifications/prefs';
 import { isSiteAdminEmail } from '@/lib/auth/siteAdmin';
 import SettingsClient from '@/components/settings/SettingsClient';
 import { canLeaveLeague } from '@/lib/leagues/leaveGuard';
+import type { CommissionerClub } from '@/components/settings/CommissionerTools';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,14 +48,34 @@ export default async function LeagueSettingsPage({ params }: Props) {
     .eq('id', user.id)
     .single();
 
+  const isCommissioner = league.commissioner_id === user.id;
+  const started = !canLeaveLeague(league.status);
+
+  // The commissioner's controls (Transfer Commissioner, Remove Manager) only
+  // apply once the draft has started; before it, managers leave themselves.
+  let commissionerClubs: CommissionerClub[] | null = null;
+  if (isCommissioner && started) {
+    const { data: clubs } = await admin
+      .from('teams')
+      .select('id, team_name, user_id, user:users(username)')
+      .eq('league_id', leagueId)
+      .order('team_name');
+    commissionerClubs = (clubs ?? []).map((c) => {
+      const u = (Array.isArray(c.user) ? c.user[0] : c.user) as { username?: string } | null;
+      return { teamId: c.id, teamName: c.team_name, userId: c.user_id, managerName: u?.username ?? null };
+    });
+  }
+
   return (
     <SettingsClient
       leagueId={leagueId}
       leagueName={league.name}
-      isCommissioner={league.commissioner_id === user.id}
-      canLeave={canLeaveLeague(league.status)}
+      isCommissioner={isCommissioner}
+      canLeave={!started}
       isSiteAdmin={isSiteAdminEmail(user.email)}
       initialPrefs={resolvePrefs(profile?.notification_prefs)}
+      myUserId={user.id}
+      commissionerClubs={commissionerClubs}
     />
   );
 }

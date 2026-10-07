@@ -22,6 +22,7 @@ import { fetchAllPages } from '@/lib/supabase/pagination';
 import type { BenchSlot, GranularPosition } from '@/types';
 import { getFplStatus } from '@/lib/fpl/api';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { CARETAKER_NAME } from '@/lib/leagues/caretaker';
 import {
   computeSeasonPrize,
   DEFAULT_PRIZE_CONFIG,
@@ -608,7 +609,7 @@ export async function buildHomeModel(
       name: t?.team_name ?? 'Unknown',
       abbreviation: t?.abbreviation ?? null,
       crest: t?.crest_config ?? null,
-      manager: userObj?.username ?? null,
+      manager: userObj?.username ?? (t && t.user_id == null ? CARETAKER_NAME : null),
       userId: userObj?.id ?? t?.user_id ?? null,
     };
   };

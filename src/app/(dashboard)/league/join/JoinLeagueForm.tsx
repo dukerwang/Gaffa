@@ -11,7 +11,9 @@ interface LeaguePreview {
   rosterSize: number;
   faabBudget: number;
   isDynasty: boolean;
-  status: 'setup' | 'drafting' | 'active' | 'completed';
+  status: 'setup' | 'drafting' | 'active' | 'completed' | 'offseason' | 'pre_draft';
+  /** After the draft, the Caretaker club a newcomer would take over. */
+  openClub: { teamName: string } | null;
 }
 
 export default function JoinLeagueForm() {
@@ -39,8 +41,10 @@ export default function JoinLeagueForm() {
     return () => clearTimeout(timer);
   }, [inviteCode]);
 
-  const isFull = preview ? preview.currentTeams >= preview.maxTeams : false;
-  const isClosed = preview ? preview.status === 'active' || preview.status === 'completed' : false;
+  // After the draft, the only way in is taking over a Caretaker club.
+  const takeover = preview && preview.status !== 'setup' ? preview.openClub : null;
+  const isFull = preview && !takeover ? preview.currentTeams >= preview.maxTeams : false;
+  const isClosed = preview ? preview.status !== 'setup' && !takeover : false;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -105,10 +109,16 @@ export default function JoinLeagueForm() {
           {!isFull && isClosed && (
             <p className={styles.previewWarning}>League is no longer accepting new members.</p>
           )}
+          {takeover && (
+            <p className={styles.hint}>
+              You&apos;ll take over {takeover.teamName}, which the Caretaker has run since its manager left. You
+              keep its squad, Club Balance and record, and you can rename it and change its crest.
+            </p>
+          )}
         </div>
       )}
 
-      {preview && !isFull && !isClosed && (
+      {preview && !takeover && !isFull && !isClosed && (
         <div className={styles.field}>
           <label className={styles.label} htmlFor="team-name">
             Team Name
@@ -132,7 +142,7 @@ export default function JoinLeagueForm() {
         className={styles.submitBtn}
         disabled={loading || isFull || isClosed}
       >
-        {loading ? 'Joining…' : 'Join League'}
+        {loading ? 'Joining…' : takeover ? 'Take Over Club' : 'Join League'}
       </button>
     </form>
   );
