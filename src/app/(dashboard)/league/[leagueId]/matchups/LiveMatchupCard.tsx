@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import NavigationLink from '@/components/ui/NavigationLink';
-import { createClient } from '@/lib/supabase/client';
 import type { Matchup } from '@/types';
 import CrestBadge from '@/components/crest/CrestBadge';
 import MarginAxis, { marginVerdict } from '@/components/matchups/MarginAxis';
@@ -42,11 +40,6 @@ export default function LiveMatchupCard({
     recordA,
     recordB,
 }: Props) {
-    const [liveScore, setLiveScore] = useState({
-        score_a: matchup.score_a,
-        score_b: matchup.score_b,
-    });
-
     let effectiveStatus = matchup.status;
     if (currentFplGw > matchup.gameweek || (currentFplGw === matchup.gameweek && isCurrentFplGwFinished)) {
         effectiveStatus = 'completed';
@@ -67,51 +60,8 @@ export default function LiveMatchupCard({
     const myTeamSide: 'a' | 'b' | null =
         myTeamId === teamAId ? 'a' : myTeamId === teamBId ? 'b' : null;
 
-    // Ensure state stays synced when the matchup prop changes (e.g. user toggles gameweeks)
-    useEffect(() => {
-        setLiveScore({ score_a: matchup.score_a, score_b: matchup.score_b });
-    }, [matchup.score_a, matchup.score_b]);
-
-    // One fetch on mount to pick up anything that changed since SSR, then live
-    // updates via Realtime instead of the 60s poll this replaced — `matchups`
-    // is on the supabase_realtime publication (migration 104) and its scores
-    // are recomputed on every fpl_live sync tick (~2 min, migration 103), not
-    // just on page load.
-    useEffect(() => {
-        if (!isLive) return;
-
-        let cancelled = false;
-        (async () => {
-            try {
-                const res = await fetch(`/api/leagues/${matchup.league_id}/matchups/${matchup.id}/score`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (!cancelled) setLiveScore({ score_a: data.score_a, score_b: data.score_b });
-                }
-            } catch { /* silent */ }
-        })();
-
-        const supabase = createClient();
-        const channel = supabase
-            .channel(`matchup:${matchup.id}`)
-            .on(
-                'postgres_changes',
-                { event: 'UPDATE', schema: 'public', table: 'matchups', filter: `id=eq.${matchup.id}` },
-                (payload) => {
-                    const row = payload.new as { score_a: number; score_b: number };
-                    setLiveScore({ score_a: row.score_a, score_b: row.score_b });
-                },
-            )
-            .subscribe();
-
-        return () => {
-            cancelled = true;
-            supabase.removeChannel(channel);
-        };
-    }, [isLive, matchup.id, matchup.league_id]);
-
-    const scoreA = liveScore.score_a;
-    const scoreB = liveScore.score_b;
+    const scoreA = matchup.score_a;
+    const scoreB = matchup.score_b;
 
     const isDraw = isCompleted && isDrawMargin(scoreA, scoreB);
     const aWins = isCompleted && !isDraw && scoreA > scoreB;

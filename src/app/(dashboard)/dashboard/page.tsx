@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -12,6 +13,10 @@ import { AboutGaffa, Doors, Matchweek, Shelf } from './Sections';
 import styles from './dashboard.module.css';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Dashboard',
+};
 
 /**
  * The home screen. A thin renderer over `buildDashboardModel`: your leagues

@@ -9,5 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/league/', '/admin/', '/dashboard/', '/settings/'],
       },
     ],
+    sitemap: 'https://gaffa.live/sitemap.xml',
   };
 }

@@ -115,7 +115,7 @@ describe('Lineup Selection Eligibility', () => {
                 name: 'Kobbie Mainoo',
                 primary_position: 'DM',
                 date_of_birth: '2005-04-19',
-            };
+            } as unknown as Player;
             // 2025-26 season: turns 21 in April 2026, but season age is 20 -> eligible
             expect(isU21Eligible(mockMidseasonGraduate, 21, '2025-26')).toBe(true);
             // 2026-27 season: turns 22 in April 2027, but season age is 21 -> still eligible for rest of season!

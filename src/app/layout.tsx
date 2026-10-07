@@ -46,7 +46,10 @@ const sofiaSansSemiCondensed = Sofia_Sans_Semi_Condensed({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://gaffa.live'),
-  title: 'Gaffa',
+  title: {
+    template: '%s · Gaffa',
+    default: 'Gaffa — Dynasty Fantasy Football',
+  },
   description: 'Dynasty fantasy football for the Premier League, with granular tactical positions, a live transfer market, and a scoring engine that judges every player against the role they actually played.',
   openGraph: {
     title: 'Gaffa — Dynasty Fantasy Football',

@@ -44,8 +44,7 @@ Meetings". Minor words stay lowercase: a, an, and, as, at, but, by, for, from,
 in, of, on, or, the, to, v, vs, with.
 
 Buttons and short labels take **title case** too: "Save Lineup", "Join League",
-"Active Roster". Duke reversed the old sentence-case rule for buttons on
-2026-09-09. Never uppercase a label in the markup.
+"Active Roster" (DECISIONS 2026-09-09). Never uppercase a label in the markup.
 
 Prose (tooltips, `aria-label`, placeholders, descriptions, empty states, error
 messages) stays sentence case and reads as a sentence.
@@ -84,7 +83,7 @@ football pastiche, no.
 ## Running a sweep
 
 1. `node scripts/extract-ui-copy.mjs --suspect` — the strings most likely wrong,
-   as `file:line  kind  text`. Use the bare form for all 341.
+   as `file:line  kind  text`. Use the bare form for every string.
 2. Judge every row against the rules above. Most rows will be fine; say so
    rather than inventing changes. A rename must be clearly better, not merely
    different.

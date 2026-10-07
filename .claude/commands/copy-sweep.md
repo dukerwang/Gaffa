@@ -4,10 +4,10 @@ description: Audit every user-facing heading, title and caption in the app again
 
 Run a whole-app UI copy sweep.
 
-Spawn ONE background subagent (`Agent`, `subagent_type: general-purpose`,
+Spawn one background subagent (`Agent`, `subagent_type: general-purpose`,
 `run_in_background: true`) with this brief:
 
-> Load the `gaffa-ui-copy` skill and read `docs/UI_RULES.md` rules 1–4 before
+> Load the `gaffa-ui-copy` skill and read `docs/UI_RULES.md` rules 1–4a before
 > starting. Then run `node scripts/extract-ui-copy.mjs --suspect` from the repo
 > root and judge every row it prints against those rules.
 >
@@ -21,7 +21,8 @@ Spawn ONE background subagent (`Agent`, `subagent_type: general-purpose`,
 > proposing a replacement — a heading can only be judged against the thing it
 > sits above.
 >
-> Change NOTHING. Report a single markdown table: file:line, current, proposed,
+> Don't edit any file: a copy change is a product change and Duke approves
+> it. Report a single markdown table: file:line, current, proposed,
 > rule broken. Order by how wrong it is. Finish with a one-line count of rows
 > judged and rows flagged.
 
