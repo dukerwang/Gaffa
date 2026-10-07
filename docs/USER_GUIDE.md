@@ -113,7 +113,9 @@ After the draft, your club stays. If you leave, or the commissioner removes you,
 
 The Caretaker keeps the club playing and never does business: it doesn't bid, sell, trade or loan, and nobody can propose a deal to a club it runs. Each morning before a gameweek starts, it picks the club's best lineup from that week's projected points, so a fit, in-form player starts ahead of an injured one. Between gameweeks it moves injured players onto IR, brings fit ones back, and activates held players when there's room. Once one of the club's players has kicked off, its lineup stands, the same as yours would. A new manager can take the club over at any time, in or out of season, from the league's invite code. They keep everything the club has and can rename it and change its crest. A league's history keeps the club's results under the names it had at the time.
 
-A commissioner can't leave a league that has drafted until they hand the role to another manager, from **Settings**. The commissioner also removes managers there.
+A commissioner can't leave a league that has drafted until they hand the role to another manager, from **Settings**. The commissioner also removes managers there, and can see when each manager last opened the league.
+
+**If you go quiet.** Opening any page of your league counts as being active, and so does opening your dashboard. If you haven't for **five full gameweeks**, you get a warning. If you still haven't after one more gameweek, your commissioner is told your club looks inactive. That's all that happens automatically: whether to remove you is the commissioner's decision. Gameweeks are counted rather than days, so an international break or the summer never counts against you.
 
 **Why a Caretaker rather than deleting the club?** Deleting a club deletes every match it played, so every rival's results against it would vanish from the table and from the league's history. And a club with nobody in charge can't be allowed to do business, because it can't say no to a bad trade.
 

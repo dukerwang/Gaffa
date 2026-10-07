@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { processMatchupsForGameweek } from '@/lib/scoring/matchupProcessor';
 import { generateValidLineup } from '@/lib/lineups/generateValidLineup';
 import { runCaretakers } from '@/lib/caretaker/runCaretakers';
+import { runInactivityCheck } from '@/lib/inactivity/runInactivityCheck';
 
 export const maxDuration = 60;
 
@@ -24,6 +25,14 @@ export async function GET(req: NextRequest) {
         caretakers = await runCaretakers(admin);
     } catch (err: any) {
         console.error('[set-bot-lineups] caretaker error:', err);
+    }
+
+    // Managers who haven't opened their league for five or six full gameweeks.
+    let inactivity: Awaited<ReturnType<typeof runInactivityCheck>> | null = null;
+    try {
+        inactivity = await runInactivityCheck(admin);
+    } catch (err: any) {
+        console.error('[set-bot-lineups] inactivity check error:', err);
     }
 
     // 2. Get current gameweek from FPL
@@ -57,7 +66,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (matchups.length === 0) {
-        return NextResponse.json({ ok: true, message: `No matchups for GW ${currentGw}`, gameweek: currentGw, caretakers });
+        return NextResponse.json({ ok: true, message: `No matchups for GW ${currentGw}`, gameweek: currentGw, caretakers, inactivity });
     }
 
     // 4. Find bot teams by team_name containing 'Bot' (e.g. 'FC Bot 1', 'Bot FC 2')
@@ -148,5 +157,6 @@ export async function GET(req: NextRequest) {
         updatedCount,
         debug: debugLog.slice(0, 10), // first 10 for brevity
         caretakers,
+        inactivity,
     });
 }

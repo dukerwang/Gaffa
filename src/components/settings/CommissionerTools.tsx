@@ -10,6 +10,18 @@ export interface CommissionerClub {
   /** null for a club the Caretaker runs. */
   userId: string | null;
   managerName: string | null;
+  /** When the manager last opened the league (migration 171). */
+  lastActiveAt?: string | null;
+}
+
+function lastActiveLabel(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const then = new Date(iso);
+  const days = Math.floor((Date.now() - then.getTime()) / 86_400_000);
+  if (days < 1) return 'Active today';
+  if (days < 2) return 'Active yesterday';
+  if (days < 14) return `Active ${days} days ago`;
+  return `Last active ${then.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
 }
 
 interface Props {
@@ -108,7 +120,11 @@ export default function CommissionerTools({ leagueId, myUserId, clubs }: Props) 
           <div key={club.teamId} className={styles.row}>
             <div className={styles.rowMain}>
               <span className={styles.rowLabel}>{club.teamName}</span>
-              <span className={styles.rowMeta}>{club.userId ? club.managerName ?? 'Manager' : 'Run by the Caretaker'}</span>
+              <span className={styles.rowMeta}>
+                {club.userId
+                  ? [club.managerName ?? 'Manager', lastActiveLabel(club.lastActiveAt)].filter(Boolean).join(' · ')
+                  : 'Run by the Caretaker'}
+              </span>
             </div>
             {club.userId && (
               <button
