@@ -105,6 +105,18 @@ Sometimes a player arrives when your squad is already full: a loan comes to an e
 
 When you join you pick a **club name** (up to 20 characters) and a **2–4 character abbreviation**, then build a **crest**: shield shape, background pattern, primary/secondary/border colours, optional icon and text, with live preview and a randomiser. There's no image upload — every crest is assembled from the same parts, so no badge in the league looks out of place next to another.
 
+### Leaving a league, and the Caretaker
+
+Before the draft, leaving a league removes your club, and a commissioner who leaves deletes the league: nothing has been played yet.
+
+After the draft, your club stays. If you leave, or the commissioner removes you, the **Caretaker** runs your club until a new manager takes it over. The club keeps its squad, Club Balance, record and fixtures, so the table and the cup brackets never change. Your live bids are withdrawn and your open trade and loan offers are cancelled, along with any listing nobody has bid on. Deals you'd already agreed still go through at the end of the gameweek.
+
+The Caretaker keeps the club playing and never does business: it doesn't bid, sell, trade or loan, and nobody can propose a deal to a club it runs. A new manager can take the club over at any time, in or out of season, from the league's invite code. They keep everything the club has and can rename it and change its crest. A league's history keeps the club's results under the names it had at the time.
+
+A commissioner can't leave a league that has drafted until they hand the role to another manager, from **Settings**. The commissioner also removes managers there.
+
+**Why a Caretaker rather than deleting the club?** Deleting a club deletes every match it played, so every rival's results against it would vanish from the table and from the league's history. And a club with nobody in charge can't be allowed to do business, because it can't say no to a bad trade.
+
 ---
 
 ## 3. The Draft

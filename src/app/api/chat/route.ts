@@ -42,14 +42,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Fetch all managers/teams in this league to enrich the sender context on the frontend
+  // Fetch all managers/teams in this league to enrich the sender context on the frontend.
+  // Caretaker clubs have no manager to message, so they're left out.
   const { data: leagueTeams } = await admin
     .from('teams')
     .select(`
       id, team_name, user_id, abbreviation, crest_config,
       user:users(id, username, avatar_url)
     `)
-    .eq('league_id', leagueId);
+    .eq('league_id', leagueId)
+    .not('user_id', 'is', null);
 
   // Fetch messages:
   // - Public messages (recipient_id IS NULL)

@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { loadLoanOutSlots } from '@/lib/facilities/server';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
+import { CARETAKER_DEAL_MESSAGE, isCaretakerClub } from '@/lib/leagues/caretaker';
 import { buildEffectivePpgMap } from '@/lib/transfers/effectivePpg';
 import { getCurrentFplSeason, previousSeason as seasonBefore } from '@/lib/season/currentSeason';
 
@@ -392,6 +393,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     .single();
 
   if (!counterpartyTeam) return NextResponse.json({ error: 'Target team not found in this league' }, { status: 404 });
+  if (isCaretakerClub(counterpartyTeam)) return NextResponse.json({ error: CARETAKER_DEAL_MESSAGE }, { status: 409 });
 
   // 10. Fetch player details
   const { data: player } = await admin

@@ -27,7 +27,24 @@ export async function GET(req: NextRequest) {
     .select('*', { count: 'exact', head: true })
     .eq('league_id', league.id);
 
+  // After the draft, a newcomer joins by taking over the club the Caretaker
+  // has run longest (the same order claim_caretaker_club_rpc uses).
+  let openClub: { teamName: string } | null = null;
+  if (league.status !== 'setup') {
+    const { data: club } = await admin
+      .from('teams')
+      .select('team_name')
+      .eq('league_id', league.id)
+      .is('user_id', null)
+      .order('caretaker_since', { ascending: true })
+      .order('id', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (club) openClub = { teamName: club.team_name };
+  }
+
   return NextResponse.json({
+    openClub,
     name: league.name,
     maxTeams: league.max_teams,
     currentTeams: count ?? 0,

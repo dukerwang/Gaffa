@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { claimCaretakerClub } from '@/lib/leagues/caretaker';
 
 export async function POST(req: NextRequest) {
   const supabase = await createServerClient();
@@ -26,10 +27,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid invite code' }, { status: 404 });
   }
 
-  if (league.status === 'active' || league.status === 'complete') {
-    return NextResponse.json({ error: 'League is no longer accepting new members' }, { status: 400 });
-  }
-
   // Check if user is already a member
   const { data: existing } = await admin
     .from('league_members')
@@ -40,6 +37,20 @@ export async function POST(req: NextRequest) {
 
   if (existing) {
     return NextResponse.json({ leagueId: league.id, alreadyMember: true });
+  }
+
+  // Once the draft has started, the only way in is taking over a club the
+  // Caretaker is running. A new empty club would have no squad and no fixtures.
+  if (league.status !== 'setup') {
+    try {
+      const teamId = await claimCaretakerClub(admin, league.id, user.id);
+      if (!teamId) {
+        return NextResponse.json({ error: 'League is no longer accepting new members' }, { status: 400 });
+      }
+      return NextResponse.json({ leagueId: league.id, teamId, takeover: true });
+    } catch (err: any) {
+      return NextResponse.json({ error: err?.message ?? 'Failed to join league' }, { status: 500 });
+    }
   }
 
   // Check capacity

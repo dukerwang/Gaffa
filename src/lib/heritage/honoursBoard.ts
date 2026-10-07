@@ -13,6 +13,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getClubHonours, groupHonours, type HonourGroup } from '@/lib/honours/getClubHonours';
 import type { CrestConfig } from '@/components/crest/types';
+import { CARETAKER_NAME } from '@/lib/leagues/caretaker';
 
 export interface BoardClub {
   teamId: string;
@@ -51,7 +52,7 @@ export async function loadHonoursBoard(
 ): Promise<HonoursBoard> {
   const { data: teams } = await admin
     .from('teams')
-    .select('id, team_name, crest_config, user:users!user_id(username)')
+    .select('id, team_name, crest_config, user_id, user:users!user_id(username)')
     .eq('league_id', leagueId)
     .order('team_name');
 
@@ -71,7 +72,7 @@ export async function loadHonoursBoard(
     return {
       teamId: t.id,
       teamName: t.team_name,
-      managerName: t.user?.username ?? null,
+      managerName: t.user?.username ?? (t.user_id == null ? CARETAKER_NAME : null),
       crestConfig: t.crest_config ?? null,
       honours: groupHonours(honours),
       trophies,

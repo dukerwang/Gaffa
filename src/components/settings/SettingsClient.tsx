@@ -7,6 +7,8 @@ import { Icon } from '@/components/ui/Icon';
 import NotificationsToggle from '@/components/layout/NotificationsToggle';
 import LeaveLeagueButton from '@/components/settings/LeaveLeagueButton';
 import PlatformAdminSection from '@/components/settings/PlatformAdminSection';
+import CommissionerTools, { type CommissionerClub } from '@/components/settings/CommissionerTools';
+import { COMMISSIONER_LEAVE_BLOCKED_MESSAGE } from '@/lib/leagues/leaveGuard';
 import {
   KIND_LABELS,
   NOTIFICATION_KINDS,
@@ -21,16 +23,28 @@ interface Props {
   leagueId?: string | null;
   leagueName?: string | null;
   isCommissioner?: boolean;
+  /**
+   * True before the draft, when leaving deletes the club (and the league, for
+   * the commissioner). Once the draft starts, leaving hands the club to the
+   * Caretaker and the league can't be deleted.
+   */
+  canLeave?: boolean;
   isSiteAdmin?: boolean;
   initialPrefs: NotificationPrefs;
+  myUserId?: string | null;
+  /** Every club in the league, for the commissioner's controls once the draft has started. */
+  commissionerClubs?: CommissionerClub[] | null;
 }
 
 export default function SettingsClient({
   leagueId = null,
   leagueName = null,
   isCommissioner = false,
+  canLeave = false,
   isSiteAdmin = false,
   initialPrefs,
+  myUserId = null,
+  commissionerClubs = null,
 }: Props) {
   const { theme, setTheme } = useTheme();
   const [prefs, setPrefs] = useState<NotificationPrefs>(initialPrefs);
@@ -175,9 +189,23 @@ export default function SettingsClient({
               </Link>
             )}
             <div className={styles.dangerWrap}>
-              <LeaveLeagueButton leagueId={leagueId} isCommissioner={isCommissioner} />
+              {isCommissioner && !canLeave ? (
+                <p className={styles.dangerNote}>{COMMISSIONER_LEAVE_BLOCKED_MESSAGE}</p>
+              ) : (
+                <LeaveLeagueButton leagueId={leagueId} isCommissioner={isCommissioner} started={!canLeave} />
+              )}
             </div>
           </div>
+        </section>
+      )}
+
+      {leagueId && isCommissioner && !canLeave && myUserId && commissionerClubs && (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Commissioner</h2>
+          <p className={styles.sectionHint}>
+            Removing a manager hands their club to the Caretaker, which sets its lineups until a new manager joins.
+          </p>
+          <CommissionerTools leagueId={leagueId} myUserId={myUserId} clubs={commissionerClubs} />
         </section>
       )}
 
