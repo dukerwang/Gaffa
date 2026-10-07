@@ -181,9 +181,10 @@
 .moveTx { min-width: 0; }
 .moveName { font-size: 16px; font-weight: 600; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .route { margin-top: 5px; font-size: var(--t-13); color: var(--color-text-secondary); white-space: nowrap; }
-.fee { margin-left: auto; padding-left: var(--s3); text-align: right; font-family: var(--font-serif); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--color-text-primary); }
-.feeK { display: block; font-family: var(--font-label); font-size: var(--t-10); font-weight: 700; letter-spacing: 0.1em; color: var(--color-text-muted); }
-.link { display: grid; place-items: center; color: var(--color-text-muted); }
+.fee { margin-left: auto; padding-left: var(--s3); text-align: right; font-family: var(--font-serif); font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--color-text-primary); }
+/* Same 22px band + 7px gap as .tag over .outLine, so the two figures share a baseline. */
+.feeK { display: flex; align-items: center; justify-content: flex-end; height: 22px; margin-bottom: 7px; line-height: 1; font-family: var(--font-label); font-size: var(--t-10); font-weight: 700; letter-spacing: 0.1em; color: var(--color-text-muted); }
+.link { display: grid; place-items: center; margin-top: 29px; color: var(--color-text-muted); }
 .outcome { min-width: 0; }
 .tag {
   display: inline-flex;
@@ -200,7 +201,7 @@
 .tagAuction { background: var(--color-tint-accent); color: var(--color-accent-ink); }
 .tagChoice { background: var(--color-tint-warning); color: var(--color-warning-text); }
 .outLine { display: flex; align-items: baseline; gap: var(--s2); margin-top: 7px; }
-.outBig { font-family: var(--font-serif); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--color-text-primary); }
+.outBig { font-family: var(--font-serif); font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--color-text-primary); }
 .outD { font-size: var(--t-12); color: var(--color-text-muted); }
 .choice { display: flex; gap: var(--s2); margin-top: var(--s2); }
 .opt { flex: 1 1 0; min-width: 0; border-radius: 8px; background: var(--color-bg-inset); padding: var(--s2) 10px; }
