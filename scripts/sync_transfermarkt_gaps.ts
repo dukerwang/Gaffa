@@ -141,6 +141,14 @@ function scoreName(dbName: string, tmName: string): { score: number; how: 'full'
   return full >= token ? { score: full, how: 'full' } : { score: token, how: 'token' };
 }
 
+function normalizeMatchName(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
 async function searchOnce(query: string): Promise<Candidate[]> {
   const html = await tmFetch(
     `https://www.transfermarkt.com/schnellsuche/ergebnis/schnellsuche?query=${encodeURIComponent(query)}`,
@@ -267,24 +275,64 @@ async function main() {
       const scored = candidates
         .map((c) => ({ c, ...scoreName(p.name, c.name) }))
         .sort((a, b) => b.score - a.score);
-      const best = scored[0];
-      if (best.score < NAME_THRESHOLD) {
-        console.log(`weak match "${best.c.name}" (${best.score.toFixed(2)}) — skipped`);
-        failures.push({ name: p.name, reason: `weak match "${best.c.name}" ${best.score.toFixed(2)}` });
+      // Iterate candidates to find one matching the club for active players
+      let matchedProfile: { value: number | null; club: string; asOf: string | null } | null = null;
+      let matchedCandidate: (typeof scored)[0] | null = null;
+
+      for (const candidate of scored) {
+        if (candidate.score < NAME_THRESHOLD) break;
+        const profile = await fetchProfile(candidate.c.url);
+        await sleep(REQUEST_DELAY_MS);
+
+        if (p.is_active && p.pl_team) {
+          const normDbClub = normalizeMatchName(p.pl_team);
+          const normTmClub = normalizeMatchName(profile.club);
+          const clubMatches =
+            normDbClub.includes(normTmClub) ||
+            normTmClub.includes(normDbClub) ||
+            (normDbClub.includes('chelsea') && normTmClub.includes('chelsea')) ||
+            (normDbClub.includes('man city') && normTmClub.includes('manchester city')) ||
+            (normDbClub.includes('man utd') && normTmClub.includes('manchester united')) ||
+            (normDbClub.includes('spurs') && normTmClub.includes('tottenham')) ||
+            (normDbClub.includes('wolves') && normTmClub.includes('wolverhampton')) ||
+            (normDbClub.includes('brighton') && normTmClub.includes('brighton')) ||
+            (normDbClub.includes('forest') && normTmClub.includes('nottingham'));
+
+          if (!clubMatches) {
+            console.log(`[club mismatch: DB "${p.pl_team}" vs TM "${profile.club}" for "${candidate.c.name}"]`);
+            continue;
+          }
+        }
+
+        matchedProfile = profile;
+        matchedCandidate = candidate;
+        break;
+      }
+
+      consecutiveFailures = 0;
+      if (!matchedProfile || !matchedCandidate) {
+        console.log(`no suitable match with matching club — skipped`);
+        failures.push({ name: p.name, reason: 'no candidate with matching club' });
         continue;
       }
-      const profile = await fetchProfile(best.c.url);
-      consecutiveFailures = 0;
-      await sleep(REQUEST_DELAY_MS);
-      if (profile.value == null) {
+
+      if (matchedProfile.value == null) {
         console.log('no market value on profile');
         failures.push({ name: p.name, reason: 'no value on profile' });
         continue;
       }
-      console.log(`€${p.market_value}m -> €${profile.value}m  [${profile.club}]`);
+
+      console.log(`€${p.market_value}m -> €${matchedProfile.value}m  [${matchedProfile.club}]`);
       results.push({
-        id: p.id, name: p.name, from: Number(p.market_value), to: profile.value,
-        club: profile.club, matched: best.c.name, score: best.score, how: best.how, asOf: profile.asOf,
+        id: p.id,
+        name: p.name,
+        from: Number(p.market_value),
+        to: matchedProfile.value,
+        club: matchedProfile.club,
+        matched: matchedCandidate.c.name,
+        score: matchedCandidate.score,
+        how: matchedCandidate.how,
+        asOf: matchedProfile.asOf,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

@@ -1,0 +1,2574 @@
+[
+  {
+    "id": 236772,
+    "name": "Dominik Szoboszlai",
+    "fullName": "Dominik Szoboszlai",
+    "club": "Liverpool FC",
+    "positions": [
+      "CAM",
+      "RB",
+      "CDM",
+      "CM",
+      "RM"
+    ],
+    "href": "/player/236772/dominik-szoboszlai/270002/",
+    "roles": [
+      "Playmaker +",
+      "Build-upBalancedRoaming",
+      "Attacking wingback +",
+      "SupportAttack",
+      "Deep-Lying playmaker +",
+      "Build-upDefendRoaming",
+      "AttackRoaming",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 251517,
+    "name": "Joško Gvardiol",
+    "fullName": "Josko Gvardiol",
+    "club": "Manchester City",
+    "positions": [
+      "CB",
+      "LB"
+    ],
+    "href": "/player/251517/josko-gvardiol/270002/",
+    "roles": [
+      "Ball-playing defender +",
+      "DefendBuild-upAggressive",
+      "Wide back +",
+      "DefendAggressiveSupport",
+      "Wingback +",
+      "BalancedSupport",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 251805,
+    "name": "Jurriën Timber",
+    "fullName": "Jurrien Timber",
+    "club": "Arsenal FC",
+    "positions": [
+      "RB",
+      "LB",
+      "CB",
+      "RM",
+      "LM"
+    ],
+    "href": "/player/251805/jurrien-timber/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Ball-playing defender +",
+      "DefendBuild-upAggressive",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 256197,
+    "name": "Piero Hincapié",
+    "fullName": "Piero Hincapie",
+    "club": "Arsenal FC",
+    "positions": [
+      "LB",
+      "CB"
+    ],
+    "href": "/player/256197/piero-hincapie/270002/",
+    "roles": [
+      "Falseback ++",
+      "DefendBalanced",
+      "Ball-playing defender +",
+      "DefendBuild-upAggressive",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 238074,
+    "name": "Reece James",
+    "fullName": "Reece James",
+    "club": "Chelsea FC",
+    "positions": [
+      "RB",
+      "CDM",
+      "CM"
+    ],
+    "href": "/player/238074/reece-james/270002/",
+    "roles": [
+      "Falseback ++",
+      "DefendBalanced",
+      "Deep-Lying playmaker +",
+      "Build-upDefendRoaming",
+      "Build-upDefend",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 253124,
+    "name": "Matheus Luiz Nunes",
+    "fullName": "Matheus Luiz Nunes",
+    "club": "Manchester City",
+    "positions": [
+      "RB",
+      "CM"
+    ],
+    "href": "/player/253124/matheus-luiz-nunes/270002/",
+    "roles": [
+      "Inverted wingback ++",
+      "Build-upAttack",
+      "Half-winger +",
+      "AttackBalancedSupport",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 277427,
+    "name": "Nico O'Reilly",
+    "fullName": "Nico Oreilly",
+    "club": "Manchester City",
+    "positions": [
+      "LB",
+      "CM",
+      "CDM"
+    ],
+    "href": "/player/277427/nico-oreilly/270002/",
+    "roles": [
+      "Inverted wingback ++",
+      "Build-upAttack",
+      "Attacking wingback +",
+      "SupportAttack",
+      "Box-to-Box +",
+      "BalancedBall-winning",
+      "Box crasher +",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 266127,
+    "name": "Lewis Hall",
+    "fullName": "Lewis Hall",
+    "club": "Newcastle United",
+    "positions": [
+      "LB"
+    ],
+    "href": "/player/266127/lewis-hall/270002/",
+    "roles": [
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 243576,
+    "name": "Pedro Antonio Porro Sauceda",
+    "fullName": "Pedro Antonio Porro Sauceda",
+    "club": "Tottenham Hotspur",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/243576/pedro-antonio-porro-sauceda/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Falseback +",
+      "DefendBalanced",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 257711,
+    "name": "Riccardo Calafiori",
+    "fullName": "Riccardo Calafiori",
+    "club": "Arsenal FC",
+    "positions": [
+      "LB",
+      "CB",
+      "CM"
+    ],
+    "href": "/player/257711/riccardo-calafiori/270002/",
+    "roles": [
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Falseback +",
+      "DefendBalanced",
+      "Ball-playing defender +",
+      "DefendBuild-upAggressive",
+      "Half-winger +",
+      "AttackBalancedSupport",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 243657,
+    "name": "James Garner",
+    "fullName": "James Garner",
+    "club": "Everton FC",
+    "positions": [
+      "CDM",
+      "RB",
+      "CM"
+    ],
+    "href": "/player/243657/james-garner/270002/",
+    "roles": [
+      "Holding ++",
+      "DefendBall-winningRoaming",
+      "Wide half +",
+      "DefendBuild-up",
+      "Wingback +",
+      "BalancedSupport",
+      "Holding +",
+      "DefendBall-winning",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 237646,
+    "name": "Daniel Muñoz",
+    "fullName": "Daniel Munoz",
+    "club": "Nottingham Forest",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/237646/daniel-munoz/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 231936,
+    "name": "Benjamin White",
+    "fullName": "Benjamin White",
+    "club": "Arsenal FC",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/231936/benjamin-white/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 227174,
+    "name": "Matty Cash",
+    "fullName": "Matty Cash",
+    "club": "Aston Villa",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/227174/matty-cash/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 253149,
+    "name": "Jeremie Frimpong",
+    "fullName": "Jeremie Frimpong",
+    "club": "Liverpool FC",
+    "positions": [
+      "RB",
+      "RM",
+      "RW"
+    ],
+    "href": "/player/253149/jeremie-frimpong/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Inside forward +",
+      "BalancedAttack",
+      "AttackBalancedRoaming",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 260908,
+    "name": "Milos Kerkez",
+    "fullName": "Milos Kerkez",
+    "club": "Liverpool FC",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/260908/milos-kerkez/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 242641,
+    "name": "Rayan Aït-Nouri",
+    "fullName": "Rayan Ait Nouri",
+    "club": "Manchester City",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/242641/rayan-ait-nouri/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 262118,
+    "name": "Tino Livramento",
+    "fullName": "Tino Livramento",
+    "club": "Newcastle United",
+    "positions": [
+      "RB",
+      "LB",
+      "RM",
+      "LM"
+    ],
+    "href": "/player/262118/tino-livramento/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 264453,
+    "name": "Micky van de Ven",
+    "fullName": "Micky Van De Ven",
+    "club": "Tottenham Hotspur",
+    "positions": [
+      "CB",
+      "LB"
+    ],
+    "href": "/player/264453/micky-van-de-ven/270002/",
+    "roles": [
+      "Defender +",
+      "DefendBalanced",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 226166,
+    "name": "Nordi Mukiele",
+    "fullName": "Nordi Mukiele",
+    "club": "Sunderland AFC",
+    "positions": [
+      "RB",
+      "CB",
+      "CDM"
+    ],
+    "href": "/player/226166/nordi-mukiele/270002/",
+    "roles": [
+      "Falseback ++",
+      "DefendBalanced",
+      "Wide back +",
+      "DefendAggressiveSupport",
+      "Wide half +",
+      "DefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 277869,
+    "name": "Michael Kayode",
+    "fullName": "Michael Kayode",
+    "club": "Brentford",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/277869/michael-kayode/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 253163,
+    "name": "Ronald Araujo",
+    "fullName": "Ronald Araujo",
+    "club": "Liverpool FC",
+    "positions": [
+      "CB",
+      "RB"
+    ],
+    "href": "/player/253163/ronald-araujo/270002/",
+    "roles": [
+      "Stopper +",
+      "BalancedAggressive",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 236401,
+    "name": "Noussair Mazraoui",
+    "fullName": "Noussair Mazraoui",
+    "club": "Manchester United",
+    "positions": [
+      "RB",
+      "CB"
+    ],
+    "href": "/player/236401/noussair-mazraoui/270002/",
+    "roles": [
+      "Fullback ++",
+      "DefendBalancedVersatile",
+      "Ball-playing defender +",
+      "DefendBuild-upAggressive",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 243057,
+    "name": "Neco Williams",
+    "fullName": "Neco Williams",
+    "club": "Nottingham Forest",
+    "positions": [
+      "LB",
+      "RB",
+      "LM"
+    ],
+    "href": "/player/243057/neco-williams/270002/",
+    "roles": [
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 216267,
+    "name": "Andrew Robertson",
+    "fullName": "Andrew Robertson",
+    "club": "Tottenham Hotspur",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/216267/andrew-robertson/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 236045,
+    "name": "Reinildo Isnard Mandava",
+    "fullName": "Reinildo Isnard Mandava",
+    "club": "Sunderland AFC",
+    "positions": [
+      "LB"
+    ],
+    "href": "/player/236045/reinildo-isnard-mandava/270002/",
+    "roles": [
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 229348,
+    "name": "Antonee Robinson",
+    "fullName": "Antonee Robinson",
+    "club": "Fulham FC",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/229348/antonee-robinson/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 259694,
+    "name": "Óscar Mingueza García",
+    "fullName": "Oscar Mingueza Garcia",
+    "club": "Crystal Palace",
+    "positions": [
+      "RB",
+      "LM",
+      "RM"
+    ],
+    "href": "/player/259694/oscar-mingueza-garcia/270002/",
+    "roles": [
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Wide playmaker +",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 235152,
+    "name": "Ferdi Kadıoğlu",
+    "fullName": "Ferdi Kadioglu",
+    "club": "Brighton & Hove Albion",
+    "positions": [
+      "LB",
+      "RB",
+      "CM"
+    ],
+    "href": "/player/235152/ferdi-kadioglu/270002/",
+    "roles": [
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Half-winger +",
+      "AttackBalancedSupport",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 256769,
+    "name": "Adrien Truffert",
+    "fullName": "Adrien Truffert",
+    "club": "AFC Bournemouth",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/256769/adrien-truffert/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 248465,
+    "name": "Ian Maatsen",
+    "fullName": "Ian Maatsen",
+    "club": "Aston Villa",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/248465/ian-maatsen/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 258371,
+    "name": "Josep María Chavarría Pérez",
+    "fullName": "Josep Maria Chavarria Perez",
+    "club": "Chelsea FC",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/258371/josep-maria-chavarria-perez/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 259307,
+    "name": "Malo Gusto",
+    "fullName": "Malo Gusto",
+    "club": "Chelsea FC",
+    "positions": [
+      "RB",
+      "CM"
+    ],
+    "href": "/player/259307/malo-gusto/270002/",
+    "roles": [
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Half-winger +",
+      "AttackBalancedSupport",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 225100,
+    "name": "Joe Gomez",
+    "fullName": "Joe Gomez",
+    "club": "Liverpool FC",
+    "positions": [
+      "CB",
+      "RB",
+      "LB"
+    ],
+    "href": "/player/225100/joe-gomez/270002/",
+    "roles": [
+      "Ball-playing defender +",
+      "DefendBuild-upAggressive",
+      "Defender +",
+      "DefendBalanced",
+      "Wingback +",
+      "BalancedSupport",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 264298,
+    "name": "Conor Bradley",
+    "fullName": "Conor Bradley",
+    "club": "Liverpool FC",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/264298/conor-bradley/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 205988,
+    "name": "Luke Shaw",
+    "fullName": "Luke Shaw",
+    "club": "Manchester United",
+    "positions": [
+      "LB",
+      "CDM"
+    ],
+    "href": "/player/205988/luke-shaw/270002/",
+    "roles": [
+      "Falseback +",
+      "DefendBalanced",
+      "Wide half +",
+      "DefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 254088,
+    "name": "Amad Diallo",
+    "fullName": "Amad Diallo",
+    "club": "Manchester United",
+    "positions": [
+      "RM",
+      "RB",
+      "RW"
+    ],
+    "href": "/player/254088/amad-diallo/270002/",
+    "roles": [
+      "Inside forward +",
+      "BalancedAttack",
+      "Attacking wingback +",
+      "SupportAttack",
+      "AttackBalancedRoaming",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 198032,
+    "name": "Dan Burn",
+    "fullName": "Dan Burn",
+    "club": "Newcastle United",
+    "positions": [
+      "CB",
+      "LB"
+    ],
+    "href": "/player/198032/dan-burn/270002/",
+    "roles": [
+      "Defender +",
+      "DefendBalanced",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 224656,
+    "name": "Ola Aina",
+    "fullName": "Ola Aina",
+    "club": "Nottingham Forest",
+    "positions": [
+      "RB",
+      "LB",
+      "RM"
+    ],
+    "href": "/player/224656/ola-aina/270002/",
+    "roles": [
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 259583,
+    "name": "Destiny Udogie",
+    "fullName": "Destiny Udogie",
+    "club": "Tottenham Hotspur",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/259583/destiny-udogie/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 240947,
+    "name": "Tyrick Mitchell",
+    "fullName": "Tyrick Mitchell",
+    "club": "Crystal Palace",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/240947/tyrick-mitchell/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 248793,
+    "name": "Mats Wieffer",
+    "fullName": "Mats Wieffer",
+    "club": "Brighton & Hove Albion",
+    "positions": [
+      "RB",
+      "CDM",
+      "CM",
+      "RM"
+    ],
+    "href": "/player/248793/mats-wieffer/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Box crasher +",
+      "Deep-Lying playmaker +",
+      "Build-upDefend",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 264846,
+    "name": "Cristhian Mosquera Ibargüen",
+    "fullName": "Cristhian Mosquera Ibarguen",
+    "club": "Arsenal FC",
+    "positions": [
+      "CB",
+      "RB"
+    ],
+    "href": "/player/264846/cristhian-mosquera-ibarguen/270002/",
+    "roles": [
+      "Defender +",
+      "DefendBalanced",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 278773,
+    "name": "Myles Lewis-Skelly",
+    "fullName": "Myles Lewis Skelly",
+    "club": "Arsenal FC",
+    "positions": [
+      "LB",
+      "CDM",
+      "CM"
+    ],
+    "href": "/player/278773/myles-lewis-skelly/270002/",
+    "roles": [
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Holding +",
+      "DefendBall-winningRoaming",
+      "Box-to-Box +",
+      "BalancedBall-winning",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 229880,
+    "name": "Aaron Wan-Bissaka",
+    "fullName": "Aaron Wan Bissaka",
+    "club": "Aston Villa",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/229880/aaron-wan-bissaka/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 259584,
+    "name": "Matteo Ruggeri",
+    "fullName": "Matteo Ruggeri",
+    "club": "Aston Villa",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/259584/matteo-ruggeri/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 272978,
+    "name": "Jorrel Hato",
+    "fullName": "Jorrel Hato",
+    "club": "Chelsea FC",
+    "positions": [
+      "LB",
+      "CB",
+      "LM",
+      "CDM"
+    ],
+    "href": "/player/272978/jorrel-hato/270002/",
+    "roles": [
+      "Falseback +",
+      "DefendBalanced",
+      "Ball-playing defender +",
+      "DefendBuild-upAggressive",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Wide half +",
+      "DefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 278339,
+    "name": "Marco Palestra",
+    "fullName": "Marco Palestra",
+    "club": "Chelsea FC",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/278339/marco-palestra/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 236822,
+    "name": "Gabriel Gudmundsson",
+    "fullName": "Gabriel Gudmundsson",
+    "club": "Leeds United",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/236822/gabriel-gudmundsson/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 234574,
+    "name": "José Diogo Dalot Teixeira",
+    "fullName": "Jose Diogo Dalot Teixeira",
+    "club": "Manchester United",
+    "positions": [
+      "RB",
+      "LB",
+      "RM",
+      "LM"
+    ],
+    "href": "/player/234574/jose-diogo-dalot-teixeira/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 277432,
+    "name": "Patrick Dorgu",
+    "fullName": "Patrick Dorgu",
+    "club": "Manchester United",
+    "positions": [
+      "LM",
+      "LB"
+    ],
+    "href": "/player/277432/patrick-dorgu/270002/",
+    "roles": [
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Attacking wingback +",
+      "SupportAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 202371,
+    "name": "Thomas Meunier",
+    "fullName": "Thomas Meunier",
+    "club": "Sunderland AFC",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/202371/thomas-meunier/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 266400,
+    "name": "Trai Hume",
+    "fullName": "Trai Hume",
+    "club": "Sunderland AFC",
+    "positions": [
+      "RB",
+      "LB",
+      "RM"
+    ],
+    "href": "/player/266400/trai-hume/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 216266,
+    "name": "Kenny Tete",
+    "fullName": "Kenny Tete",
+    "club": "Fulham FC",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/216266/kenny-tete/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 70888,
+    "name": "Anan Khalaili",
+    "fullName": "Anan Khalaili",
+    "club": "Crystal Palace",
+    "positions": [
+      "RM",
+      "RB",
+      "RW"
+    ],
+    "href": "/player/70888/anan-khalaili/270002/",
+    "roles": [
+      "Winger +",
+      "BalancedAttack",
+      "Inside forward +",
+      "Attacking wingback +",
+      "SupportAttack",
+      "BalancedAttackVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 251479,
+    "name": "Maxim De Cuyper",
+    "fullName": "Maxim De Cuyper",
+    "club": "Brighton & Hove Albion",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/251479/maxim-de-cuyper/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 274915,
+    "name": "El Hadji Malick Diouf",
+    "fullName": "El Hadji Malick Diouf",
+    "club": "Brentford",
+    "positions": [
+      "LB"
+    ],
+    "href": "/player/274915/el-hadji-malick-diouf/270002/",
+    "roles": [
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 224294,
+    "name": "Lewis Cook",
+    "fullName": "Lewis Cook",
+    "club": "AFC Bournemouth",
+    "positions": [
+      "CDM",
+      "RB",
+      "CM"
+    ],
+    "href": "/player/224294/lewis-cook/270002/",
+    "roles": [
+      "Holding +",
+      "DefendBall-winningRoaming",
+      "Wingback +",
+      "BalancedSupport",
+      "Box-to-Box +",
+      "BalancedBall-winning",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 248492,
+    "name": "James Hill",
+    "fullName": "James Hill",
+    "club": "AFC Bournemouth",
+    "positions": [
+      "CB",
+      "RB"
+    ],
+    "href": "/player/248492/james-hill/270002/",
+    "roles": [
+      "Defender +",
+      "DefendBalanced",
+      "Stopper +",
+      "BalancedAggressive",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 225782,
+    "name": "Ainsley Maitland-Niles",
+    "fullName": "Ainsley Maitland Niles",
+    "club": "Everton FC",
+    "positions": [
+      "RB",
+      "RM",
+      "CM",
+      "RW"
+    ],
+    "href": "/player/225782/ainsley-maitland-niles/270002/",
+    "roles": [
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Half-winger +",
+      "AttackBalancedSupport",
+      "BalancedAttackVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 244380,
+    "name": "Vitaliy Mykolenko",
+    "fullName": "Vitaliy Mykolenko",
+    "club": "Everton FC",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/244380/vitaliy-mykolenko/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 89738,
+    "name": "Allan Andrade Elias",
+    "fullName": "Allan Andrade Elias",
+    "club": "Manchester City",
+    "positions": [
+      "RW",
+      "LW",
+      "RB",
+      "RM",
+      "LM"
+    ],
+    "href": "/player/89738/allan-andrade-elias/270002/",
+    "roles": [
+      "Inside forward +",
+      "AttackBalancedRoaming",
+      "Winger +",
+      "BalancedAttackVersatile",
+      "Attacking wingback +",
+      "SupportAttack",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 271574,
+    "name": "Rico Lewis",
+    "fullName": "Rico Lewis",
+    "club": "Manchester City",
+    "positions": [
+      "RB",
+      "LB",
+      "CM",
+      "CDM"
+    ],
+    "href": "/player/271574/rico-lewis/270002/",
+    "roles": [
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Attacking wingback +",
+      "SupportAttack",
+      "Box-to-Box +",
+      "BalancedBall-winning",
+      "Box crasher +",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 274246,
+    "name": "Lewis Miley",
+    "fullName": "Lewis Miley",
+    "club": "Newcastle United",
+    "positions": [
+      "CM",
+      "RB",
+      "CDM",
+      "RM"
+    ],
+    "href": "/player/274246/lewis-miley/270002/",
+    "roles": [
+      "Deep-Lying playmaker +",
+      "Build-upDefend",
+      "Wingback +",
+      "BalancedSupport",
+      "Build-upDefendRoaming",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 270208,
+    "name": "Archie Gray",
+    "fullName": "Archie Gray",
+    "club": "Tottenham Hotspur",
+    "positions": [
+      "CDM",
+      "CB",
+      "RB",
+      "CM",
+      "RM"
+    ],
+    "href": "/player/270208/archie-gray/270002/",
+    "roles": [
+      "Wide half +",
+      "DefendBuild-up",
+      "Holding +",
+      "DefendBall-winningRoaming",
+      "Defender +",
+      "DefendBalanced",
+      "Wingback +",
+      "BalancedSupport",
+      "Half-winger +",
+      "AttackBalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 235883,
+    "name": "Ryan Sessegnon",
+    "fullName": "Ryan Sessegnon",
+    "club": "Fulham FC",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/235883/ryan-sessegnon/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 229942,
+    "name": "Axel Disasi",
+    "fullName": "Axel Disasi",
+    "club": "Crystal Palace",
+    "positions": [
+      "CB",
+      "RB"
+    ],
+    "href": "/player/229942/axel-disasi/270002/",
+    "roles": [
+      "Defender +",
+      "DefendBalanced",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 229984,
+    "name": "Ben Chilwell",
+    "fullName": "Ben Chilwell",
+    "club": "Crystal Palace",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/229984/ben-chilwell/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 277283,
+    "name": "Jack Hinshelwood",
+    "fullName": "Jack Hinshelwood",
+    "club": "Brighton & Hove Albion",
+    "positions": [
+      "CDM",
+      "CAM",
+      "RB",
+      "CM"
+    ],
+    "href": "/player/277283/jack-hinshelwood/270002/",
+    "roles": [
+      "Wide half +",
+      "DefendBuild-up",
+      "Holding +",
+      "DefendBall-winningRoaming",
+      "Playmaker +",
+      "Build-upBalancedRoaming",
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Half-winger +",
+      "AttackBalancedSupport",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 224258,
+    "name": "Kristoffer Ajer",
+    "fullName": "Kristoffer Ajer",
+    "club": "Brentford",
+    "positions": [
+      "CB",
+      "RB",
+      "LB"
+    ],
+    "href": "/player/224258/kristoffer-ajer/270002/",
+    "roles": [
+      "Defender +",
+      "DefendBalanced",
+      "Wide back +",
+      "DefendAggressiveSupport",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 243606,
+    "name": "Keane Lewis-Potter",
+    "fullName": "Keane Lewis Potter",
+    "club": "Brentford",
+    "positions": [
+      "LB",
+      "LM",
+      "RM",
+      "LW",
+      "RW"
+    ],
+    "href": "/player/243606/keane-lewis-potter/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Inside forward +",
+      "BalancedAttack",
+      "AttackBalancedRoaming",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 253510,
+    "name": "Jake O'Brien",
+    "fullName": "Jake Obrien",
+    "club": "Everton FC",
+    "positions": [
+      "RB",
+      "CB",
+      "RM"
+    ],
+    "href": "/player/253510/jake-obrien/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Stopper +",
+      "BalancedAggressive",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 231554,
+    "name": "James Justin",
+    "fullName": "James Justin",
+    "club": "Leeds United",
+    "positions": [
+      "RB",
+      "LB",
+      "CB"
+    ],
+    "href": "/player/231554/james-justin/270002/",
+    "roles": [
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Stopper +",
+      "BalancedAggressive",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 244591,
+    "name": "Jayden Bogle",
+    "fullName": "Jayden Bogle",
+    "club": "Leeds United",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/244591/jayden-bogle/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 254548,
+    "name": "Melvin Bard",
+    "fullName": "Melvin Bard",
+    "club": "Leeds United",
+    "positions": [
+      "LB",
+      "LM",
+      "CB",
+      "CDM",
+      "LW"
+    ],
+    "href": "/player/254548/melvin-bard/270002/",
+    "roles": [
+      "Falseback +",
+      "DefendBalanced",
+      "Winger +",
+      "BalancedAttack",
+      "Wide back +",
+      "DefendAggressiveSupport",
+      "Wide half +",
+      "DefendBuild-up",
+      "BalancedAttackVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 232223,
+    "name": "Kostas Tsimikas",
+    "fullName": "Kostas Tsimikas",
+    "club": "Liverpool FC",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/232223/kostas-tsimikas/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 257345,
+    "name": "Amar Dedić",
+    "fullName": "Amar Dedic",
+    "club": "Newcastle United",
+    "positions": [
+      "RB"
+    ],
+    "href": "/player/257345/amar-dedic/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 232938,
+    "name": "Takehiro Tomiyasu",
+    "fullName": "Takehiro Tomiyasu",
+    "club": "Crystal Palace",
+    "positions": [
+      "LB",
+      "RB",
+      "CB",
+      "CM"
+    ],
+    "href": "/player/232938/takehiro-tomiyasu/270002/",
+    "roles": [
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Falseback +",
+      "DefendBalanced",
+      "Ball-playing defender +",
+      "DefendBuild-upAggressive",
+      "Half-winger +",
+      "AttackBalancedSupport",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 224494,
+    "name": "Rico Henry",
+    "fullName": "Rico Henry",
+    "club": "Brentford",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/224494/rico-henry/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 264174,
+    "name": "Juan Luis Sánchez Velasco",
+    "fullName": "Juan Luis Sanchez Velasco",
+    "club": "AFC Bournemouth",
+    "positions": [
+      "RB",
+      "RM",
+      "RW"
+    ],
+    "href": "/player/264174/juan-luis-sanchez-velasco/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Inside forward +",
+      "BalancedAttack",
+      "AttackBalancedRoaming",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 71651,
+    "name": "Josh Acheampong",
+    "fullName": "Josh Acheampong",
+    "club": "Chelsea FC",
+    "positions": [
+      "CB",
+      "RB"
+    ],
+    "href": "/player/71651/josh-acheampong/270002/",
+    "roles": [
+      "Defender +",
+      "DefendBalanced",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 74310,
+    "name": "Nicolò Savona",
+    "fullName": "Nicolo Savona",
+    "club": "Nottingham Forest",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/74310/nicolo-savona/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 235405,
+    "name": "Dara O'Shea",
+    "fullName": "Dara Oshea",
+    "club": "Ipswich Town",
+    "positions": [
+      "CB",
+      "RB"
+    ],
+    "href": "/player/235405/dara-oshea/270002/",
+    "roles": [
+      "Stopper +",
+      "BalancedAggressive",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 246685,
+    "name": "Leif Davis",
+    "fullName": "Leif Davis",
+    "club": "Ipswich Town",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/246685/leif-davis/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 74491,
+    "name": "Dayann Methalie",
+    "fullName": "Dayann Methalie",
+    "club": "Sunderland AFC",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/74491/dayann-methalie/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 222501,
+    "name": "Timothy Castagne",
+    "fullName": "Timothy Castagne",
+    "club": "Fulham FC",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/222501/timothy-castagne/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 251626,
+    "name": "Milan van Ewijk",
+    "fullName": "Milan Van Ewijk",
+    "club": "Coventry City",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/251626/milan-van-ewijk/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 251942,
+    "name": "João Pedro Loureiro da Costa",
+    "fullName": "Joao Pedro Loureiro Da Costa",
+    "club": "Brighton & Hove Albion",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/251942/joao-pedro-loureiro-da-costa/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 248808,
+    "name": "Aaron Hickey",
+    "fullName": "Aaron Hickey",
+    "club": "Brentford",
+    "positions": [
+      "RB",
+      "LB",
+      "RM",
+      "LM"
+    ],
+    "href": "/player/248808/aaron-hickey/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 260478,
+    "name": "Sorba Thomas",
+    "fullName": "Sorba Thomas",
+    "club": "Hull City",
+    "positions": [
+      "LM",
+      "RM",
+      "RB",
+      "LW",
+      "RW"
+    ],
+    "href": "/player/260478/sorba-thomas/270002/",
+    "roles": [
+      "Winger +",
+      "BalancedAttack",
+      "Inside forward +",
+      "Attacking wingback +",
+      "SupportAttack",
+      "BalancedAttackVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 260653,
+    "name": "Brooke Norton-Cuffy",
+    "fullName": "Brooke Norton Cuffy",
+    "club": "Hull City",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/260653/brooke-norton-cuffy/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 276633,
+    "name": "Nobel Mendy",
+    "fullName": "Nobel Mendy",
+    "club": "Hull City",
+    "positions": [
+      "CB",
+      "LB"
+    ],
+    "href": "/player/276633/nobel-mendy/270002/",
+    "roles": [
+      "Defender +",
+      "DefendBalanced",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 264209,
+    "name": "Lamare Bogarde",
+    "fullName": "Lamare Bogarde",
+    "club": "Aston Villa",
+    "positions": [
+      "CDM",
+      "CM",
+      "RB"
+    ],
+    "href": "/player/264209/lamare-bogarde/270002/",
+    "roles": [
+      "Holding +",
+      "DefendBall-winningRoaming",
+      "Box-to-Box +",
+      "BalancedBall-winning",
+      "Falseback +",
+      "DefendBalanced",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 248602,
+    "name": "Jacob Greaves",
+    "fullName": "Jacob Greaves",
+    "club": "Ipswich Town",
+    "positions": [
+      "CB",
+      "LB"
+    ],
+    "href": "/player/248602/jacob-greaves/270002/",
+    "roles": [
+      "Wide back +",
+      "DefendAggressiveSupport",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 270846,
+    "name": "Aurèle Amenda",
+    "fullName": "Aurele Amenda",
+    "club": "Coventry City",
+    "positions": [
+      "CB",
+      "RB"
+    ],
+    "href": "/player/270846/aurele-amenda/270002/",
+    "roles": [
+      "Defender +",
+      "DefendBalanced",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 247678,
+    "name": "Julián Araujo",
+    "fullName": "Julian Araujo",
+    "club": "AFC Bournemouth",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/247678/julian-araujo/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 272712,
+    "name": "Elliot Stroud",
+    "fullName": "Elliot Stroud",
+    "club": "Hull City",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/272712/elliot-stroud/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 256781,
+    "name": "Luca Netz",
+    "fullName": "Luca Netz",
+    "club": "Nottingham Forest",
+    "positions": [
+      "LB",
+      "LM",
+      "LW"
+    ],
+    "href": "/player/256781/luca-netz/270002/",
+    "roles": [
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Winger +",
+      "BalancedAttack",
+      "BalancedAttackVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 75318,
+    "name": "Abdoul Ouattara",
+    "fullName": "Abdoul Ouattara",
+    "club": "Ipswich Town",
+    "positions": [
+      "RM",
+      "CM",
+      "RB",
+      "CDM"
+    ],
+    "href": "/player/75318/abdoul-ouattara/270002/",
+    "roles": [
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Box-to-Box +",
+      "BalancedBall-winning",
+      "Attacking wingback +",
+      "SupportAttack",
+      "Box crasher +",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 223877,
+    "name": "Darnell Furlong",
+    "fullName": "Darnell Furlong",
+    "club": "Ipswich Town",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/223877/darnell-furlong/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 232755,
+    "name": "Jay Dasilva",
+    "fullName": "Jay Dasilva",
+    "club": "Coventry City",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/232755/jay-dasilva/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 190885,
+    "name": "Adam Smith",
+    "fullName": "Adam Smith",
+    "club": "AFC Bournemouth",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/190885/adam-smith/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 261335,
+    "name": "Kaine Kesler-Hayden",
+    "fullName": "Kaine Kesler Hayden",
+    "club": "Coventry City",
+    "positions": [
+      "RB",
+      "RM",
+      "LB",
+      "RW",
+      "LM"
+    ],
+    "href": "/player/261335/kaine-kesler-hayden/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "BalancedAttackVersatile",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 218659,
+    "name": "Matt Targett",
+    "fullName": "Matt Targett",
+    "club": "Hull City",
+    "positions": [
+      "LB",
+      "LM",
+      "CB"
+    ],
+    "href": "/player/218659/matt-targett/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Ball-playing defender +",
+      "DefendBuild-upAggressive",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 243608,
+    "name": "Ryan Giles",
+    "fullName": "Ryan Giles",
+    "club": "Hull City",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/243608/ryan-giles/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 233047,
+    "name": "Joel Latibeaudiere",
+    "fullName": "Joel Latibeaudiere",
+    "club": "Coventry City",
+    "positions": [
+      "CB",
+      "RB"
+    ],
+    "href": "/player/233047/joel-latibeaudiere/270002/",
+    "roles": [
+      "Defender +",
+      "DefendBalanced",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 240060,
+    "name": "Max Aarons",
+    "fullName": "Max Aarons",
+    "club": "AFC Bournemouth",
+    "positions": [
+      "RB",
+      "RM"
+    ],
+    "href": "/player/240060/max-aarons/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 224099,
+    "name": "Lewie Coyle",
+    "fullName": "Lewie Coyle",
+    "club": "Hull City",
+    "positions": [
+      "RB",
+      "LB",
+      "RM",
+      "LM"
+    ],
+    "href": "/player/224099/lewie-coyle/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 273599,
+    "name": "Harry Amass",
+    "fullName": "Harry Amass",
+    "club": "Manchester United",
+    "positions": [
+      "LB",
+      "LM",
+      "CM",
+      "LW"
+    ],
+    "href": "/player/273599/harry-amass/270002/",
+    "roles": [
+      "Inverted wingback +",
+      "Build-upAttack",
+      "Winger +",
+      "BalancedAttack",
+      "Half-winger +",
+      "AttackBalancedSupport",
+      "BalancedAttackVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 81538,
+    "name": "Stephen Mfuni",
+    "fullName": "Stephen Mfuni",
+    "club": "Coventry City",
+    "positions": [
+      "CB",
+      "LB"
+    ],
+    "href": "/player/81538/stephen-mfuni/270002/",
+    "roles": [
+      "Defender +",
+      "DefendBalanced",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 258230,
+    "name": "Jaouen Hadjam",
+    "fullName": "Jaouen Hadjam",
+    "club": "Brighton & Hove Albion",
+    "positions": [
+      "LB",
+      "LM",
+      "CB",
+      "LW"
+    ],
+    "href": "/player/258230/jaouen-hadjam/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wide playmaker +",
+      "Build-upAttack",
+      "Ball-playing defender +",
+      "DefendBuild-upAggressive",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 231777,
+    "name": "Abdülkadir Ömür",
+    "fullName": "Abdulkadir Omur",
+    "club": "Hull City",
+    "positions": [
+      "RM",
+      "CAM",
+      "CM",
+      "RB",
+      "CDM"
+    ],
+    "href": "/player/231777/abdulkadir-omur/270002/",
+    "roles": [
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Half-winger +",
+      "AttackBalancedRoaming",
+      "Holding +",
+      "DefendBall-winning",
+      "Attacking wingback +",
+      "SupportAttack",
+      "DefendBall-winningRoaming",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 196952,
+    "name": "Jake Bidwell",
+    "fullName": "Jake Bidwell",
+    "club": "Coventry City",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/196952/jake-bidwell/270002/",
+    "roles": [
+      "Attacking wingback +",
+      "SupportAttack",
+      "Wingback +",
+      "BalancedSupport",
+      "Winger +",
+      "BalancedAttack",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 269796,
+    "name": "Julio Soler",
+    "fullName": "Julio Soler",
+    "club": "AFC Bournemouth",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/269796/julio-soler/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 88560,
+    "name": "Kaden Braithwaite",
+    "fullName": "Kaden Braithwaite",
+    "club": "Manchester City",
+    "positions": [
+      "CB",
+      "LB"
+    ],
+    "href": "/player/88560/kaden-braithwaite/270002/",
+    "roles": [
+      "Ball-playing defender +",
+      "DefendBuild-upAggressive",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 70781,
+    "name": "Benjamin Fredrick",
+    "fullName": "Benjamin Fredrick",
+    "club": "Brentford",
+    "positions": [
+      "CB",
+      "RB"
+    ],
+    "href": "/player/70781/benjamin-fredrick/270002/",
+    "roles": [
+      "Stopper +",
+      "BalancedAggressive",
+      "Fullback +",
+      "DefendBalancedVersatile",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 85700,
+    "name": "Jayden Lienou",
+    "fullName": "Jayden Lienou",
+    "club": "Leeds United",
+    "positions": [
+      "LB",
+      "LM"
+    ],
+    "href": "/player/85700/jayden-lienou/270002/",
+    "roles": [
+      "Wingback +",
+      "BalancedSupport",
+      "Wide midfielder +",
+      "SupportDefendBuild-up",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "id": 85912,
+    "name": "Alfie Cresswell",
+    "fullName": "Alfie Cresswell",
+    "club": "Leeds United",
+    "positions": [
+      "CDM",
+      "CB",
+      "RB",
+      "CM"
+    ],
+    "href": "/player/85912/alfie-cresswell/270002/",
+    "roles": [
+      "Holding +",
+      "DefendBall-winningRoaming",
+      "DefendBall-winning",
+      "Layout 1",
+      "2",
+      "3"
+    ]
+  }
+]

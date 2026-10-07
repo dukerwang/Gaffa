@@ -1,0 +1,5057 @@
+{
+  "generatedAt": "2026-09-20T19:56:53.560Z",
+  "totalScraped": 3905,
+  "totalMatched": 662,
+  "totalChanges": 195,
+  "primaryChangesCount": 85,
+  "secondaryChangesCount": 186,
+  "rosteredImpactedCount": 48,
+  "changes": [
+    {
+      "playerId": "ad4ecab9-d1d8-46be-b6ef-7e0aee0efa14",
+      "playerName": "Dominik Szoboszlai",
+      "webName": "Szoboszlai",
+      "club": "Liverpool",
+      "sofifaClub": "Liverpool FC",
+      "sofifaId": 236772,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "AM",
+      "oldSecondaries": [
+        "RB",
+        "CM"
+      ],
+      "newSecondaries": [
+        "RB",
+        "RWB",
+        "DM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CAM",
+        "RB",
+        "CDM",
+        "CM",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "ba85b775-4ac0-4047-a8ce-b43e28d81a9b",
+      "playerName": "Rayan Cherki",
+      "webName": "Cherki",
+      "club": "Man City",
+      "sofifaClub": "Manchester City",
+      "sofifaId": 251570,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "RW",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RW",
+        "RM",
+        "CAM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "56c84b50-abbf-49ab-af83-542261f67c3a",
+      "playerName": "Jurriën Timber",
+      "webName": "J.Timber",
+      "club": "Arsenal",
+      "sofifaClub": "Arsenal FC",
+      "sofifaId": 251805,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "RWB",
+      "newPrimary": "RWB",
+      "oldSecondaries": [
+        "LB",
+        "RB",
+        "CB"
+      ],
+      "newSecondaries": [
+        "LWB",
+        "LB",
+        "RB",
+        "CB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "LB",
+        "CB",
+        "RM",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "7a82d11b-e98f-4506-bd2d-b778f6ba4806",
+      "playerName": "Reece James",
+      "webName": "James",
+      "club": "Chelsea",
+      "sofifaClub": "Chelsea FC",
+      "sofifaId": 238074,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "DM"
+      ],
+      "newSecondaries": [
+        "DM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "1b7cbbd9-e2a2-43e8-9daa-a3a4e3b80270",
+      "playerName": "Matheus Cunha",
+      "webName": "Cunha",
+      "club": "Man Utd",
+      "sofifaClub": "Manchester United",
+      "sofifaId": 240243,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "LW",
+        "ST"
+      ],
+      "newSecondaries": [
+        "AM",
+        "ST"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "CAM",
+        "ST",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "51344323-d33f-4b45-86d1-6538f443c5d0",
+      "playerName": "John McGinn",
+      "webName": "McGinn",
+      "club": "Aston Villa",
+      "sofifaClub": "Aston Villa",
+      "sofifaId": 210881,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "RW",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "LW",
+        "RWB",
+        "AM"
+      ],
+      "newSecondaries": [
+        "LW",
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "LM",
+        "CAM",
+        "RW",
+        "LW",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "8f3d944e-3bb6-4882-9055-875f5c32a168",
+      "playerName": "Nico O'Reilly",
+      "webName": "O'Reilly",
+      "club": "Man City",
+      "sofifaClub": "Manchester City",
+      "sofifaId": 277427,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "LB",
+        "CM",
+        "DM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "26d4c44c-a94f-4c61-a5f9-d2f075533c54",
+      "playerName": "Lewis Hall",
+      "webName": "Hall",
+      "club": "Newcastle",
+      "sofifaClub": "Newcastle United",
+      "sofifaId": 266127,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "LWB"
+      ],
+      "newSecondaries": [
+        "LB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB"
+      ]
+    },
+    {
+      "playerId": "8abd2d0e-35a2-4b4e-9dc8-3bdcec0cfadf",
+      "playerName": "Riccardo Calafiori",
+      "webName": "Calafiori",
+      "club": "Arsenal",
+      "sofifaClub": "Arsenal FC",
+      "sofifaId": 257711,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "CB",
+        "CM"
+      ],
+      "newSecondaries": [
+        "LB",
+        "CB",
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "CB",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "e58c5fbe-8162-406c-a16c-dc12bd031333",
+      "playerName": "James Garner",
+      "webName": "Garner",
+      "club": "Everton",
+      "sofifaClub": "Everton FC",
+      "sofifaId": 243657,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "RB",
+        "CM"
+      ],
+      "newSecondaries": [
+        "RWB",
+        "RB",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "RB",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "37730d28-4221-466f-ab14-0e6e10d0e1a7",
+      "playerName": "Iliman Ndiaye",
+      "webName": "Ndiaye",
+      "club": "Man City",
+      "sofifaClub": "Manchester City",
+      "sofifaId": 261188,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "RW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "LW"
+      ],
+      "newSecondaries": [
+        "RW"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "RM",
+        "LW",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "beb3d9af-1178-45ad-bbfc-6a225aa8a9cd",
+      "playerName": "Omar Marmoush",
+      "webName": "Marmoush",
+      "club": "Spurs",
+      "sofifaClub": "Tottenham Hotspur",
+      "sofifaId": 256675,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "ST"
+      ],
+      "newSecondaries": [
+        "ST",
+        "AM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LW",
+        "ST",
+        "LM",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "24725095-8ece-4ce2-ae86-1f225ef55d55",
+      "playerName": "Adam Wharton",
+      "webName": "Wharton",
+      "club": "Crystal Palace",
+      "sofifaClub": "Crystal Palace",
+      "sofifaId": 259240,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "CM",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "DM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "cc8a07de-8a46-4bdf-8032-801d293c15a1",
+      "playerName": "Benjamin White",
+      "webName": "White",
+      "club": "Arsenal",
+      "sofifaClub": "Arsenal FC",
+      "sofifaId": 231936,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "RWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "c80f3912-04f9-4255-8d41-7999f8f9bd59",
+      "playerName": "Pedro Neto",
+      "webName": "Neto",
+      "club": "Chelsea",
+      "sofifaClub": "Chelsea FC",
+      "sofifaId": 238616,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "RW",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "LW"
+      ],
+      "newSecondaries": [
+        "LW",
+        "RWB",
+        "LWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "LM",
+        "RW",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "596ef9b5-f4a0-4434-b08a-d3371f693b2c",
+      "playerName": "Kiernan Dewsbury-Hall",
+      "webName": "Dewsbury-Hall",
+      "club": "Everton",
+      "sofifaClub": "Everton FC",
+      "sofifaId": 237386,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "AM",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "CM",
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CAM",
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "ac1ee078-b557-4b6f-b2b1-0d849604bf39",
+      "playerName": "Tino Livramento",
+      "webName": "Livramento",
+      "club": "Newcastle",
+      "sofifaClub": "Newcastle United",
+      "sofifaId": 262118,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "RWB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "LB",
+        "RB"
+      ],
+      "newSecondaries": [
+        "LB",
+        "LWB",
+        "RWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "LB",
+        "RM",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "a1668405-eac3-49f0-bc7c-78a85f757e38",
+      "playerName": "Mohammed Kudus",
+      "webName": "Kudus",
+      "club": "Spurs",
+      "sofifaClub": "Tottenham Hotspur",
+      "sofifaId": 245155,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "RW",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "ST"
+      ],
+      "newSecondaries": [
+        "ST",
+        "AM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "RW",
+        "ST",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "9c6867b7-3951-423f-8b31-5b2c94768a22",
+      "playerName": "Nordi Mukiele",
+      "webName": "Mukiele",
+      "club": "Sunderland",
+      "sofifaClub": "Sunderland AFC",
+      "sofifaId": 226166,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "CB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "RB"
+      ],
+      "newSecondaries": [
+        "CB",
+        "DM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "CB",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "b57ac6fe-8758-4ae4-b285-9cd744ba847d",
+      "playerName": "Alex Scott",
+      "webName": "Scott",
+      "club": "Bournemouth",
+      "sofifaClub": "AFC Bournemouth",
+      "sofifaId": 261299,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "CM",
+      "oldSecondaries": [
+        "CM",
+        "AM"
+      ],
+      "newSecondaries": [
+        "DM",
+        "AM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "CDM",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "5cc907bc-2006-4003-b30c-0f6df4f7fcba",
+      "playerName": "Emiliano Buendía",
+      "webName": "Buendía",
+      "club": "Aston Villa",
+      "sofifaClub": "Aston Villa",
+      "sofifaId": 226162,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "CAM",
+        "LW",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "c0bbcb06-d1a0-4e53-b84e-0048f028aa75",
+      "playerName": "Ethan Ampadu",
+      "webName": "Ampadu",
+      "club": "Leeds",
+      "sofifaClub": "Leeds United",
+      "sofifaId": 235735,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "CB",
+        "CM"
+      ],
+      "newSecondaries": [
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "226ccc5f-8dda-43bc-bb4e-58359b09336d",
+      "playerName": "Noussair Mazraoui",
+      "webName": "Mazraoui",
+      "club": "Man Utd",
+      "sofifaClub": "Manchester United",
+      "sofifaId": 236401,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "LB",
+        "RWB",
+        "CB"
+      ],
+      "newSecondaries": [
+        "CB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "CB"
+      ]
+    },
+    {
+      "playerId": "4bf2300f-315a-4fc8-b48c-25f567b422f5",
+      "playerName": "Neco Williams",
+      "webName": "N.Williams",
+      "club": "Nott'm Forest",
+      "sofifaClub": "Nottingham Forest",
+      "sofifaId": 243057,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "RB"
+      ],
+      "newSecondaries": [
+        "LWB",
+        "RB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "RB",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "28ac21e0-ec4e-4b29-bcb4-5e514a059232",
+      "playerName": "Enzo Le Fée",
+      "webName": "E.Le Fée",
+      "club": "Sunderland",
+      "sofifaClub": "Sunderland AFC",
+      "sofifaId": 246350,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "AM",
+      "oldSecondaries": [
+        "LW",
+        "AM"
+      ],
+      "newSecondaries": [
+        "LW",
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CAM",
+        "LM",
+        "CM",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "f658882c-a88c-407c-9fba-dd86c5af973c",
+      "playerName": "Noah Sadiki",
+      "webName": "Sadiki",
+      "club": "Sunderland",
+      "sofifaClub": "Sunderland AFC",
+      "sofifaId": 269230,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "DM",
+        "AM"
+      ],
+      "newSecondaries": [
+        "CM",
+        "AM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "4c9276aa-a5ca-4aa2-ace6-df7f44685ed1",
+      "playerName": "Alex Iwobi",
+      "webName": "Iwobi",
+      "club": "Fulham",
+      "sofifaClub": "Fulham FC",
+      "sofifaId": 213655,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "DM"
+      ],
+      "newSecondaries": [
+        "DM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "CDM",
+        "LW",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "3b63a4b0-936e-4d26-956c-c9acfcd7e1f9",
+      "playerName": "Ferdi Kadıoğlu",
+      "webName": "F.Kadıoğlu",
+      "club": "Brighton",
+      "sofifaClub": "Brighton & Hove Albion",
+      "sofifaId": 235152,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "LWB",
+        "RB"
+      ],
+      "newSecondaries": [
+        "LB",
+        "RWB",
+        "RB",
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "RB",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "4396df3e-4925-46af-b437-f12d65eb2a94",
+      "playerName": "Adrien Truffert",
+      "webName": "Truffert",
+      "club": "Bournemouth",
+      "sofifaClub": "AFC Bournemouth",
+      "sofifaId": 256769,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "LWB"
+      ],
+      "newSecondaries": [
+        "LB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "4249721b-3041-4345-b971-91c4c07a7696",
+      "playerName": "Malo Gusto",
+      "webName": "Gusto",
+      "club": "Chelsea",
+      "sofifaClub": "Chelsea FC",
+      "sofifaId": 259307,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "RWB",
+      "newPrimary": "RWB",
+      "oldSecondaries": [
+        "RB"
+      ],
+      "newSecondaries": [
+        "RB",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "221b1ba7-f1b4-464b-832b-48703a774888",
+      "playerName": "Valentín Barco",
+      "webName": "Barco",
+      "club": "Chelsea",
+      "sofifaClub": "Chelsea FC",
+      "sofifaId": 263370,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "CM",
+      "oldSecondaries": [
+        "DM",
+        "AM"
+      ],
+      "newSecondaries": [
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "97e1cfe4-3a30-4d84-98f5-5ddfb705396b",
+      "playerName": "Joe Gomez",
+      "webName": "Gomez",
+      "club": "Liverpool",
+      "sofifaClub": "Liverpool FC",
+      "sofifaId": 225100,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "LB",
+        "RB",
+        "RWB"
+      ],
+      "newSecondaries": [
+        "LWB",
+        "LB",
+        "RWB",
+        "RB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB",
+        "RB",
+        "LB"
+      ]
+    },
+    {
+      "playerId": "cc81d169-a7d9-446e-9294-09aee60888ca",
+      "playerName": "Conor Bradley",
+      "webName": "Bradley",
+      "club": "Liverpool",
+      "sofifaClub": "Liverpool FC",
+      "sofifaId": 264298,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "RWB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "RB"
+      ],
+      "newSecondaries": [
+        "RWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "5ee9ace0-9a25-46ab-a79f-4f7c5326533e",
+      "playerName": "Luke Shaw",
+      "webName": "Shaw",
+      "club": "Man Utd",
+      "sofifaClub": "Manchester United",
+      "sofifaId": 205988,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "LWB",
+        "CB"
+      ],
+      "newSecondaries": [
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "eb8ecd45-6747-483f-9d57-32cfd51eb304",
+      "playerName": "Sander Berge",
+      "webName": "Berge",
+      "club": "Fulham",
+      "sofifaClub": "Fulham FC",
+      "sofifaId": 228092,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "CM",
+        "CB"
+      ],
+      "newSecondaries": [
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "2247e53b-19a8-4deb-b935-b8b511ccf488",
+      "playerName": "Daichi Kamada",
+      "webName": "Kamada",
+      "club": "Crystal Palace",
+      "sofifaClub": "Crystal Palace",
+      "sofifaId": 232730,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "CM",
+      "oldSecondaries": [
+        "AM",
+        "DM"
+      ],
+      "newSecondaries": [
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "d56cdc2a-a3fb-4c33-8dc9-73547c33c809",
+      "playerName": "Mats Wieffer",
+      "webName": "Wieffer",
+      "club": "Brighton",
+      "sofifaClub": "Brighton & Hove Albion",
+      "sofifaId": 248793,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "RB",
+        "CM"
+      ],
+      "newSecondaries": [
+        "RWB",
+        "DM",
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "CDM",
+        "CM",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "067e06bf-e99f-4fa3-b463-b6258442e6bc",
+      "playerName": "Justin Kluivert",
+      "webName": "Kluivert",
+      "club": "Bournemouth",
+      "sofifaClub": "AFC Bournemouth",
+      "sofifaId": 236920,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "AM",
+      "oldSecondaries": [
+        "LW",
+        "CM"
+      ],
+      "newSecondaries": [
+        "LW"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CAM",
+        "LM",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "4459f763-775e-4899-bb86-7e00e4dafe54",
+      "playerName": "Marcus Tavernier",
+      "webName": "Tavernier",
+      "club": "Bournemouth",
+      "sofifaClub": "AFC Bournemouth",
+      "sofifaId": 237477,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "RW",
+        "AM"
+      ],
+      "newSecondaries": [
+        "RW",
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "RM",
+        "CAM",
+        "LW",
+        "RW",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "004bc5f5-ae90-4f6b-b5d3-afeb7dcd45f7",
+      "playerName": "Myles Lewis-Skelly",
+      "webName": "Lewis-Skelly",
+      "club": "Arsenal",
+      "sofifaClub": "Arsenal FC",
+      "sofifaId": 278773,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "LB",
+        "DM",
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "bc1c56ac-c9dc-4d38-a444-74afc91f6356",
+      "playerName": "Aaron Wan-Bissaka",
+      "webName": "Wan-Bissaka",
+      "club": "Aston Villa",
+      "sofifaClub": "Aston Villa",
+      "sofifaId": 229880,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "RW"
+      ],
+      "newSecondaries": [
+        "RWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "1055f873-c248-49a1-a6b6-6a7b0a57ef28",
+      "playerName": "Matteo Ruggeri",
+      "webName": "Ruggeri",
+      "club": "Aston Villa",
+      "sofifaClub": "Aston Villa",
+      "sofifaId": 259584,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LWB",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "LB"
+      ],
+      "newSecondaries": [
+        "LWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "912cad56-1e19-46c1-9092-580bbcea3da1",
+      "playerName": "Jorrel Hato",
+      "webName": "Hato",
+      "club": "Chelsea",
+      "sofifaClub": "Chelsea FC",
+      "sofifaId": 272978,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "CB",
+        "DM"
+      ],
+      "newSecondaries": [
+        "LWB",
+        "CB",
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "CB",
+        "LM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "100258a3-7810-41aa-b5b1-dccc6f36a290",
+      "playerName": "Gabriel Gudmundsson",
+      "webName": "Gudmundsson",
+      "club": "Leeds",
+      "sofifaClub": "Leeds United",
+      "sofifaId": 236822,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LWB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "LB",
+        "CB"
+      ],
+      "newSecondaries": [
+        "LB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "77808a89-3608-47a4-b4c3-12a3b0de46f9",
+      "playerName": "Mason Mount",
+      "webName": "Mount",
+      "club": "Man Utd",
+      "sofifaClub": "Manchester United",
+      "sofifaId": 233064,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "AM",
+      "oldSecondaries": [
+        "LW",
+        "CM"
+      ],
+      "newSecondaries": [
+        "LW",
+        "CM",
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CAM",
+        "LM",
+        "CM",
+        "LW",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "d66ca0d3-6585-47b0-ada5-4f1127a30810",
+      "playerName": "Patrick Dorgu",
+      "webName": "Dorgu",
+      "club": "Man Utd",
+      "sofifaClub": "Manchester United",
+      "sofifaId": 277432,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LW",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "LWB",
+        "RW"
+      ],
+      "newSecondaries": [
+        "LWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "LB"
+      ]
+    },
+    {
+      "playerId": "ce4875ad-29ed-456e-987b-68effccdeea9",
+      "playerName": "Bazoumana Touré",
+      "webName": "Touré",
+      "club": "Newcastle",
+      "sofifaClub": "Newcastle United",
+      "sofifaId": 71418,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LW",
+        "LM",
+        "CAM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "50e658d4-663f-4a42-89f4-cfeb9de563e8",
+      "playerName": "Matias Fernandez-Pardo",
+      "webName": "Fernandez-Pardo",
+      "club": "Newcastle",
+      "sofifaClub": "Newcastle United",
+      "sofifaId": 276048,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LW",
+      "newPrimary": "ST",
+      "oldSecondaries": [
+        "RW",
+        "ST"
+      ],
+      "newSecondaries": [
+        "LW"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "ST",
+        "LM",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "0769c646-5fb3-4a2b-9c10-a0721d8e8fc0",
+      "playerName": "Nicolás Domínguez",
+      "webName": "Dominguez",
+      "club": "Nott'm Forest",
+      "sofifaClub": "Nottingham Forest",
+      "sofifaId": 237819,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "LW",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM",
+        "LM",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "b101912d-f378-45aa-9e57-1ccb70426ee8",
+      "playerName": "Arnaud Kalimuendo",
+      "webName": "Kalimuendo",
+      "club": "Nott'm Forest",
+      "sofifaClub": "Nottingham Forest",
+      "sofifaId": 253444,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "ST",
+      "newPrimary": "ST",
+      "oldSecondaries": [
+        "LW",
+        "RW"
+      ],
+      "newSecondaries": [
+        "LW",
+        "RW",
+        "AM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "ST",
+        "LM",
+        "RM",
+        "CAM",
+        "LW",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "4626b630-1317-46dc-92cf-ad780d1b43ec",
+      "playerName": "Mathys Tel",
+      "webName": "Tel",
+      "club": "Spurs",
+      "sofifaClub": "Tottenham Hotspur",
+      "sofifaId": 268421,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "ST",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "LW",
+        "AM"
+      ],
+      "newSecondaries": [
+        "ST",
+        "AM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "LW",
+        "ST",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "4a73d0f1-b600-4a0e-91d3-40b3efe75012",
+      "playerName": "Daizen Maeda",
+      "webName": "Maeda",
+      "club": "Ipswich Town",
+      "sofifaClub": "Ipswich Town",
+      "sofifaId": 246321,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "ST",
+        "AM"
+      ],
+      "newSecondaries": [
+        "ST",
+        "AM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": false,
+      "rawPositions": [
+        "LM",
+        "LW",
+        "ST",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "1f93ac89-6ad2-4ed3-affc-19a57f5eb612",
+      "playerName": "Trai Hume",
+      "webName": "Hume",
+      "club": "Sunderland",
+      "sofifaClub": "Sunderland AFC",
+      "sofifaId": 266400,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "RWB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "LB",
+        "RB",
+        "CM"
+      ],
+      "newSecondaries": [
+        "LWB",
+        "LB",
+        "RWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "LB",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "f2c2072d-5f5a-4302-8679-f9a8d9384d19",
+      "playerName": "Anan Khalaili",
+      "webName": "Khalaili",
+      "club": "Crystal Palace",
+      "sofifaClub": "Crystal Palace",
+      "sofifaId": 70888,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CB",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "RWB"
+      ],
+      "newSecondaries": [
+        "RWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": false,
+      "rawPositions": [
+        "RM",
+        "RB",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "8fcf0391-9d05-457b-83e5-eb5e6913704a",
+      "playerName": "Diego Gómez",
+      "webName": "Gomez",
+      "club": "Brighton",
+      "sofifaClub": "Brighton & Hove Albion",
+      "sofifaId": 269278,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "CM",
+      "oldSecondaries": [
+        "LW",
+        "CM"
+      ],
+      "newSecondaries": [
+        "RW",
+        "AM",
+        "DM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "CAM",
+        "RM",
+        "CDM",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "577b5ff0-8e42-4fc4-be35-3a4a5deb2172",
+      "playerName": "El Hadji Malick Diouf",
+      "webName": "Diouf",
+      "club": "Brentford",
+      "sofifaClub": "Brentford",
+      "sofifaId": 274915,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "LW"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB"
+      ]
+    },
+    {
+      "playerId": "284bbe8d-a421-46e7-a847-189a8f7d1ecd",
+      "playerName": "Lewis Cook",
+      "webName": "Cook",
+      "club": "Bournemouth",
+      "sofifaClub": "AFC Bournemouth",
+      "sofifaId": 224294,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "RB",
+        "CM"
+      ],
+      "newSecondaries": [
+        "RWB",
+        "RB",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "RB",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "cc1a5acc-e12d-4f9a-b0df-1a844c9f44a7",
+      "playerName": "Ainsley Maitland-Niles",
+      "webName": "Maitland-Niles",
+      "club": "Everton",
+      "sofifaClub": "Everton FC",
+      "sofifaId": 225782,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "RWB",
+      "newPrimary": "RWB",
+      "oldSecondaries": [
+        "RB",
+        "CM"
+      ],
+      "newSecondaries": [
+        "RW",
+        "RB",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM",
+        "CM",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "02990cda-3234-4d82-a41c-bc4f4211f75b",
+      "playerName": "Noah Okafor",
+      "webName": "Okafor",
+      "club": "Leeds",
+      "sofifaClub": "Leeds United",
+      "sofifaId": 242530,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "ST",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "LW",
+        "AM"
+      ],
+      "newSecondaries": [
+        "ST",
+        "AM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LW",
+        "ST",
+        "LM",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "7e07391c-d458-4579-9e03-3ad057486ab9",
+      "playerName": "Rico Lewis",
+      "webName": "Lewis",
+      "club": "Man City",
+      "sofifaClub": "Manchester City",
+      "sofifaId": 271574,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "RB",
+      "newPrimary": "RWB",
+      "oldSecondaries": [
+        "LB",
+        "CM"
+      ],
+      "newSecondaries": [
+        "LWB",
+        "LB",
+        "RB",
+        "CM",
+        "DM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "LB",
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "ca08f081-12c8-4fa0-98dc-b284bce0078a",
+      "playerName": "Joshua Zirkzee",
+      "webName": "Zirkzee",
+      "club": "Man Utd",
+      "sofifaClub": "Manchester United",
+      "sofifaId": 250961,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "ST",
+      "newPrimary": "ST",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "ST"
+      ]
+    },
+    {
+      "playerId": "e572b17d-4572-4646-a55c-e68db73308ba",
+      "playerName": "Lewis Miley",
+      "webName": "L.Miley",
+      "club": "Newcastle",
+      "sofifaClub": "Newcastle United",
+      "sofifaId": 274246,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "CM",
+      "oldSecondaries": [
+        "RB",
+        "DM"
+      ],
+      "newSecondaries": [
+        "RB",
+        "RWB",
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "RB",
+        "CDM",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "9cfdaa90-16bf-43b7-9a3e-2162902f611c",
+      "playerName": "Dan Ndoye",
+      "webName": "Ndoye",
+      "club": "Nott'm Forest",
+      "sofifaClub": "Nottingham Forest",
+      "sofifaId": 257980,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "RW",
+        "ST"
+      ],
+      "newSecondaries": [
+        "RW",
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "RM",
+        "CAM",
+        "LW",
+        "RW",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "fde34915-4507-4518-9c05-5f2b5df35f90",
+      "playerName": "Archie Gray",
+      "webName": "Gray",
+      "club": "Spurs",
+      "sofifaClub": "Tottenham Hotspur",
+      "sofifaId": 270208,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "RB",
+        "CB",
+        "CM"
+      ],
+      "newSecondaries": [
+        "RB",
+        "RWB",
+        "CB",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CB",
+        "RB",
+        "CM",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "d5c6b33b-58bd-4dd8-a184-7399d8c1812e",
+      "playerName": "Habib Diarra",
+      "webName": "Diarra",
+      "club": "Sunderland",
+      "sofifaClub": "Sunderland AFC",
+      "sofifaId": 264293,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "CM",
+      "oldSecondaries": [
+        "AM",
+        "DM"
+      ],
+      "newSecondaries": [
+        "AM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "a68e94b0-e3be-4ad5-bb7f-8ac6b2f86ec4",
+      "playerName": "Ryan Sessegnon",
+      "webName": "Sessegnon",
+      "club": "Fulham",
+      "sofifaClub": "Fulham FC",
+      "sofifaId": 235883,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "LWB"
+      ],
+      "newSecondaries": [
+        "LB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "d259f6ad-45fc-4227-84da-ec8c50d5f3d2",
+      "playerName": "Yann Gboho",
+      "webName": "Gboho",
+      "club": "Coventry City",
+      "sofifaClub": "Coventry City",
+      "sofifaId": 252937,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "RW",
+        "AM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "ST"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LW",
+        "CAM",
+        "LM",
+        "ST"
+      ]
+    },
+    {
+      "playerId": "28f001b5-4974-4145-a4de-8651f8848c5f",
+      "playerName": "Jack Hinshelwood",
+      "webName": "Hinshelwood",
+      "club": "Brighton",
+      "sofifaClub": "Brighton & Hove Albion",
+      "sofifaId": 277283,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "RB",
+        "AM",
+        "CM"
+      ],
+      "newSecondaries": [
+        "RWB",
+        "RB",
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CAM",
+        "RB",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "40d0fd76-fff4-4690-ba10-1720bf504dc4",
+      "playerName": "Amine Adli",
+      "webName": "Adli",
+      "club": "Bournemouth",
+      "sofifaClub": "AFC Bournemouth",
+      "sofifaId": 255223,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "ST",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "LW",
+        "AM"
+      ],
+      "newSecondaries": [
+        "ST",
+        "AM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "ST",
+        "LW",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "0f396aa7-3ed6-427b-8b66-e8cbf111be8e",
+      "playerName": "Geovany Quenda",
+      "webName": "Quenda",
+      "club": "Chelsea",
+      "sofifaClub": "Chelsea FC",
+      "sofifaId": 279044,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "RW",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "LW",
+        "AM"
+      ],
+      "newSecondaries": [
+        "LW",
+        "AM",
+        "CM",
+        "RWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "LM",
+        "CAM",
+        "RW",
+        "LW",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "0ba005dd-ba53-44bd-a30a-0992f0efcc0a",
+      "playerName": "Tanaka Ao",
+      "webName": "Tanaka",
+      "club": "Leeds",
+      "sofifaClub": "Leeds United",
+      "sofifaId": 236764,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "CM",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "DM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "8b97c08c-e887-4b4d-bdba-b87eeea0da89",
+      "playerName": "Jayden Bogle",
+      "webName": "Bogle",
+      "club": "Leeds",
+      "sofifaClub": "Leeds United",
+      "sofifaId": 244591,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "RB",
+      "newPrimary": "RWB",
+      "oldSecondaries": [
+        "RWB"
+      ],
+      "newSecondaries": [
+        "RB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "326cfa59-1d15-4b4f-9113-2499b0476a78",
+      "playerName": "Melvin Bard",
+      "webName": "Bard",
+      "club": "Leeds",
+      "sofifaClub": "Leeds United",
+      "sofifaId": 254548,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "LWB",
+        "CB"
+      ],
+      "newSecondaries": [
+        "LW",
+        "LB",
+        "CB",
+        "DM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "LM",
+        "CB",
+        "CDM",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "0ac6d19c-f84e-4316-8554-0fde42e4cc53",
+      "playerName": "Jean-Mattéo Bahoya",
+      "webName": "Bahoya",
+      "club": "Leeds",
+      "sofifaClub": "Leeds United",
+      "sofifaId": 269728,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "CAM",
+        "LW",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "c8c62312-548d-45f9-a23e-e3b9e86faa8e",
+      "playerName": "Amar Dedic",
+      "webName": "Dedić",
+      "club": "Newcastle",
+      "sofifaClub": "Newcastle United",
+      "sofifaId": 257345,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CB",
+      "newPrimary": "RWB",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "RB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB"
+      ]
+    },
+    {
+      "playerId": "54b33793-6911-4ad2-97b4-4f1e1396698a",
+      "playerName": "Jaydee Canvot",
+      "webName": "Canvot",
+      "club": "Crystal Palace",
+      "sofifaClub": "Crystal Palace",
+      "sofifaId": 74133,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "CB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "DM",
+        "CM"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB"
+      ]
+    },
+    {
+      "playerId": "38ff9e4d-f698-4fbf-9d1c-c88248957835",
+      "playerName": "Takehiro Tomiyasu",
+      "webName": "Tomiyasu",
+      "club": "Crystal Palace",
+      "sofifaClub": "Crystal Palace",
+      "sofifaId": 232938,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "RB",
+        "CM"
+      ],
+      "newSecondaries": [
+        "LB",
+        "RWB",
+        "RB",
+        "CB",
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "RB",
+        "CB",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "24d2e652-7b23-4b35-b8a3-4772b0b60544",
+      "playerName": "Cheick Doucouré",
+      "webName": "Doucouré",
+      "club": "Crystal Palace",
+      "sofifaClub": "Crystal Palace",
+      "sofifaId": 242619,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "CM",
+        "CB"
+      ],
+      "newSecondaries": [
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "9faa8929-757b-4be9-a37a-61d893d3c531",
+      "playerName": "Dwight McNeil",
+      "webName": "McNeil",
+      "club": "Crystal Palace",
+      "sofifaClub": "Crystal Palace",
+      "sofifaId": 243282,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LW",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "RW",
+        "AM"
+      ],
+      "newSecondaries": [
+        "LW",
+        "AM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "LM",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "92625d1d-e93f-4e61-98bb-7a9620800b09",
+      "playerName": "Josh Acheampong",
+      "webName": "Acheampong",
+      "club": "Chelsea",
+      "sofifaClub": "Chelsea FC",
+      "sofifaId": 71651,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "CB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "RB",
+        "DM"
+      ],
+      "newSecondaries": [
+        "RB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB",
+        "RB"
+      ]
+    },
+    {
+      "playerId": "22bee9ee-5422-4cd9-b95c-58273a23cbd3",
+      "playerName": "Carlos Alcaraz",
+      "webName": "Alcaraz",
+      "club": "Everton",
+      "sofifaClub": "Everton FC",
+      "sofifaId": 256402,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "AM",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "CM",
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CAM",
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "5c4f3194-95c6-40cd-b538-02d15523664b",
+      "playerName": "Dara O'Shea",
+      "webName": "O'Shea",
+      "club": "Ipswich Town",
+      "sofifaClub": "Ipswich Town",
+      "sofifaId": 235405,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "RB",
+        "RWB"
+      ],
+      "newSecondaries": [
+        "RB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB",
+        "RB"
+      ]
+    },
+    {
+      "playerId": "20c2dcb7-c2e8-4494-b462-79e08c77fabc",
+      "playerName": "Jack Clarke",
+      "webName": "Clarke",
+      "club": "Ipswich Town",
+      "sofifaClub": "Ipswich Town",
+      "sofifaId": 242908,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "RW"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "906d8113-403b-4e46-89cb-36aba8478718",
+      "playerName": "Gustavo Hamer",
+      "webName": "Hamer",
+      "club": "Coventry City",
+      "sofifaClub": "Coventry City",
+      "sofifaId": 234741,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "CAM",
+        "LW",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "7edf4b2a-139f-4383-81c8-33e2506251a4",
+      "playerName": "Frank Onyeka",
+      "webName": "Onyeka",
+      "club": "Coventry City",
+      "sofifaClub": "Coventry City",
+      "sofifaId": 239529,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "DM"
+      ],
+      "newSecondaries": [
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "7103bc8c-aacc-41d1-96e0-066a321db9e8",
+      "playerName": "Jack Rudoni",
+      "webName": "Rudoni",
+      "club": "Coventry City",
+      "sofifaClub": "Coventry City",
+      "sofifaId": 251690,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "AM",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "CM",
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CAM",
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "e2fcd959-fa3f-41ff-9923-d07a45eeae6e",
+      "playerName": "João Pedro Loureiro da Costa",
+      "webName": "Costinha",
+      "club": "Brighton",
+      "sofifaClub": "Brighton & Hove Albion",
+      "sofifaId": 251942,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CB",
+      "newPrimary": "RB",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "RWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "d15d45c5-2c0a-4d7a-bb89-785fa1968f52",
+      "playerName": "Aaron Hickey",
+      "webName": "Hickey",
+      "club": "Brentford",
+      "sofifaClub": "Brentford",
+      "sofifaId": 248808,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "LB",
+        "RWB"
+      ],
+      "newSecondaries": [
+        "LB",
+        "LWB",
+        "RWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "LB",
+        "RM",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "5d93da2c-05d1-4e89-9882-7ba45171a090",
+      "playerName": "Josh King",
+      "webName": "King",
+      "club": "Fulham",
+      "sofifaClub": "Fulham FC",
+      "sofifaId": 70786,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "AM",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "CM",
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CAM",
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "07cbe642-3846-482b-b7b2-e7b37cd90f45",
+      "playerName": "Tom Cairney",
+      "webName": "Cairney",
+      "club": "Fulham",
+      "sofifaClub": "Fulham FC",
+      "sofifaId": 195202,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "CM",
+      "oldSecondaries": [
+        "DM",
+        "AM"
+      ],
+      "newSecondaries": [
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "76eb695c-e374-41ba-a702-1aa204ae6bdb",
+      "playerName": "Honest Ahanor",
+      "webName": "Ahanor",
+      "club": "Crystal Palace",
+      "sofifaClub": "Crystal Palace",
+      "sofifaId": 74483,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "CB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "LB"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB"
+      ]
+    },
+    {
+      "playerId": "0729b388-f7d8-40c0-801c-e3ebe8808de9",
+      "playerName": "Fábio Carvalho",
+      "webName": "Carvalho",
+      "club": "Brentford",
+      "sofifaClub": "Brentford",
+      "sofifaId": 256725,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "AM",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "CM",
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CAM",
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "0af9af34-fda0-4b66-a346-a4798b651652",
+      "playerName": "Elliot Stroud",
+      "webName": "Stroud",
+      "club": "Hull City",
+      "sofifaClub": "Hull City",
+      "sofifaId": 272712,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "LWB"
+      ],
+      "newSecondaries": [
+        "LB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "61fd8d72-6349-42d2-a091-63a3b6b5523e",
+      "playerName": "Luca Netz",
+      "webName": "Netz",
+      "club": "Nott'm Forest",
+      "sofifaClub": "Nottingham Forest",
+      "sofifaId": 256781,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LWB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "LB"
+      ],
+      "newSecondaries": [
+        "LW",
+        "LB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "LM",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "dd17bddd-dc46-4d81-9a61-d2cd6a0f7664",
+      "playerName": "James McAtee",
+      "webName": "McAtee",
+      "club": "Nott'm Forest",
+      "sofifaClub": "Nottingham Forest",
+      "sofifaId": 264349,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "RW",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "CAM",
+        "RW",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "489d6907-4e86-4173-b6cb-b9ca47f53d62",
+      "playerName": "Abdoul Ouattara",
+      "webName": "Ouattara",
+      "club": "Ipswich Town",
+      "sofifaClub": "Ipswich Town",
+      "sofifaId": 75318,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "RW",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "RWB",
+        "CM",
+        "DM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "CM",
+        "RB",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "9e9a69cf-9777-46e6-a65c-4a3e9da93d17",
+      "playerName": "Shea Charles",
+      "webName": "Charles",
+      "club": "Fulham",
+      "sofifaClub": "Fulham FC",
+      "sofifaId": 276695,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "DM",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "1199464d-eb1e-46d1-851f-1acfeee853b2",
+      "playerName": "Jay Dasilva",
+      "webName": "Dasilva",
+      "club": "Coventry City",
+      "sofifaClub": "Coventry City",
+      "sofifaId": 232755,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LWB",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "LB"
+      ],
+      "newSecondaries": [
+        "LWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "85d12d99-f67a-4eab-94f4-3811dc51fa8c",
+      "playerName": "Victor Torp",
+      "webName": "Torp",
+      "club": "Coventry City",
+      "sofifaClub": "Coventry City",
+      "sofifaId": 241645,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "DM",
+        "AM"
+      ],
+      "newSecondaries": [
+        "CM",
+        "AM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "a5776d6d-c27d-43d8-b7e2-0575b0affdf3",
+      "playerName": "Charalampos Kostoulas",
+      "webName": "Kostoulas",
+      "club": "Brighton",
+      "sofifaClub": "Brighton & Hove Albion",
+      "sofifaId": 73885,
+      "isRostered": true,
+      "isActive": true,
+      "oldPrimary": "ST",
+      "newPrimary": "ST",
+      "oldSecondaries": [
+        "RW",
+        "AM"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "ST"
+      ]
+    },
+    {
+      "playerId": "f55ef4c0-4ca5-4988-ae84-e983a8bd23fb",
+      "playerName": "Joe Gelhardt",
+      "webName": "Gelhardt",
+      "club": "Hull City",
+      "sofifaClub": "Hull City",
+      "sofifaId": 246053,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "AM",
+      "oldSecondaries": [
+        "RW",
+        "ST",
+        "CM"
+      ],
+      "newSecondaries": [
+        "RW",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CAM",
+        "RM",
+        "CM",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "27d39c64-cb27-43ad-8e2b-3aff60b06fa6",
+      "playerName": "Mateo Joseph",
+      "webName": "Mateo Joseph",
+      "club": "Leeds",
+      "sofifaClub": "Leeds United",
+      "sofifaId": 270206,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "ST",
+      "newPrimary": "ST",
+      "oldSecondaries": [
+        "RW"
+      ],
+      "newSecondaries": [
+        "RW",
+        "AM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "ST",
+        "RM",
+        "CAM",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "8557b8ee-986d-4696-bba5-5dd0dfd98b2d",
+      "playerName": "Sean Steur",
+      "webName": "Steur",
+      "club": "Newcastle",
+      "sofifaClub": "Newcastle United",
+      "sofifaId": 77152,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "CM",
+      "oldSecondaries": [
+        "DM"
+      ],
+      "newSecondaries": [
+        "DM",
+        "AM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "CDM",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "a89d856f-75de-4863-8a9b-af8e493f89fd",
+      "playerName": "Anis Mehmeti",
+      "webName": "Mehmeti",
+      "club": "Ipswich Town",
+      "sofifaClub": "Ipswich Town",
+      "sofifaId": 250816,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "AM",
+      "oldSecondaries": [
+        "LW",
+        "ST"
+      ],
+      "newSecondaries": [
+        "LW",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CAM",
+        "LM",
+        "CM",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "a7c3156e-4bee-4e78-93ee-5b8c2e854b38",
+      "playerName": "Romaine Mundle",
+      "webName": "Mundle",
+      "club": "Sunderland",
+      "sofifaClub": "Sunderland AFC",
+      "sofifaId": 268903,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "RW"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "bec55db9-943a-4163-a911-26395fa19022",
+      "playerName": "Kaine Kesler-Hayden",
+      "webName": "Kesler-Hayden",
+      "club": "Coventry City",
+      "sofifaClub": "Coventry City",
+      "sofifaId": 261335,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "RB",
+      "newPrimary": "RWB",
+      "oldSecondaries": [
+        "RWB"
+      ],
+      "newSecondaries": [
+        "LB",
+        "LWB",
+        "RW",
+        "RB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM",
+        "LB",
+        "RW",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "d61c417f-d156-4887-9411-bf2e4425b562",
+      "playerName": "Sidiki Cherif",
+      "webName": "Cherif",
+      "club": "Coventry City",
+      "sofifaClub": "Coventry City",
+      "sofifaId": 277485,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "ST",
+      "newPrimary": "ST",
+      "oldSecondaries": [
+        "LW"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "ST"
+      ]
+    },
+    {
+      "playerId": "9a0cc1a2-c263-4408-9aef-ef463dabab5f",
+      "playerName": "Regan Slater",
+      "webName": "Slater",
+      "club": "Hull City",
+      "sofifaClub": "Hull City",
+      "sofifaId": 241953,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "RB",
+        "CM"
+      ],
+      "newSecondaries": [
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "17d5ad72-0380-4f06-b63e-677aaf3642dc",
+      "playerName": "Kasey McAteer",
+      "webName": "McAteer",
+      "club": "Ipswich Town",
+      "sofifaClub": "Ipswich Town",
+      "sofifaId": 265801,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "RW",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "RW",
+        "CAM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "4e191984-2af9-406c-b6fc-30ea2de72a33",
+      "playerName": "Zavier Gozo",
+      "webName": "Gozo",
+      "club": "Crystal Palace",
+      "sofifaClub": "Crystal Palace",
+      "sofifaId": 278875,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "CAM",
+        "RW",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "0abf515a-0e4b-4b0d-9b13-a7fe653f6074",
+      "playerName": "Josh Eccles",
+      "webName": "Eccles",
+      "club": "Coventry City",
+      "sofifaClub": "Coventry City",
+      "sofifaId": 251555,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "DM",
+        "AM"
+      ],
+      "newSecondaries": [
+        "CM",
+        "AM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "158e31d7-1857-4ba2-a8a0-f94d66f321d0",
+      "playerName": "Lewie Coyle",
+      "webName": "Coyle",
+      "club": "Hull City",
+      "sofifaClub": "Hull City",
+      "sofifaId": 224099,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "LB",
+        "RWB"
+      ],
+      "newSecondaries": [
+        "LB",
+        "LWB",
+        "RWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "LB",
+        "RM",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "83811d85-d0df-48aa-ab0f-1aca4afc8d41",
+      "playerName": "Óscar Zambrano",
+      "webName": "Zambrano",
+      "club": "Hull City",
+      "sofifaClub": "Hull City",
+      "sofifaId": 268599,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "DM",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "11ff33ac-28e8-4134-bd3a-43b8d920c296",
+      "playerName": "Harry Amass",
+      "webName": "Amass",
+      "club": "Man Utd",
+      "sofifaClub": "Manchester United",
+      "sofifaId": 273599,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "LWB"
+      ],
+      "newSecondaries": [
+        "LW",
+        "LB",
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "LM",
+        "CM",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "c06aaf8c-e1f7-4c42-b65b-b9d1ac37e153",
+      "playerName": "Jaouen Hadjam",
+      "webName": "Hadjam",
+      "club": "Brighton",
+      "sofifaClub": "Brighton & Hove Albion",
+      "sofifaId": 258230,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "LW",
+        "LB"
+      ],
+      "newSecondaries": [
+        "LW",
+        "LB",
+        "CB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "LM",
+        "CB",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "240b731c-b4c3-4e60-a55d-8746566c1a7d",
+      "playerName": "Abdülkadir Ömür",
+      "webName": "Ömür",
+      "club": "Hull City",
+      "sofifaClub": "Hull City",
+      "sofifaId": 231777,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "RW",
+        "CM"
+      ],
+      "newSecondaries": [
+        "RWB",
+        "AM",
+        "CM",
+        "DM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "CAM",
+        "CM",
+        "RB",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "54df73da-6644-4a05-ac60-a9c3687645f2",
+      "playerName": "Jake Bidwell",
+      "webName": "Bidwell",
+      "club": "Coventry City",
+      "sofifaClub": "Coventry City",
+      "sofifaId": 196952,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "LWB",
+      "oldSecondaries": [
+        "LWB"
+      ],
+      "newSecondaries": [
+        "LB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "898d0558-2032-41ff-bc00-a31b7d5b9a44",
+      "playerName": "Kieran Dowell",
+      "webName": "Dowell",
+      "club": "Hull City",
+      "sofifaClub": "Hull City",
+      "sofifaId": 226401,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "RW",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "CAM",
+        "RW",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "13303b91-9c75-4c73-9e8a-0af9470defa3",
+      "playerName": "Zadok Yohanna",
+      "webName": "Yohanna",
+      "club": "Brighton",
+      "sofifaClub": "Brighton & Hove Albion",
+      "sofifaId": 80314,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "RW",
+        "CM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "RW",
+        "CAM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "58841852-0cef-4a74-a204-f3b17abf6a06",
+      "playerName": "Jannik Schuster",
+      "webName": "Schuster",
+      "club": "Brentford",
+      "sofifaClub": "Brentford",
+      "sofifaId": 79918,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "LB"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB"
+      ]
+    },
+    {
+      "playerId": "b9432e93-4fc5-48ff-a703-cc84154e0c8d",
+      "playerName": "Ryan McAidoo",
+      "webName": "McAidoo",
+      "club": "Man City",
+      "sofifaClub": "Manchester City",
+      "sofifaId": 81685,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "AM",
+      "newPrimary": "RW",
+      "oldSecondaries": [],
+      "newSecondaries": [],
+      "primaryChanged": true,
+      "secondaryChanged": false,
+      "rawPositions": [
+        "RW",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "2e8276e4-c35d-4f6b-83d1-9a2fe1ecacb3",
+      "playerName": "George Hemmings",
+      "webName": "George Hemmings",
+      "club": "Aston Villa",
+      "sofifaClub": "Aston Villa",
+      "sofifaId": 82350,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "DM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "CM",
+        "AM"
+      ],
+      "newSecondaries": [
+        "LW",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "d77fbb21-6ce0-47a4-84c3-0d5fdd46c728",
+      "playerName": "Jules Ahoka",
+      "webName": "Ahoka",
+      "club": "Sunderland",
+      "sofifaClub": "Sunderland AFC",
+      "sofifaId": 85425,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "DM",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "80887392-8393-4cd9-a6f8-889a1b050eac",
+      "playerName": "Benjamin Fredrick",
+      "webName": "Fredrick",
+      "club": "Brentford",
+      "sofifaClub": "Brentford",
+      "sofifaId": 70781,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "LB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "LW"
+      ],
+      "newSecondaries": [
+        "RB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB",
+        "RB"
+      ]
+    },
+    {
+      "playerId": "db3af38c-fffd-4c60-a7f4-2207f5c40577",
+      "playerName": "Rhys Chadwick",
+      "webName": "Chadwick",
+      "club": "Leeds",
+      "sofifaClub": "Leeds United",
+      "sofifaId": 73353,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CM",
+      "newPrimary": "CM",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "RW",
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "CDM",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "055f000d-1be9-4e7f-82b6-3de6dde9bcf7",
+      "playerName": "Jayden Lienou",
+      "webName": "Lienou",
+      "club": "Leeds",
+      "sofifaClub": "Leeds United",
+      "sofifaId": 85700,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CB",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "LWB"
+      ],
+      "newSecondaries": [
+        "LWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": false,
+      "rawPositions": [
+        "LB",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "7d37c614-8747-46a7-8822-9f51e4f21ad0",
+      "playerName": "Alfie Cresswell",
+      "webName": "Cresswell",
+      "club": "Leeds",
+      "sofifaClub": "Leeds United",
+      "sofifaId": 85912,
+      "isRostered": false,
+      "isActive": true,
+      "oldPrimary": "CM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "RB",
+        "CB"
+      ],
+      "newSecondaries": [
+        "RB",
+        "CB",
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CB",
+        "RB",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "6bd506ef-06c1-4e71-9af1-5196068f9e71",
+      "playerName": "Ladislav Krejcí",
+      "webName": "Krejčí",
+      "club": "Wolves",
+      "sofifaClub": "Wolverhampton Wanderers",
+      "sofifaId": 252064,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "CM",
+        "DM"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB"
+      ]
+    },
+    {
+      "playerId": "1514a465-eaab-44bb-97e7-8ff77cd48741",
+      "playerName": "Kieran Trippier",
+      "webName": "Trippier",
+      "club": "Newcastle",
+      "sofifaClub": "Wolverhampton Wanderers",
+      "sofifaId": 186345,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "RW"
+      ],
+      "newSecondaries": [
+        "RWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "3a16d6e1-4de9-4a49-84fd-6b99774a3396",
+      "playerName": "Kyle Walker-Peters",
+      "webName": "Walker-Peters",
+      "club": "West Ham",
+      "sofifaClub": "West Ham United",
+      "sofifaId": 227927,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RWB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "RB"
+      ],
+      "newSecondaries": [
+        "RWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "559c00db-9759-435e-aa17-97f42fdb45f3",
+      "playerName": "Manor Solomon",
+      "webName": "Solomon",
+      "club": "Spurs",
+      "sofifaClub": "West Ham United",
+      "sofifaId": 246791,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "RW"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "f66b8551-7fd1-4c6f-a3b3-61b7a145c5a8",
+      "playerName": "Kyle Walker",
+      "webName": "Walker",
+      "club": "Burnley",
+      "sofifaClub": "Burnley",
+      "sofifaId": 188377,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "CB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "CB"
+      ]
+    },
+    {
+      "playerId": "518fa26c-7aea-4c35-9bf6-70082851278a",
+      "playerName": "Largie Ramazani",
+      "webName": "Frimpong",
+      "club": "Liverpool",
+      "sofifaClub": "Burnley",
+      "sofifaId": 243134,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RB",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "RW"
+      ],
+      "newSecondaries": [
+        "RW"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": false,
+      "rawPositions": [
+        "LW",
+        "LM",
+        "RM",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "5444aabf-2ce9-474b-8c6d-74786984e5cc",
+      "playerName": "Felipe Rodrigues da Silva",
+      "webName": "Morato",
+      "club": "Nott'm Forest",
+      "sofifaClub": "West Ham United",
+      "sofifaId": 256008,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "LB",
+        "DM"
+      ],
+      "newSecondaries": [
+        "LB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB",
+        "LB"
+      ]
+    },
+    {
+      "playerId": "92cd80f5-169a-4ca9-a492-2a2da4a44da3",
+      "playerName": "Mateus Mané",
+      "webName": "Mané",
+      "club": "Wolves",
+      "sofifaClub": "Wolverhampton Wanderers",
+      "sofifaId": 77593,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "AM",
+      "newPrimary": "AM",
+      "oldSecondaries": [
+        "CM",
+        "RW"
+      ],
+      "newSecondaries": [
+        "LW",
+        "RW",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CAM",
+        "LW",
+        "RW",
+        "CM",
+        "LM",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "0f1543e9-3bb2-4d50-835a-12dc77c9b80a",
+      "playerName": "Jean-Ricner Bellegarde",
+      "webName": "Bellegarde",
+      "club": "Wolves",
+      "sofifaClub": "Wolverhampton Wanderers",
+      "sofifaId": 235456,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "AM",
+      "newPrimary": "CM",
+      "oldSecondaries": [
+        "CM",
+        "LW"
+      ],
+      "newSecondaries": [
+        "LW",
+        "AM",
+        "DM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "CAM",
+        "LW",
+        "CDM",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "d94652fb-3f06-4062-9c65-c9c618dfbeeb",
+      "playerName": "Connor Roberts",
+      "webName": "Roberts",
+      "club": "Burnley",
+      "sofifaClub": "Burnley",
+      "sofifaId": 225147,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "LB",
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "LB",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "ebeaabc3-4bcd-4f36-85a3-93329cfc8c7e",
+      "playerName": "Maxwel Cornet",
+      "webName": "Cornet",
+      "club": "West Ham",
+      "sofifaClub": "West Ham United",
+      "sofifaId": 215798,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LW",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "ST"
+      ],
+      "newSecondaries": [
+        "LWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "LB"
+      ]
+    },
+    {
+      "playerId": "dd903dc6-adf9-43e7-8c5c-c4a9a383049c",
+      "playerName": "Pablo Felipe Pereira de Jesus",
+      "webName": "Pablo",
+      "club": "West Ham",
+      "sofifaClub": "West Ham United",
+      "sofifaId": 264290,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "ST",
+      "newPrimary": "ST",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "AM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "ST",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "a0c29710-b062-4d85-b8e5-18862cb75ad9",
+      "playerName": "Adam Armstrong",
+      "webName": "Armstrong",
+      "club": "Wolves",
+      "sofifaClub": "Wolverhampton Wanderers",
+      "sofifaId": 221841,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "ST",
+      "newPrimary": "ST",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "ST"
+      ]
+    },
+    {
+      "playerId": "22165f4b-9259-4a87-a758-e1d0899862d9",
+      "playerName": "Matt Doherty",
+      "webName": "Doherty",
+      "club": "Wolves",
+      "sofifaClub": "Sheffield United",
+      "sofifaId": 201417,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "RB",
+        "RW"
+      ],
+      "newSecondaries": [
+        "RB",
+        "RWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB",
+        "RB",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "3ea9be2a-2d3b-435e-ac7b-a322264dcd4f",
+      "playerName": "Samuel Iling-Junior",
+      "webName": "Iling Jr",
+      "club": "Aston Villa",
+      "sofifaClub": "Bolton Wanderers",
+      "sofifaId": 272379,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LW",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "LWB",
+        "RW"
+      ],
+      "newSecondaries": [
+        "LWB",
+        "RB",
+        "RWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "RM",
+        "LB",
+        "RB"
+      ]
+    },
+    {
+      "playerId": "bb68f273-d4a7-48a2-beef-725709c6f624",
+      "playerName": "Tariq Lamptey",
+      "webName": "M.Sarr",
+      "club": "Chelsea",
+      "sofifaClub": "Queens Park Rangers",
+      "sofifaId": 242418,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "RWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "d4be7445-9780-4de3-8970-1a8f77ef66bb",
+      "playerName": "Patrick Roberts",
+      "webName": "Roberts",
+      "club": "Sunderland",
+      "sofifaClub": "Birmingham City",
+      "sofifaId": 221982,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CM",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "DM",
+        "AM"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "2cbcf4ac-77a5-40fa-8622-1e24dc32ad63",
+      "playerName": "Jackson Tchatchoua",
+      "webName": "Tchatchoua",
+      "club": "Wolves",
+      "sofifaClub": "Wolverhampton Wanderers",
+      "sofifaId": 262937,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "RW"
+      ],
+      "newSecondaries": [
+        "RWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "cb4d3ae8-86a9-4b1d-8da5-a3e121aa677b",
+      "playerName": "Ben Johnson",
+      "webName": "Johnson",
+      "club": "Ipswich Town",
+      "sofifaClub": "Stoke City",
+      "sofifaId": 241842,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RB",
+      "newPrimary": "RWB",
+      "oldSecondaries": [
+        "LB",
+        "RWB"
+      ],
+      "newSecondaries": [
+        "LB",
+        "RW",
+        "RB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM",
+        "LB",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "e9db4fd1-12ef-46d3-be35-4a5c2833b307",
+      "playerName": "Lewis Dobbin",
+      "webName": "Petrović",
+      "club": "Bournemouth",
+      "sofifaClub": "Southampton FC",
+      "sofifaId": 264039,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "ST"
+      ],
+      "newSecondaries": [
+        "ST",
+        "AM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "ST",
+        "LW",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "62fe75d4-7690-4026-8120-6e281af3d802",
+      "playerName": "Eiran Cashin",
+      "webName": "Palmer",
+      "club": "Chelsea",
+      "sofifaClub": "Derby County",
+      "sofifaId": 263914,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "AM",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "RW",
+        "CM"
+      ],
+      "newSecondaries": [
+        "LB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB",
+        "LB"
+      ]
+    },
+    {
+      "playerId": "d7ae735f-97be-494f-b2b2-0841418fe1cc",
+      "playerName": "Patrick Bamford",
+      "webName": "Leoni",
+      "club": "Liverpool",
+      "sofifaClub": "Sheffield United",
+      "sofifaId": 206534,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CB",
+      "newPrimary": "ST",
+      "oldSecondaries": [],
+      "newSecondaries": [],
+      "primaryChanged": true,
+      "secondaryChanged": false,
+      "rawPositions": [
+        "ST"
+      ]
+    },
+    {
+      "playerId": "7a3d4350-0f26-4ca2-9050-6bb9396b05ac",
+      "playerName": "Marko Stamenić",
+      "webName": "Olusesi",
+      "club": "Spurs",
+      "sofifaClub": "Swansea City",
+      "sofifaId": 259680,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CM",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "AM",
+        "DM"
+      ],
+      "newSecondaries": [
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "6ced2442-1706-4db8-bc90-e0c0195eabb9",
+      "playerName": "Keiber Lamadrid",
+      "webName": "Lamadrid",
+      "club": "West Ham",
+      "sofifaClub": "West Ham United",
+      "sofifaId": 268564,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "LW",
+        "CAM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "f0de60c2-1834-4789-b41a-ade8dd91ccc1",
+      "playerName": "Chiedozie Ogbene",
+      "webName": "Ogbene",
+      "club": "Ipswich Town",
+      "sofifaClub": "Lincoln City",
+      "sofifaId": 231005,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RW",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "RWB"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "db1861f6-3413-46b3-ada2-06241299ca0a",
+      "playerName": "Sam Byram",
+      "webName": "Byram",
+      "club": "Leeds",
+      "sofifaClub": "Middlesbrough FC",
+      "sofifaId": 208892,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LB",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "LWB",
+        "RB"
+      ],
+      "newSecondaries": [
+        "LWB",
+        "RB",
+        "RWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "RB",
+        "LM",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "ede62fb9-8623-426f-8f8c-aace196792f3",
+      "playerName": "Amario Cozier-Duberry",
+      "webName": "Cozier-Duberry",
+      "club": "Brighton",
+      "sofifaClub": "Middlesbrough FC",
+      "sofifaId": 271743,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RW",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "LW"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "3677440a-616a-454e-8b1f-d5bc66985c51",
+      "playerName": "Danny Imray",
+      "webName": "Imray",
+      "club": "Crystal Palace",
+      "sofifaClub": "Wrexham",
+      "sofifaId": 73615,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "RW"
+      ],
+      "newSecondaries": [
+        "RWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "695c11f0-4557-4189-9339-728904934dbd",
+      "playerName": "Myles Peart-Harris",
+      "webName": "Peart-Harris",
+      "club": "Brentford",
+      "sofifaClub": "Middlesbrough FC",
+      "sofifaId": 263582,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "RW"
+      ],
+      "newSecondaries": [
+        "RW",
+        "ST",
+        "AM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "RM",
+        "ST",
+        "LW",
+        "RW",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "53c2662c-53a8-47ea-a23e-d6ffaade4f56",
+      "playerName": "Paris Maghoma",
+      "webName": "Howell",
+      "club": "Brighton",
+      "sofifaClub": "Norwich City",
+      "sofifaId": 243849,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RW",
+      "newPrimary": "CM",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [
+        "RW",
+        "AM",
+        "DM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "CAM",
+        "RM",
+        "CDM",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "2da791ee-3851-42df-86aa-9a3bec0e68e9",
+      "playerName": "Tom Edozie",
+      "webName": "Edozie",
+      "club": "Wolves",
+      "sofifaClub": "Wolverhampton Wanderers",
+      "sofifaId": 75772,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RW",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RW",
+        "CAM",
+        "RM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "3f325a9b-74bf-434b-86c6-545aa7ef3d33",
+      "playerName": "Rio Cardines",
+      "webName": "Cardines",
+      "club": "Crystal Palace",
+      "sofifaClub": "Bristol City",
+      "sofifaId": 80711,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RWB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "LB",
+        "RB"
+      ],
+      "newSecondaries": [
+        "LB",
+        "LWB",
+        "RWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM",
+        "LB",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "b110fca5-44b2-442c-a794-58aae89c3d30",
+      "playerName": "Tawanda Chirewa",
+      "webName": "Chirewa",
+      "club": "Wolves",
+      "sofifaClub": "Wolverhampton Wanderers",
+      "sofifaId": 279519,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "AM",
+        "RW",
+        "LB"
+      ],
+      "newSecondaries": [
+        "RW",
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "CAM",
+        "RM",
+        "LW",
+        "CM",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "00cbbf80-afb3-4c30-a50b-d712f81592e1",
+      "playerName": "Ryan Kavuma-McQueen",
+      "webName": "Kavuma-McQueen",
+      "club": "Chelsea",
+      "sofifaClub": "Portsmouth",
+      "sofifaId": 85676,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LW",
+      "newPrimary": "RW",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "LW"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RM",
+        "LM",
+        "RW",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "7e8df6ee-596a-494d-a4fb-acf56ee85b5d",
+      "playerName": "Enso González",
+      "webName": "Gonzalez",
+      "club": "Wolves",
+      "sofifaClub": "Wolverhampton Wanderers",
+      "sofifaId": 274377,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "RW",
+        "AM"
+      ],
+      "newSecondaries": [
+        "RW"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LW",
+        "RW",
+        "LM",
+        "RM"
+      ]
+    },
+    {
+      "playerId": "efd98582-fad7-48e6-9860-3ef286ed2ec8",
+      "playerName": "Anthony Gordon",
+      "webName": "Gordon",
+      "club": "Newcastle",
+      "sofifaClub": "FC Barcelona",
+      "sofifaId": 242964,
+      "isRostered": true,
+      "isActive": false,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "ST",
+        "RW"
+      ],
+      "newSecondaries": [
+        "ST"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LW",
+        "ST",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "cc36da6d-a57d-4e6b-aa5a-df8a62217169",
+      "playerName": "Gonçalo Manuel Ganchinho Guedes",
+      "webName": "Guedes",
+      "club": "Wolves",
+      "sofifaClub": "Real Sociedad",
+      "sofifaId": 224411,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CM",
+      "newPrimary": "LW",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "RW",
+        "ST",
+        "AM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LW",
+        "RM",
+        "ST",
+        "LM",
+        "RW",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "d29ccfc4-0663-4f16-bfbd-ec9ab34bc2fb",
+      "playerName": "Guido Rodríguez",
+      "webName": "G.Rodriguez",
+      "club": "West Ham",
+      "sofifaClub": "Valencia CF",
+      "sofifaId": 225659,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CM",
+      "newPrimary": "DM",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "b327dd19-13a4-45c8-967b-45ad4d27a8dc",
+      "playerName": "Quilindschy Hartman",
+      "webName": "Hartman",
+      "club": "Burnley",
+      "sofifaClub": "RCD Espanyol",
+      "sofifaId": 271121,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LB",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "LWB"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB"
+      ]
+    },
+    {
+      "playerId": "45f6f561-417b-455e-8da7-3be26a116b9b",
+      "playerName": "Christantus Uche",
+      "webName": "Uche",
+      "club": "Crystal Palace",
+      "sofifaClub": "Getafe CF",
+      "sofifaId": 73374,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "ST",
+      "newPrimary": "ST",
+      "oldSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM",
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "ST",
+        "CAM",
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "b4ddfefb-54f2-495e-8e89-2a3d9da2532e",
+      "playerName": "Manuel Akanji",
+      "webName": "Reijnders",
+      "club": "Man City",
+      "sofifaClub": "Inter Milan",
+      "sofifaId": 229237,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CM",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "DM",
+        "AM"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB"
+      ]
+    },
+    {
+      "playerId": "4f642553-88f9-4c7c-958a-eef5a3b12c46",
+      "playerName": "John Stones",
+      "webName": "Stones",
+      "club": "Man City",
+      "sofifaClub": "Inter Milan",
+      "sofifaId": 203574,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "RB",
+        "DM"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB"
+      ]
+    },
+    {
+      "playerId": "a51adb96-34c7-4d1d-8048-e6cd975ca040",
+      "playerName": "Djed Spence",
+      "webName": "Spence",
+      "club": "Spurs",
+      "sofifaClub": "Inter Milan",
+      "sofifaId": 243702,
+      "isRostered": true,
+      "isActive": false,
+      "oldPrimary": "LB",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "LWB",
+        "RB"
+      ],
+      "newSecondaries": [
+        "RB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "RB"
+      ]
+    },
+    {
+      "playerId": "02fe2fe0-42ad-4e03-8e53-4baebab53fac",
+      "playerName": "Nick Woltemade",
+      "webName": "Woltemade",
+      "club": "Newcastle",
+      "sofifaClub": "Juventus FC",
+      "sofifaId": 254022,
+      "isRostered": true,
+      "isActive": false,
+      "oldPrimary": "ST",
+      "newPrimary": "ST",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "AM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "ST",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "7dca8805-e8f7-412e-bb97-efb438d93e57",
+      "playerName": "Trevoh Chalobah",
+      "webName": "Chalobah",
+      "club": "Chelsea",
+      "sofifaClub": "Como",
+      "sofifaId": 230918,
+      "isRostered": true,
+      "isActive": false,
+      "oldPrimary": "CB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "RB"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB"
+      ]
+    },
+    {
+      "playerId": "de02c9c7-6550-4d4c-ac77-8f8967cf161e",
+      "playerName": "Nathan Patterson",
+      "webName": "Patterson",
+      "club": "Everton",
+      "sofifaClub": "Torino FC",
+      "sofifaId": 257896,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "RWB"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB"
+      ]
+    },
+    {
+      "playerId": "31243507-688c-43b5-ac92-840f172da4ff",
+      "playerName": "Cody Drameh",
+      "webName": "Drameh",
+      "club": "Hull City",
+      "sofifaClub": "Genoa",
+      "sofifaId": 254529,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "LB"
+      ],
+      "newSecondaries": [
+        "LB",
+        "LWB",
+        "RWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "LB",
+        "RM",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "d84d8b90-69db-4709-8f91-f35b3e2e3c88",
+      "playerName": "Idrissa Gueye",
+      "webName": "Gana",
+      "club": "Everton",
+      "sofifaClub": "Udinese Calcio",
+      "sofifaId": 76411,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "DM",
+      "newPrimary": "ST",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "ST"
+      ]
+    },
+    {
+      "playerId": "6c6ab314-47ec-4211-9fd4-3e6b43744ba0",
+      "playerName": "Christopher Nkunku",
+      "webName": "Iroegbunam",
+      "club": "Everton",
+      "sofifaClub": "RB Leipzig",
+      "sofifaId": 232411,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "DM",
+      "newPrimary": "ST",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "AM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "ST",
+        "CAM"
+      ]
+    },
+    {
+      "playerId": "9bf7fcd6-8fd9-45bd-a1de-a89da0964829",
+      "playerName": "Albert Sambi Lokonga",
+      "webName": "M.Bizot",
+      "club": "Aston Villa",
+      "sofifaClub": "Hamburger SV",
+      "sofifaId": 241928,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CM",
+      "newPrimary": "CM",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CM",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "7b8988a6-e607-4de5-86a1-ce30e6926f34",
+      "playerName": "Ethan Nwaneri",
+      "webName": "Nwaneri",
+      "club": "Arsenal",
+      "sofifaClub": "Borussia Dortmund",
+      "sofifaId": 271807,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RW",
+      "newPrimary": "RW",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RW",
+        "CAM",
+        "RM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "bbbe8b64-103d-4ae4-ba10-d68643576914",
+      "playerName": "Mikey Moore",
+      "webName": "Moore",
+      "club": "Spurs",
+      "sofifaClub": "1. FC Köln",
+      "sofifaId": 72159,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LW",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "AM"
+      ],
+      "newSecondaries": [
+        "AM",
+        "CM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LW",
+        "LM",
+        "CAM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "b0b726db-6482-45ba-9421-fe1839e53520",
+      "playerName": "David Møller Wolfe",
+      "webName": "Møller Wolfe",
+      "club": "Wolves",
+      "sofifaClub": "Hamburger SV",
+      "sofifaId": 262135,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LWB",
+      "newPrimary": "LB",
+      "oldSecondaries": [
+        "LB"
+      ],
+      "newSecondaries": [
+        "LWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "c3245195-a8bc-4fb1-a273-9ecab3e7104c",
+      "playerName": "Reigan Heskey",
+      "webName": "Heskey",
+      "club": "Man City",
+      "sofifaClub": "1. FC Köln",
+      "sofifaId": 82841,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "AM",
+      "newPrimary": "LW",
+      "oldSecondaries": [
+        "DM",
+        "CM"
+      ],
+      "newSecondaries": [
+        "RW"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LW",
+        "RW",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "e0d19650-ffe3-4869-a949-5da670d4fa60",
+      "playerName": "Illia Zabarnyi",
+      "webName": "Cook",
+      "club": "Bournemouth",
+      "sofifaClub": "Paris Saint-Germain",
+      "sofifaId": 258781,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "DM",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "RB",
+        "CM"
+      ],
+      "newSecondaries": [],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB"
+      ]
+    },
+    {
+      "playerId": "5a5b6202-223e-4dc4-a0df-db2f2c3a3945",
+      "playerName": "Tyler Morton",
+      "webName": "Lewis",
+      "club": "Man City",
+      "sofifaClub": "Olympique Lyonnais",
+      "sofifaId": 265459,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LB",
+      "newPrimary": "DM",
+      "oldSecondaries": [
+        "CM"
+      ],
+      "newSecondaries": [
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": false,
+      "rawPositions": [
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "f2d54dcc-f5f7-4f5a-a5ab-7faa0f0839e3",
+      "playerName": "Emerson Palmieri dos Santos",
+      "webName": "Emerson",
+      "club": "West Ham",
+      "sofifaClub": "Olympique de Marseille",
+      "sofifaId": 210736,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CB",
+      "newPrimary": "LB",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "LWB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LB",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "31ec9bf4-5d4c-4b92-91b0-feae73093f60",
+      "playerName": "Martial Godo",
+      "webName": "Bornauw",
+      "club": "Leeds",
+      "sofifaClub": "RC Strasbourg Alsace",
+      "sofifaId": 271940,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CB",
+      "newPrimary": "LW",
+      "oldSecondaries": [],
+      "newSecondaries": [],
+      "primaryChanged": true,
+      "secondaryChanged": false,
+      "rawPositions": [
+        "LM",
+        "LW"
+      ]
+    },
+    {
+      "playerId": "40a05184-2d85-444e-bdec-06a6223406df",
+      "playerName": "Romain Faivre",
+      "webName": "Ji-soo",
+      "club": "Brentford",
+      "sofifaClub": "AJ Auxerre",
+      "sofifaId": 242577,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CB",
+      "newPrimary": "RW",
+      "oldSecondaries": [],
+      "newSecondaries": [],
+      "primaryChanged": true,
+      "secondaryChanged": false,
+      "rawPositions": [
+        "RM",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "5d410351-57b8-4408-81a5-b63e6dc1aa5d",
+      "playerName": "Axel Tuanzebe",
+      "webName": "Tuanzebe",
+      "club": "Burnley",
+      "sofifaClub": "AJ Auxerre",
+      "sofifaId": 231485,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "RB"
+      ],
+      "newSecondaries": [
+        "RB",
+        "DM"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB",
+        "RB",
+        "CDM"
+      ]
+    },
+    {
+      "playerId": "e1316dd9-53f8-476e-9605-df83c8f7ca79",
+      "playerName": "Eliezer Mayenda",
+      "webName": "Mayenda",
+      "club": "Sunderland",
+      "sofifaClub": "Stade Rennais",
+      "sofifaId": 271248,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "ST",
+      "newPrimary": "ST",
+      "oldSecondaries": [
+        "RW",
+        "LW"
+      ],
+      "newSecondaries": [
+        "RW"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "ST",
+        "RM",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "85519343-f602-47b1-a847-e34a7fb3760c",
+      "playerName": "Luca Koleosho",
+      "webName": "Sarr",
+      "club": "Crystal Palace",
+      "sofifaClub": "Paris FC",
+      "sofifaId": 266041,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CB",
+      "newPrimary": "LW",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "RW"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "RM",
+        "LW",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "c752d930-5ba5-4414-bf83-3375bb505b12",
+      "playerName": "Timothée Pembélé",
+      "webName": "Masuaku",
+      "club": "Sunderland",
+      "sofifaClub": "Le Havre AC",
+      "sofifaId": 257270,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "CB"
+      ],
+      "newSecondaries": [
+        "LB",
+        "LWB",
+        "RWB",
+        "CB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "CB",
+        "LB",
+        "RM",
+        "LM"
+      ]
+    },
+    {
+      "playerId": "67dd01ae-f582-47d9-908c-a3241ca95d21",
+      "playerName": "Jakub Kiwior",
+      "webName": "Hincapie",
+      "club": "Arsenal",
+      "sofifaClub": "FC Porto",
+      "sofifaId": 265693,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "LB",
+      "newPrimary": "CB",
+      "oldSecondaries": [
+        "CB"
+      ],
+      "newSecondaries": [
+        "LB"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CB",
+        "LB"
+      ]
+    },
+    {
+      "playerId": "200c6740-908b-48cb-a365-891984908be0",
+      "playerName": "Enzo Barrenechea",
+      "webName": "Abraham",
+      "club": "Aston Villa",
+      "sofifaClub": "SL Benfica",
+      "sofifaId": 246871,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "ST",
+      "newPrimary": "DM",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "CM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CDM",
+        "CM"
+      ]
+    },
+    {
+      "playerId": "e667bfdb-79f1-47e7-8789-7503f63275ac",
+      "playerName": "Claudio Echeverri",
+      "webName": "Echeverri",
+      "club": "Man City",
+      "sofifaClub": "SL Benfica",
+      "sofifaId": 276528,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "AM",
+      "newPrimary": "AM",
+      "oldSecondaries": [
+        "LW",
+        "CM",
+        "ST"
+      ],
+      "newSecondaries": [
+        "ST"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "CAM",
+        "ST"
+      ]
+    },
+    {
+      "playerId": "6bd6710b-2d00-4e10-9898-c439c2644fac",
+      "playerName": "Luis Guilherme Lira dos Santos",
+      "webName": "L.Guilherme",
+      "club": "West Ham",
+      "sofifaClub": "Sporting CP",
+      "sofifaId": 72754,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "CM",
+      "newPrimary": "LW",
+      "oldSecondaries": [],
+      "newSecondaries": [
+        "RW",
+        "AM"
+      ],
+      "primaryChanged": true,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "LM",
+        "RM",
+        "CAM",
+        "LW",
+        "RW"
+      ]
+    },
+    {
+      "playerId": "a2f7e668-aeb5-4328-a681-0d249a61298e",
+      "playerName": "Leo Shahar",
+      "webName": "Shahar",
+      "club": "Newcastle",
+      "sofifaClub": "FC Arouca",
+      "sofifaId": 72281,
+      "isRostered": false,
+      "isActive": false,
+      "oldPrimary": "RB",
+      "newPrimary": "RB",
+      "oldSecondaries": [
+        "RW"
+      ],
+      "newSecondaries": [
+        "RWB"
+      ],
+      "primaryChanged": false,
+      "secondaryChanged": true,
+      "rawPositions": [
+        "RB",
+        "RM"
+      ]
+    }
+  ]
+}

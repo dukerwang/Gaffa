@@ -418,18 +418,34 @@ async function runSync(preloadedTeams: SoFifaTeamDetail[] | null) {
             if (pCat === 'wing') primary = wing;
           }
           if (hasFB) {
-            // Preserve explicit SoFIFA WB vs FB — do not flatten LWB→LB.
-            if (hasExplicitWB) {
+            // Preserve explicit SoFIFA WB vs FB — or grant WB if role indicates wingback.
+            const hasWBRole = roles.some((r) => {
+              const l = r.toLowerCase();
+              return l.includes('wingback') || l.includes('wing-back');
+            });
+            const firstRoleLower = (roles[0] || '').toLowerCase();
+            const isAttackingOrInverted =
+              firstRoleLower.includes('attacking wingback') || firstRoleLower.includes('inverted wingback');
+
+            if (hasWBRole) {
               finalSet.add(wb);
-              if (pCat === 'fb' && sofifaPrimaryRaw === wbRaw) primary = wb;
-            }
-            if (hasExplicitFB) {
               finalSet.add(fb);
-              if (pCat === 'fb' && sofifaPrimaryRaw === fbRaw) primary = fb;
-            }
-            if (!hasExplicitWB && !hasExplicitFB) {
-              finalSet.add(fb);
-              if (pCat === 'fb') primary = fb;
+              if (pCat === 'fb') {
+                primary = hasExplicitWB || isAttackingOrInverted ? wb : fb;
+              }
+            } else {
+              if (hasExplicitWB) {
+                finalSet.add(wb);
+                if (pCat === 'fb' && sofifaPrimaryRaw === wbRaw) primary = wb;
+              }
+              if (hasExplicitFB) {
+                finalSet.add(fb);
+                if (pCat === 'fb' && sofifaPrimaryRaw === fbRaw) primary = fb;
+              }
+              if (!hasExplicitWB && !hasExplicitFB) {
+                finalSet.add(fb);
+                if (pCat === 'fb') primary = fb;
+              }
             }
           }
           return;
@@ -455,8 +471,13 @@ async function runSync(preloadedTeams: SoFifaTeamDetail[] | null) {
 
         // 3. Has FB and Mid but no Wing -> Look at roles
         if (hasFB && hasMid && !hasWing) {
+          const hasWBRole = roles.some((r) => {
+            const l = r.toLowerCase();
+            return l.includes('wingback') || l.includes('wing-back');
+          });
           const firstRoleLower = (roles[0] || '').toLowerCase();
-          const isAttackingOrInverted = firstRoleLower.includes('attacking wingback') || firstRoleLower.includes('inverted wingback');
+          const isAttackingOrInverted =
+            firstRoleLower.includes('attacking wingback') || firstRoleLower.includes('inverted wingback');
 
           if (isAttackingOrInverted) {
             if (pCat === 'fb' || pCat === 'mid') primary = wb;
@@ -483,8 +504,20 @@ async function runSync(preloadedTeams: SoFifaTeamDetail[] | null) {
           finalSet.add(mapped as GranularPosition);
         }
       }
-      if (allRaw.has('LWB')) finalSet.add('LWB');
-      if (allRaw.has('RWB')) finalSet.add('RWB');
+      const fullName = sp.fullName || [sp.firstName, sp.lastName].filter(Boolean).join(' ');
+      const common = sp.commonName || '';
+
+      const TACTICAL_HYBRID_PROFILES: Record<string, GranularPosition[]> = {
+        'Pedro Lomba Neto': ['RWB', 'LWB'],
+        'Geovany Tcherno Quenda': ['RWB'],
+      };
+
+      const hybridPositions = TACTICAL_HYBRID_PROFILES[fullName] || TACTICAL_HYBRID_PROFILES[common];
+      if (hybridPositions) {
+        for (const hp of hybridPositions) {
+          finalSet.add(hp);
+        }
+      }
 
       if (primary && !finalSet.has(primary)) {
         finalSet.add(primary);
@@ -494,8 +527,6 @@ async function runSync(preloadedTeams: SoFifaTeamDetail[] | null) {
       const finalSecondary = Array.from(finalSet).filter(p => p !== primary);
 
       // Match to our DB by name
-      const fullName = sp.fullName || [sp.firstName, sp.lastName].filter(Boolean).join(' ');
-      const common = sp.commonName || '';
       const normFull = normalizeName(fullName);
       const normCommon = normalizeName(common);
 
@@ -503,48 +534,6 @@ async function runSync(preloadedTeams: SoFifaTeamDetail[] | null) {
         normFull, normCommon,
         firstLast(normFull), firstLast(normCommon),
       ])).filter(Boolean) as string[];
-
-      let dbMatch: DbPlayer | null = null;
-      for (const c of candidates) {
-        const matches = nameMap.get(c) ?? [];
-        if (matches.length === 0) continue;
-
-        // Find a candidate that matches the club name or shares significant name tokens
-        for (const candidate of matches) {
-          const dbTeamNorm = normalizeTeam(candidate.pl_team ?? '');
-          const sfTeamNorm = normalizeTeam(team.name ?? '');
-
-          // Team match (e.g. "Man City" vs "Manchester City")
-          const teamMatches =
-            !dbTeamNorm ||
-            !sfTeamNorm ||
-            dbTeamNorm === sfTeamNorm ||
-            dbTeamNorm.includes(sfTeamNorm) ||
-            sfTeamNorm.includes(dbTeamNorm);
-
-          const pTokens = significantTokens(`${candidate.name}`);
-          const sfTokens = significantTokens(`${fullName} ${common}`);
-          let sharedTokens = 0;
-          for (const t of pTokens) {
-            if (sfTokens.has(t)) sharedTokens++;
-          }
-
-          const exactNameMatches =
-            normFull === normalizeName(candidate.name) ||
-            (normCommon && normCommon === normalizeName(candidate.name));
-
-          // Guard against assigning field positions to a known Goalkeeper or vice versa unless full names strongly match
-          const positionMismatch =
-            (candidate.primary_position === 'GK' && primary !== 'GK') ||
-            (candidate.primary_position !== 'GK' && primary === 'GK');
-
-          if ((teamMatches || exactNameMatches) && (sharedTokens > 0 || exactNameMatches) && !positionMismatch) {
-            dbMatch = candidate;
-            break;
-          }
-        }
-        if (dbMatch) break;
-      }
 
       const MANUAL_OVERRIDES: Record<string, string> = {
         'Louis Jordan Beyer': 'Jordan Beyer',
@@ -558,15 +547,66 @@ async function runSync(preloadedTeams: SoFifaTeamDetail[] | null) {
         'Eli Junior Kroupi': 'Junior Kroupi',
         'Adilson Angel Abreu de Almeida Gomés': 'Angel Gomes',
         'James William McConnell': 'James McConnell',
-        'Lewis William Orford': 'Lewis Orford'
+        'Lewis William Orford': 'Lewis Orford',
+        'Nicolás González Iglesias': 'Nico González',
+        'Nicolas Gonzalez Iglesias': 'Nico González',
       };
 
-      if (!dbMatch && MANUAL_OVERRIDES[fullName]) {
+      let dbMatch: DbPlayer | null = null;
+      if (MANUAL_OVERRIDES[fullName]) {
         dbMatch = nameMap.get(normalizeName(MANUAL_OVERRIDES[fullName]))?.[0] ?? null;
       }
-
       if (!dbMatch && common && MANUAL_OVERRIDES[common]) {
         dbMatch = nameMap.get(normalizeName(MANUAL_OVERRIDES[common]))?.[0] ?? null;
+      }
+
+      if (!dbMatch) {
+        for (const c of candidates) {
+          const matches = nameMap.get(c) ?? [];
+          if (matches.length === 0) continue;
+
+          // Find a candidate that matches the club name or shares significant name tokens
+          for (const candidate of matches) {
+            const dbTeamNorm = normalizeTeam(candidate.pl_team ?? '');
+            const sfTeamNorm = normalizeTeam(team.name ?? '');
+
+            // Team match (e.g. "Man City" vs "Manchester City")
+            const teamMatches =
+              !dbTeamNorm ||
+              !sfTeamNorm ||
+              dbTeamNorm === sfTeamNorm ||
+              dbTeamNorm.includes(sfTeamNorm) ||
+              sfTeamNorm.includes(dbTeamNorm);
+
+            // Strict club validation for active Premier League players:
+            // An active Premier League player at Newcastle cannot match a player at Juventus or another foreign club.
+            if (dbTeamNorm && sfTeamNorm && !teamMatches) {
+              continue;
+            }
+
+            const pTokens = significantTokens(`${candidate.name}`);
+            const sfTokens = significantTokens(`${fullName} ${common}`);
+            let sharedTokens = 0;
+            for (const t of pTokens) {
+              if (sfTokens.has(t)) sharedTokens++;
+            }
+
+            const exactNameMatches =
+              normFull === normalizeName(candidate.name) ||
+              (normCommon && normCommon === normalizeName(candidate.name));
+
+            // Guard against assigning field positions to a known Goalkeeper or vice versa unless full names strongly match
+            const positionMismatch =
+              (candidate.primary_position === 'GK' && primary !== 'GK') ||
+              (candidate.primary_position !== 'GK' && primary === 'GK');
+
+            if ((teamMatches || exactNameMatches) && (sharedTokens > 0 || exactNameMatches) && !positionMismatch) {
+              dbMatch = candidate;
+              break;
+            }
+          }
+          if (dbMatch) break;
+        }
       }
 
       // Fuzzy matching is completely disabled to guarantee 100% precision and zero false positives.
