@@ -148,7 +148,7 @@ export default function FreeAgentsClient({
 
   return (
     <div className={styles.page}>
-      <TransfersSubNav leagueId={leagueId} counts={model.counts} />
+      <TransfersSubNav leagueId={leagueId} counts={model.counts} listings={model.league.is_dynasty !== false} />
 
       <header className={styles.header}>
         <div>
@@ -352,6 +352,7 @@ export default function FreeAgentsClient({
           myRoster={model.myRoster}
           academy={model.academy}
           bidFloor={model.league.free_agent_bid_floor ?? 0.5}
+          redraft={model.league.is_dynasty === false}
           onDone={() => { router.refresh(); load(); }}
         />
       )}

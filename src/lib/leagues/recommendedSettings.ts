@@ -1,3 +1,5 @@
+import { REDRAFT_BUDGET } from './features';
+
 export type LeagueSizeProfile = 'casual' | 'standard' | 'deep';
 
 export interface RecommendedSettings {
@@ -51,7 +53,12 @@ export function computeRecommendedSettings({
   const rosterSize = ROSTER_BANDS[profile][bandIndex(maxTeams)] - (isDynasty ? 0 : 2);
   const benchSize = Math.round(rosterSize * 0.2);
   const irSize = rosterSize < 18 ? 1 : rosterSize < 23 ? 2 : 3;
-  const faabBudget = clamp(round50((FAAB_BASE_AT_10[profile] * 10) / maxTeams), 50, 500);
+  // Redraft resets every season and only buys free agents, so the budget just
+  // sets the price labels (scratch/redraft-economy-sim). €100m is the number
+  // a FAAB player already knows.
+  const faabBudget = isDynasty
+    ? clamp(round50((FAAB_BASE_AT_10[profile] * 10) / maxTeams), 50, 500)
+    : REDRAFT_BUDGET;
 
   return { rosterSize, benchSize, irSize, faabBudget };
 }

@@ -419,7 +419,7 @@ export default function DealsClient({
 
   return (
     <div className={styles.page}>
-      <TransfersSubNav leagueId={leagueId} counts={model.counts} />
+      <TransfersSubNav leagueId={leagueId} counts={model.counts} listings={model.league.is_dynasty !== false} />
 
       <header className={styles.header}>
         <div>

@@ -31,6 +31,7 @@ import { resolveCurrentGw } from '@/lib/season/currentGameweek';
 import { resolveLineupEditMatchup } from '@/lib/lineups/editTarget';
 import { normalizeMatchupLineup } from '@/lib/lineups/normalizeMatchupLineup';
 import { buildFacilityViews, effectiveSlots, type FacilityView, type TeamSlotOverrides } from '@/lib/facilities/facilities';
+import { leagueFeatures, type LeagueFeatures } from '@/lib/leagues/features';
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -131,6 +132,8 @@ export interface ClubProps {
     academyAgeLimit: number;
     gw: number;
     crestConfig: CrestConfig | null;
+    /** What this league's format includes (redraft switches some systems off). */
+    features: LeagueFeatures;
   };
   standing: {
     rank: number | null;
@@ -178,7 +181,7 @@ export async function loadClubView(
       id, user_id, team_name, faab_budget, crest_config, league_id,
       academy_slots, ir_slots, loan_out_slots,
       league:leagues(id, name, season, current_season, previous_season, status,
-        roster_size, taxi_size, taxi_age_limit, retained_slots, ir_size, max_loan_outs)
+        roster_size, taxi_size, taxi_age_limit, retained_slots, ir_size, max_loan_outs, is_dynasty)
     `,
     )
     .eq('league_id', leagueId);
@@ -201,6 +204,7 @@ export async function loadClubView(
     retained_slots: number | null;
     ir_size: number | null;
     max_loan_outs: number | null;
+    is_dynasty: boolean | null;
   };
 
   const slots = effectiveSlots(team as TeamSlotOverrides, league);
@@ -573,6 +577,7 @@ export async function loadClubView(
       academyAgeLimit: league.taxi_age_limit ?? 21,
       gw: currentGw,
       crestConfig: (team as any).crest_config ?? null,
+      features: leagueFeatures(league),
     },
     standing,
     entries,

@@ -22,6 +22,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { distributeAllPrizes, type PrizeEntry } from './prizeDistribution';
+import { isRedraft } from '@/lib/leagues/features';
 import { insertMatchups } from '@/lib/schedule/insertMatchups';
 import { createAllTournaments, type CreateTournamentResult } from '@/lib/tournaments/createTournaments';
 import { recomputePositionRanks } from '@/lib/stats/seasonStats';
@@ -602,8 +603,12 @@ export async function runSeasonReset(
   // the archive RPC leaves them empty for this pass to fill (migration 085).
   await recomputePositionRanks(admin, seasonFrom);
 
-  // Step 3: Distribute prizes
-  const { paid: prizesPaid, totalFaab: totalPrizeFaab } = await distributeAllPrizes(admin, leagueId, seasonFrom);
+  // Step 3: Distribute prizes. Not in redraft: every Club Balance resets for
+  // the new season, so prize money would be gone the moment it arrived.
+  const { data: format } = await admin.from('leagues').select('is_dynasty').eq('id', leagueId).single();
+  const { paid: prizesPaid, totalFaab: totalPrizeFaab } = isRedraft(format)
+    ? { paid: [] as PrizeEntry[], totalFaab: 0 }
+    : await distributeAllPrizes(admin, leagueId, seasonFrom);
 
   // Step 4: Reset matchup schedule
   const matchupsReset = await resetMatchups(admin, leagueId);

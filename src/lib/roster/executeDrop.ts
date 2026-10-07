@@ -2,6 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { getDepartureCompensationRate } from '@/lib/transfers/compensation';
 import { initialAuctionExpiry } from '@/lib/auction/timer';
 import { getLeagueAuctionSettings } from '@/lib/auction/leagueAuctionSettings';
+import { leagueFeatures } from '@/lib/leagues/features';
 
 export async function executeDrop(
     admin: SupabaseClient,
@@ -48,8 +49,11 @@ export async function executeDrop(
 
     const marketValue = Number(player.market_value || 0);
 
-    // Severance fee: 20% of market value (rounded down), minimum €2m — charged on plain drops only
-    const severanceFee = actionType === 'drop' ? Math.max(2, Math.floor(marketValue * 0.2)) : 0;
+    // Severance fee: 20% of market value (rounded down), minimum €2m — charged on
+    // plain drops only, and never in a redraft league, where dropping is routine.
+    const { data: league } = await admin.from('leagues').select('is_dynasty').eq('id', team.league_id).single();
+    const severanceFee =
+        actionType === 'drop' && leagueFeatures(league).severance ? Math.max(2, Math.floor(marketValue * 0.2)) : 0;
 
     // Priced off the league's configured rate, not a literal. This path used to
     // hardcode 0.8 while the relegation sweep used COMPENSATION_RATE = 1.0, so

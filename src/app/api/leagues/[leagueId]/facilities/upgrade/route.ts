@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { FACILITY_KEYS, type FacilityKey } from '@/lib/facilities/facilities';
+import { FEATURE_OFF_MESSAGE, leagueFeatures } from '@/lib/leagues/features';
 
 interface Props {
   params: Promise<{ leagueId: string }>;
@@ -46,6 +47,11 @@ export async function POST(req: NextRequest, { params }: Props) {
     .maybeSingle();
 
   if (!team) return NextResponse.json({ error: 'You do not have a club in this league.' }, { status: 403 });
+
+  const { data: format } = await admin.from('leagues').select('is_dynasty').eq('id', leagueId).single();
+  if (!leagueFeatures(format).facilities) {
+    return NextResponse.json({ error: FEATURE_OFF_MESSAGE.facilities }, { status: 403 });
+  }
 
   const { data, error } = await admin.rpc('purchase_facility_upgrade_rpc', {
     p_team_id: team.id,
