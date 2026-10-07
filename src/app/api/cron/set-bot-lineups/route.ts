@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { processMatchupsForGameweek } from '@/lib/scoring/matchupProcessor';
 import { generateValidLineup } from '@/lib/lineups/generateValidLineup';
+import { runCaretakers } from '@/lib/caretaker/runCaretakers';
 
 export const maxDuration = 60;
 
@@ -14,6 +15,16 @@ export async function GET(req: NextRequest) {
     }
 
     const admin = createAdminClient();
+
+    // Clubs with no manager (the Caretaker runs them). Runs every morning so
+    // the lineup reflects the latest injury news before the weekend's first
+    // kickoff; it leaves a club alone once any of its players has kicked off.
+    let caretakers: Awaited<ReturnType<typeof runCaretakers>> = [];
+    try {
+        caretakers = await runCaretakers(admin);
+    } catch (err: any) {
+        console.error('[set-bot-lineups] caretaker error:', err);
+    }
 
     // 2. Get current gameweek from FPL
     let currentGw = 1;
@@ -46,7 +57,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (matchups.length === 0) {
-        return NextResponse.json({ ok: true, message: `No matchups for GW ${currentGw}`, gameweek: currentGw });
+        return NextResponse.json({ ok: true, message: `No matchups for GW ${currentGw}`, gameweek: currentGw, caretakers });
     }
 
     // 4. Find bot teams by team_name containing 'Bot' (e.g. 'FC Bot 1', 'Bot FC 2')
@@ -136,5 +147,6 @@ export async function GET(req: NextRequest) {
         prevGwLineupCount: prevLineupByTeam.size,
         updatedCount,
         debug: debugLog.slice(0, 10), // first 10 for brevity
+        caretakers,
     });
 }
