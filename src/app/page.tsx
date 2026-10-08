@@ -30,10 +30,9 @@ export default async function RootPage() {
   if (user) redirect('/dashboard');
 
   const [fpl, season] = await Promise.all([getFplStatus(), getCurrentFplSeason()]);
-  const settledGw = fpl.isFinished && !fpl.isLive ? fpl.currentGw : fpl.currentGw - 1;
   const [fixtures, showcase] = await Promise.all([
     fpl.displayGw ? getGameweekFixtures(fpl.displayGw) : Promise.resolve([]),
-    loadShowcase(season, settledGw),
+    loadShowcase(),
   ]);
 
   return (

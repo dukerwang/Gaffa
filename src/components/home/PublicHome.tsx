@@ -292,7 +292,7 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
 
           <div className={styles.twoCol}>
             <div className={styles.board}>
-              {[comparison.hero, ...comparison.scorers].map((p, i) => (
+              {[comparison.hero, comparison.scorer].map((p, i) => (
                 <div key={p.playerId} className={`${styles.rate} ${i === 0 ? styles.rateTop : ''}`}>
                   <Portrait
                     size="md"
@@ -332,10 +332,8 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
 
             <div>
               <p className={styles.prose}>
-                {comparison.scorers.length > 1
-                  ? `${oxford(comparison.scorers.map((s) => s.name))} both scored in Matchweek ${comparison.gameweek}. `
-                  : `${comparison.scorers[0].name} scored in Matchweek ${comparison.gameweek}. `}
-                {comparison.hero.name} didn&rsquo;t, and he rated higher than {comparison.scorers.length > 1 ? 'both' : comparison.scorers[0].name}
+                {comparison.scorer.name} scored in Matchweek {comparison.gameweek}. {comparison.hero.name} didn&rsquo;t,
+                and he rated higher than {comparison.scorer.name}
                 {comparison.heroWhy ? `, with ${comparison.heroWhy}.` : '.'}
               </p>
               <p className={styles.prose}>

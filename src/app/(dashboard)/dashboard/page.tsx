@@ -33,8 +33,7 @@ export default async function DashboardPage() {
   // No clubs yet: the same front page a visitor sees, with the actions going
   // straight to create and join.
   if (model.cards.length === 0) {
-    const settledGw = fpl.isFinished && !fpl.isLive ? fpl.currentGw : fpl.currentGw - 1;
-    const showcase = await loadShowcase(season, settledGw);
+    const showcase = await loadShowcase();
     return (
       <PublicHome
         showcase={showcase}
