@@ -1,11 +1,11 @@
 /* ==========================================================
    Lineup Builder.
 
-   Composed from the same parts as the dashboard (DESIGN.md § 3b): a green
-   shelf under the topbar, cards that rise out of its bottom edge on a shadow
-   rather than a border, and one dark block for the action. The pitch is the
-   shipped ReadOnlyFormationBoard, not a second one. Formation pills mirror the
-   lineup page's. Every colour is a token, so both themes follow.
+   One board, like the lineup page: a head that carries the lineup's name, its
+   progress and its actions at one scale, a formation bar, then the pitch beside
+   a Starting XI rail, divided by a hairline. The pitch is the shipped
+   ReadOnlyFormationBoard. Buttons, pills and the rail follow the lineup page's
+   rules. Every colour is a token, so both themes follow.
    ========================================================== */
 
 .page {
@@ -14,126 +14,111 @@
   padding-bottom: var(--s16);
 }
 
-/* ---------- the shelf ---------- */
-.shelf {
-  --shelf-a: var(--color-topbar);
-  --shelf-b: color-mix(in oklab, var(--color-topbar) 94%, white);
-  --shelf-ink: var(--color-text-inverse);
-  --shelf-soft: color-mix(in oklab, var(--color-text-inverse) 68%, var(--color-topbar));
-  position: relative;
-  margin-top: calc(var(--space-8) * -1);
-  padding: var(--s8) 0 96px;
-  color: var(--shelf-ink);
-  border-image: repeating-linear-gradient(90deg, var(--shelf-a) 0 36px, var(--shelf-b) 36px 72px) fill 0 / 0 / 0 100vmax;
-}
+.board { display: flex; flex-direction: column; }
 
-.shelfInner {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas: 'tile title pills';
-  align-items: end;
-  gap: var(--s6);
-}
-
-.tile {
-  grid-area: tile;
+/* ---------- head ---------- */
+.head {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 14px;
-  background: var(--color-bg-card);
+  justify-content: space-between;
+  gap: var(--s5);
+  padding: var(--s5) var(--s5) var(--s4);
+}
+.titleBlock { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: var(--s2); }
+.titleInput {
+  width: 100%;
+  padding: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-32);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
   color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  transition: border-color var(--dur-fast) var(--ease-standard);
 }
-.tileFigure {
-  font-family: var(--font-serif);
-  font-size: var(--t-25);
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums lining-nums;
+.titleInput::placeholder { color: var(--color-text-muted); }
+@media (hover: hover) and (pointer: fine) {
+  .titleInput:hover { border-bottom-color: var(--color-border-subtle); }
 }
-.tileOf {
-  margin-top: 2px;
-  font-family: var(--font-condensed);
-  font-size: var(--t-10);
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
+.titleInput:focus-visible { outline: none; border-bottom-color: var(--color-accent); }
 
-.shelfTitle { grid-area: title; min-width: 0; }
-.shelfH {
-  margin: 0;
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: var(--t-40);
-  line-height: 1;
-  letter-spacing: -0.034em;
-  color: var(--shelf-ink);
+.meterRow { display: flex; align-items: center; gap: var(--s3); min-height: 20px; }
+.meter { display: flex; gap: 3px; flex: none; }
+.meter i {
+  display: block;
+  width: 14px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--color-bg-inset);
+  transition: background var(--dur-base) var(--ease-standard);
 }
-.shelfSub { font-size: var(--t-13); color: var(--shelf-soft); margin-top: var(--s2); }
-
-.pills { grid-area: pills; display: flex; flex-wrap: wrap; gap: var(--s2); padding-bottom: 2px; }
-.pill {
-  display: inline-flex;
-  align-items: center;
-  height: 30px;
-  padding: 0 var(--s3);
-  border-radius: var(--r-pill);
-  background: color-mix(in oklab, var(--shelf-ink) 12%, transparent);
-  color: var(--shelf-ink);
-  font-family: var(--font-condensed);
+.meter i.meterOn { background: var(--color-accent); }
+.caption {
+  font-family: var(--font-label);
   font-size: var(--t-12);
   font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  white-space: nowrap;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
-/* ---------- workspace ---------- */
-.workspace {
-  position: relative;
-  margin-top: -66px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  grid-template-areas:
-    'board formation'
-    'board details'
-    'board share';
-  grid-template-rows: auto auto 1fr;
-  gap: var(--s5);
-  align-items: start;
-}
-
-.card {
-  border-radius: 14px;
-  background: var(--color-bg-card);
-  box-shadow: var(--shadow-sm), var(--shadow-lg);
-  min-width: 0;
-}
-.formationCard { grid-area: formation; padding: var(--s4); }
-.detailsCard { grid-area: details; padding: var(--s4); display: flex; flex-direction: column; gap: var(--s4); }
-.boardCard { grid-area: board; padding: var(--s3); }
-
-.cardH {
-  margin: 0 0 var(--s3);
-  font-family: var(--font-serif);
-  font-size: var(--t-20);
+.actions { display: flex; align-items: center; gap: var(--s2); flex: none; }
+.primaryBtn,
+.secondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--s5);
+  border-radius: var(--r-control);
+  font-family: var(--font-label);
+  font-size: var(--t-15);
   font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--color-text-primary);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
-.detailsCard .cardH { margin-bottom: 0; }
+.primaryBtn {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border: 1px solid var(--color-accent);
+}
+.secondaryBtn {
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+@media (hover: hover) and (pointer: fine) {
+  .primaryBtn:not(:disabled):hover { background: var(--color-accent-hover); border-color: var(--color-accent-hover); }
+  .secondaryBtn:hover { border-color: var(--color-accent); }
+}
+.primaryBtn:disabled { opacity: 0.5; cursor: progress; }
+.primaryBtn:focus-visible,
+.secondaryBtn:focus-visible,
+.textBtn:focus-visible,
+.formationPill:focus-visible,
+.railRow:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
-/* ---------- formation pills (as on the lineup page) ---------- */
-.formationGroups { display: flex; flex-direction: column; gap: var(--s3); }
-.formationGroup { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+/* ---------- formation bar (the lineup page's, same pills) ---------- */
+.formationBar {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  padding: var(--s3) var(--s5);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+.formationGroups { flex: 1 1 auto; display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; row-gap: var(--s3); min-width: 0; }
+.formationGroup { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+.formationGroup + .formationGroup { padding-left: var(--s4); border-left: 1px solid var(--color-border-subtle); }
 .formationGroupLabel {
-  flex: 0 0 48px;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -148,7 +133,7 @@
   justify-content: center;
   min-height: 30px;
   padding: var(--s1) var(--s3);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-12);
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -170,9 +155,118 @@
   color: var(--color-on-accent);
   border-color: var(--color-accent);
 }
+.textBtn {
+  flex: none;
+  min-height: 30px;
+  padding: 0 var(--s3);
+  font-family: var(--font-label);
+  font-size: var(--t-13);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-control);
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  .textBtn:not(:disabled):hover { color: var(--color-text-primary); border-color: var(--color-border); }
+}
+.textBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ---------- details ---------- */
-.field { display: flex; flex-direction: column; gap: var(--s1); }
+/* ---------- pitch beside the rail ---------- */
+.body { display: grid; grid-template-columns: minmax(0, 1fr) 340px; align-items: stretch; }
+/* The board component draws its own border and radius; inside this panel the
+   pitch runs to the panel's edges and the hairline divides it from the rail. */
+.pitchCol { min-width: 0; }
+.pitchCol > div { border: 0; border-radius: 0; }
+
+.rail { border-left: 1px solid var(--color-border); display: flex; flex-direction: column; min-width: 0; }
+.railHead { padding: var(--s4) var(--s4) var(--s3); display: flex; flex-direction: column; gap: var(--s3); border-bottom: 1px solid var(--color-border-subtle); }
+.railTitleRow { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
+.railH {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-20);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+.pickFrom { display: flex; align-items: center; gap: var(--s3); }
+.select {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0 var(--s3);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  color: var(--color-text-primary);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-control);
+}
+.select:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+.railList { list-style: none; margin: 0; padding: 0; }
+.railList li + li { border-top: 1px solid var(--color-border-subtle); }
+.railRow {
+  display: grid;
+  grid-template-columns: 40px 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--s2) var(--s4);
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+@media (hover: hover) and (pointer: fine) {
+  .railRow:hover { background: var(--color-bg-secondary); }
+}
+.railText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.railName {
+  font-family: var(--font-serif);
+  font-size: var(--t-15);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.railClub { font-size: var(--t-12); color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.railAction {
+  font-family: var(--font-label);
+  font-size: var(--t-12);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-accent-ink);
+}
+.railEmptyDot {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-control);
+  border: 1px dashed var(--color-border);
+  background: var(--color-bg-primary);
+}
+.railEmpty { font-family: var(--font-label); font-size: var(--t-13); font-weight: 700; color: var(--color-text-muted); }
+.railAdd {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-family: var(--font-label);
+  font-size: var(--t-20);
+  line-height: 1;
+  color: var(--color-accent-ink);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-control);
+}
+
+/* ---------- player picker ---------- */
 .input {
   width: 100%;
   min-height: 40px;
@@ -186,47 +280,6 @@
 }
 .input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
-/* ---------- the dark block ---------- */
-.shareCard {
-  grid-area: share;
-  --ink: var(--color-text-inverse);
-  --ink-soft: color-mix(in oklab, var(--color-text-inverse) 68%, var(--color-topbar));
-  padding: var(--s5) var(--s4);
-  border-radius: 14px;
-  background: var(--color-topbar);
-  color: var(--ink);
-  min-width: 0;
-}
-.shareH {
-  margin: 0;
-  font-family: var(--font-serif);
-  font-size: var(--t-20);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-}
-.shareP { margin: var(--s2) 0 var(--s4); font-size: var(--t-13); line-height: 1.5; color: var(--ink-soft); }
-.shareActions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
-.sharePrimary,
-.shareSecondary {
-  min-height: 40px;
-  padding: 0 var(--s4);
-  border-radius: var(--r-control);
-  font-family: var(--font-condensed);
-  font-size: var(--t-13);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-.sharePrimary { grid-column: 1 / -1; background: var(--ink); color: var(--color-topbar); border: 1px solid var(--ink); }
-.shareSecondary { background: transparent; color: var(--ink); border: 1px solid color-mix(in oklab, var(--ink) 40%, transparent); }
-.sharePrimary:disabled,
-.shareSecondary:disabled { opacity: 0.4; cursor: not-allowed; }
-.notice { min-height: 1.4em; margin: var(--s3) 0 0; font-size: var(--t-12); font-weight: 600; color: var(--ink); }
-
-/* ---------- player picker ---------- */
 .modalBackdrop {
   position: fixed;
   inset: 0;
@@ -268,18 +321,6 @@
   color: var(--color-text-primary);
 }
 .modalHeaderActions { display: flex; align-items: center; gap: var(--s2); }
-.textBtn {
-  min-height: 34px;
-  padding: 0 var(--s3);
-  font-family: var(--font-condensed);
-  font-size: var(--t-13);
-  font-weight: 700;
-  color: var(--color-text-secondary);
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-control);
-  cursor: pointer;
-}
 .closeBtn {
   display: grid;
   place-items: center;
@@ -340,7 +381,7 @@
 .playerTags { display: flex; align-items: center; gap: var(--s2); flex: none; }
 .assignedTag {
   padding: 2px var(--s2);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   color: var(--color-text-secondary);
@@ -349,32 +390,6 @@
 }
 .emptyList { padding: var(--s8) var(--s4); text-align: center; color: var(--color-text-muted); }
 .listNote { padding: var(--s3); text-align: center; font-size: var(--t-12); color: var(--color-text-muted); }
-
-/* ---------- mobile: one column, composed for the thumb ---------- */
-@media (max-width: 900px) {
-  .shelf { margin-top: calc(var(--space-4) * -1); padding: 18px 0 66px; }
-  .shelfInner {
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas: 'tile title' 'pills pills';
-    gap: var(--s3) var(--s4);
-    align-items: center;
-  }
-  .tile { width: 52px; height: 52px; }
-  .shelfH { font-size: 29px; letter-spacing: -0.032em; }
-  .shelfSub { font-size: var(--t-12); margin-top: 6px; }
-  .pill { height: 26px; padding: 0 10px; font-size: var(--t-11); }
-
-  .workspace {
-    margin-top: -44px;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'formation' 'board' 'details' 'share';
-    grid-template-rows: none;
-    gap: var(--s4);
-  }
-  .formationGroup { align-items: flex-start; }
-  .formationPill { min-height: 36px; }
-  .input, .sharePrimary, .shareSecondary { min-height: 44px; }
-}
 
 @media (max-width: 640px) {
   .modalBackdrop { align-items: flex-end; padding: 0; }
@@ -390,6 +405,31 @@
   .closeBtn { width: 44px; height: 44px; }
 }
 
+/* ---------- mobile: composed for the thumb ---------- */
+@media (max-width: 900px) {
+  .head { flex-direction: column; align-items: stretch; gap: var(--s4); padding: var(--s4); }
+  .titleInput { font-size: var(--t-25); }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .primaryBtn, .secondaryBtn { min-height: 44px; }
+  .actions .primaryBtn { order: 2; }
+
+  .formationBar { padding: var(--s3) var(--s4); gap: var(--s3); }
+  .formationGroups {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 calc(var(--s4) * -1) 0 0;
+    padding-right: var(--s4);
+  }
+  .formationGroups::-webkit-scrollbar { display: none; }
+  .formationGroup { flex: 0 0 auto; }
+  .formationPill { min-height: 36px; }
+  .textBtn { min-height: 36px; }
+
+  .body { grid-template-columns: minmax(0, 1fr); }
+  .rail { border-left: 0; border-top: 1px solid var(--color-border); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .formationPill { transition: none; }
+  .formationPill, .meter i, .titleInput { transition: none; }
 }

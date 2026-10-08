@@ -7,6 +7,10 @@ import clubsData from '@/lib/clubs/clubs.json';
 import { serializeLineup, VALID_FORMATIONS, type SerializedLineup } from '@/lib/lineups/lineupSerializer';
 import { exportLineupToBlob, type LineupExportSlot } from '@/lib/lineups/lineupImageExport';
 import ReadOnlyFormationBoard, { type FormationBoardSlot } from '@/components/formation/ReadOnlyFormationBoard';
+import Portrait from '@/components/players/Portrait';
+import PositionBadge from '@/components/players/PositionBadge';
+import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { resolveClub } from '@/lib/clubs/registry';
 import LineupPlayerPickerModal from './LineupPlayerPickerModal';
 import styles from './lineup-builder.module.css';
 
@@ -233,29 +237,53 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
     }
   }, [assignments, formation, title]);
 
+  const slotPositions = FORMATION_SLOTS[formation] as GranularPosition[];
+  const caption = feedbackNotice ?? `${filledCount} of 11 picked`;
+
   return (
     <div className={styles.page}>
-      <div className={styles.shelf}>
-        <div className={styles.shelfInner}>
-          <div className={styles.tile} aria-hidden="true">
-            <span className={styles.tileFigure}>{filledCount}</span>
-            <span className={styles.tileOf}>of 11</span>
+      <div className={`g-panel ${styles.board}`}>
+        <div className={styles.head}>
+          <div className={styles.titleBlock}>
+            <input
+              type="text"
+              className={styles.titleInput}
+              value={title}
+              maxLength={60}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Name Your Lineup"
+              aria-label="Lineup name"
+            />
+            <div className={styles.meterRow}>
+              <div
+                className={styles.meter}
+                role="progressbar"
+                aria-label="Players picked"
+                aria-valuemin={0}
+                aria-valuemax={11}
+                aria-valuenow={filledCount}
+              >
+                {Array.from({ length: 11 }, (_, i) => (
+                  <i key={i} className={i < filledCount ? styles.meterOn : undefined} />
+                ))}
+              </div>
+              <span className={styles.caption} role="status" aria-live="polite">
+                {caption}
+              </span>
+            </div>
           </div>
-          <div className={styles.shelfTitle}>
-            <h1 className={styles.shelfH}>Lineup Builder</h1>
-            <div className={styles.shelfSub}>Any Premier League player, in any of the 12 formations</div>
-          </div>
-          <div className={styles.pills}>
-            <span className={styles.pill}>{formation}</span>
-            <span className={styles.pill}>{filledCount === 11 ? 'Complete' : `${11 - filledCount} Open`}</span>
+          <div className={styles.actions}>
+            <button type="button" className={styles.secondaryBtn} onClick={handleCopyLink}>
+              Copy Link
+            </button>
+            <button type="button" className={styles.primaryBtn} onClick={handleShare} disabled={isExporting}>
+              {isExporting ? 'Generating…' : 'Share XI'}
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className={styles.workspace}>
-        <section className={`${styles.card} ${styles.formationCard}`} aria-label="Formation">
-          <h2 className={styles.cardH}>Formation</h2>
-          <div className={styles.formationGroups}>
+        <div className={styles.formationBar}>
+          <div className={styles.formationGroups} role="group" aria-label="Formation">
             {BACK_LINES.map((line) => (
               <div key={line} className={styles.formationGroup}>
                 <span className={styles.formationGroupLabel} aria-hidden>
@@ -278,67 +306,82 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
               </div>
             ))}
           </div>
-        </section>
+        </div>
 
-        <section className={`${styles.card} ${styles.boardCard}`} aria-label="Starting XI">
-          <ReadOnlyFormationBoard
-            formation={formation}
-            slots={boardSlots}
-            emptyLabel="Pick a formation to start"
-            ariaLabel={`${formation} starting XI`}
-            variant="standard"
-            onSelectSlot={handleOpenSlot}
-          />
-        </section>
-
-        <section className={`${styles.card} ${styles.detailsCard}`} aria-label="Lineup Details">
-          <h2 className={styles.cardH}>Details</h2>
-          <label className={styles.field}>
-            <span className="g-label">Lineup Name</span>
-            <input
-              type="text"
-              className={styles.input}
-              value={title}
-              maxLength={60}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Chelsea vs Hull"
+        <div className={styles.body}>
+          <div className={styles.pitchCol}>
+            <ReadOnlyFormationBoard
+              formation={formation}
+              slots={boardSlots}
+              emptyLabel="Pick a formation to start"
+              ariaLabel={`${formation} starting XI`}
+              variant="standard"
+              onSelectSlot={handleOpenSlot}
             />
-          </label>
-          <label className={styles.field}>
-            <span className="g-label">Club Filter</span>
-            <select
-              className={styles.input}
-              value={clubFilter || ''}
-              onChange={(e) => setClubFilter(e.target.value || null)}
-            >
-              <option value="">All Clubs</option>
-              {clubsData.map((c) => (
-                <option key={c.slug} value={c.slug}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </section>
-
-        <section className={`${styles.shareCard}`} aria-label="Share">
-          <h2 className={styles.shareH}>Share Your XI</h2>
-          <p className={styles.shareP}>Save it as an image or send the link. Anyone with the link opens the same lineup.</p>
-          <div className={styles.shareActions}>
-            <button type="button" className={styles.sharePrimary} onClick={handleShare} disabled={isExporting}>
-              {isExporting ? 'Generating…' : 'Share XI'}
-            </button>
-            <button type="button" className={styles.shareSecondary} onClick={handleCopyLink}>
-              Copy Link
-            </button>
-            <button type="button" className={styles.shareSecondary} onClick={handleReset} disabled={filledCount === 0}>
-              Clear XI
-            </button>
           </div>
-          <p className={styles.notice} role="status" aria-live="polite">
-            {feedbackNotice ?? ''}
-          </p>
-        </section>
+
+          <aside className={styles.rail} aria-label="Starting XI">
+            <div className={styles.railHead}>
+              <div className={styles.railTitleRow}>
+                <h2 className={styles.railH}>Starting XI</h2>
+                <button type="button" className={styles.textBtn} onClick={handleReset} disabled={filledCount === 0}>
+                  Clear XI
+                </button>
+              </div>
+              <label className={styles.pickFrom}>
+                <span className="g-label">Pick From</span>
+                <select
+                  className={styles.select}
+                  value={clubFilter || ''}
+                  onChange={(e) => setClubFilter(e.target.value || null)}
+                >
+                  <option value="">All Clubs</option>
+                  {clubsData.map((c) => (
+                    <option key={c.slug} value={c.slug}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <ol className={styles.railList}>
+              {slotPositions.map((pos, i) => {
+                const p = assignments[i];
+                return (
+                  <li key={i}>
+                    <button type="button" className={styles.railRow} onClick={() => handleOpenSlot(i)}>
+                      <PositionBadge position={pos} size="sm" />
+                      {p ? (
+                        <>
+                          <Portrait
+                            photoUrl={p.photo_url}
+                            name={p.name}
+                            club={p.pl_team}
+                            size="sm"
+                            headTopPct={p.portrait_head_top_pct}
+                            headWidthPct={p.portrait_head_width_pct}
+                            photoVersion={p.photo_version}
+                          />
+                          <span className={styles.railText}>
+                            <span className={styles.railName}>{getPlayerDisplayName(p, 'full')}</span>
+                            <span className={styles.railClub}>{resolveClub(p.pl_team)?.name ?? p.pl_team}</span>
+                          </span>
+                          <span className={styles.railAction}>Change</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className={styles.railEmptyDot} aria-hidden="true" />
+                          <span className={styles.railEmpty}>Add {pos}</span>
+                          <span className={styles.railAdd} aria-hidden="true">+</span>
+                        </>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </aside>
+        </div>
       </div>
 
       {/* Player Picker Modal */}

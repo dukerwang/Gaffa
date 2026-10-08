@@ -1,6 +1,8 @@
 import type { Formation, GranularPosition, Player } from '@/types';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { portraitInitials, portraitSources } from '@/lib/players/photo';
+import { customPortraitCrop } from '@/lib/players/portraitCrop';
+import { clubBadgePath } from '@/lib/clubs/registry';
 
 export interface LineupExportSlot {
   slotIndex: number;
@@ -35,28 +37,22 @@ function getZone(pos: GranularPosition, formation?: Formation): PitchZone {
  *
  * PL's photo CDN sends no CORS headers, so drawing its images straight onto
  * the export canvas taints it and canvas.toBlob() below silently returns
- * null — this routes through /api/players/photo-proxy, which re-serves the
- * same bytes same-origin, so no crossOrigin mode is needed here at all.
+ * null. Player photos go through /api/players/photo-proxy, which re-serves the
+ * same bytes same-origin. Club crests are already same-origin.
  */
-function loadImage(url: string, timeoutMs = 1500): Promise<HTMLImageElement | null> {
+function loadImage(url: string, timeoutMs = 2500, proxy = true): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
-
-    const timer = setTimeout(() => {
-      resolve(null);
-    }, timeoutMs);
-
+    const timer = setTimeout(() => resolve(null), timeoutMs);
     img.onload = () => {
       clearTimeout(timer);
       resolve(img);
     };
-
     img.onerror = () => {
       clearTimeout(timer);
       resolve(null);
     };
-
-    img.src = `/api/players/photo-proxy?url=${encodeURIComponent(url)}`;
+    img.src = proxy ? `/api/players/photo-proxy?url=${encodeURIComponent(url)}` : url;
   });
 }
 
@@ -66,21 +62,29 @@ function token(name: string, fallback: string): string {
   return v || fallback;
 }
 
-// The card is a poster people post elsewhere, so its chips use the light
-// theme's ink and card colours whatever theme the page is in.
+// The card is a poster people post elsewhere, so its chips and portrait ground
+// use the light theme's colours whatever theme the page is in.
 const CARD = '#FCFAF7';
 const INK = '#1B1915';
 
+interface NodeAssets {
+  photo: HTMLImageElement | null;
+  /** True when the 220x280 fallback source loaded instead of the 500x500 one. */
+  alt: boolean;
+  crest: HTMLImageElement | null;
+}
+
 /**
  * Generates a 1080x1350 PNG of the lineup, drawn like the on-page board: the
- * green shelf on top, the banded pitch below, a white chip under each player.
+ * green shelf on top, the banded pitch below, and each player as the app's own
+ * portrait (same crop maths as <Portrait>) over a white name chip.
  */
 export async function exportLineupToBlob(data: LineupExportData): Promise<Blob | null> {
   if (!('document' in globalThis)) return null;
   await document.fonts?.ready;
 
   const serif = token('--font-serif', 'Georgia, serif');
-  const condensed = token('--font-condensed', 'sans-serif');
+  const label = token('--font-label', 'sans-serif');
   const topbar = token('--color-topbar', '#185B37');
   const pitch = token('--color-pitch', '#417655');
   const pitchBand = token('--color-pitch-band', '#386A4B');
@@ -96,7 +100,6 @@ export async function exportLineupToBlob(data: LineupExportData): Promise<Blob |
   ctx.fillStyle = topbar;
   ctx.fillRect(0, 0, width, height);
 
-  // Shelf: the dashboard's alternating stripes, then the title.
   const shelfH = 210;
   for (let x = 0, i = 0; x < width; x += 36, i++) {
     ctx.fillStyle = i % 2 === 0 ? topbar : 'rgba(255,255,255,0.05)';
@@ -109,10 +112,9 @@ export async function exportLineupToBlob(data: LineupExportData): Promise<Blob |
   ctx.font = `700 64px ${serif}`;
   ctx.fillText(fitText(ctx, data.title.trim() || 'Starting XI', width - pad * 2), pad, 108);
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.font = `700 24px ${condensed}`;
-  ctx.fillText(`${data.formation}  ·  LINEUP BUILDER`, pad, 156);
+  ctx.font = `700 24px ${label}`;
+  ctx.fillText(`${data.formation}  ·  GAFFA LINEUP BUILDER`, pad, 156);
 
-  // Pitch card
   const px = pad;
   const py = shelfH - 24;
   const pw = width - pad * 2;
@@ -151,37 +153,41 @@ export async function exportLineupToBlob(data: LineupExportData): Promise<Blob |
   for (const s of data.slots) zoned.get(getZone(s.pos, data.formation))?.push(s);
   const rows = ZONE_ORDER.filter((z) => (zoned.get(z)?.length ?? 0) > 0);
 
-  const photos = new Map<string, HTMLImageElement | null>();
+  const assets = new Map<string, NodeAssets>();
   await Promise.all(
     data.slots.map(async (slot) => {
-      const src = slot.player?.photo_url
-        ? portraitSources(slot.player.photo_url, slot.player.photo_version)
-        : [];
-      if (slot.player && src.length > 0) {
-        let img: HTMLImageElement | null = null;
-        for (const url of src) {
-          img = await loadImage(url, 2500);
-          if (img) break;
-        }
-        photos.set(slot.player.id, img);
+      const player = slot.player;
+      if (!player) return;
+      const sources = player.photo_url ? portraitSources(player.photo_url, player.photo_version) : [];
+      let photo: HTMLImageElement | null = null;
+      let alt = false;
+      for (let i = 0; i < sources.length && !photo; i++) {
+        photo = await loadImage(sources[i]);
+        alt = i > 0;
       }
+      const badge = clubBadgePath(player.pl_team);
+      const crest = badge ? await loadImage(badge, 2500, false) : null;
+      assets.set(player.id, { photo, alt, crest });
     }),
   );
 
   const top = fY + 20;
   const usable = fH - 40;
   const rowH = usable / rows.length;
+  // 66x78 is the app's lot-size portrait; shrink it on 6-row formations so rows never overlap.
+  const scale = Math.min(1.35, Math.max(0.9, (rowH - 84) / 78));
   rows.forEach((zone, r) => {
     const inRow = zoned.get(zone) ?? [];
     const cy = top + rowH * r + rowH / 2;
     inRow.forEach((slot, c) => {
       const cx = fX + (fW / (inRow.length + 1)) * (c + 1);
-      drawNode(ctx, slot, cx, cy, photos.get(slot.player?.id ?? ''), serif, condensed, Math.min(240, fW / (inRow.length + 1) - 8));
+      const maxChip = Math.min(240, fW / (inRow.length + 1) - 8);
+      drawNode(ctx, slot, cx, cy, assets.get(slot.player?.id ?? ''), scale, serif, label, maxChip);
     });
   });
 
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.font = `700 20px ${condensed}`;
+  ctx.font = `700 20px ${label}`;
   ctx.textAlign = 'center';
   ctx.fillText('GAFFA.LIVE', width / 2, height - 26);
 
@@ -202,20 +208,23 @@ function drawNode(
   slot: LineupExportSlot,
   x: number,
   y: number,
-  img: HTMLImageElement | null | undefined,
+  assets: NodeAssets | undefined,
+  k: number,
   serif: string,
-  condensed: string,
+  label: string,
   maxChip: number,
 ) {
-  const r = 46;
+  const fw = 66 * k;
+  const fh = 78 * k;
   const badgeH = 26;
   const chipH = 34;
-  const total = badgeH + 6 + r * 2 + 8 + chipH;
+  const total = badgeH + 6 + fh + 8 + chipH;
   const top = y - total / 2;
-  const cy = top + badgeH + 6 + r;
+  const fx = x - fw / 2;
+  const fy = top + badgeH + 6;
 
   const color = token(`--color-pos-${slot.pos.toLowerCase()}`, '#7B56B9');
-  ctx.font = `700 17px ${condensed}`;
+  ctx.font = `700 17px ${label}`;
   const bw = Math.max(ctx.measureText(slot.pos).width + 20, 44);
   ctx.fillStyle = color;
   roundRect(ctx, x - bw / 2, top, bw, badgeH, 5);
@@ -225,53 +234,81 @@ function drawNode(
   ctx.textBaseline = 'middle';
   ctx.fillText(slot.pos, x, top + badgeH / 2 + 1);
 
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(x, cy, r, 0, Math.PI * 2);
-  if (slot.player) {
-    ctx.fillStyle = '#E4E0D8';
+  const player = slot.player;
+  if (!player) {
+    roundRect(ctx, fx, fy, fw, fh, 6 * k);
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
     ctx.fill();
-    ctx.clip();
-    if (img) {
-      const side = r * 2;
-      // Cut-outs are taller than wide: fill the circle from the top so heads are not cropped.
-      const scale = Math.max(side / img.naturalWidth, side / img.naturalHeight);
-      ctx.drawImage(img, x - r, cy - r, img.naturalWidth * scale, img.naturalHeight * scale);
-    } else {
-      ctx.fillStyle = INK;
-      ctx.font = `700 34px ${serif}`;
-      ctx.fillText(portraitInitials(slot.player.name), x, cy + 2);
-    }
-    ctx.restore();
-    ctx.beginPath();
-    ctx.arc(x, cy, r, 0, Math.PI * 2);
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 4;
-    ctx.stroke();
-  } else {
-    ctx.restore();
-    ctx.beginPath();
-    ctx.arc(x, cy, r, 0, Math.PI * 2);
+    ctx.setLineDash([8, 8]);
     ctx.strokeStyle = 'rgba(255,255,255,0.75)';
     ctx.lineWidth = 3;
-    ctx.setLineDash([8, 8]);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.font = `700 44px ${condensed}`;
-    ctx.fillText('+', x, cy + 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = `700 44px ${label}`;
+    ctx.fillText('+', x, fy + fh / 2 + 2);
     return;
   }
 
-  const name = getPlayerDisplayName(slot.player.name, 'smart');
-  ctx.font = `700 22px ${serif}`;
+  // The app's <Portrait>: neutral radial ground, the cut-out zoomed and pushed
+  // down inside the frame, the same per-player head-solve, clipped to the frame.
+  ctx.save();
+  roundRect(ctx, fx, fy, fw, fh, 6 * k);
+  ctx.clip();
+  const ground = ctx.createRadialGradient(x, fy + fh * 0.256, 0, x, fy + fh * 0.256, fw * 0.8);
+  ground.addColorStop(0, '#F6F3EC');
+  ground.addColorStop(0.67, '#E6E2DA');
+  ground.addColorStop(1, '#DAD5CA');
+  ctx.fillStyle = ground;
+  ctx.fillRect(fx, fy, fw, fh);
+  const photo = assets?.photo;
+  if (photo) {
+    const custom = assets?.alt
+      ? null
+      : customPortraitCrop('md', player.portrait_head_top_pct, player.portrait_head_width_pct);
+    const zoom = (assets?.alt ? 142 : (custom?.zoomPct ?? 156.25)) / 100;
+    const insetPx = (custom?.insetPx ?? -2) * k;
+    const iw = fw * zoom;
+    const ih = iw * (photo.naturalHeight / photo.naturalWidth);
+    ctx.drawImage(photo, x - iw / 2, fy + insetPx, iw, ih);
+  } else {
+    ctx.fillStyle = INK;
+    ctx.font = `600 ${Math.round(30 * k)}px ${serif}`;
+    ctx.fillText(portraitInitials(player.name), x, fy + fh / 2 + 2);
+  }
+  ctx.restore();
+  roundRect(ctx, fx, fy, fw, fh, 6 * k);
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  if (assets?.crest) {
+    const cr = 11 * k;
+    const cx = fx + 2 * k + cr;
+    const cy = fy + fh - 2 * k - cr;
+    ctx.beginPath();
+    ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+    ctx.fillStyle = CARD;
+    ctx.fill();
+    const ci = cr * 1.35;
+    ctx.drawImage(assets.crest, cx - ci / 2, cy - ci / 2, ci, ci);
+  }
+
+  const name = getPlayerDisplayName(player.name, 'smart');
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  let nameSize = 22;
+  ctx.font = `700 ${nameSize}px ${serif}`;
+  while (nameSize > 16 && ctx.measureText(name).width + 22 > maxChip) {
+    nameSize -= 1;
+    ctx.font = `700 ${nameSize}px ${serif}`;
+  }
   const cw = Math.min(Math.max(ctx.measureText(name).width + 22, 96), maxChip);
-  const chipY = cy + r + 8;
+  const chipY = fy + fh + 8;
   ctx.fillStyle = CARD;
   roundRect(ctx, x - cw / 2, chipY, cw, chipH, 6);
   ctx.fill();
   ctx.fillStyle = INK;
-  ctx.textBaseline = 'middle';
   ctx.fillText(fitText(ctx, name, cw - 16), x, chipY + chipH / 2 + 1);
 }
 
