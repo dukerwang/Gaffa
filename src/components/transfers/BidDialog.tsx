@@ -392,7 +392,7 @@ export default function BidDialog({
         <label className={styles.field}>
           <span className={styles.fieldLabel}>Player to drop</span>
           <select className={styles.select} value={dropId} onChange={(e) => setDropId(e.target.value)}>
-            <option value="">Send him to the academy if there is room</option>
+            <option value="">{redraft ? 'Choose a player to drop' : 'Send him to the academy if there is room'}</option>
             {droppable.map((r) => (
               <option key={r.id} value={r.id}>
                 {getPlayerDisplayName(r, 'full')} · {r.primary_position} · {money(Number(r.market_value) || 0)}
@@ -400,8 +400,9 @@ export default function BidDialog({
             ))}
           </select>
           <div className={styles.hint}>
-            Your squad is full. Nominate a player to release upon winning, or send him to the
-            academy. You cannot bid if neither has open slots.
+            {redraft
+              ? 'Your squad is full. Name the player to drop if you win him. Dropping is free.'
+              : 'Your squad is full. Nominate a player to release upon winning, or send him to the academy. You cannot bid if neither has open slots.'}
           </div>
         </label>
       )}

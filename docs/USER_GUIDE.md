@@ -582,6 +582,10 @@ A redraft league plays the same game: the same positions, scoring, lineups, auto
 - **No Match Revenue or prizes.** Your Club Balance is for signing free agents.
 - **Every free agent opens at €1m**, whatever his market value. The recommended Club Balance is **€100m**.
 
+**Transfer Day.** Instead of rolling auctions, every bid in a redraft league settles together on **Transfer Day**: 24 hours before the gameweek's first kickoff (in a congested week, halfway between the previous gameweek's last match and the next one's first). Bid openly all week; a later bid doesn't move the deadline. When Transfer Day passes, the highest bidder with room wins each player, the top-priced players first. After that, until his club kicks off, any free agent nobody bid on can be signed instantly for nothing with **Sign Now**. A player you drop is up for auction until the next Transfer Day, so he can't be dropped straight into a friend's squad.
+
+**Why Transfer Day?** It's the waiver rhythm most fantasy players know: one moment a week when contested signings are decided, and quick pickups afterwards for the injury news that breaks on a Friday. Most free agents draw a single bid, so a rolling clock only made those signings wait.
+
 **Why money matters less here.** A simulation of full redraft seasons on last season's real points found that, with a snake draft, the draft decides most of a season and the money spent on free agents changes very little: even doubling one club's budget moved it by a handful of points. So in redraft the budget is a fair way to settle who gets a player two clubs both want, the way it works on other fantasy platforms. It isn't the strategic resource it is in dynasty. A floor tied to market value would only make prices follow Transfermarkt instead of points, which is the wrong signal for a one-season league.
 
 ---
