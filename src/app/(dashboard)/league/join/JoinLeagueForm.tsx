@@ -14,8 +14,10 @@ interface LeaguePreview {
   status: 'setup' | 'drafting' | 'active' | 'completed' | 'offseason' | 'pre_draft';
   /** After the draft, the Caretaker club a newcomer would take over. */
   openClub: { teamName: string } | null;
-  /** Joining creates a new club: before the first draft, or between redraft seasons. */
+  /** Joining creates a new club: before the first draft, between redraft seasons, or into an expansion. */
   newClubOpen: boolean;
+  /** The new club is an expansion club: it builds its squad in the expansion draft. */
+  expansionOpen?: boolean;
 }
 
 export default function JoinLeagueForm() {
@@ -116,6 +118,13 @@ export default function JoinLeagueForm() {
             <p className={styles.hint}>
               You&apos;ll take over {takeover.teamName}, which the Caretaker has run since its manager left. You
               keep its squad, Club Balance and record, and you can rename it and change its crest.
+            </p>
+          )}
+          {!takeover && preview.expansionOpen && (
+            <p className={styles.hint}>
+              This league is expanding. You&apos;ll build your squad in the expansion draft, picking from the
+              players other clubs leave unprotected and from the free agents, and you start with the league&apos;s
+              median Club Balance.
             </p>
           )}
         </div>

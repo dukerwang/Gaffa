@@ -25,7 +25,7 @@ export default async function LeagueSettingsPage({ params }: Props) {
   const admin = createAdminClient();
   const { data: league } = await admin
     .from('leagues')
-    .select('id, name, commissioner_id, status')
+    .select('id, name, commissioner_id, status, is_dynasty')
     .eq('id', leagueId)
     .single();
 
@@ -50,6 +50,15 @@ export default async function LeagueSettingsPage({ params }: Props) {
 
   const isCommissioner = league.commissioner_id === user.id;
   const started = !canLeaveLeague(league.status);
+
+  // The expansion draft page: for a dynasty commissioner, and for everyone while one is open.
+  const { data: openExpansion } = await admin
+    .from('expansions')
+    .select('id')
+    .eq('league_id', leagueId)
+    .in('status', ['protecting', 'drafting'])
+    .maybeSingle();
+  const showExpansion = !!openExpansion || (isCommissioner && league.is_dynasty !== false);
 
   // The commissioner's controls (Transfer Commissioner, Remove Manager) only
   // apply once the draft has started; before it, managers leave themselves.
@@ -82,6 +91,7 @@ export default async function LeagueSettingsPage({ params }: Props) {
       leagueName={league.name}
       isCommissioner={isCommissioner}
       canLeave={!started}
+      expansionHref={showExpansion ? `/league/${leagueId}/expansion` : null}
       isSiteAdmin={isSiteAdminEmail(user.email)}
       initialPrefs={resolvePrefs(profile?.notification_prefs)}
       myUserId={user.id}

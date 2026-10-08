@@ -567,6 +567,20 @@ Once every gameweek and cup tie is complete, the commissioner triggers the reset
 
 ---
 
+## Expansion Draft
+
+A dynasty league can grow. In the offseason, after the reset and before Kickoff, the commissioner can open an **expansion draft** for up to 4 new clubs, and new managers join with the league's invite code.
+
+1. **Protect.** Every existing club protects **8 players**. Your academy and anyone you have out on loan are safe on top of that, so the 8 are only about your senior squad. If you don't choose, your 8 most valuable players are protected when the picks start.
+2. **Pick.** The new clubs take turns in a random order. Each pick is either an unprotected player from an existing club or a free agent, until every new squad is full. **No existing club loses more than 2 players**, so you keep at least 20 of your 22 however the picks fall. The commissioner can make a pick for a club that's on the clock, so one absent manager can't hold the draft up.
+3. **Kick off.** When the last squad is full, the season's fixtures and cups are rebuilt with the new clubs in them. Kickoff waits until the expansion draft is finished or cancelled.
+
+A new club starts with the league's **median Club Balance** and pays nothing for the players it takes. The clubs that lose a player aren't paid for him either.
+
+**Why these numbers?** They were tested on the real alpha squads and on simulated leagues of 6 to 12 clubs. Protecting 8 and taking up to 2 per club costs an existing club about 2% of its strength while putting the new club within reach of the league's middle. Protecting more barely helps the existing clubs and leaves the new one hopeless in a bigger league. Charging fees for the players taken would cost a new club around double a typical balance, so it would arrive broke. The median balance, rather than a fixed sum, gives it the same money its rivals have for the summer's new arrivals, which is where it closes the rest of the gap.
+
+---
+
 ## Redraft Leagues
 
 Everything above describes a **dynasty** league, Gaffa's main format, where your squad carries over forever. When a league is created, the commissioner can choose **Redraft** instead: the format most fantasy players already know, where every season is its own competition.
