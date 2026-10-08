@@ -138,7 +138,7 @@
 }
 
 .breakdownLabel {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-11);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -210,7 +210,7 @@
   border: none;
   border-right: 1px solid var(--color-border);
   padding: var(--s2) var(--s3);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-12);
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -254,7 +254,7 @@
 
 .ledgerTable thead th {
   text-align: left;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -292,7 +292,7 @@
 
 .typePill {
   display: inline-block;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.08em;

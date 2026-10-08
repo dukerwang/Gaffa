@@ -365,7 +365,7 @@ export default function Trophy({ kind, size = 'hero', season, club, height, clas
             {season && (
               <text
                 x={60} y={167.5} textAnchor="middle"
-                fontFamily="'Archivo Narrow','Arial Narrow',sans-serif"
+                style={{ fontFamily: 'var(--font-label)' }}
                 fontSize={7.2} fontWeight={600} letterSpacing={0.4}
                 fill={M.engrave} textLength={38} lengthAdjust="spacingAndGlyphs"
               >

@@ -10,6 +10,7 @@ import ChatNavIcon from './ChatNavIcon';
 import { Icon } from '@/components/ui/Icon';
 import CrestBadge from '@/components/crest/CrestBadge';
 import { clubHref } from '@/lib/teams/clubHref';
+import { isAwaitingDraft } from '@/lib/leagues/status';
 import styles from './TopBar.module.css';
 
 interface LeagueInfo {
@@ -17,6 +18,7 @@ interface LeagueInfo {
   name: string;
   status: string;
   season: string;
+  is_dynasty?: boolean | null;
 }
 
 interface LeagueTeamBalance {
@@ -317,7 +319,7 @@ export default function TopBar() {
   // home IS the draft lobby, so Draft owns that highlight instead.
   function isHomeActive(): boolean {
     if (!currentLeagueId) return false;
-    if (currentLeague?.status === 'setup' || currentLeague?.status === 'drafting') return false;
+    if (isAwaitingDraft(currentLeague?.status) || currentLeague?.status === 'drafting') return false;
     return pathname === `/league/${currentLeagueId}`;
   }
 
@@ -336,7 +338,7 @@ export default function TopBar() {
 
   // Draft is its own top-level item during setup/drafting; lobby lives on the
   // league home page (PreDraftLobby), with the live room under /draft.
-  const isDraftVisible = currentLeague?.status === 'setup' || currentLeague?.status === 'drafting';
+  const isDraftVisible = isAwaitingDraft(currentLeague?.status) || currentLeague?.status === 'drafting';
   function isDraftActive(): boolean {
     if (!currentLeagueId || !isDraftVisible) return false;
     const base = `/league/${currentLeagueId}`;
@@ -568,16 +570,18 @@ export default function TopBar() {
                   >
                     View Finance →
                   </Link>
-                  <Link
-                    href={`/league/${currentLeagueId}/team/roster#facilities`}
-                    className={styles.dropdownActionLink}
-                    onClick={() => {
-                      setBalanceDropdownOpen(false);
-                      setIsNavigating(true);
-                    }}
-                  >
-                    Club Facilities →
-                  </Link>
+                  {currentLeague?.is_dynasty !== false && (
+                    <Link
+                      href={`/league/${currentLeagueId}/team/roster#facilities`}
+                      className={styles.dropdownActionLink}
+                      onClick={() => {
+                        setBalanceDropdownOpen(false);
+                        setIsNavigating(true);
+                      }}
+                    >
+                      Club Facilities →
+                    </Link>
+                  )}
                 </div>
               )}
             </div>

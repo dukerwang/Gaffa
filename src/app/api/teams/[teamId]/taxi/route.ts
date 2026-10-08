@@ -7,6 +7,7 @@ import { resolveLineupEditMatchup } from '@/lib/lineups/editTarget';
 import { resolveCurrentGw } from '@/lib/season/currentGameweek';
 import { countBuybackSlots, DEFAULT_ROSTER_SIZE } from '@/lib/roster/capacity';
 import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
+import { FEATURE_OFF_MESSAGE, leagueFeatures } from '@/lib/leagues/features';
 
 import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/academyEligibility';
 
@@ -47,11 +48,17 @@ export async function POST(req: NextRequest, { params }: Props) {
     // Fetch league academy config
     const { data: league } = await admin
         .from('leagues')
-        .select('roster_size, taxi_size, taxi_age_limit, season')
+        .select('roster_size, taxi_size, taxi_age_limit, season, is_dynasty')
         .eq('id', team.league_id)
         .single();
 
     if (!league) return NextResponse.json({ error: 'League not found' }, { status: 404 });
+
+    // Redraft has no academy. Moving a player out of one is still allowed, so
+    // nobody can be stranded there.
+    if (!leagueFeatures(league).academy && action !== 'activate') {
+        return NextResponse.json({ error: FEATURE_OFF_MESSAGE.academy }, { status: 403 });
+    }
 
     const taxiSize: number = effectiveSlots(team, league).academy;
     const taxiAgeLimit: number = league.taxi_age_limit ?? 21;

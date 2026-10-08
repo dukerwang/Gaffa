@@ -23,5 +23,7 @@ Deeper references, read when the task calls for them rather than up front:
 ## The one rule agents keep breaking
 
 Headings and section titles are **title case** ("Record Book", "Title-Winning
-XI"). Buttons are sentence case ("Submit proposal"), never uppercase.
+XI"). Buttons and short labels are title case too ("Save Lineup"), never
+uppercase in the markup. Nothing inanimate is the subject of a verb: "Enter to
+open", never "Enter opens it"; no "lets you" or "allows you to".
 `scripts/check-ui-rules.mjs` enforces this on write.

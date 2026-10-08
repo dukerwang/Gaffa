@@ -22,6 +22,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { distributeAllPrizes, type PrizeEntry } from './prizeDistribution';
+import { isRedraft } from '@/lib/leagues/features';
 import { insertMatchups } from '@/lib/schedule/insertMatchups';
 import { createAllTournaments, type CreateTournamentResult } from '@/lib/tournaments/createTournaments';
 import { recomputePositionRanks } from '@/lib/stats/seasonStats';
@@ -312,7 +313,7 @@ async function archiveCupMatchups(
  * Deletes all matchups for the league (to regenerate for new season).
  * Preserves tournament matchups — those are handled separately.
  */
-async function resetMatchups(
+export async function resetMatchups(
   admin: SupabaseClient,
   leagueId: string,
 ): Promise<number> {
@@ -329,7 +330,7 @@ async function resetMatchups(
 /**
  * Deletes all tournaments (and their rounds/matchups via cascade) for the league.
  */
-async function resetTournaments(
+export async function resetTournaments(
   admin: SupabaseClient,
   leagueId: string,
 ): Promise<number> {
@@ -511,6 +512,12 @@ export async function runSeasonReset(
 
   if (!league) throw new Error('League not found');
 
+  // A redraft league that has already been reset waits in pre_draft; running
+  // again would archive an empty season over the real one.
+  if (league.status === 'pre_draft') {
+    throw new Error(`League is already waiting for its ${league.current_season} draft. Reset already ran.`);
+  }
+
   if (league.status === 'offseason') {
     // Check if matchups or tournaments are missing
     const { count: matchupCount } = await admin
@@ -602,8 +609,12 @@ export async function runSeasonReset(
   // the archive RPC leaves them empty for this pass to fill (migration 085).
   await recomputePositionRanks(admin, seasonFrom);
 
-  // Step 3: Distribute prizes
-  const { paid: prizesPaid, totalFaab: totalPrizeFaab } = await distributeAllPrizes(admin, leagueId, seasonFrom);
+  // Step 3: Distribute prizes. Not in redraft: every Club Balance resets for
+  // the new season, so prize money would be gone the moment it arrived.
+  const { data: format } = await admin.from('leagues').select('is_dynasty').eq('id', leagueId).single();
+  const { paid: prizesPaid, totalFaab: totalPrizeFaab } = isRedraft(format)
+    ? { paid: [] as PrizeEntry[], totalFaab: 0 }
+    : await distributeAllPrizes(admin, leagueId, seasonFrom);
 
   // Step 4: Reset matchup schedule
   const matchupsReset = await resetMatchups(admin, leagueId);
@@ -635,6 +646,31 @@ export async function runSeasonReset(
       updated_at: new Date().toISOString(),
     })
     .eq('id', leagueId);
+
+  // Redraft: every squad is cleared, balances go back to the budget and the
+  // league waits for its next draft (reset_redraft_league_rpc, migration 173).
+  // The schedule and cups are built when that draft finishes, exactly as in a
+  // league's first season, so a manager can still join before it.
+  if (isRedraft(format)) {
+    const { error: redraftErr } = await admin.rpc('reset_redraft_league_rpc', {
+      p_league_id: leagueId,
+      p_season_from: seasonFrom,
+    });
+    if (redraftErr) throw new Error(`Failed to reset redraft league: ${redraftErr.message}`);
+
+    await sendChampionsNotifications(admin, leagueId, seasonFrom, prizesPaid);
+    return {
+      seasonFrom,
+      seasonTo,
+      prizesPaid,
+      totalPrizeFaab,
+      matchupsReset,
+      tournamentsReset,
+      standingsArchived,
+      matchupsGenerated: 0,
+      tournamentsCreated: [],
+    };
+  }
 
   // Step 9: Generate new matchup schedule for the upcoming season.
   const scheduleResult = await insertMatchups(admin, leagueId);

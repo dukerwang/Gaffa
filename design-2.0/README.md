@@ -59,7 +59,7 @@ rebuilt is the system underneath.
 | Italic serif accent carried headings, live, eyebrows, and suffix tags | **One job:** the section / card heading |
 | Nothing showed that scoring is against a positional baseline | **The baseline rule** — the new signature component |
 | No image treatment existed in the system at all | **Portraits** — see "The portrait" below. The position-tinted plinth was tried and rejected |
-| The italic serif and the UI sans left no face for column heads, club names and axis labels, so JetBrains Mono took the job | **Archivo Narrow** carries that role. Mono is reserved for values that genuinely tick — countdowns, lot numbers, bid clocks |
+| The italic serif and the UI sans left no face for column heads, club names and axis labels, so JetBrains Mono took the job | **Sofia Sans Semi Condensed** (`--font-label`) carries that role. It replaced Archivo Narrow on 2026-09-23. Mono is reserved for values that genuinely tick — countdowns, lot numbers, bid clocks |
 | LW/RW were sage green, colliding with the accent | Moved to a muted **terracotta** matched to the spine's own saturation; LWB/RWB pushed off the green band |
 
 ## The baseline rule
@@ -211,7 +211,7 @@ below the fold.
   Your side is ruled in the accent, because accent means "yours".
 - **Row tint** position hue on **hover only**. Tinting every row at rest turns a squad into a
   paint chart.
-- **Labels** the condensed face (`--font-condensed`, Archivo Narrow), not mono.
+- **Labels** the label face (`--font-label`, Sofia Sans Semi Condensed), not mono.
 
 ## The portrait
 
@@ -1634,7 +1634,8 @@ from it for the public login carousel. `admin/*` never faces a manager.
   The header above it is `.g-player-head` — see "The player head".
 - ~~Nothing from the two spec files is in `src/` yet.~~ **Both landed 2026-08-10**, ahead of
   the first route port and used by no page yet:
-  - `--font-condensed` is Archivo Narrow via `next/font` (`src/app/layout.tsx`), tokenised in
+  - The label face landed as `--font-condensed` (Archivo Narrow). Since 2026-09-24 it is
+    `--font-label`, Sofia Sans Semi Condensed via `next/font` (`src/app/layout.tsx`), tokenised in
     `globals.css` next to `--font-serif` / `--font-sans` / `--font-mono`.
   - `gaffa-surface.css` → `globals.css` § "GAFFA 2.0 — THE SURFACE" (`.g-page`, `.g-panel`,
     `.g-panel-hd`, `.g-spectrum`, `.g-score*`, `.g-label`, `.g-row:hover`, `.g-track`),

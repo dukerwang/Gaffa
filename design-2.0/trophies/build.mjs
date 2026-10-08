@@ -59,7 +59,7 @@ const SWEEP = {
 const FONTS =
   '<link rel="preconnect" href="https://fonts.googleapis.com">' +
   '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
-  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700&family=Archivo+Narrow:wght@500;600;700&display=swap">';
+  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&display=swap">';
 
 function themeCss(theme) {
   const p = T[theme];
@@ -85,9 +85,9 @@ function base(theme) {
       font-family:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       -webkit-font-smoothing:antialiased; }
     .serif { font-family:'Newsreader',Georgia,'Times New Roman',serif; }
-    .cond { font-family:'Archivo Narrow','Arial Narrow',sans-serif;
+    .cond { font-family:'Sofia Sans Semi Condensed','Hanken Grotesk',sans-serif;
       letter-spacing:.06em; text-transform:uppercase; }
-    .label { font-family:'Archivo Narrow','Arial Narrow',sans-serif;
+    .label { font-family:'Sofia Sans Semi Condensed','Hanken Grotesk',sans-serif;
       font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
     .panel { border-radius:10px; overflow:hidden; }
     h1,h2 { margin:0; text-wrap:balance; }
@@ -118,12 +118,12 @@ function base(theme) {
     .nameplate { margin-top:8px; text-align:center; max-width:190px; }
     .nameplate .comp { font-family:'Newsreader',Georgia,serif; font-size:17px;
       font-weight:600; line-height:1.15; }
-    .nameplate .fin { font-family:'Archivo Narrow','Arial Narrow',sans-serif;
+    .nameplate .fin { font-family:'Sofia Sans Semi Condensed','Hanken Grotesk',sans-serif;
       font-size:10px; font-weight:600; letter-spacing:.10em; text-transform:uppercase;
       margin-top:3px; }
     .caseHd { position:relative; z-index:1; display:flex; align-items:baseline;
       justify-content:space-between; gap:16px; padding:18px 26px 0; }
-    .caseHd .t { font-family:'Archivo Narrow','Arial Narrow',sans-serif;
+    .caseHd .t { font-family:'Sofia Sans Semi Condensed','Hanken Grotesk',sans-serif;
       font-size:11px; font-weight:600; letter-spacing:.11em; text-transform:uppercase; }
 
   `;

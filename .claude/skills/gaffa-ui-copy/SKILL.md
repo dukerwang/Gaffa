@@ -1,11 +1,11 @@
 ---
 name: gaffa-ui-copy
-description: Write or audit Gaffa's user-facing naming — headings, section titles, tab labels, captions, empty states, button text. Use when adding or changing any string a manager reads in the app, and for a whole-app copy sweep. Enforces title case on names, sentence case on buttons, and "name the thing, don't narrate it".
+description: Write or audit Gaffa's user-facing naming — headings, section titles, tab labels, captions, empty states, button text. Use when adding or changing any string a manager reads in the app, and for a whole-app copy sweep. Enforces title case on names, buttons and labels, "name the thing, don't narrate it", and no inanimate agency ("Enter to open", never "Enter opens it"; no "lets you").
 ---
 
 # Gaffa UI copy
 
-`docs/UI_RULES.md` rules 1–4 are the contract. This skill is how you apply them.
+`docs/UI_RULES.md` rules 1–4a are the contract. This skill is how you apply them.
 
 `scripts/check-ui-rules.mjs` already catches title case mechanically on every
 write. What it cannot catch — and what this skill exists for — is the difference
@@ -43,11 +43,34 @@ Names take **title case**: "Record Book", "Title-Winning XI", "Previous
 Meetings". Minor words stay lowercase: a, an, and, as, at, but, by, for, from,
 in, of, on, or, the, to, v, vs, with.
 
-Buttons take **sentence case**: "Submit proposal", "Join league". Never
-uppercase a button label.
+Buttons and short labels take **title case** too: "Save Lineup", "Join League",
+"Active Roster". Duke reversed the old sentence-case rule for buttons on
+2026-09-09. Never uppercase a label in the markup.
 
-Prose — tooltips, `aria-label`, placeholders, descriptions, empty states — stays
-sentence case and reads as a sentence.
+Prose (tooltips, `aria-label`, placeholders, descriptions, empty states, error
+messages) stays sentence case and reads as a sentence.
+
+## Nothing inanimate acts
+
+Duke's most-repeated complaint (DECISIONS 2026-09-08). A key, button, tab,
+card, dialog, page, board or rule is never the grammatical subject of a verb.
+A person does the thing, or the string is an imperative or a plain name.
+
+| Don't | Do |
+|---|---|
+| Enter opens it · Esc closes | Enter to open · Esc to return |
+| This tab lets you view your squad | View your squad (or: Squad Overview) |
+| The button submits your bid | Submit Bid |
+| An asking price invites offers | Set an asking price to invite offers |
+| The clause ends the auction | Meet the release clause to end the auction |
+| €34m if it holds | projected €34m |
+
+"Lets you" and "allows you to" are banned outright, even though the generic
+`google-dev-style` skill recommends "lets you". Gaffa's rule wins.
+
+Check every sentence you write: find its subject. If the subject is a thing on
+screen, rewrite it so a person (you, a manager, a club) is the subject, or turn
+it into an imperative.
 
 ## Vocabulary
 

@@ -129,7 +129,7 @@
 }
 
 .verdict {
-  font-family: var(--font-condensed, var(--font-sans));
+  font-family: var(--font-label);
   font-weight: 600;
   font-size: var(--t-11);
   letter-spacing: .045em;
@@ -166,7 +166,7 @@
 }
 .rank {
   flex: 0 0 auto;
-  font-family: var(--font-condensed, var(--font-sans));
+  font-family: var(--font-label);
   font-weight: 500;
   font-size: var(--t-10);
   letter-spacing: .045em;
@@ -177,7 +177,7 @@
 
 .note {
   margin: var(--s3) 0 0;
-  font-family: var(--font-condensed, var(--font-sans));
+  font-family: var(--font-label);
   font-weight: 500;
   font-size: var(--t-10);
   letter-spacing: .05em;

@@ -1,303 +1,210 @@
 /* ============================================================
-   PremiumPlayerCard — holographic flip trading card
-   360 × 520px fixed canvas, 18px radius
+   PremiumPlayerCard: the player card object, 360 × 520
+   Ported from the approved Player Card 2.0 prototype (Claude Design,
+   "Gaffa Player Card 2 Combined", turn 7, 2026-09-23).
+
+   Top bar: club crest, full name and club, owner crest.
+   Photo window: the club's colour, lit behind the player, with the pitch
+   stripes on it, the position spine down the left and the season's four
+   figures down the right. The rank circle sits on the window's bottom edge.
+   Below: first name, surname, position tags (which pick the slot the card is
+   scored at), bio. Then Value / Pts / PPG / OVR.
+
+   A light-only object in both themes: a trading card is a printed thing, so
+   `.g-theme-light` (globals.css) re-supplies the cream palette to this
+   subtree. The class is applied by PremiumPlayerCard.tsx on .container.
    ============================================================ */
 
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--s4);
+  gap: var(--s3);
   position: relative;
 }
 
-/* THE CARD IS A LIGHT-ONLY OBJECT, and that is deliberate: a trading card is a
-   printed thing, the same category as the pitch grass, so it stays on the cream
-   palette even when the app is in dark mode.
+/* ── Open button (for surfaces that show the card inline) ───── */
 
-   It used to pin itself by restating 25 tokens here, inside
-   `[data-theme="dark"] .container`. That copy went stale exactly the way
-   design-2.0/README.md records for ListingCard's crest and the club page's
-   position badge — a duplicated rule does not merely drift, it becomes wrong:
-
-     --color-text-muted      #9A9488  →  2.94 on the card, 2.47 on the inset
-     --color-text-secondary  #4A4A4A  →  superseded by the warm #4A453D
-     --color-text-primary    #1C1C1C  →  superseded by the warm #1C1A17
-     --color-accent-hover    #1B8350  →  the hover that LIGHTENS, replaced by
-                                          #0F5632 so it moves away from the ground
-
-   The muted value is the damaging one: globals.css replaced it precisely
-   because it "measured 2.73-2.94:1 ... and carried essentially every label,
-   caption, column head and timestamp in the app". This card never got the fix.
-
-   `.g-theme-light` (globals.css) now re-supplies the whole light block to this
-   subtree, so there is one definition of the palette and no copy to go stale.
-   The class is applied by PremiumPlayerCard.tsx on .container. */
-
-/* ── The rating ramp ─────────────────────────────────────────
-   Seven bands — green / green / gold / amber / orange / red / grey — because
-   the points curve's zero-line sits at display 5.5 (matchRating.ts,
-   calculateFantasyPoints), and the whole 5.5-6.5 range below the 6.5
-   median-starter floor was one flat "poor" band even though most below-par
-   performances land somewhere in it. Split at 6.0 on 2026-08-24 so a merely
-   below-average game (6.0-6.5) reads distinctly from a genuinely weak one
-   (5.5-6.0), instead of both painting identically.
-
-   Lightness moved, holding hue and chroma, solved to 4.8 against the card
-   face (scratch/verify_player_card.mjs). The new --rating-below-avg is the
-   OKLCH midpoint of fair and weak, solved the same way
-   (scratch/derive_rating_split_color.mjs):
-
-     >= 8.5  #3A6B4A  6.05
-     >= 7.5  #387D53  4.84
-     >= 6.5  #8C6C00  4.80
-     >= 6.0  #9D6407  4.81  (new)
-     >= 5.5  #AC5B0E  4.81
-     <  5.5  #D72930  4.82
-     null    #757064  4.81
-
-   These live on .container rather than in globals.css on purpose. The colour
-   law says there is ONE performance ramp, and it keys on the sigmoid score
-   against the positional median; this one keys on the 1-10 display rating.
-   The two are in fact monotonically related — curveFinalRating() is a monotone
-   function of the same composite — so this is arguably the same ramp on a
-   different scale rather than a second one. Arguably is not certainly, so it
-   stays scoped to the component instead of entering the global token set.
-   ratingHex() in the .tsx reads these. */
-.container {
-  --rating-elite:      #3A6B4A;
-  --rating-good:       #387D53;
-  --rating-fair:       #8C6C00;
-  --rating-below-avg:  #9D6407;
-  --rating-weak:       #AC5B0E;
-  --rating-bad:        #D72930;
-  --rating-none:       #757064;
+.openRow {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 360px;
 }
+
+.openBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-round);
+  background: var(--color-bg-card);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  color: var(--color-text-secondary);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .openBtn:hover { color: var(--color-accent); }
+}
+
+/* ── Stage ──────────────────────────────────────────────────── */
 
 .stage {
-  perspective: 1800px;
+  /* The window's three colours, from the club colour. The deep end is mixed
+     toward ink so the white figures on it hold up for every club; the lit end
+     stays close to the real colour, so sky blue still reads as City. */
+  --window-top: color-mix(in oklab, var(--team) 82%, var(--color-text-primary));
+  --window-ink: color-mix(in oklab, var(--team) 52%, var(--color-text-primary));
+  --window-glow: color-mix(in oklab, var(--team) 86%, var(--color-text-inverse));
+  position: relative;
   width: 360px;
   height: 520px;
-  position: relative;
   flex-shrink: 0;
+  perspective: 1800px;
+  /* Vertical drags still scroll the page or sheet; a sideways drag tilts. */
+  touch-action: pan-y;
 }
 
-/* The front of the card never shows a loading state — it paints from data the
-   opener already had. Only the back face (game log / history), which is hidden
-   until the card is flipped, can still be in flight, and it uses these. */
-@keyframes cardShimmer {
-  from { transform: translateX(-60%); }
-  to   { transform: translateX(60%); }
-}
-
-.rowSkeletons {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 4px 0;
-}
-
-.rowSkeleton {
-  height: 14px;
-  border-radius: 3px;
-  background: var(--color-bg-elevated);
-  position: relative;
-  overflow: hidden;
-}
-
-.rowSkeleton::after,
-.barSkeleton::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    110deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.45) 48%,
-    transparent 66%
-  );
-  animation: cardShimmer 1.1s ease-in-out infinite;
-}
-
-.barSkeleton {
-  background: var(--color-bg-elevated);
-  position: relative;
-  overflow: hidden;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rowSkeleton::after,
-  .barSkeleton::after {
-    animation: none;
-  }
-}
-
-/* Drop shadow underneath the card */
-.cardShadow {
+.shadow {
   position: absolute;
   bottom: -22px;
   left: 8%;
   right: 8%;
   height: 32px;
-  background: radial-gradient(ellipse at center, rgba(28, 28, 28, 0.30) 0%, transparent 70%);
-  filter: blur(8px);
   border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.45) 0%, transparent 70%);
+  filter: blur(8px);
   z-index: -1;
-  transition: opacity 250ms ease;
+  opacity: 0.22;
   pointer-events: none;
+  transition: opacity 250ms ease;
 }
 
-/* ── Card container ─────────────────────────────────────────── */
+.live .shadow { opacity: 0.5; }
 
 .card {
   position: relative;
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
-  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 700ms var(--ease-standard);
   will-change: transform;
 }
 
-.flipped {
-  transform: rotateY(180deg);
-}
-
-/* ── Card face base ─────────────────────────────────────────── */
+/* A finger tracks closely; the mouse keeps the shipped slow settle. */
+.drag .card { transition: transform 120ms ease-out; }
 
 .face {
   position: absolute;
   inset: 0;
   border-radius: 18px;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
   overflow: hidden;
   background: var(--color-bg-card);
+  display: flex;
+  flex-direction: column;
+  transform: translateZ(0);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.55) inset,
     0 0 0 1px var(--color-border) inset,
-    0 24px 56px -16px rgba(28, 28, 28, 0.28),
-    0 8px 18px -6px rgba(28, 28, 28, 0.14);
+    0 24px 56px -16px rgba(0, 0, 0, 0.34),
+    0 8px 18px -6px rgba(0, 0, 0, 0.18);
 }
 
-/* ══════════════════════════════════════════════════════════════
-   FRONT FACE
-   ══════════════════════════════════════════════════════════════ */
-
-.front {
-  /* translateZ(0) gives .front its own GPU compositing layer, matching
-     .back which already has translateZ(0). Without this, parent opacity
-     animations (modal fadeIn, Framer Motion carousel) flatten the 3D
-     hierarchy and break backface-visibility:hidden on this face. */
-  transform: translateZ(0);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  position: relative;
-  pointer-events: auto;
-  transition: pointer-events 0s;
-}
-
-.flipped .front {
-  pointer-events: none;
-}
-
-.flipped .back {
-  pointer-events: auto;
-}
-
-/* Team-color pitch backdrop */
-.frontBg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: 18px;
-  overflow: hidden;
-}
-
-.frontBg::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 70% 100% at 50% 100%, var(--team-color-soft) 0%, transparent 70%),
-    linear-gradient(180deg,
-      var(--color-bg-card) 0%,
-      var(--color-bg-card) 42%,
-      var(--team-color-deep) 100%
-    );
-}
-
-/* Mown-pitch stripe texture */
-.frontBg::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 40%;
-  background: repeating-linear-gradient(
-    180deg,
-    rgba(58, 107, 74, 0.07) 0,
-    rgba(58, 107, 74, 0.07) 14px,
-    rgba(58, 107, 74, 0.14) 14px,
-    rgba(58, 107, 74, 0.14) 28px
-  );
-  mask-image: linear-gradient(180deg, transparent 0%, black 28%, black 100%);
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, black 28%, black 100%);
-}
-
-/* ── Masthead ───────────────────────────────────────────────── */
+/* ── Top bar ────────────────────────────────────────────────── */
 
 .masthead {
-  position: relative;
-  z-index: 3;
+  flex: 0 0 auto;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 18px 10px;
-  border-bottom: 1px solid var(--color-border-subtle);
-  flex-shrink: 0;
+  gap: 10px;
+  padding: 0 14px 0 16px;
 }
 
-.mastheadLeft {
+.who {
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
-  flex: 1;
 }
 
-/* Always mounted, even for a free agent or before ownership resolves, so the
-   club name to its left is measured against a constant width and never
-   re-wraps when a crest arrives. */
-.mastheadRight {
+.clubCrest {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.crest {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-control);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-style: italic;
+  font-size: var(--t-13);
+  color: var(--color-text-inverse);
+  flex-shrink: 0;
+}
+
+.whoNames {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.fullName {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clubName {
+  font-family: var(--font-label);
+  font-size: var(--t-11);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--color-text-secondary);
+}
+
+/* Always mounted at a fixed width, so a crest that resolves late never
+   re-flows the name beside it. */
+.ownerSlot {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   flex-shrink: 0;
-  margin-left: 10px;
-  min-width: 34px;
+  min-width: 30px;
   min-height: 34px;
 }
 
-/* Also the squad-peek trigger — reset the button chrome so it stays a crest.
-   Falls back to a plain <div> on surfaces with no drawer (share pages). */
+/* Also the squad-peek trigger: reset the button chrome so it stays a crest. */
 .ownerCrest {
   display: flex;
-  align-items: center;
-  justify-content: center;
   line-height: 0;
   padding: 0;
   border: none;
   background: none;
   cursor: pointer;
-  border-radius: 50%;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: transform var(--dur-fast) var(--ease-standard);
 }
+
 @media (hover: hover) and (pointer: fine) {
-  .ownerCrest:hover {
-    transform: scale(1.06);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 45%, transparent);
-  }
+  .ownerCrest:hover { transform: scale(1.06); }
 }
 
 .loanCrests {
@@ -316,17 +223,12 @@
   border: none;
   background: none;
   cursor: pointer;
-  border-radius: var(--r-control);
-  transition: transform var(--transition-fast);
-}
-@media (hover: hover) and (pointer: fine) {
-  .loanCrestCol:hover { transform: scale(1.06); }
 }
 
 .loanRole {
-  font-family: var(--font-sans);
+  font-family: var(--font-label);
   font-size: var(--t-10);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -341,142 +243,81 @@
   margin-bottom: 8px;
 }
 
-.crest {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--r-control);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-style: italic;
-  font-size: var(--t-13);
-  color: var(--color-text-inverse);
-  flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+/* ── Photo window ───────────────────────────────────────────── */
+
+.window {
   position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 0 10px;
+  border-radius: 12px;
   overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(70% 58% at 52% 40%, var(--window-light, color-mix(in oklab, var(--window-glow) 78%, transparent)) 0%, transparent 72%),
+    linear-gradient(180deg, var(--window-top) 0%, var(--window-ink) 100%);
+  box-shadow: inset 0 0 0 var(--keyline-w, 1px) var(--keyline, rgba(255, 255, 255, 0.1));
 }
 
-.crestImg {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-  border-radius: var(--r-control);
-  flex-shrink: 0;
+/* A club with a second colour (Newcastle) lights and edges the window in it. */
+.twoTone {
+  --window-light: color-mix(in srgb, var(--team2) 20%, transparent);
+  --keyline: color-mix(in srgb, var(--team2) 92%, transparent);
+  --keyline-w: 2px;
 }
 
-.crest::after {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.20), transparent);
-}
-
-.clubMeta {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.05;
-  min-width: 0;
-}
-
-.mastheadName {
-  font-family: var(--font-serif);
-  font-size: var(--t-13);
-  font-weight: 700;
-  color: var(--color-text-primary);
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mastheadClub {
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  margin-top: 1px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* ── Position spine ─────────────────────────────────────────── */
-
-.posSpine {
+/* Mown-pitch stripes, on the colour where they can be seen. */
+.window::before {
+  content: '';
   position: absolute;
   left: 0;
-  top: 56px;
-  bottom: 193px;
-  width: 22px;
+  right: 0;
+  bottom: 0;
+  height: 52%;
+  z-index: 0;
+  background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0 14px, rgba(255, 255, 255, 0) 14px 28px);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 45%, #000 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 45%, #000 100%);
+}
+
+.spine {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 5;
 }
 
-.posSpineText {
+.spineText {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
+  font-family: var(--font-label);
+  font-size: var(--t-11);
   font-weight: 700;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  /* THE KEYLINE CARRIES THE HUE, THE TEXT GOES TO INK — the position spine's
-     own rule, applied to the one place in this card that broke it. A position
-     FILL colour is designed to hold white text on it, not to be text: as ink
-     here it measured 2.17:1 at this opacity (worst pair GK on an Aston Villa
-     card), and 3.49 even at full strength. The rules above and below keep
-     --pos-color and are decorative, because the word itself says the position.
-     Nothing else moves — same size, same tracking, same 0.65. */
-  color: var(--color-text-primary);
+  color: rgba(255, 255, 255, 0.86);
   padding: 12px 0;
-  border-top: 1px solid var(--pos-color);
-  border-bottom: 1px solid var(--pos-color);
-  opacity: 0.65;
+  border-top: 2px solid color-mix(in oklab, var(--pos-color) 70%, var(--color-text-inverse));
+  border-bottom: 2px solid color-mix(in oklab, var(--pos-color) 70%, var(--color-text-inverse));
 }
 
-/* ── Hero — player photo ────────────────────────────────────── */
-
-.hero {
-  position: relative;
-  z-index: 2;
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 8px 28px 0;
-  overflow: visible;
-  margin-top: -8px;
-}
-
-/* Fixed slot sized to the FPL portrait aspect (110×140 → 196×250). Reserving
-   the exact box means the photo, the fallback initial, and a still-loading
-   photo all occupy identical space — the identity bar below can never move. */
+/* Fixed slot sized to the FPL portrait aspect (110×140 → 196×250), centred.
+   The photo, the fallback initial and a still-loading photo all occupy it. */
 .photoSlot {
-  position: relative;
+  position: absolute;
+  left: 50%;
+  bottom: 0;
   width: 196px;
   height: 250px;
-  max-width: calc(100% - 20px);
-  margin-bottom: -30px;
-  flex-shrink: 0;
-  z-index: 3;
+  margin-left: -98px;
+  z-index: 2;
 }
 
-/* Primary source (photo_url, the tall 110x140/220x280 cut-out), shown at a
-   fixed 1:1 scale — deliberately NOT per-player corrected. A per-player zoom
-   (tried 2026-08-24, reverted) makes every card's head a consistent width,
-   but since the box's aspect already closely matches this source's, it also
-   means every card's *photo* is a different size depending on how that
-   player happened to be framed — Doku's tiny with a gap round it, Savinho's
-   filling the box, one player card next to another looking inconsistent.
-   That's a worse trade than the (real, but far less obtrusive) framing
-   variance across players' own photos. Uniform scale, unlike the small
-   avatar (`Portrait.tsx`), which crops in tight enough at 150%+ zoom that an
-   unusually-framed photo really does get cut off wrong there. */
 .photo {
   position: absolute;
   inset: 0;
@@ -484,25 +325,15 @@
   height: 100%;
   object-fit: contain;
   object-position: bottom center;
-  filter: drop-shadow(0 6px 16px rgba(28, 28, 28, 0.22));
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.35));
   image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  /* Cold images cross-fade in place; warm ones mount already at .photoLoaded
-     so there is no transition to see. Opacity only — never geometry. */
   opacity: 0;
   transition: opacity 180ms ease-out;
 }
 
-.photoLoaded {
-  opacity: 1;
-}
+.photoLoaded { opacity: 1; }
 
-/* The 500x500 fallback (photo.ts) is a different, square crop — not the
-   box's own 110x140 aspect. `contain` (the default above) shrinks it to the
-   box's width and anchors it to the bottom, leaving a bare gap above the
-   head where the photo should be. `cover` scales it to the box's full height
-   instead, matching the primary source's size and cropping evenly at the
-   sides. */
+/* The 500x500 fallback is a square crop, so it covers rather than contains. */
 .photoAlt {
   object-fit: cover;
   object-position: top center;
@@ -511,51 +342,109 @@
 .photoPlaceholder {
   position: absolute;
   left: 50%;
-  bottom: 0;
+  bottom: 16px;
   transform: translateX(-50%);
   width: 120px;
   height: 160px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: color-mix(in srgb, var(--placeholder-tint, var(--color-bg-elevated)) 12%, var(--color-bg-elevated));
+  display: grid;
+  place-items: center;
   border-radius: 8px;
-  border: 1px solid var(--color-border-subtle);
+  background: rgba(255, 255, 255, 0.12);
   font-family: var(--font-serif);
   font-size: 60px;
   font-weight: 700;
-  color: var(--color-text-muted);
+  color: rgba(255, 255, 255, 0.8);
   opacity: 1;
   transition: opacity 180ms ease-out;
   pointer-events: none;
 }
 
-.photoPlaceholderHidden {
-  opacity: 0;
+.photoPlaceholderHidden { opacity: 0; }
+
+/* The season down the window's right edge. A long label breaks onto two lines
+   rather than pushing into the photo. */
+.figures {
+  position: absolute;
+  right: 12px;
+  top: 45%;
+  transform: translateY(-52%);
+  z-index: 3;
+  max-width: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+  text-align: right;
+  animation: figuresIn 220ms var(--ease-standard);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .photo,
-  .photoPlaceholder {
-    transition: none;
-  }
+@keyframes figuresIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* ── Injury stamp (top-right of hero, under masthead) ───────── */
+.figureValue {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--color-text-inverse);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.35);
+}
+
+.figureLabel {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-label);
+  font-size: var(--t-10);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.15;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+/* "xGI" is a proper noun of the stats world; uppercased it reads as XGI. */
+.figureLabelAsIs {
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+
+/* Foil: a sheen that is always there and follows the pointer or finger. */
+.sheen {
+  position: absolute;
+  inset: -25%;
+  z-index: 4;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.9;
+  background:
+    linear-gradient(115deg, transparent 34%, rgba(255, 255, 255, 0.13) 44%, rgba(255, 255, 255, 0) 54%),
+    linear-gradient(115deg, transparent 40%, rgba(255, 214, 140, 0.1) 46%, rgba(140, 222, 255, 0.1) 51%, rgba(220, 150, 255, 0.08) 56%, transparent 62%);
+  transform: translate(var(--gx, 0%), var(--gy, 0%));
+  transition: transform 500ms var(--ease-standard);
+}
+
+.live .sheen { transition: none; }
+
+/* ── Injury stamp (top-right of the window) ─────────────────── */
 
 .injuryStamp {
   position: absolute;
-  /* Right inset is visually looser than top against the masthead rule —
-     bias top down so the gaps read equal. */
-  top: 22px;
-  right: 16px;
-  z-index: 10;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  max-width: 120px;
+  max-width: 140px;
+  padding: 3px 7px;
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
   cursor: default;
-  pointer-events: auto;
 }
 
 .injuryDot {
@@ -564,31 +453,22 @@
   border-radius: 50%;
   flex-shrink: 0;
   background: currentColor;
-  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 22%, transparent);
 }
 
 .injuryLabel {
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
+  font-family: var(--font-label);
+  font-size: var(--t-11);
   font-weight: 700;
   line-height: 1;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: currentColor;
-  text-shadow:
-    0 0 6px var(--color-bg-card),
-    0 1px 2px var(--color-bg-card);
 }
 
-.injuryOut {
-  color: var(--color-accent-red);
-}
+.injuryOut { color: var(--color-accent-red); }
+.injuryDoubtful { color: var(--color-warning-text); }
 
-.injuryDoubtful {
-  color: var(--color-accent-yellow);
-}
-
-/* Custom tip — native title dies under the card's 3D transforms */
+/* Custom tip: a native title dies under the card's 3D transforms. */
 .injuryTip {
   display: none;
   position: absolute;
@@ -599,377 +479,224 @@
   max-width: 200px;
   padding: 6px 8px;
   border-radius: var(--r-control);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
   box-shadow: 0 8px 20px -8px rgba(28, 28, 28, 0.35);
   font-family: var(--font-sans);
-  font-size: var(--t-10);
+  font-size: var(--t-11);
   font-weight: 500;
   line-height: 1.35;
-  letter-spacing: 0.01em;
   text-transform: none;
+  letter-spacing: 0;
   color: var(--color-text-primary);
-  text-shadow: none;
   pointer-events: none;
 }
 
-.injuryStamp:focus-visible .injuryTip {
-  display: block;
-}
+.injuryStamp:focus-visible .injuryTip { display: block; }
 
 @media (hover: hover) and (pointer: fine) {
-  .injuryStamp:hover .injuryTip {
-    display: block;
-  }
+  .injuryStamp:hover .injuryTip { display: block; }
 }
 
-/* ── Identity bar ───────────────────────────────────────────── */
+/* ── Identity ───────────────────────────────────────────────── */
 
-.identityBar {
+.identity {
   position: relative;
-  z-index: 4;
-  padding: 32px 20px 11px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    color-mix(in srgb, var(--color-bg-card) 55%, transparent) 26%,
-    color-mix(in srgb, var(--color-bg-card) 88%, transparent) 52%,
-    var(--color-bg-card) 70%
-  );
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  padding: 12px 20px;
 }
 
-/* Rating bubble + form arrow floating above identity bar */
-.ratingCluster {
+/* Rank at the selected position, in that position's colour, on the window's
+   bottom edge. */
+.rankBadge {
   position: absolute;
-  top: -22px;
-  right: 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  top: -33px;
+  right: 16px;
   z-index: 6;
-}
-
-.ratingBubble {
-  width: 50px;
-  height: 50px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: var(--color-bg-card);
-  border: 2px solid;
+  background: var(--slot);
+  color: var(--color-text-inverse);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px -4px rgba(28, 28, 28, 0.22), 0 0 0 3px var(--color-bg-card);
+  gap: 2px;
+  box-shadow: 0 0 0 4px var(--color-bg-card), 0 8px 18px -6px rgba(0, 0, 0, 0.35);
+  transition: background var(--dur-fast) ease;
 }
 
-.formArrow {
-  filter: drop-shadow(0 1px 2px rgba(28, 28, 28, 0.12));
-}
-
-.ratingVal {
+.rankValue {
   font-family: var(--font-serif);
-  font-size: var(--t-15);
+  font-size: 25px;
   font-weight: 700;
   line-height: 1;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 
-.ratingLbl {
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
+.rankPos {
+  font-family: var(--font-label);
+  font-size: var(--t-11);
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
-  margin-top: 1px;
+  line-height: 1;
+  opacity: 0.92;
+}
+
+.names {
+  padding-right: 92px;
+  min-width: 0;
 }
 
 .firstName {
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
+  display: block;
+  font-family: var(--font-label);
+  font-size: var(--t-13);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--color-text-secondary);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  line-height: 1.1;
+  color: var(--color-text-secondary);
 }
 
 .lastName {
+  display: block;
+  margin-top: 2px;
   font-family: var(--font-serif);
-  font-size: 27px;
+  font-size: 30px;
   font-weight: 700;
   letter-spacing: -0.025em;
   line-height: 1;
   color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.idMeta {
+.meta {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   flex-wrap: wrap;
-  margin-top: 3px;
-  font-size: var(--t-10);
-  font-family: var(--font-sans);
+  margin-top: 8px;
+  font-family: var(--font-label);
+  font-size: var(--t-13);
+  font-weight: 500;
   color: var(--color-text-secondary);
 }
 
-.posTag {
-  font-size: var(--t-10);
+.tag {
+  font-family: var(--font-label);
+  font-size: var(--t-11);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
+  line-height: 1.15;
   color: var(--color-text-inverse);
   padding: 2px 5px;
+  border: none;
   border-radius: var(--r-micro);
+  background: var(--tag);
 }
 
-.dot {
-  color: var(--color-text-muted);
+/* A tag with a rank picks the slot the card is scored at. */
+.tagBtn {
+  cursor: pointer;
+  opacity: 0.72;
+  transition: box-shadow var(--dur-fast) ease, opacity var(--dur-fast) ease;
 }
+
+.tagBtn:focus-visible {
+  outline: 2px solid var(--tag);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tagBtn:hover { opacity: 1; }
+}
+
+.tagOn {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--color-bg-card), 0 0 0 3.5px var(--tag);
+}
+
+.dot { color: var(--color-text-muted); }
 
 /* ── Stats strip ────────────────────────────────────────────── */
 
-.statsStrip {
+.strip {
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   border-top: 1px solid var(--color-border-subtle);
-  background: var(--color-bg-card);
-  flex-shrink: 0;
-  position: relative;
-  z-index: 4;
 }
 
-.statCell {
-  padding: 18px 6px 7px;
+.cell {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  position: relative;
+  gap: 5px;
+  padding: 11px 4px 10px;
 }
 
-.statCell + .statCell::before {
-  content: "";
+.cell + .cell::before {
+  content: '';
   position: absolute;
-  left: 0; top: 16%; bottom: 16%;
+  left: 0;
+  top: 18%;
+  bottom: 18%;
   width: 1px;
   background: var(--color-border-subtle);
 }
 
-.statVal {
+.cellValue {
   font-family: var(--font-serif);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  line-height: 1;
   letter-spacing: -0.01em;
-  color: var(--color-text-primary);
-  line-height: 1;
-}
-
-.statGold { color: var(--color-gold); }
-.statGreen { color: var(--color-accent-green); }
-
-.statLbl {
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  margin-top: 7px;
-}
-
-/* ── Position rank strip ────────────────────────────────────── */
-
-.rankStrip {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  padding: 7px 18px 9px;
-  background: var(--color-bg-card);
-  border-top: 1px solid var(--color-border-subtle);
-  flex-shrink: 0;
-  position: relative;
-  z-index: 4;
-  flex-wrap: wrap;
-}
-
-.rankLbl {
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  flex-shrink: 0;
-}
-
-.rankChips {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-}
-
-.rankEmpty {
-  font-family: var(--font-sans);
-  font-size: var(--t-11);
-  color: var(--color-text-muted);
-}
-
-.rankChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 6px 2px 3px;
-  border-radius: 3px;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-subtle);
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
-  line-height: 1;
-  cursor: pointer;
-  color: inherit;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .rankChip:hover {
-    border-color: color-mix(in srgb, var(--chip-color, var(--color-accent-green)) 55%, var(--color-border-subtle));
-  }
-}
-
-.rankChip:focus-visible {
-  outline: 2px solid var(--chip-color, var(--color-accent-green));
-  outline-offset: 1px;
-}
-
-.rankChipSelected {
-  border-color: var(--chip-color, var(--color-accent-green));
-  background: color-mix(in srgb, var(--chip-color, var(--color-accent-green)) 10%, var(--color-bg-card));
-}
-
-.rcPos {
-  font-size: var(--t-10);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--color-text-inverse);
-  background: var(--chip-color, var(--color-accent-green));
-  padding: 1px 3px;
-  border-radius: 1px;
-}
-
-.rcNum {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 700;
-  font-size: var(--t-11);
-  color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
 }
 
-.rankChipSelected .rcNum {
-  color: var(--chip-color, var(--color-accent-green));
-}
+.gold { color: var(--color-gold); }
+.green { color: var(--color-accent-green); }
 
-/* ── Action Buttons (Close, Flip) — Inside faces for 3D tilt ──────── */
-
-/* FLAT Action Buttons — Standardized order (X, then Flip) and outside 3D stack to prevent jitter */
-.cardActionsOverlay {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--s3);
-  width: 100%;
-  max-width: 360px;
-  z-index: 1000;
-  pointer-events: auto;
-}
-
-
-.actionIconBtn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-card);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  pointer-events: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color var(--transition-base), color var(--transition-base), transform var(--transition-base), background var(--transition-base);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-  font-size: var(--t-20);
+.cellLabel {
+  font-family: var(--font-label);
+  font-size: var(--t-11);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   line-height: 1;
+  color: var(--color-text-muted);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .actionIconBtn:hover {
-    border-color: var(--color-accent-green);
-    color: var(--color-accent-green);
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .actionIconBtn[aria-label="Close"]:hover {
-    border-color: var(--color-accent-red);
-    color: var(--color-accent-red);
-    transform: none;
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .actionIconBtn[aria-label^="Flip"]:hover {
-    transform: rotate(180deg);
-  }
-}
-
-.crestImg {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-/* ── Holographic shimmer overlay ────────────────────────────── */
+/* ── Holographic overlay, while a pointer or finger is on the card ── */
 
 .holo {
   position: absolute;
   inset: 0;
-  z-index: 6;
+  z-index: 7;
   pointer-events: none;
   border-radius: 18px;
   overflow: hidden;
+  opacity: 0;
   transition: opacity 200ms ease;
-  /* mix-blend-mode is applied only when hovering via .holoActive —
-     keeping it always-on forces a GPU blend compositing context
-     that can break backface-visibility during the flip animation */
 }
 
-.holoActive {
+/* mix-blend-mode only while active: always-on it forces a GPU blend context. */
+.live .holo {
   mix-blend-mode: color-dodge;
+  opacity: 0.85;
 }
 
 .holoShimmer {
   position: absolute;
   inset: -20%;
-  background: linear-gradient(
-    105deg,
-    transparent 30%,
-    rgba(255, 220, 130, 0.16) 38%,
-    rgba(120, 220, 180, 0.20) 44%,
-    rgba(140, 180, 255, 0.20) 50%,
-    rgba(220, 130, 220, 0.16) 56%,
-    rgba(255, 200, 100, 0.14) 62%,
-    transparent 70%
-  );
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 220, 130, 0.16) 38%, rgba(120, 220, 180, 0.2) 44%, rgba(140, 180, 255, 0.2) 50%, rgba(220, 130, 220, 0.16) 56%, rgba(255, 200, 100, 0.14) 62%, transparent 70%);
   filter: blur(2px);
   transform: translate(var(--gx, 0%), var(--gy, 0%));
 }
@@ -977,430 +704,21 @@
 .holoGrid {
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(
-    var(--rot, 45deg),
-    transparent 0,
-    transparent 4px,
-    rgba(255, 255, 255, 0.07) 4px,
-    rgba(255, 255, 255, 0.07) 5px
-  );
+  background: repeating-linear-gradient(var(--rot, 45deg), transparent 0, transparent 4px, rgba(255, 255, 255, 0.07) 4px, rgba(255, 255, 255, 0.07) 5px);
   opacity: 0.4;
 }
 
 .holoGlare {
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    circle 180px at var(--mx, 50%) var(--my, 50%),
-    rgba(255, 255, 255, 0.50) 0%,
-    rgba(255, 255, 255, 0) 60%
-  );
+  background: radial-gradient(circle 180px at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 60%);
   mix-blend-mode: overlay;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   BACK FACE
-   ══════════════════════════════════════════════════════════════ */
-
-.back {
-  transform: rotateY(180deg) translateZ(0);
-}
-
-.backContent {
-  display: flex;
-  flex-direction: column;
-  padding: 16px 16px 14px;
-  height: 100%;
-}
-
-.backHead {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding-bottom: 11px;
-  padding-right: 80px;
-  border-bottom: 2px solid var(--color-text-primary);
-  margin-bottom: 10px;
-  flex-shrink: 0;
-}
-
-.backEyebrow {
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
-  font-weight: 700;
-  letter-spacing: 0.20em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  display: block;
-  margin-bottom: 3px;
-}
-
-.backName {
-  font-family: var(--font-serif);
-  font-size: var(--t-17);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--color-text-primary);
-}
-
-.backName em {
-  font-style: italic;
-  color: var(--color-accent-green);
-}
-
-/* ── Form sparkline ─────────────────────────────────────────── */
-
-.formSection {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--s3);
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-border-subtle);
-  margin-bottom: 8px;
-  flex-shrink: 0;
-}
-
-.formBars {
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 42px;
-}
-
-.formBar {
-  flex: 1;
-  background: var(--color-border);
-  border-radius: 1px 1px 0 0;
-  min-height: 3px;
-  transition: background 200ms ease;
-}
-
-.barHigh { background: var(--color-accent-green); }
-.barMid  { background: var(--rating-fair); }
-.barLow  { background: var(--rating-weak); }
-.barDnp  { background: var(--color-border-subtle); }
-
-.formEmpty {
-  font-family: var(--font-sans);
-  font-size: var(--t-11);
-  color: var(--color-text-muted);
-  display: flex;
-  align-items: flex-end;
-  padding-bottom: 2px;
-}
-
-.formSummary {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.formLbl {
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.formVal {
-  font-family: var(--font-serif);
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-accent-green);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-/* ── Back tabs ──────────────────────────────────────────────── */
-
-.backTabs {
-  display: flex;
-  gap: var(--s3);
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--color-border-subtle);
-  flex-shrink: 0;
-}
-
-.backTab {
-  background: none;
-  border: none;
-  padding: 6px 0;
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  position: relative;
-  transition: color 150ms ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .backTab:hover { color: var(--color-text-primary); }
-}
-
-.backTabActive { color: var(--color-text-primary); }
-
-.backTabActive::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 0;
-  bottom: -1px;
-  height: 2px;
-  background: var(--color-accent-green);
-}
-
-/* ── Tab content area ───────────────────────────────────────── */
-
-.backTabContent {
-  flex: 1;
-  width: 100%;
-  overflow: hidden;
-  position: relative;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ── Game log table ─────────────────────────────────────────── */
-
-.glWrap {
-  flex: 1;
-  width: 100%;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-border) transparent;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-  position: relative;
-  z-index: 5;
-}
-
-.glWrap::-webkit-scrollbar { width: 4px; }
-.glWrap::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: var(--r-micro); }
-
-/* The season block, above the game log. Sits inside the scroller deliberately:
-   the card back is 520px tall and pinning this would leave the log four rows. */
-.seasonPerf {
-  padding: var(--s2) var(--s1) var(--s3);
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: var(--s2);
-}
-.seasonPerfHead {
-  display: block;
-  margin-bottom: var(--s2);
-  color: var(--color-text-muted);
-}
-
-.glTable {
-  width: 100%;
-  font-family: var(--font-sans);
-  font-size: var(--t-11);
-  border-collapse: collapse;
-}
-
-.glTable thead th {
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  text-align: right;
-  padding: 5px 3px 6px;
-  position: sticky;
-  top: 0;
-  background: var(--color-bg-card);
-  border-bottom: 1px solid var(--color-border-subtle);
-  z-index: 1;
-}
-
-.gwTh, .oppTh { text-align: left !important; }
-
-.glTable tbody td {
-  padding: 5px 3px;
-  font-variant-numeric: tabular-nums;
-  border-bottom: 1px solid var(--color-border-subtle);
-  color: var(--color-text-primary);
-  text-align: right;
-  vertical-align: middle;
-}
-
-.gwTd, .oppTd { text-align: left !important; }
-.ctrTh, .ctrTd { text-align: center !important; }
-
-.gwTd {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 700;
-  color: var(--color-text-secondary) !important;
-  text-align: left !important;
-}
-
-.oppTd {
-  text-align: left !important;
-  color: var(--color-text-secondary) !important;
-  font-weight: 500;
-}
-
-.resTag {
-  font-size: var(--t-10);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  margin-left: 4px;
-}
-
-.ptsTd {
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: var(--t-12);
-  white-space: nowrap;
-}
-
-.dnpRow td { opacity: 0.55; }
-
-.dnpTd {
-  text-align: center !important;
-  color: var(--color-text-muted) !important;
-  font-style: italic;
-}
-
-.upcomingRow td {
-  border-bottom: 1px solid var(--color-border-subtle);
-}
-
-.fixtureTag {
-  font-family: var(--font-condensed);
-  font-size: var(--t-10);
-  font-weight: 500;
-  color: var(--color-text-muted);
-  letter-spacing: 0.02em;
-  margin-left: 5px;
-  white-space: nowrap;
-}
-
-.ptsForecast {
-  color: var(--color-text-secondary);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.projTag {
-  font-family: var(--font-condensed);
-  font-size: var(--t-9);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  margin-left: 3px;
-  vertical-align: baseline;
-}
-
-.emptyState {
-  padding: var(--s6) var(--s4);
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: var(--t-13);
-  font-family: var(--font-sans);
-}
-
-/* ── Rating breakdown ───────────────────────────────────────── */
-
-.bdList {
-  padding: 4px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  overflow-y: auto;
-  height: 100%;
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-border) transparent;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-  position: relative;
-  z-index: 5;
-}
-
-.bdRow {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.bdTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-.bdName {
-  font-family: var(--font-sans);
-  font-size: var(--t-11);
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.bdWt {
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
-  font-weight: 700;
-  letter-spacing: 0.10em;
-  color: var(--color-text-muted);
-}
-
-.bdTrack {
-  height: 5px;
-  background: var(--color-bg-elevated);
-  border-radius: var(--r-micro);
-  overflow: hidden;
-}
-
-.bdFill {
-  height: 100%;
-  border-radius: var(--r-micro);
-  transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.bdDetail {
-  font-family: var(--font-sans);
-  font-size: var(--t-10);
-  color: var(--color-text-muted);
-}
-
-/* ── Back footer (flip button) ──────────────────────────────── */
-
-
-/* ── Mobile scale ───────────────────────────────────────────── */
-
-@media (max-width: 380px) {
-  .stage {
-    transform: scale(0.92);
-    transform-origin: center center;
-  }
-}
-
-/* ── The performance block in the game log ─────────────────────────────────
-   A scoring row opens in place. One at a time (accordion) — the card is
-   already a long scroll and two open blocks push the second off-screen. */
-.logRowOpenable { cursor: pointer; }
-.logRowOpenable td { transition: background-color .12s var(--ease, ease); }
-@media (hover: hover) and (pointer: fine) {
-  .logRowOpenable:hover td { background: var(--color-bg-card-alt); }
-}
-.logRowOpen td { background: var(--color-bg-card-alt); }
-.logRowOpen td:first-child { box-shadow: inset 2px 0 0 var(--color-accent); }
-
-.logExpandRow td { border-bottom: 1px solid var(--color-border); }
-.logExpandCell {
-  padding: var(--s3) var(--s2) var(--s4) !important;
-  text-align: left !important;
-  background: var(--color-bg-card-alt);
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .sheen,
+  .photo,
+  .photoPlaceholder { transition: none; }
+  .figures { animation: none; }
 }

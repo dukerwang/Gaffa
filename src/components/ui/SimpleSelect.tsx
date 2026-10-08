@@ -29,7 +29,7 @@ export interface SimpleSelectProps<T extends string = string> {
  * Single-value select control that renders Gaffa's styled surface and
  * automatically leverages the native OS picker on mobile devices for
  * maximum ergonomics.
- * - Archivo Narrow typography
+ * - Sofia Sans Semi Condensed typography (--font-label)
  * - High contrast :focus-visible outline
  * - Custom arrow caret
  */

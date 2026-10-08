@@ -3,6 +3,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { DEFAULT_SCORING_RULES } from '@/types';
 import { getCurrentFplSeason, previousSeason } from '@/lib/season/currentSeason';
+import { REDRAFT_LEAGUE_SETTINGS } from '@/lib/leagues/features';
 
 export async function POST(req: NextRequest) {
   // Verify the requesting user is authenticated
@@ -53,6 +54,9 @@ export async function POST(req: NextRequest) {
     season: currentSeason,
     current_season: currentSeason,
     previous_season: priorSeason,
+    // Redraft switches off Match Revenue, the solidarity and scout split,
+    // the academy and loans at the settings the database code reads.
+    ...(isDynasty === false ? REDRAFT_LEAGUE_SETTINGS : {}),
   }).select('id, invite_code').single();
 
   if (leagueErr) return NextResponse.json({ error: leagueErr.message }, { status: 500 });

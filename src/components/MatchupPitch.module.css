@@ -458,7 +458,7 @@
    set of abbreviated column-head-shaped tokens rather than prose. */
 .chipStats {
     display: block;
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-10);
     letter-spacing: 0.03em;
     color: var(--color-text-secondary);
@@ -670,7 +670,7 @@
 /* Same token the lineup sidebar uses — DEF/MID/ATT/FLEX is the category, not
    a tactical position, so it is condensed ink rather than a PositionBadge. */
 .benchSlotLabel {
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-10);
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -857,7 +857,7 @@
 }
 
 .breakdownStats {
-    font-family: var(--font-condensed);
+    font-family: var(--font-label);
     font-size: var(--t-10);
     letter-spacing: 0.03em;
     color: var(--color-text-secondary);

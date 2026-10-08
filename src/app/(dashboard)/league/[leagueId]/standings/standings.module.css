@@ -133,7 +133,7 @@
 .medalBronze { color: var(--color-bronze); }
 
 .podiumLeaderBadge {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-11);
   letter-spacing: 0.08em;
@@ -246,7 +246,7 @@
 
 .table thead th {
   text-align: right;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.14em;

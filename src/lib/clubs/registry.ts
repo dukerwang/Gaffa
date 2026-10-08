@@ -38,6 +38,12 @@ export interface Club {
     /** Primary club colour, used for card accents. */
     color: string;
     /**
+     * Second kit colour, only where the primary alone can't identify the club
+     * (Newcastle's is a dark grey). The player card lights and edges its photo
+     * window with it.
+     */
+    color2?: string;
+    /**
      * Every other spelling seen across FPL, SoFIFA and Transfermarkt feeds.
      * Matched case-insensitively.
      */
@@ -78,6 +84,11 @@ export function clubBadgePath(nameOrSlug: string | null | undefined): string | n
 /** Primary colour for a club name, falling back to the neutral accent. */
 export function clubColor(nameOrSlug: string | null | undefined): string {
     return resolveClub(nameOrSlug)?.color ?? UNKNOWN_CLUB_COLOR;
+}
+
+/** Second club colour, or null when the club has only the one. */
+export function clubColor2(nameOrSlug: string | null | undefined): string | null {
+    return resolveClub(nameOrSlug)?.color2 ?? null;
 }
 
 /** Every badge path, for preloading. */

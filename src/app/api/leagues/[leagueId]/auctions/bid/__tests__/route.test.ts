@@ -295,6 +295,45 @@ describe('the free-agent floor', () => {
   });
 });
 
+describe('a redraft league', () => {
+  const TRANSFER_DAY = '2026-10-09T11:30:00.000Z';
+
+  function redraft(marketValue = 40, nextSettleAt: string | null = TRANSFER_DAY) {
+    const tables = leagueFixture({ marketValue });
+    Object.assign(tables.leagues[0], { is_dynasty: false, taxi_size: 0 });
+    return setup(tables, {
+      ...acceptingRpc,
+      transfer_day_window: () => [{ next_settle_at: nextSettleAt, last_settle_at: null, instant_open: false, instant_gameweek: null }],
+    });
+  }
+
+  it('opens every free agent at a flat €1m, whatever his market value', async () => {
+    redraft(40);
+    expect((await bid({ playerId: PLAYER_ID, bidAmount: 1 })).status).toBe(200);
+  });
+
+  it('closes the lot on the next Transfer Day, not on a rolling clock', async () => {
+    redraft();
+    expect((await bid({ playerId: PLAYER_ID, bidAmount: 5 })).status).toBe(200);
+    const call = admin.__rpcCalls.find((c) => c.name === 'place_auction_bid_rpc')!;
+    expect(call.args.p_expires_at).toBe(TRANSFER_DAY);
+  });
+
+  it('refuses a bid once the season has no Transfer Day left', async () => {
+    redraft(40, null);
+    const res = await bid({ playerId: PLAYER_ID, bidAmount: 5 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("There's no Transfer Day left this season.");
+  });
+
+  it('refuses academy routing, because redraft has no academy', async () => {
+    redraft();
+    const res = await bid({ playerId: PLAYER_ID, bidAmount: 5, sendToAcademy: true });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("Redraft leagues don't have an academy.");
+  });
+});
+
 describe("a manager's listing", () => {
   function withListing(extra: Record<string, unknown>) {
     const tables = leagueFixture({ marketValue: 40 });

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import { LISTING_INITIAL_WINDOW_MS } from '@/lib/auction/timer';
+import { FEATURE_OFF_MESSAGE, leagueFeatures } from '@/lib/leagues/features';
 
 interface Props {
   params: Promise<{ leagueId: string }>;
@@ -72,6 +73,11 @@ export async function POST(req: NextRequest, { params }: Props) {
     .single();
 
   if (!myTeam) return NextResponse.json({ error: 'No team in this league' }, { status: 403 });
+
+  const { data: format } = await admin.from('leagues').select('is_dynasty').eq('id', leagueId).single();
+  if (!leagueFeatures(format).listings) {
+    return NextResponse.json({ error: FEATURE_OFF_MESSAGE.listings }, { status: 403 });
+  }
 
   // 3. Parse and validate body
   const body = await req.json();

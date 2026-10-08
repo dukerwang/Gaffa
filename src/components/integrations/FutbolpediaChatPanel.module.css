@@ -36,7 +36,7 @@
 .bubbleAi { align-items: flex-start; }
 
 .bubbleWho {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -99,7 +99,7 @@
 }
 
 .lockKicker {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -116,7 +116,7 @@
 
 .lockConf {
   margin-left: var(--s2);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-style: normal;
   font-size: var(--t-10);
   font-weight: 700;

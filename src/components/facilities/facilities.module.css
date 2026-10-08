@@ -154,7 +154,7 @@
 
 .price {
   height: 10px;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -183,7 +183,7 @@
   border-radius: var(--r-control);
   background: var(--color-accent);
   color: var(--color-on-accent);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-12);
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -213,7 +213,7 @@
   border-radius: var(--r-control);
   background: transparent;
   color: var(--color-text-secondary);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-13);
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -238,7 +238,7 @@
 
 .figKey {
   margin-top: 2px;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 500;
   letter-spacing: 0.05em;
@@ -247,7 +247,7 @@
 }
 
 .built {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.08em;

@@ -25,7 +25,7 @@ These primitives provide small, high-leverage prop APIs that are **responsive by
 Unified action control replacing ad-hoc `.btn` CSS classes.
 
 - **Import**: `import { Button } from '@/components/ui';`
-- **Typography**: Archivo Narrow (`--font-condensed`), 600 weight.
+- **Typography**: Sofia Sans Semi Condensed (`--font-label`), 600 weight.
 - **Physics**: Active press scaling (`--press-scale: 0.97`) via Emil Kowalski micro-interaction rules.
 - **Rule**: Buttons are **Title Case** (`Save Lineup`, `Join League`, not `Save lineup`).
 
@@ -121,7 +121,7 @@ import { ResponsiveModal, Button } from '@/components/ui';
 Accessible tablist and segmented switcher for view and mode toggles.
 
 - **Import**: `import { SegmentedControl } from '@/components/ui';`
-- **Typography**: Archivo Narrow (`--font-condensed`).
+- **Typography**: Sofia Sans Semi Condensed (`--font-label`).
 - **Keyboard navigation**: Implements `role="tablist"` and `role="tab"` with arrow key (`ArrowLeft`, `ArrowRight`, `Home`, `End`) navigation.
 - **Visuals**: Crisp active pill indicator with high contrast in both themes.
 

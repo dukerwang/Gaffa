@@ -17,7 +17,7 @@
   { "slug": "liverpool", "name": "Liverpool", "shortName": "LIV", "fplCode": 14, "color": "#C8102E", "aliases": [] },
   { "slug": "man-city", "name": "Man City", "shortName": "MCI", "fplCode": 43, "color": "#6CABDD", "aliases": ["Manchester City"] },
   { "slug": "man-utd", "name": "Man Utd", "shortName": "MUN", "fplCode": 1, "color": "#DA291C", "aliases": ["Manchester United", "Man United"] },
-  { "slug": "newcastle", "name": "Newcastle", "shortName": "NEW", "fplCode": 4, "color": "#363635", "aliases": ["Newcastle United"] },
+  { "slug": "newcastle", "name": "Newcastle", "shortName": "NEW", "fplCode": 4, "color": "#363635", "color2": "#FFFFFF", "aliases": ["Newcastle United"] },
   { "slug": "norwich", "name": "Norwich", "shortName": "NOR", "fplCode": 45, "color": "#FFF200", "aliases": ["Norwich City"] },
   { "slug": "nottingham-forest", "name": "Nott'm Forest", "shortName": "NFO", "fplCode": 17, "color": "#E53233", "aliases": ["Nottm Forest", "Nottingham Forest", "Forest"] },
   { "slug": "sheffield-utd", "name": "Sheffield Utd", "shortName": "SHU", "fplCode": 49, "color": "#EE2737", "aliases": ["Sheffield United"] },

@@ -59,7 +59,7 @@
 
 .seasonTab,
 .segBtn {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-11);
   letter-spacing: 0.08em;
@@ -129,7 +129,7 @@
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-full);
   background: transparent;
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-11);
   letter-spacing: 0.07em;
@@ -210,7 +210,7 @@
   border: none;
   border-right: 1px solid var(--color-border);
   padding: var(--s2) var(--s3);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-12);
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -400,7 +400,7 @@
 }
 
 .qual {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-10);
   letter-spacing: 0.09em;
@@ -436,7 +436,7 @@
   border-radius: var(--radius-sm);
   background: var(--color-tint-danger);
   color: var(--color-text-primary);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-10);
   letter-spacing: 0.07em;
@@ -460,7 +460,7 @@
 
 .tag,
 .tagQuiet {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 600;
   font-size: var(--t-10);
   letter-spacing: 0.05em;
@@ -498,7 +498,7 @@
 
 .owner,
 .ownerFree {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: 9.5px;
   letter-spacing: 0.07em;
@@ -534,7 +534,7 @@
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-full);
   background: var(--color-bg-card);
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-weight: 700;
   font-size: var(--t-12);
   letter-spacing: 0.09em;

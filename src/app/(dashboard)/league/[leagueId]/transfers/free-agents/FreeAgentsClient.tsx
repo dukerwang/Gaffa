@@ -15,6 +15,7 @@ import styles from './free-agents.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 
 const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
+const SignNowDialog = dynamic(() => import('@/components/transfers/SignNowDialog'), { ssr: false });
 
 /**
  * Free Agency — the browsing problem.
@@ -68,9 +69,27 @@ export default function FreeAgentsClient({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [bidFor, setBidFor] = useState<EnrichedPlayer | null>(null);
+  const [signFor, setSignFor] = useState<EnrichedPlayer | null>(null);
   const [newTransfers, setNewTransfers] = useState<EnrichedPlayer[]>(() => initial.newTransfers ?? []);
 
   useEffect(() => { setServerClock(model.serverNow); }, [model.serverNow]);
+
+  // Redraft: bids settle on Transfer Day; after it, free agents whose club
+  // hasn't kicked off can be signed instantly. Formatted after mount so the
+  // label is in the manager's own time zone, not the server's.
+  const transferDay = model.transferDay;
+  const kickedOff = useMemo(() => new Set(transferDay?.kickedOffClubIds ?? []), [transferDay]);
+  const canSignNow = (p: EnrichedPlayer) =>
+    !!transferDay?.instantOpen && !(p.pl_team_id != null && kickedOff.has(p.pl_team_id));
+  const [transferDayLabel, setTransferDayLabel] = useState<string | null>(null);
+  useEffect(() => {
+    if (!transferDay?.nextSettleAt) return setTransferDayLabel(null);
+    setTransferDayLabel(
+      new Date(transferDay.nextSettleAt).toLocaleString(undefined, {
+        weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+      }),
+    );
+  }, [transferDay?.nextSettleAt]);
 
   // Typing must not fire a request per keystroke against a 600-row scan.
   useEffect(() => {
@@ -148,7 +167,7 @@ export default function FreeAgentsClient({
 
   return (
     <div className={styles.page}>
-      <TransfersSubNav leagueId={leagueId} counts={model.counts} />
+      <TransfersSubNav leagueId={leagueId} counts={model.counts} listings={model.league.is_dynasty !== false} />
 
       <header className={styles.header}>
         <div>
@@ -168,8 +187,22 @@ export default function FreeAgentsClient({
             <div className={styles.statValue}>{total || model.counts.freeAgents}</div>
             <div className={`g-label-quiet ${styles.statLabel}`}>Available</div>
           </div>
+          {transferDay && (
+            <div className={styles.stat}>
+              <div className={styles.statValue}>{transferDayLabel ?? '—'}</div>
+              <div className={`g-label-quiet ${styles.statLabel}`}>Next Transfer Day</div>
+            </div>
+          )}
         </div>
       </header>
+
+      {transferDay && (
+        <p className={styles.transferDayNote}>
+          {transferDay.instantOpen
+            ? 'Transfer Day has passed. Sign any free agent now, for nothing, until his club kicks off. Bids settle on the next Transfer Day.'
+            : 'Bids settle together on Transfer Day, 24 hours before the gameweek’s first kickoff. After that, unclaimed free agents can be signed instantly until their club kicks off.'}
+        </p>
+      )}
 
       {liveAuctions.length > 0 && (
         <section className={styles.auctions}>
@@ -298,9 +331,15 @@ export default function FreeAgentsClient({
                 <td className={styles.num}>{p.ppg != null ? Number(p.ppg).toFixed(1) : '—'}</td>
                 <td className={styles.num}>{p.form_rating != null ? Number(p.form_rating).toFixed(1) : '—'}</td>
                 <td className={styles.tdAction}>
-                  <button type="button" className={styles.bidBtn} onClick={() => setBidFor(p)}>
-                    Bid
-                  </button>
+                  {canSignNow(p) ? (
+                    <button type="button" className={styles.bidBtn} onClick={() => setSignFor(p)}>
+                      Sign Now
+                    </button>
+                  ) : (
+                    <button type="button" className={styles.bidBtn} onClick={() => setBidFor(p)}>
+                      Bid
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -352,6 +391,20 @@ export default function FreeAgentsClient({
           myRoster={model.myRoster}
           academy={model.academy}
           bidFloor={model.league.free_agent_bid_floor ?? 0.5}
+          redraft={model.league.is_dynasty === false}
+          onDone={() => { router.refresh(); load(); }}
+        />
+      )}
+
+      {signFor && (
+        <SignNowDialog
+          open
+          onClose={() => setSignFor(null)}
+          leagueId={leagueId}
+          player={signFor}
+          rosterFull={model.rosterFull}
+          myRoster={model.myRoster}
+          kickedOffClubIds={transferDay?.kickedOffClubIds ?? []}
           onDone={() => { router.refresh(); load(); }}
         />
       )}

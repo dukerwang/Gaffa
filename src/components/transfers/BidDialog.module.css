@@ -46,7 +46,7 @@
 .rung:last-child { border-right: none; }
 
 .rungLabel {
-  font-family: var(--font-condensed);
+  font-family: var(--font-label);
   font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.14em;

@@ -14,6 +14,7 @@ import type { Player, PlayerOwnership } from '@/types';
 import { fetchPlayerFront } from '@/lib/players/cardData';
 import { loadFacetInputs } from '@/lib/outlook/facetInputs';
 import { fetchAllPages } from '@/lib/supabase/pagination';
+import { getCurrentFplSeason, previousSeason } from '@/lib/season/currentSeason';
 
 /**
  * Everything the player hub renders, in the two layers the page is built on.
@@ -234,4 +235,94 @@ export async function loadPlayerHub(
       ownership,
     },
   };
+}
+
+/**
+ * The player card's Scouting view: the report and one season's real-world form,
+ * the same figures the hub shows, without the hub's cost.
+ *
+ * `loadPlayerHub` builds the xGI percentile through loadFacetInputs, which pulls
+ * every player_stats row for two seasons into this process to rank one player:
+ * about six seconds a request. Here the ranking is one database call
+ * (`player_xgi_percentile`, migration 168, identical semantics), and the rest
+ * is this player's own rows.
+ */
+export async function loadScoutingProfile(
+  admin: SupabaseClient,
+  playerId: string,
+  requestedSeason?: string | null,
+): Promise<{ report: HubScoutingReport | null; form: HubRealWorldForm | null; season: string } | null> {
+  const current = await getCurrentFplSeason();
+  const prior = previousSeason(current);
+  const season = requestedSeason || current;
+  const seasons = [...new Set([season, current, prior])];
+
+  const [playerRes, outlookRes, statRows, curPctRes, priorPctRes] = await Promise.all([
+    admin.from('players').select('primary_position, secondary_positions').eq('id', playerId).maybeSingle(),
+    admin.from('player_outlooks').select('outlook, sidecar, generated_at').eq('player_id', playerId).maybeSingle(),
+    fetchAllPages<{ season: string; stats: Record<string, unknown> | null }>((from, to) =>
+      admin
+        .from('player_stats')
+        .select('season, stats')
+        .eq('player_id', playerId)
+        .in('season', seasons)
+        .order('id', { ascending: true })
+        .range(from, to),
+    ),
+    admin.rpc('player_xgi_percentile', { p_player_id: playerId, p_season: current }),
+    admin.rpc('player_xgi_percentile', { p_player_id: playerId, p_season: prior }),
+  ]);
+
+  const player = playerRes.data as { primary_position: string | null; secondary_positions: string[] | null } | null;
+  if (!player) return null;
+
+  const report = toReport(
+    (outlookRes.data as StoredOutlookRow | null) ?? null,
+    player.primary_position ?? '',
+    player.secondary_positions ?? [],
+  );
+
+  const totals = (s: string) => {
+    let minutes = 0, appearances = 0, starts = 0, contributions = 0, xgi = 0;
+    for (const row of statRows) {
+      if (row.season !== s) continue;
+      const st = row.stats ?? {};
+      const mins = Number(st.minutes_played ?? 0);
+      if (!Number.isFinite(mins)) continue;
+      minutes += mins;
+      if (mins > 0) appearances += 1;
+      // A start is 60+ minutes, as loadFacetInputs counts it: no season of
+      // player_stats records the start itself.
+      if (mins >= 60) starts += 1;
+      contributions += Number(st.goals ?? 0) + Number(st.assists ?? 0);
+      xgi += Number(st.expected_goals ?? 0) + Number(st.expected_assists ?? 0);
+    }
+    return { minutes, appearances, starts, contributions, xgi };
+  };
+
+  // The hub's rule (loadFacetInputs): rank on the current season once it has
+  // 900 minutes behind it, otherwise on last season, otherwise on what exists.
+  const curPct = curPctRes.data != null ? Number(curPctRes.data) : null;
+  const priorPct = priorPctRes.data != null ? Number(priorPctRes.data) : null;
+  const preferCurrent = totals(current).minutes >= 900;
+  const percentile = (preferCurrent ? curPct : null) ?? priorPct ?? curPct;
+  const rankable = player.primary_position ? RANKABLE_ON_ATTACK.has(player.primary_position) : false;
+
+  const t = totals(season);
+  const form: HubRealWorldForm | null =
+    t.minutes > 0
+      ? {
+          season,
+          minutes: t.minutes,
+          starts: t.starts,
+          appearances: t.appearances,
+          startRate: t.appearances > 0 ? t.starts / t.appearances : null,
+          goalContributions: t.contributions,
+          xgiPer90: (t.xgi * 90) / t.minutes,
+          xgiPercentile: rankable ? percentile : null,
+          setPieces: report?.set_pieces ?? [],
+        }
+      : null;
+
+  return { report, form, season };
 }

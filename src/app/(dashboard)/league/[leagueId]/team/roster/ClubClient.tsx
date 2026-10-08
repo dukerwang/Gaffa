@@ -429,13 +429,15 @@ export default function ClubClient({
           Directly under the masthead, not below the squad: buying Academy, IR
           and Loans Out capacity is a main use of Club Balance and should not
           have to be scrolled to (DECISIONS 2026-09-15). */}
-      <ClubFacilities
-        leagueId={leagueId}
-        facilities={facilities}
-        balance={club.balance}
-        viewerIsOwner={viewerIsOwner}
-        onPurchased={() => router.refresh()}
-      />
+      {club.features.facilities && (
+        <ClubFacilities
+          leagueId={leagueId}
+          facilities={facilities}
+          balance={club.balance}
+          viewerIsOwner={viewerIsOwner}
+          onPurchased={() => router.refresh()}
+        />
+      )}
 
       {/* ── Toolbar ── */}
       <div className={styles.toolbar}>
@@ -461,7 +463,9 @@ export default function ClubClient({
             <CommandPicker
               label="Show"
               value={filter}
-              options={FILTERS}
+              options={FILTERS.filter((f) =>
+                (f.k !== 'taxi' || club.features.academy) &&
+                ((f.k !== 'loan_in' && f.k !== 'loan_out') || club.features.loans))}
               open={openCommand === 'filter'}
               onToggle={() => setOpenCommand(openCommand === 'filter' ? null : 'filter')}
               onSelect={(key) => { chooseFilter(key); setOpenCommand(null); }}
@@ -485,14 +489,16 @@ export default function ClubClient({
           {view === 'depth' && <DepthChart entries={shown} allEntries={entries} selId={selectedId} onSelect={selectEntry} />}
           {view === 'table' && <SquadTable entries={shown} selId={selectedId} onSelect={selectEntry} />}
           <HeldList entries={entries} hold={hold} viewerIsOwner={viewerIsOwner} onSelect={selectEntry} />
-          <RetainedList
-            leagueId={leagueId}
-            teamId={teamId}
-            serverNow={serverNow}
-            departures={departures}
-            viewerIsOwner={viewerIsOwner}
-            onDecision={setDecision}
-          />
+          {club.features.retainedList && (
+            <RetainedList
+              leagueId={leagueId}
+              teamId={teamId}
+              serverNow={serverNow}
+              departures={departures}
+              viewerIsOwner={viewerIsOwner}
+              onDecision={setDecision}
+            />
+          )}
           <Intel entries={entries} totals={totals} />
         </main>
 
@@ -520,6 +526,7 @@ export default function ClubClient({
             leagueId={leagueId}
             viewerIsOwner={viewerIsOwner}
             academyAgeLimit={club.academyAgeLimit}
+            features={club.features}
             hold={hold}
             onAfter={() => router.refresh()}
           />
