@@ -313,7 +313,7 @@ async function archiveCupMatchups(
  * Deletes all matchups for the league (to regenerate for new season).
  * Preserves tournament matchups — those are handled separately.
  */
-async function resetMatchups(
+export async function resetMatchups(
   admin: SupabaseClient,
   leagueId: string,
 ): Promise<number> {
@@ -330,7 +330,7 @@ async function resetMatchups(
 /**
  * Deletes all tournaments (and their rounds/matchups via cascade) for the league.
  */
-async function resetTournaments(
+export async function resetTournaments(
   admin: SupabaseClient,
   leagueId: string,
 ): Promise<number> {

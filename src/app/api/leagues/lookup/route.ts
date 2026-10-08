@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { canJoinWithNewClub } from '@/lib/leagues/status';
+import { getExpansionClubIds, getOpenExpansion } from '@/lib/expansion/expansion';
 
 export async function GET(req: NextRequest) {
   const supabase = await createServerClient();
@@ -44,10 +45,21 @@ export async function GET(req: NextRequest) {
     if (club) openClub = { teamName: club.team_name };
   }
 
+  // A dynasty league expanding in the offseason takes new clubs until it has
+  // the number it opened for.
+  let expansionOpen = false;
+  if (league.status === 'offseason') {
+    const expansion = await getOpenExpansion(admin, league.id);
+    if (expansion?.status === 'protecting') {
+      expansionOpen = (await getExpansionClubIds(admin, expansion.id)).length < expansion.new_clubs;
+    }
+  }
+
   return NextResponse.json({
     openClub,
-    /** Joining creates a new club (before the first draft, or between redraft seasons). */
-    newClubOpen: canJoinWithNewClub(league),
+    /** Joining creates a new club: before the first draft, between redraft seasons, or into an expansion. */
+    newClubOpen: canJoinWithNewClub(league) || expansionOpen,
+    expansionOpen,
     name: league.name,
     maxTeams: league.max_teams,
     currentTeams: count ?? 0,

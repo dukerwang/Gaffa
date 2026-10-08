@@ -70,6 +70,22 @@ export async function runKickoffPreflight(
     });
   }
 
+  // An expansion draft rebuilds the schedule and cups when it finishes, so the
+  // season can't start while one is open.
+  const { data: openExpansion } = await admin
+    .from('expansions')
+    .select('status')
+    .eq('league_id', leagueId)
+    .in('status', ['protecting', 'drafting'])
+    .maybeSingle();
+  if (openExpansion) {
+    issues.push({
+      severity: 'blocker',
+      code: 'expansion_open',
+      message: 'An expansion draft is open. Finish or cancel it before Kickoff.',
+    });
+  }
+
   // ── Roster-side checks ────────────────────────────────────────────────────
   const { data: teams } = await admin.from('teams').select('id, team_name').eq('league_id', leagueId);
   const teamIds = (teams ?? []).map((t) => t.id);
