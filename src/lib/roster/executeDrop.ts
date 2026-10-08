@@ -2,7 +2,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { getDepartureCompensationRate } from '@/lib/transfers/compensation';
 import { initialAuctionExpiry } from '@/lib/auction/timer';
 import { getLeagueAuctionSettings } from '@/lib/auction/leagueAuctionSettings';
-import { leagueFeatures } from '@/lib/leagues/features';
+import { isRedraft, leagueFeatures } from '@/lib/leagues/features';
+import { getTransferDayWindow } from '@/lib/transferDay/window';
 
 export async function executeDrop(
     admin: SupabaseClient,
@@ -188,8 +189,11 @@ export async function executeDrop(
         // Single 72h pre-first-bid window. This path used AUCTION_THRESHOLD (50)
         // to pick between 96h and 48h while the timer and the resolver used 40
         // for the same decision — market value no longer affects duration at all.
+        // Redraft: a dropped player is up for auction until the next Transfer
+        // Day, so nobody can drop a player straight into a friend's hands.
         const { quietHours } = await getLeagueAuctionSettings(admin, team.league_id);
-        const auctionExpiry = initialAuctionExpiry(Date.now(), quietHours, marketValue);
+        const nextTransferDay = isRedraft(league) ? (await getTransferDayWindow(admin)).nextSettleAt : null;
+        const auctionExpiry = nextTransferDay ?? initialAuctionExpiry(Date.now(), quietHours, marketValue);
 
         await admin.from('waiver_claims').insert({
             league_id: team.league_id,

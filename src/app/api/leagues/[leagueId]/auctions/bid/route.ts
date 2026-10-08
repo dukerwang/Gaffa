@@ -10,7 +10,8 @@ import { getLockedPlTeamIds } from '@/lib/auction/lockedClubs';
 import { notifyAuctionResolution, type AuctionResolutionResult } from '@/lib/auctions/notifyAuctionResolution';
 import { countBuybackSlots, DEFAULT_ROSTER_SIZE, UNCOUNTED_ROSTER_STATUSES } from '@/lib/roster/capacity';
 import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
-import { FEATURE_OFF_MESSAGE, freeAgentMinimumBid, leagueFeatures } from '@/lib/leagues/features';
+import { FEATURE_OFF_MESSAGE, freeAgentMinimumBid, isRedraft, leagueFeatures } from '@/lib/leagues/features';
+import { getTransferDayWindow, NO_TRANSFER_DAY_LEFT } from '@/lib/transferDay/window';
 import { canBidInStatus } from '@/lib/leagues/status';
 
 import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/academyEligibility';
@@ -416,10 +417,19 @@ export async function POST(req: NextRequest, { params }: Props) {
 
   const marketValue = Number(playerData?.market_value || 0);
   const bidCount = (existingBidCount ?? 0) + 1;
-  const expiresAt = calculateExpiresAt(firstBidTime, now, auctionSettings.quietHours, {
-    marketValue,
-    bidCount,
-  });
+  // Redraft: every lot settles together on the next Transfer Day, and a later
+  // bid doesn't move it. Dynasty: the rolling, activity-based clock.
+  let expiresAt: string | number;
+  if (isRedraft(league)) {
+    const { nextSettleAt } = await getTransferDayWindow(admin, new Date(now));
+    if (!nextSettleAt) return NextResponse.json({ error: NO_TRANSFER_DAY_LEFT }, { status: 400 });
+    expiresAt = nextSettleAt;
+  } else {
+    expiresAt = calculateExpiresAt(firstBidTime, now, auctionSettings.quietHours, {
+      marketValue,
+      bidCount,
+    });
+  }
 
   // Call the database RPC to place/upsert the bid atomically
   const { data: rpcRes, error: rpcError } = await admin.rpc('place_auction_bid_rpc', {

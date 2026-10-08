@@ -16,7 +16,9 @@
  */
 
 import { effectiveSlots } from '@/lib/facilities/facilities';
-import { freeAgentMinimumBid } from '@/lib/leagues/features';
+import { freeAgentMinimumBid, isRedraft } from '@/lib/leagues/features';
+import { getTransferDayWindow } from '@/lib/transferDay/window';
+import { getLockedPlTeamIds } from '@/lib/fixtures/lockout';
 import type { createAdminClient } from '@/lib/supabase/admin';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import {
@@ -289,6 +291,16 @@ export interface TransfersModel {
    * same way it never reads `playerMap` for its main table.
    */
   newTransfers: EnrichedPlayer[];
+  /**
+   * Redraft only: when bids settle, and whether free agents can be signed
+   * instantly right now (migration 174). Null in a dynasty league.
+   */
+  transferDay: {
+    nextSettleAt: string | null;
+    instantOpen: boolean;
+    /** FPL team ids whose match has kicked off in the instant-signing gameweek. */
+    kickedOffClubIds: number[];
+  } | null;
 }
 
 // ── Builder ───────────────────────────────────────────────────
@@ -612,7 +624,21 @@ export async function buildTransfersModel(
         (l.lender_team_id === myTeam.id || l.borrower_team_id === myTeam.id),
     ).length;
 
+  let transferDay: TransfersModel['transferDay'] = null;
+  if (isRedraft(league)) {
+    try {
+      const window = await getTransferDayWindow(admin);
+      const kickedOff = window.instantOpen && window.instantGameweek != null
+        ? await getLockedPlTeamIds(admin, window.instantGameweek)
+        : new Set<number>();
+      transferDay = { nextSettleAt: window.nextSettleAt, instantOpen: window.instantOpen, kickedOffClubIds: [...kickedOff] };
+    } catch (err) {
+      console.error('[buildTransfersModel] Transfer Day window failed:', err);
+    }
+  }
+
   return {
+    transferDay,
     serverNow: new Date().toISOString(),
     currentGameweek: fplStatus.currentGw,
     league: { ...league, taxi_size: mySlots.academy, max_loan_outs: mySlots.loansOut },
