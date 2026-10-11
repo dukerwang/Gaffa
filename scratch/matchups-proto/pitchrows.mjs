@@ -69,10 +69,12 @@ function rowChip(p, state, opt, w) {
   const fx = p.fixture;
   const ev = (p.stats || '').split(' · ').filter((t) => t && !/x[GA]|rating/.test(t)).join(' · ');
   const line = st === 'pend' && fx ? `<b>${fx.opponentShort}</b> ${ukTime(fx.kickoffTime)}` : st === 'dnp' ? 'Did not play' : ev || '&nbsp;';
-  const lineM = `${badge}${st === 'played' && ev ? `<span>${ev.split(' · ')[0]}</span>` : st === 'pend' && fx ? `<span><b>${fx.opponentShort}</b></span>` : ''}`;
+  // On a phone the card keeps only goals and assists; the score rides the corner.
+  const scoring = ev.split(' · ').filter((t) => /^\d+[GA]$/.test(t)).join(' · ');
+  const lineM = st === 'pend' && fx ? `<b>${fx.opponentShort}</b> ${ukTime(fx.kickoffTime).slice(4)}` : st === 'played' && scoring ? `<b>${scoring}</b>` : '&nbsp;';
   return `<button class="rcC${st === 'pend' ? ' chPend' : st === 'dnp' ? ' chDnp' : ''}" style="width: ${w}px;" aria-label="${p.name}, ${p.slot}">
-    <span class="rcP">${p.subIn ? `<span class="rcSub" title="Auto-subbed in">${glyph('up', 11)}</span>` : ''}${portrait(p, opt.por)}${opt.compact ? '' : badge}</span>
-    <span class="rcBox">${chip(p.slot)}${nameHtml(p.name, w, opt.nameBase)}${opt.compact ? `<span class="rcS rcSM">${lineM}</span>` : `<span class="rcS">${line}</span>`}</span></button>`;
+    <span class="rcP">${p.subIn ? `<span class="rcSub" title="Auto-subbed in">${glyph('up', 11)}</span>` : ''}${portrait(p, opt.por)}${badge}</span>
+    <span class="rcBox">${chip(p.slot)}${nameHtml(p.name, w, opt.nameBase)}${opt.compact ? `<span class="rcS">${lineM}</span>` : `<span class="rcS">${line}</span>`}</span></button>`;
 }
 
 // side: { starters }, opt: { fieldW, compact, minRows }
@@ -81,7 +83,7 @@ export function rowPitch(side, state, { fieldW, compact = false, minRows = 0 }) 
   for (const p of side.starters) (byRow[zoneOf(p.slot)] ??= []).push(p);
   for (const k in byRow) byRow[k].sort((a, b) => (LAT[a.slot] ?? 1) - (LAT[b.slot] ?? 1));
   const rows = ROWS.filter((z) => byRow[z]);
-  const inner = fieldW - (compact ? 16 : 28);
+  const inner = fieldW - (compact ? 28 : 28);
   // Every row places chips on a five-wide grid (or four equal columns), so a
   // chip sized to one fifth can never meet its neighbour in any formation.
   const colW = inner / 5;
@@ -91,7 +93,7 @@ export function rowPitch(side, state, { fieldW, compact = false, minRows = 0 }) 
     por: compact ? 'xs' : 'cmp',
     nameBase: compact ? 10.5 : 12.5,
   };
-  const rowH = compact ? 114 : 134;
+  const rowH = compact ? 122 : 142;
   const html = rows.map((z) => {
     const ps = byRow[z];
     const cols = columns(ps.map((p) => p.slot));

@@ -95,10 +95,12 @@ function statLine(stats, slot, rating) {
   const z = zoneOf(slot);
   const parts = [];
   const g = +stats.goals || 0, a = +stats.assists || 0, cs = stats.clean_sheet;
+  // Goals and assists lead for every position: what scored comes before what defended.
+  if (g) parts.push(`${g}G`); if (a) parts.push(`${a}A`);
   if (z === 'GK') { if (+stats.saves) parts.push(`${stats.saves} Sv`); if (cs) parts.push('CS'); }
   else if (z === 'DEF' || z === 'DMZ') { if (cs) parts.push('CS'); if (+stats.fpl_tackles) parts.push(`${stats.fpl_tackles} Tk`); }
-  else if (z === 'CMZ' || z === 'AMZ') { if (g) parts.push(`${g}G`); if (a) parts.push(`${a}A`); const xa = +stats.expected_assists || 0; if (xa >= 0.05) parts.push(`${xa.toFixed(2)} xA`); }
-  else { if (g) parts.push(`${g}G`); if (a) parts.push(`${a}A`); const xg = +stats.expected_goals || 0; if (xg >= 0.05) parts.push(`${xg.toFixed(2)} xG`); }
+  else if (z === 'CMZ' || z === 'AMZ') { const xa = +stats.expected_assists || 0; if (xa >= 0.05) parts.push(`${xa.toFixed(2)} xA`); }
+  else { const xg = +stats.expected_goals || 0; if (xg >= 0.05) parts.push(`${xg.toFixed(2)} xG`); }
   if (+stats.minutes_played && rating != null) parts.push(`${Number(rating).toFixed(2)} rating`);
   return parts.join(' · ');
 }

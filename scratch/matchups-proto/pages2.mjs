@@ -396,7 +396,8 @@ function teamSheet(side, state, mobile, openName) {
   const row = (p) => {
     const st = playStatus(p, state);
     const fx = p.fixture;
-    const sub = st === 'pend' ? `${fx.opponent} · ${ukTime(fx.kickoffTime)}` : st === 'dnp' ? 'Did not play · no bench cover' : (p.subIn ? `On for ${p.replaced.name} · ` : '') + p.stats;
+    const stats = mobile ? p.stats.split(' · ').filter((t) => !/x[GA]/.test(t)).join(' · ').replace(' rating', ' Rtg') : p.stats;
+    const sub = st === 'pend' ? `${fx.opponent} · ${ukTime(fx.kickoffTime)}` : st === 'dnp' ? (mobile ? 'Did not play' : 'Did not play · no bench cover') : (p.subIn ? `On for ${p.replaced.name} · ` : '') + stats;
     const pts = st === 'pend' ? '<span class="shP shP0">–</span>' : `<span class="shP${st === 'dnp' ? ' shP0' : ''}">${fmt(st === 'dnp' ? 0 : p.pts)}</span>`;
     const open = p.name === openName && p.perf && st === 'played';
     return `<div class="shE${open ? ' shOpen' : ''}"><div class="shRow" role="button" tabindex="0" aria-expanded="${open}">${chip(p.slot)}${portrait(p, 'sm', false)}<span class="shTx"><b>${p.name}${p.subIn ? glyph('up', 12) : ''}</b><span>${esc(sub)}</span></span>${p.perf && st === 'played' ? sig(p.perf) : '<span></span>'}${pts}</div>${open ? perfBlock(p) : ''}</div>`;
@@ -418,7 +419,10 @@ function teamSheet(side, state, mobile, openName) {
 function teamSheetsBlock(m, state, mobile) {
   if (mobile) {
     const mineS = m.A.k === ME ? m.A : m.B, oth = mineS === m.A ? m.B : m.A;
-    return `<section class="blk"><div class="sh"><h2 class="shT">Team Sheets</h2></div><div class="segRow"><span class="seg"><button class="segB segOn">${crest(mineS.k, 14)}${tname(mineS.k)}</button><button class="segB">${crest(oth.k, 14)}${tname(oth.k)}</button></span></div>${teamSheet(mineS, state, mobile, 'Cunha')}</section>`;
+    const pager = `<span class="swpPager" role="tablist" aria-label="Team sheets"><button class="swpDot swpOn" role="tab" aria-selected="true" aria-label="${tname(mineS.k)}">${crest(mineS.k, 14)}</button><button class="swpDot" role="tab" aria-selected="false" aria-label="${tname(oth.k)}">${crest(oth.k, 14)}</button></span>`;
+    return `<section class="blk"><div class="sh"><h2 class="shT">Team Sheets</h2><span class="shTools">${pager}</span></div>
+      <div class="swp"><div class="swpTrack"><div class="swpCard">${teamSheet(mineS, state, mobile, 'Cunha')}</div><div class="swpCard">${teamSheet(oth, state, mobile, 'Isak')}</div></div></div>
+      <p class="lsHint">Swipe for ${tname(oth.k)}</p></section>`;
   }
   return `<section class="blk"><div class="sh"><h2 class="shT">Team Sheets</h2></div><div class="bdGrid">${teamSheet(m.A, state, mobile, 'Cunha')}${teamSheet(m.B, state, mobile, 'Isak')}</div></section>`;
 }

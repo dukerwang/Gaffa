@@ -16,7 +16,7 @@ for (const f of files) {
     const s = document.querySelector('.screen'); s.style.height = 'auto';
     const h = Math.ceil(s.getBoundingClientRect().height);
     const W = s.getBoundingClientRect().right; const issues = [];
-    const skip = (el) => el.closest('.ribCells, .tpGrid, .mbTies, .rib');
+    const skip = (el) => el.closest('.ribCells, .tpGrid, .mbTies, .rib, .swp');
     document.querySelectorAll('.screen *').forEach((el) => {
       const b = el.getBoundingClientRect();
       if (b.width && b.right > W + 0.5 && !skip(el)) issues.push('overflow-x ' + (el.getAttribute('class') || el.tagName));
@@ -42,7 +42,9 @@ for (const f of files) {
       }
     }
     document.querySelectorAll('.rcN').forEach((n) => { if (n.scrollWidth > n.clientWidth + 0.5) issues.push('NAME-CUT ' + n.textContent); const lines = Math.round(n.getBoundingClientRect().height / parseFloat(getComputedStyle(n).lineHeight)); if (lines > 2) issues.push('NAME-3LINES ' + n.textContent); });
-    document.querySelectorAll('.rpCell').forEach((c) => { const cb = c.getBoundingClientRect(); c.querySelectorAll('.pts, .rcSub, .rcBox').forEach((e) => { const b = e.getBoundingClientRect(); const f = c.closest('.rpField').getBoundingClientRect(); if (b.left < f.left || b.right > f.right) issues.push('CELL-SPILL ' + c.textContent.trim().slice(0, 20)); }); });
+    // a badge may hang past its own chip, but never onto another player
+    const chipsR = [...document.querySelectorAll('.rcC')];
+    chipsR.forEach((c) => { c.querySelectorAll('.pts, .rcSub').forEach((e) => { const b = e.getBoundingClientRect(); chipsR.forEach((o) => { if (o === c) return; o.querySelectorAll('.gp-frame, .rcBox, .pts').forEach((t) => { const r = t.getBoundingClientRect(); if (b.left < r.right - 1 && r.left < b.right - 1 && b.top < r.bottom - 1 && r.top < b.bottom - 1) issues.push('BADGE-HITS ' + c.getAttribute('aria-label') + ' > ' + o.getAttribute('aria-label')); }); }); const f = c.closest('.rp')?.getBoundingClientRect(); if (f && (b.right > f.right - 2 || b.left < f.left + 2)) issues.push('BADGE-OFF ' + c.getAttribute('aria-label')); }); });
     const broken = [...document.images].filter((i) => !i.naturalWidth).map((i) => i.src.split('/').pop());
     return { h, issues: [...new Set(issues)].slice(0, 30), broken };
   });

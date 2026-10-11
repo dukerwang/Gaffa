@@ -887,9 +887,21 @@
 .rpRow { position: relative; display: block; }
 .rpCell { position: absolute; top: 50%; transform: translate(-50%, -50%); }
 .rcNhy { hyphens: auto; -webkit-hyphens: auto; overflow-wrap: normal; word-break: normal; }
-.rcSM { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
-.rcSM .pts { font-size: 10px; padding: 0 3px; line-height: 1.3; }
 /* the two halves always share one height, whatever the formations */
 .lsGrid .rp { flex: 1; display: flex; flex-direction: column; }
 .lsGrid .rpField { flex: 1; display: flex; flex-direction: column; }
 .lsGrid .rpRows { flex: 1; }
+
+/* Team sheets as a pair you swipe between, the next one peeking in */
+.swp { margin: 0 -16px; overflow: hidden; }
+.swpTrack { display: flex; gap: 10px; padding: 0 16px; scroll-snap-type: x mandatory; }
+.swpCard { flex: 0 0 calc(100% - 26px); scroll-snap-align: start; }
+.swpCard + .swpCard { opacity: .9; }
+.swpPager { display: inline-flex; gap: 4px; padding: 3px; border-radius: 999px; background: var(--color-bg-secondary); }
+.swpDot { display: grid; place-items: center; width: 34px; height: 30px; border: 0; border-radius: 999px; background: transparent; opacity: .55; }
+.swpOn { background: var(--color-bg-card); box-shadow: var(--shadow-sm); opacity: 1; }
+/* the corner badge may sit over the touchline; nothing on the grass is clipped */
+.rpField { overflow: visible; }
+.rpField .phCircle, .rpField .phBox, .rpField .phGoal { overflow: hidden; }
+.rpM { padding: 8px 12px; }
+.rpM .rcP .pts { left: calc(100% - 20px); }
