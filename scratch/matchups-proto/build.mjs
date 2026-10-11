@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LIGHT, DARK, setMode, resetCrests, USED } from './lib.mjs';
-import { formationsBoard } from './formations.mjs';
+import { formationsBoard, looksBoard } from './formations.mjs';
 import { roundPage2 as roundPage, matchPage2 as matchPage, landscapeLineups } from './pages2.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -11,6 +11,9 @@ const STYLE = fs.readFileSync(path.join(HERE, 'mu.css'), 'utf8');
 const FONTS = 'https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=Hanken+Grotesk:wght@400;500;600;700&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap';
 
 export const BOARDS = [
+  { file: 'LooksPhone.dc.html', title: 'Chip Options · Phone Width', w: 1620, page: 'c', make: () => looksBoard({ compact: true, w: 1620 }) },
+  { file: 'LooksPhoneDark.dc.html', title: 'Chip Options · Phone Width · Dark', w: 1620, page: 'c', make: () => looksBoard({ compact: true, dark: true, w: 1620 }) },
+  { file: 'LooksDesktop.dc.html', title: 'Chip Options · Desktop Half', w: 2560, page: 'c', make: () => looksBoard({ compact: false, w: 2560 }) },
   { file: 'FormationsPhone.dc.html', title: 'Every Formation · Phone Width', w: 1230, page: 'f', make: () => formationsBoard({ compact: true, w: 1230 }) },
   { file: 'FormationsDesktop.dc.html', title: 'Every Formation · Desktop Half', w: 1300, page: 'f', make: () => formationsBoard({ compact: false, w: 1300 }) },
   { file: 'FormationsPhoneDark.dc.html', title: 'Every Formation · Phone Width · Dark', w: 1230, page: 'f', make: () => formationsBoard({ compact: true, dark: true, w: 1230 }) },

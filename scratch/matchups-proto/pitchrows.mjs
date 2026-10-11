@@ -72,13 +72,22 @@ function rowChip(p, state, opt, w) {
   // On a phone the card keeps only goals and assists; the score rides the corner.
   const scoring = ev.split(' · ').filter((t) => /^\d+[GA]$/.test(t)).join(' · ');
   const lineM = st === 'pend' && fx ? `<b>${fx.opponentShort}</b> ${ukTime(fx.kickoffTime).slice(4)}` : st === 'played' && scoring ? `<b>${scoring}</b>` : '&nbsp;';
+  if (opt.look && opt.look !== 'box') {
+    // The position chip sits on the photo's lower edge; the name needs no box.
+    const sub = st === 'pend' && fx ? `${fx.opponentShort} ${ukTime(fx.kickoffTime).slice(opt.compact ? 4 : 0)}` : st === 'played' && scoring ? scoring : '';
+    const subTag = sub ? `<span class="lkSub">${sub}</span>` : '';
+    const name = nameHtml(p.name, w + (opt.look === 'bare' ? 4 : 0), opt.nameBase);
+    return `<button class="rcC lk-${opt.look}${st === 'pend' ? ' chPend' : st === 'dnp' ? ' chDnp' : ''}" style="width: ${w}px;" aria-label="${p.name}, ${p.slot}">
+      <span class="rcP">${p.subIn ? `<span class="rcSub" title="Auto-subbed in">${glyph('up', 11)}</span>` : ''}${portrait(p, opt.por)}${badge}<span class="lkPos">${chip(p.slot)}</span></span>
+      <span class="lkName">${name}${subTag}</span></button>`;
+  }
   return `<button class="rcC${st === 'pend' ? ' chPend' : st === 'dnp' ? ' chDnp' : ''}" style="width: ${w}px;" aria-label="${p.name}, ${p.slot}">
     <span class="rcP">${p.subIn ? `<span class="rcSub" title="Auto-subbed in">${glyph('up', 11)}</span>` : ''}${portrait(p, opt.por)}${badge}</span>
     <span class="rcBox">${chip(p.slot)}${nameHtml(p.name, w, opt.nameBase)}${opt.compact ? `<span class="rcS">${lineM}</span>` : `<span class="rcS">${line}</span>`}</span></button>`;
 }
 
 // side: { starters }, opt: { fieldW, compact, minRows }
-export function rowPitch(side, state, { fieldW, compact = false, minRows = 0 }) {
+export function rowPitch(side, state, { fieldW, compact = false, minRows = 0, look = 'box' }) {
   const byRow = {};
   for (const p of side.starters) (byRow[zoneOf(p.slot)] ??= []).push(p);
   for (const k in byRow) byRow[k].sort((a, b) => (LAT[a.slot] ?? 1) - (LAT[b.slot] ?? 1));
@@ -92,8 +101,9 @@ export function rowPitch(side, state, { fieldW, compact = false, minRows = 0 }) 
     maxW: compact ? 80 : 112,
     por: compact ? 'xs' : 'cmp',
     nameBase: compact ? 10.5 : 12.5,
+    look,
   };
-  const rowH = compact ? 122 : 142;
+  const rowH = look === 'box' ? (compact ? 122 : 142) : look === 'joined' ? (compact ? 112 : 136) : (compact ? 104 : 126);
   const html = rows.map((z) => {
     const ps = byRow[z];
     const cols = columns(ps.map((p) => p.slot));

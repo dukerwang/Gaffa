@@ -905,3 +905,37 @@
 .rpField .phCircle, .rpField .phBox, .rpField .phGoal { overflow: hidden; }
 .rpM { padding: 8px 12px; }
 .rpM .rcP .pts { left: calc(100% - 20px); }
+
+/* ══ Chip looks (options) ══ */
+.lkPos { position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); z-index: 4; display: flex; }
+.lkPos .pc { box-shadow: inset 0 0 0 1px var(--pl), 0 0 0 1.5px var(--color-pitch); }
+.lk-joined .gp-crest { bottom: auto; top: -6px; left: -6px; }
+.lkName { display: flex; flex-direction: column; align-items: center; gap: 1px; width: 100%; margin-top: 8px; }
+.lkSub { font-family: var(--font-label); font-weight: 700; font-size: 10px; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+/* A · Plate: a slim dark nameplate under the photo, broadcast-graphic style */
+.lk-plate .lkName { padding: 3px 4px 4px; border-radius: 5px; background: rgba(9, 22, 15, .82); }
+.lk-plate .rcN { color: #fff; }
+.lk-plate .lkSub { color: rgba(255,255,255,.72); }
+/* B · Bare: no card, the name set on the grass */
+.lk-bare .rcN { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 0 6px rgba(0,0,0,.25); }
+.lk-bare .lkSub { color: rgba(255,255,255,.8); text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+/* C · Joined: photo and name are one card */
+.lk-joined { padding: 3px 3px 5px; border-radius: 8px; background: var(--color-bg-card); box-shadow: 0 0 0 1px var(--color-pitch-line), 0 3px 8px rgba(0,0,0,.22); gap: 0; }
+.lk-joined .rcP { width: 100%; display: flex; justify-content: center; }
+.lk-joined .gp-frame { box-shadow: none; }
+.lk-joined .lkPos .pc { box-shadow: inset 0 0 0 1px var(--pl), 0 0 0 1.5px var(--color-bg-card); }
+.lk-joined .pts { top: -10px; left: auto; right: -10px; }
+.lk-joined .lkSub { color: var(--color-text-secondary); }
+.lk-joined .gp-crest { top: -9px; left: -9px; }
+.lk-joined .rcSub { right: auto; left: -11px; top: 16px; }
+.lk-joined.rcC .gp { margin: 0 auto; }
+.lkOpt { display: flex; flex-direction: column; gap: 10px; }
+.lkOptH { display: flex; align-items: baseline; gap: 10px; }
+.lkOptH b { font-family: var(--font-serif); font-size: 22px; }
+.lkOptH span { font-size: 13px; color: var(--color-text-muted); }
+.lk-joined .pts { top: -8px; right: -5px; }
+.lk-joined .gp-crest { top: auto; bottom: 2px; left: -4px; }
+.lkOptH { flex-direction: column; align-items: flex-start; gap: 2px; min-height: 52px; }
+.lkOptH b { white-space: nowrap; }
+.rpM .lk-joined .pts { right: 1px; left: auto; }
+.rpM .lk-joined .gp-crest { left: 1px; }

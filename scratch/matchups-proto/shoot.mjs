@@ -8,7 +8,7 @@ const browser = await chromium.launch();
 const heights = fs.existsSync(path.join(HERE, 'heights.json')) ? JSON.parse(fs.readFileSync(path.join(HERE, 'heights.json'), 'utf8')) : {};
 const report = {};
 for (const f of files) {
-  const w = /FormationsPhone/.test(f) ? 1230 : /FormationsDesktop/.test(f) ? 1300 : /Landscape/.test(f) ? 844 : /Phone/.test(f) ? 390 : 1440;
+  const w = /LooksPhone/.test(f) ? 1620 : /LooksDesktop/.test(f) ? 2560 : /FormationsPhone/.test(f) ? 1230 : /FormationsDesktop/.test(f) ? 1300 : /Landscape/.test(f) ? 844 : /Phone/.test(f) ? 390 : 1440;
   const page = await browser.newPage({ viewport: { width: w, height: 900 }, deviceScaleFactor: 1 });
   await page.goto('file://' + path.join(HERE, 'preview', f));
   await page.waitForTimeout(1200);
@@ -44,7 +44,7 @@ for (const f of files) {
     document.querySelectorAll('.rcN').forEach((n) => { if (n.scrollWidth > n.clientWidth + 0.5) issues.push('NAME-CUT ' + n.textContent); const lines = Math.round(n.getBoundingClientRect().height / parseFloat(getComputedStyle(n).lineHeight)); if (lines > 2) issues.push('NAME-3LINES ' + n.textContent); });
     // a badge may hang past its own chip, but never onto another player
     const chipsR = [...document.querySelectorAll('.rcC')];
-    chipsR.forEach((c) => { c.querySelectorAll('.pts, .rcSub').forEach((e) => { const b = e.getBoundingClientRect(); chipsR.forEach((o) => { if (o === c) return; o.querySelectorAll('.gp-frame, .rcBox, .pts').forEach((t) => { const r = t.getBoundingClientRect(); if (b.left < r.right - 1 && r.left < b.right - 1 && b.top < r.bottom - 1 && r.top < b.bottom - 1) issues.push('BADGE-HITS ' + c.getAttribute('aria-label') + ' > ' + o.getAttribute('aria-label')); }); }); const f = c.closest('.rp')?.getBoundingClientRect(); if (f && (b.right > f.right - 2 || b.left < f.left + 2)) issues.push('BADGE-OFF ' + c.getAttribute('aria-label')); }); });
+    chipsR.forEach((c) => { c.querySelectorAll('.pts, .rcSub, .gp-crest').forEach((e) => { const b = e.getBoundingClientRect(); chipsR.forEach((o) => { if (o === c) return; o.querySelectorAll('.gp-frame, .rcBox, .pts, .lkName, .gp-crest').forEach((t) => { const r = t.getBoundingClientRect(); if (b.left < r.right - 1 && r.left < b.right - 1 && b.top < r.bottom - 1 && r.top < b.bottom - 1) issues.push('BADGE-HITS ' + c.getAttribute('aria-label') + ' > ' + o.getAttribute('aria-label')); }); }); const f = c.closest('.rp')?.getBoundingClientRect(); if (f && (b.right > f.right - 2 || b.left < f.left + 2)) issues.push('BADGE-OFF ' + c.getAttribute('aria-label')); }); });
     const broken = [...document.images].filter((i) => !i.naturalWidth).map((i) => i.src.split('/').pop());
     return { h, issues: [...new Set(issues)].slice(0, 30), broken };
   });

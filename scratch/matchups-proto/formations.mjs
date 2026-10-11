@@ -43,3 +43,13 @@ export function formationsBoard({ compact, dark, w }) {
   }).join('');
   return `<div class="screen ${compact ? 'm' : 'd'}" ${dark ? 'data-theme="dark"' : ''} style="width: ${w}px; height: __H__px;"><main class="fmWrap" style="grid-template-columns: repeat(${compact ? 3 : 2}, ${fieldW}px);">${cards}</main></div>`;
 }
+
+// The chip, four ways, on your real GW5 XI (back five included).
+import { GW5 } from './model.mjs';
+export function looksBoard({ compact, dark, w }) {
+  const m = GW5[0];
+  const fieldW = compact ? 358 : 595;
+  const looks = [['box', 'Current', 'Card under the photo with position, name and stat'], ['plate', 'A · Nameplate', 'Position on the photo, name on a slim dark plate'], ['bare', 'B · On the Grass', 'Position on the photo, name set straight on the pitch'], ['joined', 'C · One Card', 'Photo and name in a single card']];
+  const cols = looks.map(([k, t, d]) => `<div class="lkOpt"><div class="lkOptH"><b>${t}</b><span>${d}</span></div>${[m.A, m.B].map((s) => `<div class="fmCard" style="width: ${fieldW}px;">${rowPitch(s, 'final', { fieldW, compact, look: k, minRows: 5 })}</div>`).join('')}</div>`).join('');
+  return `<div class="screen ${compact ? 'm' : 'd'}" ${dark ? 'data-theme="dark"' : ''} style="width: ${w}px; height: __H__px;"><main class="fmWrap" style="grid-template-columns: repeat(4, ${fieldW}px);">${cols}</main></div>`;
+}
