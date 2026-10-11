@@ -41,6 +41,7 @@ for (const f of files) {
         if (a.left < b.right - 2 && b.left < a.right - 2 && a.top < b.bottom - 2 && b.top < a.bottom - 2) issues.push('OVERLAP ' + chips[i].getAttribute('aria-label') + ' / ' + chips[j].getAttribute('aria-label'));
       }
     }
+    document.querySelectorAll('.rcS').forEach((n) => { if (n.scrollWidth > n.clientWidth + 0.5) issues.push('DETAIL-CUT ' + n.textContent); });
     document.querySelectorAll('.pnN').forEach((n) => { if (n.scrollWidth > n.clientWidth + 0.5) issues.push('NAME-CUT ' + n.textContent); const lines = Math.round(n.getBoundingClientRect().height / parseFloat(getComputedStyle(n).lineHeight)); if (lines > 2) issues.push('NAME-3LINES ' + n.textContent); });
     // a badge may hang past its own chip, but never onto another player
     const chipsR = [...document.querySelectorAll('.rcC')];

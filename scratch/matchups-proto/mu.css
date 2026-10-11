@@ -952,3 +952,12 @@
 .bnSlot .ch { width: auto !important; max-width: 100%; }
 .bnSlot .chBox { width: auto; min-width: 58px; padding: 3px 7px 4px; min-height: 0; gap: 1px; }
 .bnSlot .chName { -webkit-line-clamp: 1; white-space: nowrap; }
+
+/* Revision 10: one card size per pitch, a fixed detail line, the shipped badge spot */
+.rcBox { width: 100% !important; }
+.rcS { display: block; width: 100%; overflow: hidden; text-overflow: clip; }
+.rcP .pts { top: -6px !important; left: auto !important; right: -18px; }
+.rpM .rcP .pts { left: auto !important; right: -16px; }
+.rpM .rcS { letter-spacing: 0; }
+.rpM .rcFx { font-size: 8.4px; letter-spacing: -0.02em; }
+.rpM .rcBox { padding-left: 3px; padding-right: 3px; }

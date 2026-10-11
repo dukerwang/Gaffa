@@ -36,14 +36,14 @@ export function status(p, state) {
 // measured in the real serif (name-widths.json), never estimated.
 const NW = JSON.parse(fs.readFileSync(path.join(HERE, 'name-widths.json'), 'utf8'));
 const widthOf = (t) => NW[t] ?? t.length * 0.55;
-function nameHtml(name, chipW, base) {
-  const avail = chipW - 13;
+function nameHtml(name, chipW, base, pad = 13) {
+  const avail = chipW - pad;
   const full = widthOf(name);
   const segs = name.replace(/-/g, '-\u0001').split(/[\s\u0001]+/);
   let size, two = false;
   let hy = null;
   if (full * base <= avail) size = base;
-  else if (full * 8.5 <= avail) size = avail / full;
+  else if (full * 8 <= avail) size = avail / full;
   else if (segs.length > 1) { two = true; size = Math.min(base, avail / Math.max(...segs.map(widthOf))); }
   else {
     // one long word in a tight row: break it once, at a syllable near its middle
@@ -64,21 +64,27 @@ function syllableBreak(s) {
   return best;
 }
 
+// The detail line fits the card: the fixture with its day before kickoff,
+// otherwise goals and assists first, then the position's own stats, dropping
+// from the end whatever will not fit. Rating lives in Team Sheets.
+function detailLine(p, st, cardW, compact) {
+  const fx = p.fixture;
+  if (st === 'pend' && fx) return `<span class="rcFx"><b>${fx.opponentShort}</b> ${ukTime(fx.kickoffTime)}</span>`;
+  if (st === 'dnp') return compact ? 'Did not play' : 'Did not play';
+  const toks = (p.stats || '').split(' · ').filter((t) => t && !/x[GA]|rating/.test(t));
+  const ordered = [...toks.filter((t) => /^\d+[GA]$/.test(t)), ...toks.filter((t) => !/^\d+[GA]$/.test(t))];
+  const maxChars = Math.floor((cardW - 10) / (compact ? 4.8 : 5.4));
+  while (ordered.length && ordered.join(' · ').length > maxChars) ordered.pop();
+  return ordered.length ? ordered.map((t) => (/^\d+[GA]$/.test(t) ? `<b>${t}</b>` : t)).join(' · ') : '&nbsp;';
+}
 function rowChip(p, state, opt, w) {
   const st = status(p, state);
   const badge = st === 'pend' ? '<span class="pts pts-pend">–</span>' : st === 'dnp' ? '<span class="pts pts-dnp">DNP</span>' : ptsBadge(p.pts);
-  const fx = p.fixture;
-  const ev = (p.stats || '').split(' · ').filter((t) => t && !/x[GA]|rating/.test(t)).join(' · ');
-  const scoring = ev.split(' · ').filter((t) => /^\d+[GA]$/.test(t)).join(' · ');
-  // Phones keep only goals and assists; desktop keeps the short line. No line, no row.
-  const line = st === 'pend' && fx ? `<b>${fx.opponentShort}</b> ${ukTime(fx.kickoffTime).slice(opt.compact ? 4 : 0)}` : st === 'dnp' ? '' : opt.compact ? (scoring ? `<b>${scoring}</b>` : '') : ev;
-  const nm = nameHtml(p.name, w, opt.nameBase);
-  // The card hugs what it holds: the photo's width or the name's, whichever is wider.
-  const porW = opt.compact ? 44 : 54;
-  const boxW = Math.min(w, Math.max(porW + 10, Math.ceil(nm.lineW) + 16, line ? Math.ceil(line.replace(/<[^>]+>/g, '').length * (opt.compact ? 5.2 : 5.8)) + 12 : 0));
-  return { two: nm.two, line: !!line, html: `<button class="rcC${st === 'pend' ? ' chPend' : st === 'dnp' ? ' chDnp' : ''}" style="width: ${w}px;" aria-label="${p.name}, ${p.slot}">
+  const nm = nameHtml(p.name, w, opt.nameBase, opt.compact ? 9 : 13);
+  const line = detailLine(p, st, w, opt.compact);
+  return { two: nm.two, html: `<button class="rcC${st === 'pend' ? ' chPend' : st === 'dnp' ? ' chDnp' : ''}" style="width: ${w}px;" aria-label="${p.name}, ${p.slot}">
     <span class="rcP">${p.subIn ? `<span class="rcSub" title="Auto-subbed in">${glyph('up', 11)}</span>` : ''}${portrait(p, opt.por)}${badge}</span>
-    <span class="rcBox" style="width: ${boxW}px;">${chip(p.slot)}${nm.html}${line ? `<span class="rcS">${line}</span>` : ''}</span></button>` };
+    <span class="rcBox">${chip(p.slot)}${nm.html}<span class="rcS">${line}</span></span></button>` };
 }
 
 // side: { starters }, opt: { fieldW, compact, minRows }
@@ -101,19 +107,14 @@ export function rowPitch(side, state, { fieldW, compact = false, minRows = 0, lo
   // A row is as tall as its tallest card: photo, then the card's own lines.
   const porH = compact ? 46 : 60, badgeH = compact ? 14 : 15, nameH = compact ? 12 : 15, statH = compact ? 11 : 12;
   const unit = inner / 5;
+  const cardW = Math.floor(Math.min(opt.maxW, unit - (compact ? 3 : 8)));
   const rowHtml = rows.map((z) => {
     const ps = byRow[z];
     const cols = columns(ps.map((p) => p.slot));
     const xs = cols ? cols.map((c) => (cols.length === 3 && !ps.some((p) => WIDE.has(p.slot)) ? [1.5, 3, 4.5][cols.indexOf(c)] : c) - 0.5) : ps.map((_, i) => (i + 0.5) * 5 / 4);
-    const chips = ps.map((p, i) => {
-      const cx = xs[i] * unit;
-      const near = Math.min(...xs.filter((_, j) => j !== i).map((x) => Math.abs(x - xs[i]) * unit), Infinity);
-      // a player alone in his line can take a wider card
-      const maxW = ps.length === 1 ? opt.maxW * 1.25 : opt.maxW;
-      const w = Math.floor(Math.min(maxW, 2 * Math.min(cx, inner - cx) - 2, near - (compact ? 3 : 8)));
-      return { cx, ...rowChip(p, state, opt, w) };
-    });
-    const h = 10 + porH + 4 + 8 + badgeH + nameH * (chips.some((c) => c.two) ? 2 : 1) + (chips.some((c) => c.line) ? statH : 0) + 6;
+    // One card size for the whole pitch: the width a back five leaves each player.
+    const chips = ps.map((p, i) => ({ cx: xs[i] * unit, ...rowChip(p, state, opt, cardW) }));
+    const h = 10 + porH + 4 + 8 + badgeH + nameH * (chips.some((c) => c.two) ? 2 : 1) + statH + 6;
     return { h, html: `<div class="rpRow rp${z}" style="height: ${h}px;">${chips.map((c) => `<span class="rpCell" style="left: ${(c.cx / inner) * 100}%;">${c.html}</span>`).join('')}</div>` };
   });
   const html = rowHtml.map((r) => r.html).join('');
