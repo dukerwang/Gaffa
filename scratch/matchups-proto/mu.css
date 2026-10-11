@@ -961,3 +961,22 @@
 .rpM .rcS { letter-spacing: 0; }
 .rpM .rcFx { font-size: 8.4px; letter-spacing: -0.02em; }
 .rpM .rcBox { padding-left: 3px; padding-right: 3px; }
+
+/* the sheets really scroll sideways, and snap */
+.swp { overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+.swp::-webkit-scrollbar { display: none; }
+.swpTrack { width: max-content; scroll-snap-type: none; }
+.swpCard { flex: 0 0 auto; width: calc(390px - 32px - 40px); scroll-snap-align: start; scroll-margin-left: 16px; }
+.swpCard + .swpCard { opacity: 1; }
+.swpTrack::after { content: ''; flex: 0 0 6px; }
+.swpDot { text-decoration: none; }
+.swpFoot { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--color-text-muted); }
+.swpBar { display: inline-flex; gap: 4px; }
+.swpBar i { width: 16px; height: 4px; border-radius: 2px; background: var(--color-border-strong); }
+.swpBar i:first-child { width: 24px; background: var(--color-text-primary); }
+.m .shHead { gap: 7px; padding: 0 14px; }
+.m .shName { font-size: 16px; }
+.m .shHead .lbl { white-space: nowrap; }
+.m .shTot { font-size: 21px; }
+.m .shRow { grid-template-columns: 30px 32px minmax(0, 1fr) 28px 46px; column-gap: 8px; padding: 7px 12px; }
+.m .shRow .gp-sm { width: 32px; height: 32px; }

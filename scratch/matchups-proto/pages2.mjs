@@ -419,10 +419,10 @@ function teamSheet(side, state, mobile, openName) {
 function teamSheetsBlock(m, state, mobile) {
   if (mobile) {
     const mineS = m.A.k === ME ? m.A : m.B, oth = mineS === m.A ? m.B : m.A;
-    const pager = `<span class="swpPager" role="tablist" aria-label="Team sheets"><button class="swpDot swpOn" role="tab" aria-selected="true" aria-label="${tname(mineS.k)}">${crest(mineS.k, 14)}</button><button class="swpDot" role="tab" aria-selected="false" aria-label="${tname(oth.k)}">${crest(oth.k, 14)}</button></span>`;
+    const pager = `<span class="swpPager" aria-label="Team sheets"><a class="swpDot swpOn" href="#ts-a" aria-label="${tname(mineS.k)}">${crest(mineS.k, 14)}</a><a class="swpDot" href="#ts-b" aria-label="${tname(oth.k)}">${crest(oth.k, 14)}</a></span>`;
     return `<section class="blk"><div class="sh"><h2 class="shT">Team Sheets</h2><span class="shTools">${pager}</span></div>
-      <div class="swp"><div class="swpTrack"><div class="swpCard">${teamSheet(mineS, state, mobile, 'Cunha')}</div><div class="swpCard">${teamSheet(oth, state, mobile, 'Isak')}</div></div></div>
-      <p class="lsHint">Swipe for ${tname(oth.k)}</p></section>`;
+      <div class="swp"><div class="swpTrack"><div class="swpCard" id="ts-a">${teamSheet(mineS, state, mobile, 'Cunha')}</div><div class="swpCard" id="ts-b">${teamSheet(oth, state, mobile, 'Isak')}</div></div></div>
+      <div class="swpFoot"><span class="swpBar"><i></i><i></i></span><span>Swipe for ${tname(oth.k)}</span></div></section>`;
   }
   return `<section class="blk"><div class="sh"><h2 class="shT">Team Sheets</h2></div><div class="bdGrid">${teamSheet(m.A, state, mobile, 'Cunha')}${teamSheet(m.B, state, mobile, 'Isak')}</div></section>`;
 }
