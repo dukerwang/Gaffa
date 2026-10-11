@@ -10,6 +10,7 @@ import { getEffectiveLineupForTeam } from '@/lib/lineups/carryForward';
 import { generateMatchReport } from '@/lib/narrative/matchReport';
 import { getCurrentFplSeason, getLatestReferenceStatsSeason } from '@/lib/season/currentSeason';
 import {
+    applyCountedPoints,
     applySubsToLineup,
     attachLineupSlotScores,
     buildLineupPerformance,
@@ -163,9 +164,9 @@ export default async function MatchupDetailPage({ params }: Props) {
     // Stored fantasy_points / match_rating are primary-position scores — the
     // same numbers the player browser and PPG use. The pitch has to show the
     // slot the manager actually fielded (Szoboszlai at RB is not his AM game).
-    // We re-score secondaries from the stored stats JSON, which already carries
-    // imputed ICT from sync; we do not re-derive the primary, so live ICT
-    // can't drift from the number already written.
+    // Every fielded player's figure is replaced below with the points
+    // calculateTeamScore counted at his slot (applyCountedPoints), so these
+    // stored numbers survive only on bench rows and players who didn't play.
     const detailMap: Record<string, MatchupPlayerDetail> = {};
     let perfMap: Record<string, PerfGroup[]> = {};
     const statsRows: any[] = statsRes?.data ?? [];
@@ -229,6 +230,23 @@ export default async function MatchupDetailPage({ params }: Props) {
             playerPrimary.set(id, p.primary_position ?? undefined);
         }
         attachLineupSlotScores(detailMap, [effectiveLineupA, effectiveLineupB], playerPrimary, refStats ?? {});
+        // Then pin every fielded player to the figure the total above counted,
+        // so the chips, the breakdown and the report sum to the header even
+        // where the stored primary-position number has gone stale. Only for a
+        // side whose header IS that total: a completed matchup shows the
+        // published score, and when today's engine no longer reproduces it
+        // (GW1 2026-27 predates the 2026-08-24 curve retune) its per-player
+        // figures don't explain that score either.
+        const reproduces = (computed: number, published: number | null | undefined) =>
+            matchup.status !== 'completed' || Math.abs(computed - Number(published)) < 0.005;
+        applyCountedPoints(
+            detailMap,
+            [
+                reproduces(computedScoreA, matchup.score_a) ? detailA : undefined,
+                reproduces(computedScoreB, matchup.score_b) ? detailB : undefined,
+            ],
+            refStats ?? {},
+        );
         // The banded performance block per starter, at the slot he was fielded
         // in. Computed here rather than in the client so no score reaches the
         // browser — see src/lib/scoring/perfBand.ts.

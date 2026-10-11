@@ -51,7 +51,46 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  if (user) await recordActivity(supabase, request, supabaseResponse);
+
   return supabaseResponse;
+}
+
+const LEAGUE_PATH = /^\/(?:api\/leagues|league)\/([0-9a-f-]{36})(?:\/|$)/i;
+const ACTIVITY_COOKIE_MAX_AGE = 60 * 60;
+
+/**
+ * Records that the signed-in manager visited a league (or the dashboard, which
+ * covers every league they're in), for the inactivity alert (migration 171).
+ * A cookie limits it to one database write per league per hour, and the write
+ * can only touch the caller's own membership. Never blocks the request.
+ */
+async function recordActivity(
+  supabase: ReturnType<typeof createServerClient>,
+  request: NextRequest,
+  response: NextResponse,
+) {
+  const pathname = request.nextUrl.pathname;
+  const leagueId = LEAGUE_PATH.exec(pathname)?.[1] ?? null;
+  const isDashboard = pathname === '/dashboard';
+  if (!leagueId && !isDashboard) return;
+
+  const cookieName = `gaffa_active_${leagueId ?? 'all'}`;
+  if (request.cookies.get(cookieName)) return;
+
+  try {
+    const { error } = await supabase.rpc('touch_league_activity', { p_league_id: leagueId });
+    if (error) return;
+    response.cookies.set(cookieName, '1', {
+      maxAge: ACTIVITY_COOKIE_MAX_AGE,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
+  } catch {
+    // Activity is best-effort; a failed write is retried on the next visit.
+  }
 }
 
 export const config = {

@@ -23,6 +23,7 @@ import { createNotification } from '@/lib/notifications/createNotification';
 import { fetchFplElements, findStillInPl } from '@/lib/players/plPresence';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { findLoanAbroad } from './loanAbroad';
+import { leagueFeatures } from '@/lib/leagues/features';
 import { getCurrentFplSeason } from '@/lib/season/currentSeason';
 import { MIDSEASON_DECISION_HOURS, OPEN_STATUSES, type DepartureDecision } from './types';
 
@@ -122,6 +123,21 @@ export async function recordDepartures(
       `[departures] ${stillInPl.size} player(s) marked departed are still in the FPL bootstrap — ` +
         `treating as corrupted rows, not departures: ${names.join(', ')}`,
     );
+  }
+
+  // Redraft has no retained list: a player who has left the Premier League
+  // simply comes off the squad, with no decision and no compensation.
+  const { data: format } = await admin.from('leagues').select('is_dynasty').eq('id', leagueId).single();
+  if (!leagueFeatures(format).retainedList) {
+    await removeDepartedFromRedraftSquads(
+      admin,
+      leagueId,
+      teams,
+      entries as { team_id: string; player_id: string }[],
+      departed.filter((p) => !stillInPl.has(p.id as string)),
+      opts.notify !== false,
+    );
+    return [];
   }
 
   // Skip anyone who already has a live decision in this league — including
@@ -405,6 +421,44 @@ async function notifyLoanTermination(
 }
 
 /** Convenience: the deadline for a departure detected mid-season, from now. */
+/**
+ * Redraft: take every departed player off whichever squads hold him and tell
+ * their managers. Squads reset each season, so there's no claim to keep and
+ * nothing to compensate.
+ */
+async function removeDepartedFromRedraftSquads(
+  admin: SupabaseClient,
+  leagueId: string,
+  teams: { id: string; team_name: string; user_id: string | null }[],
+  entries: { team_id: string; player_id: string }[],
+  departed: { id: unknown; name: unknown; web_name?: unknown; full_name?: unknown; sofifa_common_name?: unknown }[],
+  notify: boolean,
+): Promise<void> {
+  const teamById = new Map(teams.map((t) => [t.id, t]));
+  for (const p of departed) {
+    const playerId = p.id as string;
+    const holders = entries.filter((e) => e.player_id === playerId).map((e) => e.team_id);
+    if (holders.length === 0) continue;
+    const { error } = await admin.from('roster_entries').delete().eq('player_id', playerId).in('team_id', holders);
+    if (error) {
+      console.error(`[departures] redraft removal failed for ${playerId}: ${error.message}`);
+      continue;
+    }
+    if (!notify) continue;
+    const name = getPlayerDisplayName(p as Parameters<typeof getPlayerDisplayName>[0], 'full');
+    for (const teamId of holders) {
+      await createNotification(admin, {
+        leagueId,
+        userId: teamById.get(teamId)?.user_id ?? null,
+        kind: 'club',
+        title: 'Player Left the League',
+        content: `${name} has left the Premier League, so he's no longer in your squad. His place is free for a signing.`,
+        url: `/league/${leagueId}/team/roster`,
+      });
+    }
+  }
+}
+
 export function midseasonDecideBy(from: Date = new Date()): Date {
   return new Date(from.getTime() + MIDSEASON_DECISION_HOURS * 60 * 60 * 1000);
 }

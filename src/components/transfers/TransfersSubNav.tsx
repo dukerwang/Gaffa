@@ -18,16 +18,18 @@ import styles from './TransfersSubNav.module.css';
 interface Props {
   leagueId: string;
   counts: TransfersCounts;
+  /** False in a redraft league, which has no player listings. */
+  listings?: boolean;
 }
 
-export default function TransfersSubNav({ leagueId, counts }: Props) {
+export default function TransfersSubNav({ leagueId, counts, listings = true }: Props) {
   const pathname = usePathname();
   const base = `/league/${leagueId}/transfers`;
 
   const items = [
     { href: base, label: 'Market', count: null as number | null },
     { href: `${base}/auctions`, label: 'Auctions', count: counts.auctions },
-    { href: `${base}/listings`, label: 'Listings', count: counts.listings },
+    ...(listings ? [{ href: `${base}/listings`, label: 'Listings', count: counts.listings }] : []),
     { href: `${base}/free-agents`, label: 'Free Agency', count: counts.freeAgents },
     { href: `${base}/deals`, label: 'Deals', count: counts.deals },
   ];

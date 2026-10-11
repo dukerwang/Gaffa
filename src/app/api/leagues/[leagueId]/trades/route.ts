@@ -5,6 +5,7 @@ import { describeDeal } from '@/lib/transfers/describeDeal';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import { TRADEABLE_RIGHTS_STATUSES } from '@/lib/departures/types';
 import { isHolding, squadPlaceDelta } from '@/lib/roster/holds';
+import { CARETAKER_DEAL_MESSAGE, isCaretakerClub } from '@/lib/leagues/caretaker';
 
 interface Props {
   params: Promise<{ leagueId: string }>;
@@ -225,6 +226,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     .single();
 
   if (!targetTeam) return NextResponse.json({ error: 'Target team not found in this league' }, { status: 404 });
+  if (isCaretakerClub(targetTeam)) return NextResponse.json({ error: CARETAKER_DEAL_MESSAGE }, { status: 409 });
 
   if (offeredFaab > myTeam.faab_budget) {
     return NextResponse.json(

@@ -249,11 +249,66 @@ export interface TeamScoreDetail {
    * primary fielded in a defensive slot (§4 of the guide).
    */
   outOfPosition: { playerId: string; slot: string }[];
+  /**
+   * Every starter who played, with the points the score counted for him at
+   * his slot. Auto-subs are on `subs` instead. Surfaces that print a
+   * per-player figure beside this total read it from here — see
+   * `applyCountedPoints` — because the stored `player_stats.fantasy_points`
+   * can describe a different position than the one scored today.
+   */
+  starters: { playerId: string; slot: string; points: number }[];
 }
 
 /** An empty detail, so callers can allocate one without repeating the shape. */
 export function emptyTeamScoreDetail(): TeamScoreDetail {
-  return { blanked: [], subs: [], benchBonus: [], benchBonusTotal: 0, outOfPosition: [] };
+  return { blanked: [], subs: [], benchBonus: [], benchBonusTotal: 0, outOfPosition: [], starters: [] };
+}
+
+/**
+ * Overwrite each fielded player's figure in the detailMap with the points
+ * `calculateTeamScore` actually counted, so the chips, the breakdown rows and
+ * the match report add up to the header.
+ *
+ * Run after `attachLineupSlotScores`. That keeps the stored number whenever
+ * the slot is the player's primary, but the stored number was scored under
+ * the primary position *at sync time*. The SoFIFA sync moves primaries
+ * afterwards (Cunha was AM when GW5 2026-27 was scored, LW by the time the
+ * matchup resolved), and the scorer re-rates every starter at his slot, so the
+ * two drift apart. When they do, the stored rating and performance block are
+ * just as stale as the points, so the rating is re-derived at the slot and the
+ * stored block is dropped for `buildLineupPerformance` to rebuild.
+ *
+ * Display only. Nothing here is written back.
+ */
+export function applyCountedPoints(
+  detailMap: Record<string, MatchupPlayerDetail>,
+  details: Array<TeamScoreDetail | undefined>,
+  refStats: Record<string, ReferenceStats>,
+): void {
+  for (const detail of details) {
+    if (!detail) continue;
+    const counted = [
+      ...detail.starters,
+      ...detail.subs.map((s) => ({ playerId: s.inId, slot: s.slot, points: s.points })),
+    ];
+    for (const { playerId, slot, points } of counted) {
+      const d = detailMap[playerId];
+      if (!d) continue;
+      const shown = d.bySlot?.[slot] ?? { points: d.points, rating: d.rating ?? null };
+      let rating = shown.rating;
+      if (Math.abs(shown.points - points) > 0.005 && d.stats && d.stats.minutes_played > 0) {
+        rating = calculateMatchRating(
+          d.stats,
+          slot.toUpperCase() as GranularPosition,
+          refStats as Record<GranularPosition, ReferenceStats>,
+        ).rating;
+        d.perf = null;
+      }
+      d.bySlot = { ...d.bySlot, [slot]: { points, rating } };
+      d.points = points;
+      d.rating = rating;
+    }
+  }
 }
 
 export interface ResolvedStarter {
@@ -396,8 +451,14 @@ export function calculateTeamScore(
     const totalMinutes = record?.fixtures.reduce((s, f) => s + f.minutes, 0) ?? 0;
 
     if (totalMinutes > 0) {
-      score += getSlotPoints(starter.player_id, starter.slot);
+      const points = getSlotPoints(starter.player_id, starter.slot);
+      score += points;
       if (detail) {
+        detail.starters.push({
+          playerId: starter.player_id,
+          slot: starter.slot,
+          points: Math.round(points * 100) / 100,
+        });
         const primary = (playerPositions.get(starter.player_id) ?? [])[0];
         if (primary && MID_OR_ATT.includes(primary) && DEFENSIVE_SLOTS.includes(starter.slot)) {
           detail.outOfPosition.push({ playerId: starter.player_id, slot: starter.slot });

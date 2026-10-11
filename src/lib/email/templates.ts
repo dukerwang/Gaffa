@@ -334,3 +334,36 @@ export const getLoanAcceptedEmail = (lenderName: string, borrowerName: string, p
 };
 
 
+
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/** To a manager who hasn't opened their league for five full gameweeks. */
+export const getInactivityWarningEmail = (leagueName: string, teamName: string, leagueUrl: string) => {
+  const body = `
+    <p>You haven't opened <strong>${escapeHtml(leagueName)}</strong> for five gameweeks.</p>
+    <p>If you're still managing <strong>${escapeHtml(teamName)}</strong>, open the league before the next gameweek finishes. Otherwise your commissioner will be told the club looks inactive, and can hand it to the Caretaker until a new manager joins.</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${leagueUrl}" class="button">Open League</a>
+    </div>
+  `;
+  return baseTemplate('Inactivity Warning', body);
+};
+
+/** To the commissioner, about a manager who has missed six full gameweeks. */
+export const getInactiveManagerEmail = (
+  leagueName: string,
+  managerName: string,
+  teamName: string,
+  gameweeks: number,
+  settingsUrl: string,
+) => {
+  const body = `
+    <p><strong>${escapeHtml(managerName)}</strong> hasn't opened <strong>${escapeHtml(leagueName)}</strong> for ${gameweeks} gameweeks, and didn't respond to a warning.</p>
+    <p>You can remove them in Settings. <strong>${escapeHtml(teamName)}</strong> keeps its squad, Club Balance and record, and the Caretaker runs it until a new manager joins. Nothing changes unless you act.</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${settingsUrl}" class="button">Open Settings</a>
+    </div>
+  `;
+  return baseTemplate('Inactive Manager', body);
+};

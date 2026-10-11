@@ -10,6 +10,9 @@ import { getLockedPlTeamIds } from '@/lib/auction/lockedClubs';
 import { notifyAuctionResolution, type AuctionResolutionResult } from '@/lib/auctions/notifyAuctionResolution';
 import { countBuybackSlots, DEFAULT_ROSTER_SIZE, UNCOUNTED_ROSTER_STATUSES } from '@/lib/roster/capacity';
 import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
+import { FEATURE_OFF_MESSAGE, freeAgentMinimumBid, isRedraft, leagueFeatures } from '@/lib/leagues/features';
+import { getTransferDayWindow, NO_TRANSFER_DAY_LEFT } from '@/lib/transferDay/window';
+import { canBidInStatus } from '@/lib/leagues/status';
 
 import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/academyEligibility';
 
@@ -97,7 +100,7 @@ export async function POST(req: NextRequest, { params }: Props) {
   // League settings for roster/academy validations
   const { data: league } = await admin
     .from('leagues')
-    .select('roster_size, taxi_size, taxi_age_limit, roster_locked, previous_season, current_season, season')
+    .select('roster_size, taxi_size, taxi_age_limit, roster_locked, previous_season, current_season, season, is_dynasty, status')
     .eq('id', leagueId)
     .single();
 
@@ -147,6 +150,15 @@ export async function POST(req: NextRequest, { params }: Props) {
   if (league.roster_locked) {
     return NextResponse.json(
       { error: 'Rosters are locked during the offseason. Auction bids are not allowed until the new season begins.' },
+      { status: 403 },
+    );
+  }
+
+  // No free agents before squads exist: a league waiting for its draft (or a
+  // redraft league between seasons) builds them in the draft, not at auction.
+  if (!canBidInStatus(league.status)) {
+    return NextResponse.json(
+      { error: 'Free agents open once the draft has finished.' },
       { status: 403 },
     );
   }
@@ -202,6 +214,9 @@ export async function POST(req: NextRequest, { params }: Props) {
   // point of this feature is that another auction can claim the last slot
   // between now and then), and the resolver falls back to bench rather than
   // failing the win if that happens.
+  if (sendToAcademy && !leagueFeatures(league).academy) {
+    return NextResponse.json({ error: FEATURE_OFF_MESSAGE.academy }, { status: 400 });
+  }
   if (sendToAcademy) {
     if (!playerData?.date_of_birth) {
       return NextResponse.json(
@@ -263,14 +278,15 @@ export async function POST(req: NextRequest, { params }: Props) {
     // window's shopping cost only 22% of a starting balance, and that manager
     // listings were nearly unsellable — nobody pays 80% to a rival when the
     // equivalent free agent costs 20%.
+    // Redraft: a flat €1m, whatever the market value (freeAgentMinimumBid).
     const floorPct = auctionSettings.bidFloor;
-    const minimumBid = playerData
-      ? Math.floor(Number(playerData.market_value || 0) * floorPct)
-      : 0;
+    const minimumBid = playerData ? freeAgentMinimumBid(playerData.market_value, league, floorPct) : 0;
     if (minimumBid > 0 && bidAmount < minimumBid) {
       return NextResponse.json(
         {
-          error: `Minimum bid for this player is €${minimumBid}m (${Math.round(floorPct * 100)}% of market value)`,
+          error: leagueFeatures(league).marketValueBidFloor
+            ? `Minimum bid for this player is €${minimumBid}m (${Math.round(floorPct * 100)}% of market value)`
+            : `Minimum bid is €${minimumBid}m`,
         },
         { status: 400 },
       );
@@ -289,6 +305,10 @@ export async function POST(req: NextRequest, { params }: Props) {
   const effectiveRosterLimit =
     (league.roster_size ?? DEFAULT_ROSTER_SIZE) + (await countBuybackSlots(admin, myTeam.id));
   const rosterFull = (activeRosterCount ?? 0) >= effectiveRosterLimit;
+
+  if (rosterFull && !dropPlayerId && !leagueFeatures(league).academy) {
+    return NextResponse.json({ error: 'Your squad is full. Select a player to drop.' }, { status: 400 });
+  }
 
   if (rosterFull && !dropPlayerId) {
     const { count: academyCount } = await admin
@@ -397,10 +417,19 @@ export async function POST(req: NextRequest, { params }: Props) {
 
   const marketValue = Number(playerData?.market_value || 0);
   const bidCount = (existingBidCount ?? 0) + 1;
-  const expiresAt = calculateExpiresAt(firstBidTime, now, auctionSettings.quietHours, {
-    marketValue,
-    bidCount,
-  });
+  // Redraft: every lot settles together on the next Transfer Day, and a later
+  // bid doesn't move it. Dynasty: the rolling, activity-based clock.
+  let expiresAt: string | number;
+  if (isRedraft(league)) {
+    const { nextSettleAt } = await getTransferDayWindow(admin, new Date(now));
+    if (!nextSettleAt) return NextResponse.json({ error: NO_TRANSFER_DAY_LEFT }, { status: 400 });
+    expiresAt = nextSettleAt;
+  } else {
+    expiresAt = calculateExpiresAt(firstBidTime, now, auctionSettings.quietHours, {
+      marketValue,
+      bidCount,
+    });
+  }
 
   // Call the database RPC to place/upsert the bid atomically
   const { data: rpcRes, error: rpcError } = await admin.rpc('place_auction_bid_rpc', {

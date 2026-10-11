@@ -6,7 +6,12 @@ import { getLeagueName } from '@/lib/leagues/leagueName';
 interface CreateNotificationParams {
   /** null for an account-wide notice not scoped to any one league (e.g. a product update). */
   leagueId: string | null;
-  userId: string;
+  /**
+   * The recipient. null when the club has no manager (the Caretaker runs it),
+   * in which case nothing is sent: call sites that notify every club in a
+   * league pass each club's user_id without checking.
+   */
+  userId: string | null;
   kind: NotificationKind;
   title: string;
   content: string;
@@ -41,6 +46,7 @@ export async function createNotification(
   params: CreateNotificationParams
 ): Promise<void> {
   const { leagueId, userId, kind, title, content, url, pushTitle, pushBody, tag } = params;
+  if (!userId) return;
 
   try {
     if (tag) {

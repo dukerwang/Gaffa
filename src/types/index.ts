@@ -118,7 +118,7 @@ export interface League {
   draft_type: 'snake' | 'auction';
   scoring_rules: ScoringRules;
   is_dynasty: boolean;
-  status: 'setup' | 'drafting' | 'active' | 'completed';
+  status: 'setup' | 'drafting' | 'active' | 'completed' | 'offseason' | 'pre_draft';
   draft_scheduled_at: string | null;
   invite_code: string | null;
   created_at: string;
@@ -242,7 +242,10 @@ export interface Player {
 export interface Team {
   id: string;
   league_id: string;
-  user_id: string;
+  /** null while the Caretaker runs the club (its manager left or was removed). */
+  user_id: string | null;
+  /** When the club was handed to the Caretaker; null while it has a manager. */
+  caretaker_since?: string | null;
   team_name: string;
   faab_budget: number;
   total_points: number;

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useTick } from './useTick';
+import { freeAgentMinimumBid } from '@/lib/leagues/features';
 import type {
   TransfersModel,
   TransfersAuction,
@@ -120,7 +121,7 @@ export function useLiveTransfers(leagueId: string, model: TransfersModel): Trans
         highest_bidder_team_name: teamName(row.highest_bidder_team_id),
         bid_count: row.bid_count ?? 0,
         bids,
-        minimum_bid: listing ? listing.min_bid : Math.floor(marketValue * bidFloor),
+        minimum_bid: listing ? listing.min_bid : freeAgentMinimumBid(marketValue, model.league, bidFloor),
         first_bid_at: row.first_bid_at,
         expires_at: row.expires_at,
         opens_at: row.opens_at ?? null,

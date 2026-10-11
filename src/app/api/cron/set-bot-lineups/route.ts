@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { processMatchupsForGameweek } from '@/lib/scoring/matchupProcessor';
 import { generateValidLineup } from '@/lib/lineups/generateValidLineup';
+import { runCaretakers } from '@/lib/caretaker/runCaretakers';
+import { runInactivityCheck } from '@/lib/inactivity/runInactivityCheck';
 
 export const maxDuration = 60;
 
@@ -14,6 +16,24 @@ export async function GET(req: NextRequest) {
     }
 
     const admin = createAdminClient();
+
+    // Clubs with no manager (the Caretaker runs them). Runs every morning so
+    // the lineup reflects the latest injury news before the weekend's first
+    // kickoff; it leaves a club alone once any of its players has kicked off.
+    let caretakers: Awaited<ReturnType<typeof runCaretakers>> = [];
+    try {
+        caretakers = await runCaretakers(admin);
+    } catch (err: any) {
+        console.error('[set-bot-lineups] caretaker error:', err);
+    }
+
+    // Managers who haven't opened their league for five or six full gameweeks.
+    let inactivity: Awaited<ReturnType<typeof runInactivityCheck>> | null = null;
+    try {
+        inactivity = await runInactivityCheck(admin);
+    } catch (err: any) {
+        console.error('[set-bot-lineups] inactivity check error:', err);
+    }
 
     // 2. Get current gameweek from FPL
     let currentGw = 1;
@@ -46,7 +66,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (matchups.length === 0) {
-        return NextResponse.json({ ok: true, message: `No matchups for GW ${currentGw}`, gameweek: currentGw });
+        return NextResponse.json({ ok: true, message: `No matchups for GW ${currentGw}`, gameweek: currentGw, caretakers, inactivity });
     }
 
     // 4. Find bot teams by team_name containing 'Bot' (e.g. 'FC Bot 1', 'Bot FC 2')
@@ -136,5 +156,7 @@ export async function GET(req: NextRequest) {
         prevGwLineupCount: prevLineupByTeam.size,
         updatedCount,
         debug: debugLog.slice(0, 10), // first 10 for brevity
+        caretakers,
+        inactivity,
     });
 }

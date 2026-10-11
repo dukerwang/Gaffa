@@ -13,7 +13,7 @@ export async function GET() {
 
   const { data: teams } = await admin
     .from('teams')
-    .select('id, team_name, abbreviation, crest_config, faab_budget, league_id, league:leagues(id, name, status, season)')
+    .select('id, team_name, abbreviation, crest_config, faab_budget, league_id, league:leagues(id, name, status, season, is_dynasty)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 

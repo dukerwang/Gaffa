@@ -22,6 +22,8 @@ import { fetchAllPages } from '@/lib/supabase/pagination';
 import type { BenchSlot, GranularPosition } from '@/types';
 import { getFplStatus } from '@/lib/fpl/api';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { CARETAKER_NAME } from '@/lib/leagues/caretaker';
+import { freeAgentMinimumBid } from '@/lib/leagues/features';
 import {
   computeSeasonPrize,
   DEFAULT_PRIZE_CONFIG,
@@ -437,7 +439,7 @@ export async function buildHomeModel(
           .select(
             `id, name, status, season, current_season, previous_season, total_gameweeks,
            roster_size, taxi_size, taxi_age_limit, retained_slots, prize_config, ir_size, max_loan_outs,
-           merit_win, merit_draw, merit_loss, merit_bye, free_agent_bid_floor`,
+           merit_win, merit_draw, merit_loss, merit_bye, free_agent_bid_floor, is_dynasty`,
           )
           .eq('id', leagueId)
           .single(),
@@ -608,7 +610,7 @@ export async function buildHomeModel(
       name: t?.team_name ?? 'Unknown',
       abbreviation: t?.abbreviation ?? null,
       crest: t?.crest_config ?? null,
-      manager: userObj?.username ?? null,
+      manager: userObj?.username ?? (t && t.user_id == null ? CARETAKER_NAME : null),
       userId: userObj?.id ?? t?.user_id ?? null,
     };
   };
@@ -1998,7 +2000,7 @@ export async function buildHomeModel(
       const highest = Number(a.highest_bid ?? 0);
       const listingMinBid = a.sale_listing_id ? minBidByListing.get(a.sale_listing_id) : undefined;
       const marketVal = Number(p?.market_value ?? 0);
-      const floorVal = listingMinBid != null ? listingMinBid : Math.floor(marketVal * freeAgentBidFloor);
+      const floorVal = listingMinBid != null ? listingMinBid : freeAgentMinimumBid(marketVal, league, freeAgentBidFloor);
       const next = highest > 0 ? highest + 1 : floorVal;
 
       return {

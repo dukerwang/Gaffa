@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { processMatchupsForGameweek } from '@/lib/scoring/matchupProcessor';
 import { carryForwardLineupsForGameweek } from '@/lib/lineups/carryForward';
+import { runCaretakers } from '@/lib/caretaker/runCaretakers';
 
 export const maxDuration = 60; // 1 minute max for Vercel Hobby tier
 
@@ -52,6 +53,14 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = createAdminClient();
+    // Clubs with no manager: the Caretaker sets their lineup before anything
+    // carries an old one forward.
+    try {
+        await runCaretakers(admin);
+    } catch (ctErr) {
+        console.error('[sync/matchups] caretaker error:', ctErr);
+    }
+
     try {
         await carryForwardLineupsForGameweek(admin, { gameweek });
         if (gameweek < 38) {

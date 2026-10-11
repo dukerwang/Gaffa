@@ -64,6 +64,12 @@ export async function payMeritPeriod(
         bye: Number(league.merit_bye ?? DEFAULT_MERIT_RATES.bye),
     };
 
+    // Match Revenue switched off (redraft leagues are created with every rate
+    // at zero): nothing to pay, so write no €0 rows either.
+    if (rates.win === 0 && rates.draw === 0 && rates.loss === 0 && rates.bye === 0) {
+        return { paid: false, periodIndex, payments: [] };
+    }
+
     const { data: teams, error: teamsErr } = await admin
         .from('teams')
         .select('id, team_name')
