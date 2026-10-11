@@ -72,7 +72,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
+  gap: var(--s2);
+  min-height: 44px;
   padding: 0 var(--s5);
   border-radius: var(--r-control);
   font-family: var(--font-label);
@@ -82,12 +83,18 @@
   white-space: nowrap;
   cursor: pointer;
   touch-action: manipulation;
-  transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+  transition: background var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard),
+              box-shadow var(--dur-fast) var(--ease-standard),
+              transform var(--dur-fast) var(--ease-standard);
 }
+/* The primary is a solid object, so it lifts on a shadow with no border; the
+   secondary is a line object, so it keeps its border and no shadow. */
 .primaryBtn {
   background: var(--color-accent);
   color: var(--color-on-accent);
-  border: 1px solid var(--color-accent);
+  border: 0;
+  box-shadow: var(--shadow-sm);
 }
 .secondaryBtn {
   background: var(--color-bg-card);
@@ -95,8 +102,8 @@
   border: 1px solid var(--color-border);
 }
 @media (hover: hover) and (pointer: fine) {
-  .primaryBtn:not(:disabled):hover { background: var(--color-accent-hover); border-color: var(--color-accent-hover); }
-  .secondaryBtn:hover { border-color: var(--color-accent); }
+  .primaryBtn:not(:disabled):hover { background: var(--color-accent-hover); box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+  .secondaryBtn:hover { border-color: var(--color-accent); color: var(--color-accent-ink); }
 }
 .primaryBtn:disabled { opacity: 0.5; cursor: progress; }
 .primaryBtn:focus-visible,
@@ -110,13 +117,26 @@
   display: flex;
   align-items: center;
   gap: var(--s4);
-  padding: var(--s3) var(--s5);
+  padding: var(--s3) var(--s4);
   border-top: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
 }
-.formationGroups { flex: 1 1 auto; display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; row-gap: var(--s3); min-width: 0; }
-.formationGroup { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
-.formationGroup + .formationGroup { padding-left: var(--s4); border-left: 1px solid var(--color-border-subtle); }
+.formationGroups {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s3);
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow-x: auto;
+  padding-right: var(--s4);
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--s4)), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--s4)), transparent);
+}
+.formationGroups::-webkit-scrollbar { display: none; }
+.formationGroup { display: flex; flex: 0 0 auto; flex-direction: column; align-items: flex-start; gap: 6px; }
+.formationGroup + .formationGroup { padding-left: var(--s3); border-left: 1px solid var(--color-border-subtle); }
 .formationGroupLabel {
   font-family: var(--font-label);
   font-size: var(--t-10);
@@ -126,13 +146,13 @@
   color: var(--color-text-muted);
   white-space: nowrap;
 }
-.formationPills { display: flex; gap: var(--s1); flex-wrap: wrap; }
+.formationPills { display: flex; gap: var(--s1); }
 .formationPill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 30px;
-  padding: var(--s1) var(--s3);
+  padding: var(--s1) var(--s2);
   font-family: var(--font-label);
   font-size: var(--t-12);
   font-weight: 700;
@@ -414,15 +434,6 @@
   .actions .primaryBtn { order: 2; }
 
   .formationBar { padding: var(--s3) var(--s4); gap: var(--s3); }
-  .formationGroups {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    margin: 0 calc(var(--s4) * -1) 0 0;
-    padding-right: var(--s4);
-  }
-  .formationGroups::-webkit-scrollbar { display: none; }
-  .formationGroup { flex: 0 0 auto; }
   .formationPill { min-height: 36px; }
   .textBtn { min-height: 36px; }
 

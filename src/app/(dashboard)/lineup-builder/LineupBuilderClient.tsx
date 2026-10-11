@@ -8,6 +8,7 @@ import { serializeLineup, VALID_FORMATIONS, type SerializedLineup } from '@/lib/
 import { exportLineupToBlob, type LineupExportSlot } from '@/lib/lineups/lineupImageExport';
 import ReadOnlyFormationBoard, { type FormationBoardSlot } from '@/components/formation/ReadOnlyFormationBoard';
 import Portrait from '@/components/players/Portrait';
+import { Icon } from '@/components/ui/Icon';
 import PositionBadge from '@/components/players/PositionBadge';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { resolveClub } from '@/lib/clubs/registry';
@@ -96,7 +97,8 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
           player: p
             ? {
                 id: p.id,
-                name: p.name,
+                // Short enough for the pitch chip at every width; 'smart' defaults to 14, which clips at 74px.
+                name: getPlayerDisplayName(p, 'smart', 11),
                 club: p.pl_team,
                 photoUrl: p.photo_url,
                 photoVersion: p.photo_version,
@@ -274,9 +276,11 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
           </div>
           <div className={styles.actions}>
             <button type="button" className={styles.secondaryBtn} onClick={handleCopyLink}>
+              <Icon name="copy" size={16} strokeWidth={1.75} />
               Copy Link
             </button>
             <button type="button" className={styles.primaryBtn} onClick={handleShare} disabled={isExporting}>
+              <Icon name="share" size={16} strokeWidth={1.75} />
               {isExporting ? 'Generating…' : 'Share XI'}
             </button>
           </div>
