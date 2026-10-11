@@ -6,7 +6,7 @@ import PositionBadge from '@/components/players/PositionBadge';
 import { DRAW_THRESHOLD } from '@/lib/scoring/drawBand';
 import type { MatchState, PitchPlayer } from '@/lib/matchups/matchupView';
 import { fmt, ordinal, type ResultLetter, type TableRow } from '@/lib/matchups/roundView';
-import { Crest, Glyph, Local, Res, Ticks, kickoffShort, s, useWidth } from './parts';
+import { Crest, FitText, Glyph, Local, Res, Ticks, kickoffShort, s, useWidth } from './parts';
 import Worm, { WeekendDots, onClock } from './Worm';
 import type { Metas, TeamLite, TieLite } from './types';
 
@@ -174,7 +174,7 @@ export function Spread({ all, teams, myTeamId, live, onOpen }: { all: SpreadPlay
               <span className={s.spRank}>{i + 1}</span>
               <Portrait photoUrl={t.p.photoUrl} name={t.p.name} club={t.p.club} size="sm" headTopPct={t.p.headTopPct} headWidthPct={t.p.headWidthPct} photoVersion={t.p.photoVersion} />
               <span className={s.spTx}>
-                <span className="g-namerow"><b className={s.spName}>{t.p.name}</b><PositionBadge position={t.p.slot} size="sm" /></span>
+                <span className="g-namerow"><FitText className={s.spName} text={t.p.name} min={12} /><PositionBadge position={t.p.slot} size="sm" /></span>
                 <span className={s.spCtx}><Crest crest={teams[t.owner]?.crest ?? null} name={teams[t.owner]?.name ?? ''} size={13} />{teams[t.owner]?.name}{t.opp && <span className={s.muted}>&nbsp;v {teams[t.opp]?.name}</span>}</span>
               </span>
               <span className={s.spPts}>{fmt(t.p.points)}</span>
@@ -199,7 +199,7 @@ export function SeasonList({ rows, teams, onOpenId }: { rows: SeasonTopRow[]; te
                 <span className={s.spRank}>{i + 1}</span>
                 <Portrait photoUrl={p.photoUrl} name={p.name} club={p.club} size="sm" headTopPct={p.headTopPct} headWidthPct={p.headWidthPct} photoVersion={p.photoVersion} />
                 <span className={s.spTx}>
-                  <span className="g-namerow"><b className={s.spName}>{p.name}</b><PositionBadge position={p.slot} size="sm" /></span>
+                  <span className="g-namerow"><FitText className={s.spName} text={p.name} min={12} /><PositionBadge position={p.slot} size="sm" /></span>
                   <span className={s.spCtx}><Crest crest={teams[p.owner]?.crest ?? null} name={teams[p.owner]?.name ?? ''} size={13} />{teams[p.owner]?.name}<span className={s.muted}>&nbsp;· {p.apps} {p.apps === 1 ? 'app' : 'apps'}</span></span>
                 </span>
                 <span className={s.spPts}>{fmt(p.pts)}</span>

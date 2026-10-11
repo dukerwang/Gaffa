@@ -146,7 +146,7 @@ export function MatchView(p: MatchProps) {
   return (
     <div className={`${s.root} g-page`}>
       {view.state === 'live' && <LiveRefresh leagueId={p.leagueId} matchupId={view.id} />}
-      <MatchBar leagueId={p.leagueId} gw={view.gameweek} ties={p.ties} current={view.id} />
+      <MatchBar leagueId={p.leagueId} gw={view.gameweek} ties={[...p.ties].sort((x, y) => Number(y.id === view.id) - Number(x.id === view.id))} current={view.id} />
       <Scoreboard tie={p.current} state={view.state} gw={view.gameweek} big myTeamId={p.myTeamId} metas={p.metas} window={p.window} deadline={p.deadline}
         lineupHref={`/league/${p.leagueId}/team`} squadHref={`/league/${p.leagueId}/team/roster`} clubHref={clubHref} onOpen={open} />
       {up && h2h}

@@ -171,3 +171,31 @@ export function useReducedMotion() {
   }, []);
   return r;
 }
+
+/** Text that shrinks (to a floor) until it fits its box on one line. */
+export function FitText({ text, className, min = 8 }: { text: string; className?: string; min?: number }) {
+  return <FitBox className={className} min={min} dep={text}>{text}</FitBox>;
+}
+
+/** Any one-line content that shrinks (to a floor) until it fits its box. */
+export function FitBox({ children, className, min = 8, dep }: { children: ReactNode; className?: string; min?: number; dep?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [size, setSize] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fit = () => {
+      el.style.fontSize = '';
+      const base = parseFloat(getComputedStyle(el).fontSize);
+      let f = base;
+      while (f > min && el.scrollWidth > el.clientWidth + 0.5) { f -= 0.5; el.style.fontSize = `${f}px`; }
+      setSize(f === base ? null : f);
+    };
+    fit();
+    document.fonts?.ready.then(fit);
+    const ro = new ResizeObserver(fit);
+    ro.observe(el.parentElement ?? el);
+    return () => ro.disconnect();
+  }, [dep, min]);
+  return <span ref={ref} className={className} style={size ? { fontSize: size } : undefined}>{children}</span>;
+}

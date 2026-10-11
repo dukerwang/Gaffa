@@ -6,7 +6,7 @@ import { DRAW_THRESHOLD } from '@/lib/scoring/drawBand';
 import type { MatchState, PitchPlayer, SideView } from '@/lib/matchups/matchupView';
 import { fmt, ordinal } from '@/lib/matchups/roundView';
 import {
-  Countdown, Crest, DarkAxis, Face, FormDots, Glyph, Local, Ticks, deadlineText, kickoffShort, s, verdict, weekendRange,
+  Countdown, Crest, DarkAxis, FitText, Face, FormDots, Glyph, Local, Ticks, deadlineText, kickoffShort, s, verdict, weekendRange,
 } from './parts';
 import type { Metas, TieLite } from './types';
 
@@ -47,12 +47,13 @@ export default function Scoreboard(props: ScoreboardProps) {
     if (live && side) return <span className={s.hxMeta}><Ticks played={side.played} of={side.starters.length || 11} /> {side.toPlay} to play</span>;
     const who = manager ?? 'Caretaker';
     if (up) return <span className={s.hxMeta}>{who}{m ? <> · {ordinal(m.rank)} · <FormDots form={m.form} /></> : null}</span>;
-    return <span className={s.hxMeta}>{who}{m ? ` · ${ordinal(m.rank)} · ${m.line}` : ''}</span>;
+    return <span className={s.hxMeta}><FitText text={`${who}${m ? ` · ${ordinal(m.rank)} · ${m.line}` : ''}`} className={s.fitIn} min={10} /></span>;
   };
   const eq = (side: SideView | undefined) => (big && side && !up
     ? <span className={s.hxEq}>XI <b>{fmt(side.xi)}</b> &nbsp;+&nbsp; Bench <b>{fmt(side.bench)}</b></span> : null);
   const name = (t: { id: string; name: string }) => (big && clubHref
-    ? <NavigationLink href={clubHref(t.id)}>{t.name}</NavigationLink> : t.name);
+    ? <NavigationLink href={clubHref(t.id)}><FitText text={t.name} className={s.fitIn} min={15} /></NavigationLink>
+    : <FitText text={t.name} className={s.fitIn} min={15} />);
 
   const side = (t: TieLite['a'], sv: SideView | undefined, v: number, lose: boolean, isMine: boolean, away: boolean) => (
     <div className={`${s.hxSide}${away ? ` ${s.hxAway}` : ''}`}>

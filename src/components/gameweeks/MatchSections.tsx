@@ -8,7 +8,7 @@ import { renderBoldedText } from '@/lib/narrative/boldText';
 import type { MatchReport } from '@/lib/narrative/matchReport';
 import type { BenchPlayer, Line, MatchState, MatchupView, PitchPlayer, SideView } from '@/lib/matchups/matchupView';
 import { fmt } from '@/lib/matchups/roundView';
-import { Crest, Face, Glyph, Local, Pts, kickoffShort, s, useWidth } from './parts';
+import { Crest, Face, FitText, Glyph, Local, Pts, kickoffShort, s, useWidth } from './parts';
 import RowPitch, { rowCount } from './RowPitch';
 import Worm, { onClock, turnIndex } from './Worm';
 import type { TeamLite } from './types';
@@ -28,9 +28,9 @@ function BenchOne({ side, state, onOpen }: { side: SideView; state: MatchState; 
       <div className={s.bnChips}>
         {side.benchPlayers.map((p) => {
           const line = p.status === 'pend'
-            ? <><b>{p.fixture?.opponentShort ?? ''}</b> <Local>{() => kickoffShort(p.fixture?.kickoffTime)}</Local></>
+            ? <><b>{p.fixture?.opponentShort ?? ''}</b> <Local>{() => { const k = kickoffShort(p.fixture?.kickoffTime); const i = k.indexOf(' '); return <><span className={s.bnWide}>{k.slice(0, i)} </span>{k.slice(i + 1)}</>; }}</Local></>
             : p.status === 'dnp' ? 'Did not play'
-            : p.cameOn ? 'Came on' : <><b>+{fmt(p.credit)}</b> to total</>;
+            : p.cameOn ? 'Came on' : <><b>+{fmt(p.credit)}</b><span className={s.bnWide}> to total</span></>;
           return (
             <div key={p.id} className={s.bnSlot}>
               <button type="button" className={`${s.ch}${p.status === 'pend' ? ` ${s.chPend}` : p.status === 'dnp' ? ` ${s.chDnp}` : ''}`} onClick={() => onOpen(p)} aria-label={`${p.name}, bench`}>
@@ -40,7 +40,7 @@ function BenchOne({ side, state, onOpen }: { side: SideView; state: MatchState; 
                 </span>
                 <span className={s.chBox}>
                   <PositionBadge position={p.slot} size="sm" />
-                  <span className={s.chName}>{p.name}</span>
+                  <FitText className={s.chName} text={p.name} />
                   <span className={s.chStats}>{line}</span>
                 </span>
               </button>

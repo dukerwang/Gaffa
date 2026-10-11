@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
 import type { MatchState, PitchPlayer } from '@/lib/matchups/matchupView';
-import { Glyph, Local, Pts, kickoffShort, s, useWidth } from './parts';
+import { FitBox, Glyph, Local, Pts, kickoffShort, s, useWidth } from './parts';
 
 const ZONE: Record<string, string> = { LW: 'ATT', ST: 'ATT', RW: 'ATT', AM: 'AMZ', DM: 'DMZ', CM: 'CMZ', LWB: 'WBZ', RWB: 'WBZ', CB: 'DEF', LB: 'DEF', RB: 'DEF', GK: 'GK' };
 const ROWS = ['ATT', 'AMZ', 'CMZ', 'DMZ', 'WBZ', 'DEF', 'GK'];
@@ -42,7 +42,7 @@ function syllableBreak(t: string): number {
   }
   return best;
 }
-const segsOf = (name: string) => name.replace(/-/g, '-\u0001').split(/[\s\u0001]+/).filter(Boolean);
+const segsOf = (name: string) => [...new Set(splits(name).flatMap(([a, b]) => [a, b]).concat(name.length > 6 ? [`${name.slice(0, syllableBreak(name))}-`, name.slice(syllableBreak(name))] : []))];
 
 /** Width of each string at 1px of the pitch name face, measured once per set. */
 function useNameWidths(names: string[]): Record<string, number> | null {
@@ -78,29 +78,38 @@ function useNameWidths(names: string[]): Record<string, number> | null {
   return w?.key === key ? w.map : null;
 }
 
-interface NameFit { text: string; size: number; two: boolean; hyphenAt: number | null }
+interface NameFit { lines: string[]; size: number; hyphen: boolean }
+/** Every place a name may break in two: after a space or a hyphen. */
+function splits(name: string): [string, string][] {
+  const out: [string, string][] = [];
+  for (let i = 1; i < name.length; i++) {
+    if (name[i - 1] === ' ') out.push([name.slice(0, i - 1), name.slice(i)]);
+    else if (name[i - 1] === '-') out.push([name.slice(0, i), name.slice(i)]);
+  }
+  return out;
+}
 function fitName(name: string, chipW: number, base: number, pad: number, widthOf: (t: string) => number): NameFit {
   const avail = chipW - pad;
   const full = widthOf(name);
-  const segs = segsOf(name);
-  if (full * base <= avail) return { text: name, size: base, two: false, hyphenAt: null };
-  if (full * 8 <= avail) return { text: name, size: avail / full, two: false, hyphenAt: null };
-  if (segs.length > 1) return { text: name, size: Math.min(base, avail / Math.max(...segs.map(widthOf))), two: true, hyphenAt: null };
+  if (full * base <= avail) return { lines: [name], size: base, hyphen: false };
+  if (full * 8 <= avail) return { lines: [name], size: avail / full, hyphen: false };
+  // Two lines at the break that leaves the longer line shortest.
+  const cands = splits(name);
+  if (cands.length) {
+    const best = cands.map(([a, b]) => ({ a, b, w: Math.max(widthOf(a), widthOf(b)) })).sort((x, y) => x.w - y.w)[0];
+    const size = Math.min(base, avail / best.w);
+    if (size >= 7.5 || !V.test(name)) return { lines: [best.a, best.b], size, hyphen: false };
+  }
   // One long word in a tight row: break it once, at a syllable near its middle.
   const hy = syllableBreak(name);
-  const share = Math.max(hy, name.length - hy) / name.length;
-  return { text: name, size: Math.min(base, avail / (full * share * 1.06 + 0.4)), two: true, hyphenAt: hy };
+  const a = `${name.slice(0, hy)}-`, b = name.slice(hy);
+  return { lines: [a, b], size: Math.min(base, avail / (Math.max(widthOf(a), widthOf(b)) * 1.04)), hyphen: true };
 }
 
 function NameText({ fit }: { fit: NameFit }) {
   const style = { fontSize: `${fit.size.toFixed(2)}px` };
-  const cls = `${s.pnN}${fit.two ? ` ${s.pnN2}` : ''}`;
-  if (fit.hyphenAt != null) return <span className={cls} style={style}>{fit.text.slice(0, fit.hyphenAt)}&shy;{fit.text.slice(fit.hyphenAt)}</span>;
-  if (fit.two && fit.text.includes('-')) {
-    const parts = fit.text.split('-');
-    return <span className={cls} style={style}>{parts.map((p, i) => <span key={i}>{p}{i < parts.length - 1 ? <>-<wbr /></> : null}</span>)}</span>;
-  }
-  return <span className={cls} style={style}>{fit.text}</span>;
+  if (fit.lines.length === 1) return <span className={s.pnN} style={style}>{fit.lines[0]}</span>;
+  return <span className={`${s.pnN} ${s.pnN2}`} style={style}>{fit.lines[0]}<br />{fit.lines[1]}</span>;
 }
 
 /**
@@ -110,7 +119,7 @@ function NameText({ fit }: { fit: NameFit }) {
  */
 function DetailLine({ p, cardW, compact }: { p: PitchPlayer; cardW: number; compact: boolean }) {
   if (p.status === 'pend' && p.fixture) {
-    return <span className={s.rcFx}><b>{p.fixture.opponentShort}</b> <Local>{() => kickoffShort(p.fixture!.kickoffTime)}</Local></span>;
+    return <FitBox className={s.rcFx} min={7} dep={p.fixture.kickoffTime ?? ''}><b>{p.fixture.opponentShort}</b> <Local>{() => kickoffShort(p.fixture!.kickoffTime)}</Local></FitBox>;
   }
   if (p.status === 'dnp') return <>Did not play</>;
   const toks = p.stats.filter((t) => t && !/x[GA]|rating/.test(t));
@@ -149,8 +158,8 @@ export default function RowPitch({ starters, state, minRows = 0, onOpen }: {
     const cols = columns(ps.map((p) => p.slot));
     const central3 = cols?.length === 3 && !ps.some((p) => WIDE.has(p.slot));
     const xs = cols ? cols.map((c, i) => (central3 ? [1.5, 3, 4.5][i] : c) - 0.5) : ps.map((_, i) => ((i + 0.5) * 5) / 4);
-    const chips = ps.map((p, i) => ({ p, cx: xs[i] * unit, fit: fitName(p.name, cardW, nameBase, compact ? 9 : 13, widthOf) }));
-    const h = 10 + porH + 4 + 8 + badgeH + nameH * (chips.some((c) => c.fit.two) ? 2 : 1) + statH + 6;
+    const chips = ps.map((p, i) => ({ p, cx: xs[i] * unit, fit: fitName(p.name, cardW, nameBase, compact ? 10 : 14, widthOf) }));
+    const h = 10 + porH + 4 + 8 + badgeH + nameH * (chips.some((c) => c.fit.lines.length > 1) ? 2 : 1) + statH + 6;
     return { z, h, chips };
   });
   const rowH = Math.max(0, ...built.map((r) => r.h));
