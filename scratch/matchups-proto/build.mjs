@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LIGHT, DARK, setMode, resetCrests, USED } from './lib.mjs';
+import { formationsBoard } from './formations.mjs';
 import { roundPage2 as roundPage, matchPage2 as matchPage, landscapeLineups } from './pages2.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -10,6 +11,9 @@ const STYLE = fs.readFileSync(path.join(HERE, 'mu.css'), 'utf8');
 const FONTS = 'https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=Hanken+Grotesk:wght@400;500;600;700&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap';
 
 export const BOARDS = [
+  { file: 'FormationsPhone.dc.html', title: 'Every Formation · Phone Width', w: 1230, page: 'f', make: () => formationsBoard({ compact: true, w: 1230 }) },
+  { file: 'FormationsDesktop.dc.html', title: 'Every Formation · Desktop Half', w: 1300, page: 'f', make: () => formationsBoard({ compact: false, w: 1300 }) },
+  { file: 'FormationsPhoneDark.dc.html', title: 'Every Formation · Phone Width · Dark', w: 1230, page: 'f', make: () => formationsBoard({ compact: true, dark: true, w: 1230 }) },
   { file: 'Main.dc.html', title: 'Gameweek 5 · Final', w: 1440, page: 'r', make: () => roundPage({ state: 'final', w: 1440 }) },
   { file: 'RoundFinalDark.dc.html', title: 'Gameweek 5 · Final · Dark', w: 1440, page: 'r', make: () => roundPage({ state: 'final', dark: true, w: 1440 }) },
   { file: 'RoundLive.dc.html', title: 'Gameweek 5 · Live (Sun 13:00)', w: 1440, page: 'r', make: () => roundPage({ state: 'live', w: 1440 }) },

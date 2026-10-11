@@ -1,14 +1,14 @@
 {
  "Main.dc.html": 1737,
- "MatchFinal.dc.html": 4346,
- "MatchFinalDark.dc.html": 4346,
+ "MatchFinal.dc.html": 4260,
+ "MatchFinalDark.dc.html": 4260,
  "MatchFinalHalves.dc.html": 4162,
- "MatchFinalPhone.dc.html": 5670,
- "MatchFinalPhoneDark.dc.html": 5670,
+ "MatchFinalPhone.dc.html": 5500,
+ "MatchFinalPhoneDark.dc.html": 5500,
  "MatchFinalPhoneHalves.dc.html": 5692,
- "MatchLive.dc.html": 3813,
- "MatchLivePhone.dc.html": 4782,
- "MatchUpcoming.dc.html": 3026,
+ "MatchLive.dc.html": 3727,
+ "MatchLivePhone.dc.html": 4612,
+ "MatchUpcoming.dc.html": 2940,
  "RoundFinalDark.dc.html": 1737,
  "RoundFinalPhone.dc.html": 2821,
  "RoundFinalPhoneDark.dc.html": 2821,
@@ -17,5 +17,8 @@
  "RoundUpcoming.dc.html": 1297,
  "RoundUpcomingPhone.dc.html": 2146,
  "MatchFinalPhoneTheirs.dc.html": 5230,
- "MatchLandscape.dc.html": 1045
+ "MatchLandscape.dc.html": 967,
+ "FormationsDesktop.dc.html": 5450,
+ "FormationsPhone.dc.html": 3226,
+ "FormationsPhoneDark.dc.html": 3226
 }

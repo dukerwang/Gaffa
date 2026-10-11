@@ -6,6 +6,7 @@ import {
 } from './model.mjs';
 import { crest, tname, glyph, chip, portrait, face, ptsBadge, ukTime } from './lib.mjs';
 import { sig } from './pages.mjs';
+import { rowPitch, rowCount } from './pitchrows.mjs';
 import {
   esc, bold, topbar, gwBar, scoreboard, matchBar, reportBlock, playStatus, pitchChip, lines, spread, benches,
   perfBlock, h2hBlock, halves, halfPitch, benchOne, ticks, BAND, ORDER, LAT,
@@ -327,9 +328,10 @@ function benchesStacked(m, state, mobile) {
 // Each club's own half, both attacking up, each bench under its own half.
 function lineupsSplit(m, state, mobile, H = 800) {
   const now = state === 'live' ? LIVE_NOW : null;
+  const minRows = Math.max(rowCount(m.A), rowCount(m.B));
   const col = (side) => {
     const s = state === 'upcoming' ? null : sideAt(side, now);
-    return `<div class="lsCol"><div class="lsHead">${crest(side.k, 22)}<b>${tname(side.k)}</b><span class="lbl">${side.formation}</span>${s ? `<span class="lsScore">${fmt(s.score)}</span>` : ''}</div>${halfPitch(side, state, mobile, H, false)}${benchOne(side, state, mobile)}</div>`;
+    return `<div class="lsCol"><div class="lsHead">${crest(side.k, 22)}<b>${tname(side.k)}</b><span class="lbl">${side.formation}</span>${s ? `<span class="lsScore">${fmt(s.score)}</span>` : ''}</div>${rowPitch(side, state, mobile ? { fieldW: 358, compact: true } : { fieldW: 595, minRows })}${benchOne(side, state, mobile)}</div>`;
   };
   const keyNode = `<span class="lnKey">${[0, 2, 5.6, 15.8, 29].map((v) => ptsBadge(v)).join('')}</span>`;
   if (mobile) {
@@ -441,7 +443,7 @@ export function landscapeLineups({ w, dark }) {
   const m = GW5[0];
   const col = (side) => {
     const s = sideAt(side, null);
-    return `<div class="lsCol"><div class="lsHead">${crest(side.k, 20)}<b>${tname(side.k)}</b><span class="lbl">${side.formation}</span><span class="lsScore">${fmt(s.score)}</span></div>${halfPitch(side, 'final', true, 690, false)}${benchOne(side, 'final', true)}</div>`;
+    return `<div class="lsCol"><div class="lsHead">${crest(side.k, 20)}<b>${tname(side.k)}</b><span class="lbl">${side.formation}</span><span class="lsScore">${fmt(s.score)}</span></div>${rowPitch(side, 'final', { fieldW: 405, compact: true, minRows: Math.max(rowCount(m.A), rowCount(m.B)) })}${benchOne(side, 'final', true)}</div>`;
   };
   return `<div class="screen m land" ${dark ? 'data-theme="dark"' : ''} style="width: ${w}px; height: __H__px;"><main class="wrap" style="padding: 12px 16px 24px;"><div class="sh"><h2 class="shT">Lineups</h2></div><div class="board lsGrid">${col(m.A)}${col(m.B)}</div></main></div>`;
 }

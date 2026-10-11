@@ -84,12 +84,23 @@ export const chip = (p, size = 'sm') => `<span class="pc pc-${size}${SIDE[p] ? `
 
 // ── The 2.0 portrait: lit frame, cut-out, club crest chipped on the corner ─
 const initials = (n) => n.replace(/^[A-Z]\./, '').slice(0, 2).toUpperCase();
+// Per-player crop, the app's own solve (src/lib/players/portraitCrop.ts).
+const CROP = { md: [156.25, -2, 66], cmp: [150, 0, 54], xs: [150, 3, 44], sm: [150, -2, 36] };
+function solveCrop(size, top, w) {
+  if (top == null || !w) return null;
+  const [z0, in0, box] = CROP[size];
+  const zoom = z0 * (0.2365 / w);
+  const target = in0 + 0.1310 * (z0 / 100) * box;
+  return { zoom, inset: target - top * (zoom / 100) * box };
+}
 export function portrait(p, size = 'md', withCrest = true) {
+  const c = p.photo === 'sq' ? solveCrop(size, p.headTop, p.headW) : null;
+  const st = c ? ` style="--z: ${c.zoom.toFixed(2)}%; --in: ${c.inset.toFixed(2)}px;"` : '';
   const img = p.photo
     ? `<img class="gp-img${p.photo === 'tall' ? ' gp-img-alt' : ''}" src="${photoSrc(p.code)}" alt="">`
     : `<span class="gp-none">${initials(p.name)}</span>`;
   const cr = withCrest && p.club ? `<span class="gp-crest"><img src="${badgeSrc(p.club)}" alt="${p.club.name}"></span>` : '';
-  return `<span class="gp gp-${size}"><span class="gp-frame">${img}</span>${cr}</span>`;
+  return `<span class="gp gp-${size}"${st}><span class="gp-frame">${img}</span>${cr}</span>`;
 }
 // Round face on a ground mixed from the position colour (the dashboard's plinth, at face size).
 export function face(p, size = 40) {

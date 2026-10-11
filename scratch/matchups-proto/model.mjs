@@ -115,7 +115,7 @@ function player(p, d, slot, fixture, perf) {
   const rating = d?.bySlot?.rating ?? d?.rating ?? null;
   return {
     id: p.id, name: p.name, pos: p.pos, slot: slot ?? p.pos, club: clubOf(p.club),
-    code, photo: kind === 'none' ? null : kind, pts, rating,
+    code, photo: kind === 'none' ? null : kind, headTop: p.headTop ?? null, headW: p.headW ?? null, pts, rating,
     mins: +(d?.stats?.minutes_played ?? 0), stats: statLine(d?.stats, slot ?? p.pos, rating),
     perf: perf ?? null, fixture,
   };
