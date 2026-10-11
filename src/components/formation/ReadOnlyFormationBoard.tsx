@@ -38,6 +38,8 @@ export interface FormationBoardPlayer {
 
 export interface FormationBoardSlot {
   slot: GranularPosition;
+  /** Position of this slot in the formation, reported back by `onSelectSlot`. */
+  index?: number;
   player: FormationBoardPlayer | null;
   /** Positional cover for this exact slot. Club boards populate this; TOTW does not. */
   depth?: FormationBoardPlayer[];
@@ -50,6 +52,8 @@ interface Props {
   ariaLabel: string;
   selectedPlayerId?: string | null;
   onSelectPlayer?: (id: string) => void;
+  /** Makes every slot, empty ones included, a button that reports its index. */
+  onSelectSlot?: (index: number) => void;
   variant?: 'deck' | 'standard' | 'A' | 'B' | 'C';
 }
 
@@ -73,11 +77,13 @@ function Node({
   item,
   selectedPlayerId,
   onSelectPlayer,
+  onSelectSlot,
   variant,
 }: {
   item: FormationBoardSlot;
   selectedPlayerId?: string | null;
   onSelectPlayer?: (id: string) => void;
+  onSelectSlot?: (index: number) => void;
   variant?: 'deck' | 'standard' | 'A' | 'B' | 'C';
 }) {
   const player = item.player;
@@ -86,6 +92,32 @@ function Node({
   const isInteractive = Boolean(onSelectPlayer);
   const hasSelection = isSelected || depthList.some((d) => d.id === selectedPlayerId);
   const isDeckVariant = variant === 'deck' || variant === 'B' || (item.depth !== undefined && variant !== 'standard');
+
+  const slotIndex = item.index;
+  const pickSlot = onSelectSlot && slotIndex !== undefined ? () => onSelectSlot(slotIndex) : undefined;
+
+  if (!player && pickSlot) {
+    return (
+      <div className={styles.nodeWrap}>
+        <button
+          type="button"
+          className={`${styles.starterButton} ${styles.slotButton}`}
+          onClick={pickSlot}
+          aria-label={`Select a player for ${item.slot}`}
+        >
+          <span className={styles.slotHeaderBadge}>
+            <PositionBadge position={item.slot} size="sm" />
+          </span>
+          <span className={styles.emptyPortraitWrap} aria-hidden>
+            <span className={styles.emptyPlus}>+</span>
+          </span>
+          <span className={`${styles.nodeChip} ${styles.nodeChipEmpty}`}>
+            <span className={styles.nodeEmptyName}>Add</span>
+          </span>
+        </button>
+      </div>
+    );
+  }
 
   if (!player) {
     return (
@@ -166,9 +198,9 @@ function Node({
       <button
         type="button"
         className={styles.starterButton}
-        onClick={isInteractive ? () => onSelectPlayer!(player.id) : undefined}
+        onClick={pickSlot ?? (isInteractive ? () => onSelectPlayer!(player.id) : undefined)}
         aria-label={`${player.name}, ${item.slot}`}
-        tabIndex={isInteractive ? 0 : -1}
+        tabIndex={isInteractive || pickSlot ? 0 : -1}
       >
         <span className={styles.portraitWrap}>
           <Portrait
@@ -207,6 +239,7 @@ export default function ReadOnlyFormationBoard({
   ariaLabel,
   selectedPlayerId,
   onSelectPlayer,
+  onSelectSlot,
   variant,
 }: Props) {
   const byZone = new Map<PitchZone, FormationBoardSlot[]>();
@@ -262,10 +295,11 @@ export default function ReadOnlyFormationBoard({
               <div className={`${styles.pitchRow} ${rowModifier}`}>
                 {zoneSlots.map((item, i) => (
                   <Node
-                    key={`${item.slot}-${item.player?.id ?? i}`}
+                    key={`${item.index ?? i}-${item.slot}-${item.player?.id ?? ''}`}
                     item={item}
                     selectedPlayerId={selectedPlayerId}
                     onSelectPlayer={onSelectPlayer}
+                    onSelectSlot={onSelectSlot}
                     variant={variant}
                   />
                 ))}
