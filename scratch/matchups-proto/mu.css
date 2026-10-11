@@ -868,8 +868,8 @@
 .rcP .pts-pend, .rcP .pts-dnp { box-shadow: inset 0 0 0 1px var(--color-text-muted), 0 0 0 1px var(--color-pitch-line); }
 .rcSub { position: absolute; top: -7px; right: calc(100% - 12px); z-index: 6; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--color-bg-card); box-shadow: 0 0 0 1px var(--color-pitch-line); color: var(--color-accent-ink, var(--color-accent)); }
 .rcBox { width: 100%; padding: 4px 3px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; background: var(--color-bg-card); border: 1px solid var(--color-pitch-line); border-radius: 6px; }
-.rcN { display: block; width: 100%; font-family: var(--font-serif); font-weight: 700; line-height: 1.12; color: var(--color-text-primary); white-space: nowrap; letter-spacing: -0.01em; }
-.rcN2 { white-space: normal; overflow-wrap: normal; word-break: normal; min-height: 2.24em; }
+.pnN { display: block; width: 100%; font-family: var(--font-serif); font-weight: 700; line-height: 1.12; color: var(--color-text-primary); white-space: nowrap; letter-spacing: -0.01em; }
+.pnN2 { white-space: normal; overflow-wrap: normal; word-break: normal; min-height: 2.24em; }
 .rcS { font-family: var(--font-label); font-size: 10px; letter-spacing: .02em; color: var(--color-text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .rcS b { color: var(--color-text-primary); }
 .rpM .rcS { font-size: 9px; }
@@ -886,7 +886,7 @@
 /* rows place chips by centre, so a chip can use the room its row leaves it */
 .rpRow { position: relative; display: block; }
 .rpCell { position: absolute; top: 50%; transform: translate(-50%, -50%); }
-.rcNhy { hyphens: auto; -webkit-hyphens: auto; overflow-wrap: normal; word-break: normal; }
+.pnNhy { hyphens: auto; -webkit-hyphens: auto; overflow-wrap: normal; word-break: normal; }
 /* the two halves always share one height, whatever the formations */
 .lsGrid .rp { flex: 1; display: flex; flex-direction: column; }
 .lsGrid .rpField { flex: 1; display: flex; flex-direction: column; }
@@ -914,10 +914,10 @@
 .lkSub { font-family: var(--font-label); font-weight: 700; font-size: 10px; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
 /* A · Plate: a slim dark nameplate under the photo, broadcast-graphic style */
 .lk-plate .lkName { padding: 3px 4px 4px; border-radius: 5px; background: rgba(9, 22, 15, .82); }
-.lk-plate .rcN { color: #fff; }
+.lk-plate .pnN { color: #fff; }
 .lk-plate .lkSub { color: rgba(255,255,255,.72); }
 /* B · Bare: no card, the name set on the grass */
-.lk-bare .rcN { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 0 6px rgba(0,0,0,.25); }
+.lk-bare .pnN { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 0 6px rgba(0,0,0,.25); }
 .lk-bare .lkSub { color: rgba(255,255,255,.8); text-shadow: 0 1px 2px rgba(0,0,0,.5); }
 /* C · Joined: photo and name are one card */
 .lk-joined { padding: 3px 3px 5px; border-radius: 8px; background: var(--color-bg-card); box-shadow: 0 0 0 1px var(--color-pitch-line), 0 3px 8px rgba(0,0,0,.22); gap: 0; }
@@ -939,3 +939,16 @@
 .lkOptH b { white-space: nowrap; }
 .rpM .lk-joined .pts { right: 1px; left: auto; }
 .rpM .lk-joined .gp-crest { left: 1px; }
+
+/* Revision 9: cards hug their content; photos line up along each row */
+.rpCell { top: 10px !important; transform: translateX(-50%) !important; }
+.rcBox { min-height: 0 !important; padding: 3px 5px 4px; gap: 1px; justify-content: flex-start; }
+.rpM .rcBox { min-height: 0 !important; padding: 3px 4px 3px; }
+.pnN2 { min-height: 0; }
+.pnN { line-height: 1.15; }
+.rcC { gap: 4px; }
+
+/* bench cards hug their content too */
+.bnSlot .ch { width: auto !important; max-width: 100%; }
+.bnSlot .chBox { width: auto; min-width: 58px; padding: 3px 7px 4px; min-height: 0; gap: 1px; }
+.bnSlot .chName { -webkit-line-clamp: 1; white-space: nowrap; }

@@ -37,7 +37,7 @@ export function status(p, state) {
 const NW = JSON.parse(fs.readFileSync(path.join(HERE, 'name-widths.json'), 'utf8'));
 const widthOf = (t) => NW[t] ?? t.length * 0.55;
 function nameHtml(name, chipW, base) {
-  const avail = chipW - 9;
+  const avail = chipW - 13;
   const full = widthOf(name);
   const segs = name.replace(/-/g, '-\u0001').split(/[\s\u0001]+/);
   let size, two = false;
@@ -52,7 +52,8 @@ function nameHtml(name, chipW, base) {
     two = true; size = Math.min(base, avail / (full * share * 1.06 + 0.4));
   }
   const text = hy ? `${name.slice(0, hy)}&shy;${name.slice(hy)}` : two ? name.replace(/-/g, '-<wbr>') : name;
-  return `<span class="rcN${two ? ' rcN2' : ''}" style="font-size: ${size.toFixed(2)}px;">${text}</span>`;
+  const lineW = (two ? (hy ? full * Math.max(hy, name.length - hy) / name.length * 1.06 : Math.max(...segs.map(widthOf))) : full) * size;
+  return { html: `<span class="pnN${two ? ' pnN2' : ''}" style="font-size: ${size.toFixed(2)}px;">${text}</span>`, two, lineW };
 }
 const V = /[aeiouyáéíóúàèëïöüćčšžğı]/i;
 function syllableBreak(s) {
@@ -68,22 +69,16 @@ function rowChip(p, state, opt, w) {
   const badge = st === 'pend' ? '<span class="pts pts-pend">–</span>' : st === 'dnp' ? '<span class="pts pts-dnp">DNP</span>' : ptsBadge(p.pts);
   const fx = p.fixture;
   const ev = (p.stats || '').split(' · ').filter((t) => t && !/x[GA]|rating/.test(t)).join(' · ');
-  const line = st === 'pend' && fx ? `<b>${fx.opponentShort}</b> ${ukTime(fx.kickoffTime)}` : st === 'dnp' ? 'Did not play' : ev || '&nbsp;';
-  // On a phone the card keeps only goals and assists; the score rides the corner.
   const scoring = ev.split(' · ').filter((t) => /^\d+[GA]$/.test(t)).join(' · ');
-  const lineM = st === 'pend' && fx ? `<b>${fx.opponentShort}</b> ${ukTime(fx.kickoffTime).slice(4)}` : st === 'played' && scoring ? `<b>${scoring}</b>` : '&nbsp;';
-  if (opt.look && opt.look !== 'box') {
-    // The position chip sits on the photo's lower edge; the name needs no box.
-    const sub = st === 'pend' && fx ? `${fx.opponentShort} ${ukTime(fx.kickoffTime).slice(opt.compact ? 4 : 0)}` : st === 'played' && scoring ? scoring : '';
-    const subTag = sub ? `<span class="lkSub">${sub}</span>` : '';
-    const name = nameHtml(p.name, w + (opt.look === 'bare' ? 4 : 0), opt.nameBase);
-    return `<button class="rcC lk-${opt.look}${st === 'pend' ? ' chPend' : st === 'dnp' ? ' chDnp' : ''}" style="width: ${w}px;" aria-label="${p.name}, ${p.slot}">
-      <span class="rcP">${p.subIn ? `<span class="rcSub" title="Auto-subbed in">${glyph('up', 11)}</span>` : ''}${portrait(p, opt.por)}${badge}<span class="lkPos">${chip(p.slot)}</span></span>
-      <span class="lkName">${name}${subTag}</span></button>`;
-  }
-  return `<button class="rcC${st === 'pend' ? ' chPend' : st === 'dnp' ? ' chDnp' : ''}" style="width: ${w}px;" aria-label="${p.name}, ${p.slot}">
+  // Phones keep only goals and assists; desktop keeps the short line. No line, no row.
+  const line = st === 'pend' && fx ? `<b>${fx.opponentShort}</b> ${ukTime(fx.kickoffTime).slice(opt.compact ? 4 : 0)}` : st === 'dnp' ? '' : opt.compact ? (scoring ? `<b>${scoring}</b>` : '') : ev;
+  const nm = nameHtml(p.name, w, opt.nameBase);
+  // The card hugs what it holds: the photo's width or the name's, whichever is wider.
+  const porW = opt.compact ? 44 : 54;
+  const boxW = Math.min(w, Math.max(porW + 10, Math.ceil(nm.lineW) + 16, line ? Math.ceil(line.replace(/<[^>]+>/g, '').length * (opt.compact ? 5.2 : 5.8)) + 12 : 0));
+  return { two: nm.two, line: !!line, html: `<button class="rcC${st === 'pend' ? ' chPend' : st === 'dnp' ? ' chDnp' : ''}" style="width: ${w}px;" aria-label="${p.name}, ${p.slot}">
     <span class="rcP">${p.subIn ? `<span class="rcSub" title="Auto-subbed in">${glyph('up', 11)}</span>` : ''}${portrait(p, opt.por)}${badge}</span>
-    <span class="rcBox">${chip(p.slot)}${nameHtml(p.name, w, opt.nameBase)}${opt.compact ? `<span class="rcS">${lineM}</span>` : `<span class="rcS">${line}</span>`}</span></button>`;
+    <span class="rcBox" style="width: ${boxW}px;">${chip(p.slot)}${nm.html}${line ? `<span class="rcS">${line}</span>` : ''}</span></button>` };
 }
 
 // side: { starters }, opt: { fieldW, compact, minRows }
@@ -103,21 +98,27 @@ export function rowPitch(side, state, { fieldW, compact = false, minRows = 0, lo
     nameBase: compact ? 10.5 : 12.5,
     look,
   };
-  const rowH = look === 'box' ? (compact ? 122 : 142) : look === 'joined' ? (compact ? 112 : 136) : (compact ? 104 : 126);
-  const html = rows.map((z) => {
+  // A row is as tall as its tallest card: photo, then the card's own lines.
+  const porH = compact ? 46 : 60, badgeH = compact ? 14 : 15, nameH = compact ? 12 : 15, statH = compact ? 11 : 12;
+  const unit = inner / 5;
+  const rowHtml = rows.map((z) => {
     const ps = byRow[z];
     const cols = columns(ps.map((p) => p.slot));
-    // centres in fifths of the field; four-wide rows use quarters
     const xs = cols ? cols.map((c) => (cols.length === 3 && !ps.some((p) => WIDE.has(p.slot)) ? [1.5, 3, 4.5][cols.indexOf(c)] : c) - 0.5) : ps.map((_, i) => (i + 0.5) * 5 / 4);
-    const unit = inner / 5;
-    return `<div class="rpRow rp${z}" style="min-height: ${rowH}px;">${ps.map((p, i) => {
+    const chips = ps.map((p, i) => {
       const cx = xs[i] * unit;
       const near = Math.min(...xs.filter((_, j) => j !== i).map((x) => Math.abs(x - xs[i]) * unit), Infinity);
-      const w = Math.floor(Math.min(opt.maxW, 2 * Math.min(cx, inner - cx) - 2, near - (compact ? 3 : 8)));
-      return `<span class="rpCell" style="left: ${(cx / inner) * 100}%;">${rowChip(p, state, opt, w)}</span>`;
-    }).join('')}</div>`;
-  }).join('');
-  const minH = Math.max(rows.length, minRows) * rowH;
+      // a player alone in his line can take a wider card
+      const maxW = ps.length === 1 ? opt.maxW * 1.25 : opt.maxW;
+      const w = Math.floor(Math.min(maxW, 2 * Math.min(cx, inner - cx) - 2, near - (compact ? 3 : 8)));
+      return { cx, ...rowChip(p, state, opt, w) };
+    });
+    const h = 10 + porH + 4 + 8 + badgeH + nameH * (chips.some((c) => c.two) ? 2 : 1) + (chips.some((c) => c.line) ? statH : 0) + 6;
+    return { h, html: `<div class="rpRow rp${z}" style="height: ${h}px;">${chips.map((c) => `<span class="rpCell" style="left: ${(c.cx / inner) * 100}%;">${c.html}</span>`).join('')}</div>` };
+  });
+  const html = rowHtml.map((r) => r.html).join('');
+  const rowH = Math.max(...rowHtml.map((r) => r.h));
+  const minH = rowHtml.reduce((s, r) => s + r.h, 0) + Math.max(0, minRows - rows.length) * rowH;
   return `<div class="rp${compact ? ' rpM' : ''}"><div class="rpField"><span class="phTop"></span><span class="phCircle"></span><span class="phBox"></span><span class="phGoal"></span><div class="rpRows" style="min-height: ${minH}px;">${html}</div></div></div>`;
 }
 export const rowCount = (side) => new Set(side.starters.map((p) => zoneOf(p.slot))).size;

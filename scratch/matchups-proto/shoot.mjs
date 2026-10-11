@@ -28,7 +28,7 @@ for (const f of files) {
       if (!own.length || getComputedStyle(el).display === 'none') return;
       const tops = new Set();
       own.forEach((n) => { const rg = document.createRange(); rg.selectNodeContents(n); [...rg.getClientRects()].forEach((q) => { if (q.width > 1) tops.add(Math.round(q.top / 4)); }); });
-      if (tops.size > 1 && !el.closest('.rrLead, .mrBody, .h2Note, .pbEv, .rcN2')) issues.push('WRAP ' + (el.getAttribute('class') || el.tagName) + ': ' + el.textContent.trim().slice(0, 50));
+      if (tops.size > 1 && !el.closest('.rrLead, .mrBody, .h2Note, .pbEv, .pnN2')) issues.push('WRAP ' + (el.getAttribute('class') || el.tagName) + ': ' + el.textContent.trim().slice(0, 50));
     });
     // chips on the grass must not touch each other or leave the field
     const chips = [...document.querySelectorAll('.pa .ch, .pv .ch, .phField .ch, .rpField .rcC')];
@@ -41,7 +41,7 @@ for (const f of files) {
         if (a.left < b.right - 2 && b.left < a.right - 2 && a.top < b.bottom - 2 && b.top < a.bottom - 2) issues.push('OVERLAP ' + chips[i].getAttribute('aria-label') + ' / ' + chips[j].getAttribute('aria-label'));
       }
     }
-    document.querySelectorAll('.rcN').forEach((n) => { if (n.scrollWidth > n.clientWidth + 0.5) issues.push('NAME-CUT ' + n.textContent); const lines = Math.round(n.getBoundingClientRect().height / parseFloat(getComputedStyle(n).lineHeight)); if (lines > 2) issues.push('NAME-3LINES ' + n.textContent); });
+    document.querySelectorAll('.pnN').forEach((n) => { if (n.scrollWidth > n.clientWidth + 0.5) issues.push('NAME-CUT ' + n.textContent); const lines = Math.round(n.getBoundingClientRect().height / parseFloat(getComputedStyle(n).lineHeight)); if (lines > 2) issues.push('NAME-3LINES ' + n.textContent); });
     // a badge may hang past its own chip, but never onto another player
     const chipsR = [...document.querySelectorAll('.rcC')];
     chipsR.forEach((c) => { c.querySelectorAll('.pts, .rcSub, .gp-crest').forEach((e) => { const b = e.getBoundingClientRect(); chipsR.forEach((o) => { if (o === c) return; o.querySelectorAll('.gp-frame, .rcBox, .pts, .lkName, .gp-crest').forEach((t) => { const r = t.getBoundingClientRect(); if (b.left < r.right - 1 && r.left < b.right - 1 && b.top < r.bottom - 1 && r.top < b.bottom - 1) issues.push('BADGE-HITS ' + c.getAttribute('aria-label') + ' > ' + o.getAttribute('aria-label')); }); }); const f = c.closest('.rp')?.getBoundingClientRect(); if (f && (b.right > f.right - 2 || b.left < f.left + 2)) issues.push('BADGE-OFF ' + c.getAttribute('aria-label')); }); });
