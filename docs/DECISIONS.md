@@ -644,5 +644,24 @@ Gaffa block rewritten but kept light. Chosen 2026-09-29.
 centre-back (2026-10-02):
 > "instead of tarkowski, you should give examples of elite cb's like saliba."
 
-`src/lib/publicHome/loadShowcase.ts` reads "elite" off market value. That is an
-agent's proxy, not Duke's rule.
+## 2026-10-08 — Front page examples are fixed
+
+**One example per feature, with players people recognise.** On the front page
+picking from the latest matchweeks:
+> "when you're introducing/marketing features you need to just stick to one
+> example, real life example is good too, and use prominent players that people
+> will recognize instead of lesser known ones to get your point across."
+
+The examples are pinned by player id in `EXAMPLES` in
+`src/lib/publicHome/loadShowcase.ts`.
+
+## 2026-10-12 — Brand first on the front page
+
+**Say "most realistic" without saying it, and lead with Gaffa.**
+> "my main request is to "say" the "most realistic fantasy football game"
+> without actually saying it. because the gaffa brand should be first but
+> instead it's just a thing in the top left, make it more prominent."
+
+The hero now opens on the crest-and-name wordmark at display size, followed by
+"Fantasy football, played like the real thing." That line is an agent's
+wording, not Duke's.

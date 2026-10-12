@@ -13,7 +13,7 @@ import shell from './(dashboard)/layout.module.css';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Gaffa · The Most Realistic Fantasy Football Game',
+  title: 'Gaffa · Fantasy Football, Played Like the Real Thing',
   description:
     'Dynasty fantasy football for the Premier League. Players score the way their match went, transfers follow the real Premier League, and every season has four trophies.',
 };

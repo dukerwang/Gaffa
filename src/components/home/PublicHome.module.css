@@ -65,14 +65,28 @@
 }
 .hero { display: grid; grid-template-columns: minmax(0, 1fr) 560px; gap: 48px; align-items: end; }
 .heroText { padding-bottom: 72px; min-width: 0; }
-.heroH {
+/* The wordmark leads: the top bar's crest-and-name lockup, at hero scale. */
+.mark {
+  display: flex;
+  align-items: center;
+  gap: 0.2em;
   margin: 0;
-  max-width: 13ch;
   font-family: var(--font-serif);
   font-weight: 700;
-  font-size: 58px;
-  line-height: 1.02;
-  letter-spacing: -0.036em;
+  font-size: 96px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--shelf-ink);
+}
+.markCrest { flex: none; width: 0.82em; height: 0.82em; transform: translateY(-0.04em); }
+.heroLine {
+  margin: 22px 0 0;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
   color: var(--shelf-ink);
   text-wrap: balance;
 }
@@ -295,7 +309,7 @@
 /* ---------- tablet ---------- */
 @media (max-width: 1100px) {
   .hero { grid-template-columns: minmax(0, 1fr) 480px; gap: 32px; }
-  .heroH { font-size: 48px; }
+  .mark { font-size: 80px; }
   .bottomRow { grid-template-columns: minmax(0, 1fr) 320px; }
 }
 
@@ -313,7 +327,8 @@
   .shelf { margin-top: calc(var(--space-4) * -1); padding-top: 26px; }
   .hero { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .heroText { padding-bottom: var(--s6); }
-  .heroH { font-size: 35px; line-height: 1.04; letter-spacing: -0.032em; max-width: none; }
+  .mark { font-size: 56px; }
+  .heroLine { margin-top: 14px; font-size: 21px; }
   .heroP { font-size: var(--t-15); margin-top: var(--s3); }
   .heroActions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
   .heroActions .btn { padding: 0 var(--s3); }

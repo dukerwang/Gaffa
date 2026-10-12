@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
+import { Icon } from '@/components/ui/Icon';
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
 import Trophy from '@/components/trophies/Trophy';
@@ -100,7 +101,11 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
       <section className={styles.shelf}>
         <div className={styles.hero}>
           <div className={styles.heroText}>
-            <h1 className={styles.heroH}>The Most Realistic Fantasy Football Game</h1>
+            <h1 className={styles.mark}>
+              <Icon name="gaffa" size="1em" className={styles.markCrest} aria-hidden="true" />
+              <span>Gaffa</span>
+            </h1>
+            <p className={styles.heroLine}>Fantasy football, played like the real thing.</p>
             <p className={styles.heroP}>
               Players score the way their match went. Buy and sell in a transfer market tied to the real Premier
               League, and play for four trophies every season.
