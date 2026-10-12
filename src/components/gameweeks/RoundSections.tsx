@@ -11,11 +11,10 @@ import Worm, { WeekendDots, onClock } from './Worm';
 import type { Metas, TeamLite, TieLite } from './types';
 
 // ── Fixtures: every tie on one weekend clock ──
-function Ruler({ clock, live }: { clock: string[]; live: boolean }) {
-  const now = Date.now();
+function Ruler({ clock, started }: { clock: string[]; started: Set<string> | null }) {
   return (
     <div className={s.fsRuler}>
-      {clock.map((t) => <span key={t} className={live && Date.parse(t) > now ? s.fsFut : undefined}><Local>{() => kickoffShort(t)}</Local></span>)}
+      {clock.map((t) => <span key={t} className={started && !started.has(t) ? s.fsFut : undefined}><Local>{() => kickoffShort(t)}</Local></span>)}
     </div>
   );
 }
@@ -67,7 +66,7 @@ function Strip({ tie, clock, metas, myTeamId, href }: { tie: TieLite; clock: str
 export function Fixtures({ ties, clock, state, metas, myTeamId, leagueId }: {
   ties: TieLite[]; clock: string[]; state: MatchState; metas: Metas; myTeamId?: string; leagueId: string;
 }) {
-  const live = state === 'live';
+  const started = state === 'live' ? new Set(ties.flatMap((t) => t.view?.slots.filter((x) => x.started).map((x) => x.t) ?? [])) : null;
   const key = state === 'upcoming'
     ? <span className={s.fsKey}><span><i className={s.fsKeyDot} />Starters in each kickoff</span></span>
     : <span className={s.fsKey}><span>Above the line, home leads</span><span><i className={s.fsKeyBand} />Draw band</span><span>Below, away leads</span></span>;
@@ -77,8 +76,8 @@ export function Fixtures({ ties, clock, state, metas, myTeamId, leagueId }: {
       <div className={s.panel}>
         {clock.length > 0 && (
           <>
-            <div className={s.fsHead}><span className={s.lbl}>Home</span><div><Ruler clock={clock} live={live} /></div><span className={s.lbl} style={{ textAlign: 'right' }}>Away</span></div>
-            <div className={s.fsRulerM}><Ruler clock={clock} live={live} /></div>
+            <div className={s.fsHead}><span className={s.lbl}>Home</span><div><Ruler clock={clock} started={started} /></div><span className={s.lbl} style={{ textAlign: 'right' }}>Away</span></div>
+            <div className={s.fsRulerM}><Ruler clock={clock} started={started} /></div>
           </>
         )}
         {ties.map((t) => <Strip key={t.id} tie={t} clock={clock} metas={metas} myTeamId={myTeamId} href={`/league/${leagueId}/matchups/${t.id}`} />)}

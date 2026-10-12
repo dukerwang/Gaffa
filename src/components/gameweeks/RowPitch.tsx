@@ -7,10 +7,10 @@
  * rows, never from a fixed box, so a six-line formation grows the pitch
  * instead of squeezing it. Ported from scratch/matchups-proto/pitchrows.mjs.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
-import type { MatchState, PitchPlayer } from '@/lib/matchups/matchupView';
+import type { PitchPlayer } from '@/lib/matchups/matchupView';
 import { FitBox, Glyph, Local, Pts, kickoffShort, s, useWidth } from './parts';
 
 const ZONE: Record<string, string> = { LW: 'ATT', ST: 'ATT', RW: 'ATT', AM: 'AMZ', DM: 'DMZ', CM: 'CMZ', LWB: 'WBZ', RWB: 'WBZ', CB: 'DEF', LB: 'DEF', RB: 'DEF', GK: 'GK' };
@@ -89,7 +89,8 @@ function splits(name: string): [string, string][] {
   return out;
 }
 function fitName(name: string, chipW: number, base: number, pad: number, widthOf: (t: string) => number): NameFit {
-  const avail = chipW - pad;
+  // 3% under the box: measured widths are fractional, rendered ones round up.
+  const avail = (chipW - pad) * 0.97;
   const full = widthOf(name);
   if (full * base <= avail) return { lines: [name], size: base, hyphen: false };
   if (full * 8 <= avail) return { lines: [name], size: avail / full, hyphen: false };
@@ -107,9 +108,21 @@ function fitName(name: string, chipW: number, base: number, pad: number, widthOf
 }
 
 function NameText({ fit }: { fit: NameFit }) {
-  const style = { fontSize: `${fit.size.toFixed(2)}px` };
-  if (fit.lines.length === 1) return <span className={s.pnN} style={style}>{fit.lines[0]}</span>;
-  return <span className={`${s.pnN} ${s.pnN2}`} style={style}>{fit.lines[0]}<br />{fit.lines[1]}</span>;
+  const ref = useRef<HTMLSpanElement>(null);
+  const size = `${fit.size.toFixed(2)}px`;
+  const key = fit.lines.join('|');
+  // The serif's optical sizing draws small sizes a pixel or two wider than a
+  // width measured at 10px predicts. Settle any remainder after layout.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.fontSize = size;
+    if (el.scrollWidth > el.clientWidth + 0.5) {
+      el.style.fontSize = `${(fit.size * Math.max(0.85, (el.clientWidth - 0.5) / el.scrollWidth)).toFixed(2)}px`;
+    }
+  }, [size, key, fit.size]);
+  if (fit.lines.length === 1) return <span ref={ref} className={s.pnN} style={{ fontSize: size }}>{fit.lines[0]}</span>;
+  return <span ref={ref} className={`${s.pnN} ${s.pnN2}`} style={{ fontSize: size }}>{fit.lines[0]}<br />{fit.lines[1]}</span>;
 }
 
 /**
@@ -131,8 +144,8 @@ function DetailLine({ p, cardW, compact }: { p: PitchPlayer; cardW: number; comp
   return <>{ordered.map((t, i) => <span key={t}>{i ? ' · ' : ''}{ga(t) ? <b>{t}</b> : t}</span>)}</>;
 }
 
-export default function RowPitch({ starters, state, minRows = 0, onOpen }: {
-  starters: PitchPlayer[]; state: MatchState; minRows?: number; onOpen: (p: PitchPlayer) => void;
+export default function RowPitch({ starters, minRows = 0, onOpen }: {
+  starters: PitchPlayer[]; minRows?: number; onOpen: (p: PitchPlayer) => void;
 }) {
   const [ref, fieldW] = useWidth<HTMLDivElement>(560);
   const compact = fieldW < 480;
@@ -158,7 +171,7 @@ export default function RowPitch({ starters, state, minRows = 0, onOpen }: {
     const cols = columns(ps.map((p) => p.slot));
     const central3 = cols?.length === 3 && !ps.some((p) => WIDE.has(p.slot));
     const xs = cols ? cols.map((c, i) => (central3 ? [1.5, 3, 4.5][i] : c) - 0.5) : ps.map((_, i) => ((i + 0.5) * 5) / 4);
-    const chips = ps.map((p, i) => ({ p, cx: xs[i] * unit, fit: fitName(p.name, cardW, nameBase, compact ? 10 : 14, widthOf) }));
+    const chips = ps.map((p, i) => ({ p, cx: xs[i] * unit, fit: fitName(p.name, cardW, nameBase, compact ? 8 : 12, widthOf) }));
     const h = 10 + porH + 4 + 8 + badgeH + nameH * (chips.some((c) => c.fit.lines.length > 1) ? 2 : 1) + statH + 6;
     return { z, h, chips };
   });

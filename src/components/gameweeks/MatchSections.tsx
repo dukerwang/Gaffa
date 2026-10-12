@@ -64,7 +64,7 @@ export function Lineups({ view, teams, onOpen, mineFirst }: { view: MatchupView;
         {side.formation && <span className={s.lbl}>{side.formation}</span>}
         {!up && <span className={s.lsScore}>{fmt(side.score)}</span>}
       </div>
-      <RowPitch starters={side.starters} state={view.state} minRows={minRows} onOpen={onOpen} />
+      <RowPitch starters={side.starters} minRows={minRows} onOpen={onOpen} />
       <BenchOne side={side} state={view.state} onOpen={onOpen} />
     </div>
   );
@@ -251,12 +251,12 @@ export function Momentum({ view, teams }: { view: MatchupView; teams: { a: TeamL
 }
 
 // ── Team sheets: one per club, grouped by line ──
-function SheetRow({ p, state, open, onToggle, onOpen }: { p: PitchPlayer; state: MatchState; open: boolean; onToggle: () => void; onOpen: Open }) {
+function SheetRow({ p, open, onToggle, onOpen }: { p: PitchPlayer; open: boolean; onToggle: () => void; onOpen: Open }) {
   const fx = p.fixture;
   const statTxt = p.stats.join(' · ') + (p.rating != null && p.status === 'played' ? `${p.stats.length ? ' · ' : ''}${p.rating.toFixed(2)} rating` : '');
   const sub = p.status === 'pend'
     ? <>{fx?.opponent ?? ''} · <Local>{() => kickoffShort(fx?.kickoffTime)}</Local></>
-    : p.status === 'dnp' ? 'Did not play · no bench cover'
+    : p.status === 'dnp' ? <>Did not play<span className={s.dOnly}> · no bench cover</span></>
     : `${p.subIn && p.replacedName ? `On for ${p.replacedName}${statTxt ? ' · ' : ''}` : ''}${statTxt}`;
   const canOpen = !!p.perf?.length && p.status === 'played';
   const pts = p.status === 'pend' ? <span className={`${s.shP} ${s.shP0}`}>–</span> : <span className={`${s.shP}${p.status === 'dnp' ? ` ${s.shP0}` : ''}`}>{fmt(p.status === 'dnp' ? 0 : p.points)}</span>;
@@ -303,7 +303,7 @@ function TeamSheet({ side, team, state, onOpen }: { side: SideView; team: TeamLi
         <div key={l} className={s.shLine}>
           <div className={s.shLH}><span>{l}</span>{!up && <b>{fmt(side.lines[l])}</b>}</div>
           {byLine[l].map((p) => (
-            <SheetRow key={p.id} p={p} state={state} open={openId === p.id} onToggle={() => setOpenId((v) => (v === p.id ? null : p.id))} onOpen={onOpen} />
+            <SheetRow key={p.id} p={p} open={openId === p.id} onToggle={() => setOpenId((v) => (v === p.id ? null : p.id))} onOpen={onOpen} />
           ))}
         </div>
       ))}

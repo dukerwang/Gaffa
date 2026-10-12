@@ -488,7 +488,7 @@
 
   .hxWide { margin-bottom: 32px; }
   .hxTop { padding: 0 16px; font-size: 13px; }
-  .hxMain { grid-template-columns: 1fr; gap: 12px; padding: 16px; }
+  .hxMain { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 16px; }
   .sbBig .hxMain { padding: 16px; }
   .hxSide, .hxAway { flex-direction: row; text-align: left; justify-content: flex-start; gap: 12px; }
   .hxAway .hxTx { align-items: flex-start; }
@@ -501,7 +501,7 @@
   .hxAxis, .sbBig .hxAxis { width: 100%; }
   .hxVerdictRow { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .hxVerdictRow .hxEq { display: inline; }
-  .hxFoot { grid-template-columns: 1fr; }
+  .hxFoot { grid-template-columns: minmax(0, 1fr); }
   .hxMidWrap { order: 3; }
   .hxFootS { padding: 10px 16px; gap: 12px; }
   .hxFootS + .hxFootS { justify-content: flex-start; border-left: 0; border-top: 1px solid rgba(255,255,255,.09); }
@@ -602,9 +602,11 @@
 @container (max-width: 440px) { .bnWide { display: none; } }
 .spName { display: block; }
 @media (max-width: 640px) {
-  .soTx { min-width: 0; }
-  .so { flex: 0 1 auto; }
-  .soName { overflow: hidden; text-overflow: ellipsis; }
+  .soTx { min-width: 0; overflow: hidden; }
+  .so { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+  .soName { display: block; overflow: hidden; }
+  .hxFootS { gap: 10px; }
+  .hxFootS .so > span:first-child { width: 30px !important; height: 30px !important; }
 }
 @media (max-width: 1080px) { .mlLead { white-space: normal; } }
 @media (max-width: 900px) {

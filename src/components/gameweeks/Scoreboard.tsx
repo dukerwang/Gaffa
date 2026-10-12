@@ -71,7 +71,7 @@ export default function Scoreboard(props: ScoreboardProps) {
   const standouts = (sv: SideView | undefined) => playedFirst(sv, live).map((p) => (
     <button key={p.id} type="button" className={`${s.so} ${s.soBtn}`} onClick={() => onOpen(p)} aria-label={`${p.name}, ${fmt(p.points)} points`}>
       <Face name={p.name} photoUrl={p.photoUrl} photoVersion={p.photoVersion} slot={p.slot} size={34} onDark />
-      <span className={s.soTx}><span className={s.soName}>{p.name}</span><span className={s.soPts}>{fmt(p.points)}</span></span>
+      <span className={s.soTx}><FitText className={s.soName} text={p.name} min={9.5} /><span className={s.soPts}>{fmt(p.points)}</span></span>
     </button>
   ));
   const nextUp = (sv: SideView | undefined) => {

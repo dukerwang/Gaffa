@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react';
 import CrestBadge from '@/components/crest/CrestBadge';
 import type { CrestConfig } from '@/components/crest/types';
 import { portraitInitials, portraitSources } from '@/lib/players/photo';
@@ -160,16 +160,13 @@ export function useWidth<T extends HTMLElement>(fallback: number) {
   return [ref, w] as const;
 }
 
+const subscribeMotion = (cb: () => void) => {
+  const q = window.matchMedia('(prefers-reduced-motion: reduce)');
+  q.addEventListener('change', cb);
+  return () => q.removeEventListener('change', cb);
+};
 export function useReducedMotion() {
-  const [r, setR] = useState(false);
-  useEffect(() => {
-    const q = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setR(q.matches);
-    const on = () => setR(q.matches);
-    q.addEventListener('change', on);
-    return () => q.removeEventListener('change', on);
-  }, []);
-  return r;
+  return useSyncExternalStore(subscribeMotion, () => window.matchMedia('(prefers-reduced-motion: reduce)').matches, () => false);
 }
 
 /** Text that shrinks (to a floor) until it fits its box on one line. */
