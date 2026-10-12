@@ -42,8 +42,7 @@
 export const REF_HEAD_WIDTH_FRAC = 0.2365;
 export const REF_HEAD_TOP_FRAC = 0.1310;
 
-/** cmp and xs are the matchup pitch's card sizes (desktop and phone); xxs is a table row. */
-export type PortraitSize = 'lg' | 'md' | 'sm' | 'cmp' | 'xs' | 'xxs';
+export type PortraitSize = 'lg' | 'md' | 'sm';
 
 /**
  * Mirrors the `--g-portrait-*` custom properties set per size in globals.css
@@ -56,9 +55,6 @@ const SIZE_DEFAULTS: Record<PortraitSize, { zoomPct: number; insetPx: number; bo
   lg: { zoomPct: 156.25, insetPx: -3, boxPx: 104 },
   md: { zoomPct: 156.25, insetPx: -2, boxPx: 66 },
   sm: { zoomPct: 150, insetPx: -2, boxPx: 44 },
-  cmp: { zoomPct: 150, insetPx: 0, boxPx: 54 },
-  xs: { zoomPct: 150, insetPx: 3, boxPx: 44 },
-  xxs: { zoomPct: 150, insetPx: -2, boxPx: 36 },
 };
 
 /**
