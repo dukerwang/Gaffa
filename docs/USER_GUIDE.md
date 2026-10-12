@@ -123,7 +123,7 @@ A commissioner can't leave a league that has drafted until they hand the role to
 
 ## 3. The Draft
 
-A league drafts **once**, before its first season. After that your squad carries forward forever and changes through auctions, trades and loans — there are no future drafts.
+A dynasty league drafts **once**, before its first season (a redraft league drafts every season; see Redraft Leagues). After that your squad carries forward forever and changes through auctions, trades and loans — there are no future drafts.
 
 - The league needs **at least 4 managers**.
 - The commissioner sets or randomises the order, and either starts immediately or **schedules** it. Everyone gets an email and an in-app notice, and it auto-starts at that time — or auto-cancels and tells the commissioner if there still aren't 4 managers.
@@ -564,6 +564,43 @@ Once every gameweek and cup tie is complete, the commissioner triggers the reset
 **Departures are not part of the reset.** Players leaving the Premier League — including everyone at a relegated club — are picked up continuously as it happens, and each one opens a release-or-retain decision for you to answer (§13). So relegation doesn't hit you in one lump at the reset; it arrives as decisions as the summer unfolds.
 
 **Your squad is not touched.** The reset is about records and money — never your players.
+
+---
+
+## Expansion Draft
+
+A dynasty league can grow. In the offseason, after the reset and before Kickoff, the commissioner can open an **expansion draft** for up to 4 new clubs, and new managers join with the league's invite code.
+
+1. **Protect.** Every existing club protects **8 players**. Your academy and anyone you have out on loan are safe on top of that, so the 8 are only about your senior squad. If you don't choose, your 8 most valuable players are protected when the picks start.
+2. **Pick.** The new clubs take turns in a random order. Each pick is either an unprotected player from an existing club or a free agent, until every new squad is full. **No existing club loses more than 2 players**, so you keep at least 20 of your 22 however the picks fall. The commissioner can make a pick for a club that's on the clock, so one absent manager can't hold the draft up.
+3. **Kick off.** When the last squad is full, the season's fixtures and cups are rebuilt with the new clubs in them. Kickoff waits until the expansion draft is finished or cancelled.
+
+A new club starts with the league's **median Club Balance** and pays nothing for the players it takes. The clubs that lose a player aren't paid for him either.
+
+**Why these numbers?** They were tested on the real alpha squads and on simulated leagues of 6 to 12 clubs. Protecting 8 and taking up to 2 per club costs an existing club about 2% of its strength while putting the new club within reach of the league's middle. Protecting more barely helps the existing clubs and leaves the new one hopeless in a bigger league. Charging fees for the players taken would cost a new club around double a typical balance, so it would arrive broke. The median balance, rather than a fixed sum, gives it the same money its rivals have for the summer's new arrivals, which is where it closes the rest of the gap.
+
+---
+
+## Redraft Leagues
+
+Everything above describes a **dynasty** league, Gaffa's main format, where your squad carries over forever. When a league is created, the commissioner can choose **Redraft** instead: the format most fantasy players already know, where every season is its own competition.
+
+**Every season starts with a draft.** At the end of a season the league's results go into its history, as in dynasty. Then every squad is cleared, every Club Balance goes back to the league's budget, and the league waits for its next draft. The draft order is shuffled at random, and the commissioner can still change it or schedule the draft from the lobby. A new manager can join while the league waits. When the draft finishes, the season's schedule and cups are built. The cups are seeded from last season's final table.
+
+A redraft league plays the same game: the same positions, scoring, lineups, auto-subs, matchups, draw band and cups. You still trade, use IR, and sign free agents in open auctions from your Club Balance. What it leaves out is everything that only pays off over several seasons:
+
+- **No academy, loans or Club Facilities.** They're bets on future seasons.
+- **No listings.** You can't put your own players up for sale. Trade them with other clubs instead.
+- **No severance.** Dropping a player is free, because swapping players in and out is how redraft is played.
+- **No retained list.** A player who leaves the Premier League simply comes off your squad. His place is free, and there's no compensation and no decision to make.
+- **No Match Revenue or prizes.** Your Club Balance is for signing free agents.
+- **Every free agent opens at €1m**, whatever his market value. The recommended Club Balance is **€100m**.
+
+**Transfer Day.** Instead of rolling auctions, every bid in a redraft league settles together on **Transfer Day**: 24 hours before the gameweek's first kickoff (in a congested week, halfway between the previous gameweek's last match and the next one's first). Bid openly all week; a later bid doesn't move the deadline. When Transfer Day passes, the highest bidder with room wins each player, the top-priced players first. After that, until his club kicks off, any free agent nobody bid on can be signed instantly for nothing with **Sign Now**. A player you drop is up for auction until the next Transfer Day, so he can't be dropped straight into a friend's squad.
+
+**Why Transfer Day?** It's the waiver rhythm most fantasy players know: one moment a week when contested signings are decided, and quick pickups afterwards for the injury news that breaks on a Friday. Most free agents draw a single bid, so a rolling clock only made those signings wait.
+
+**Why money matters less here.** A simulation of full redraft seasons on last season's real points found that, with a snake draft, the draft decides most of a season and the money spent on free agents changes very little: even doubling one club's budget moved it by a handful of points. So in redraft the budget is a fair way to settle who gets a player two clubs both want, the way it works on other fantasy platforms. It isn't the strategic resource it is in dynasty. A floor tied to market value would only make prices follow Transfermarkt instead of points, which is the wrong signal for a one-season league.
 
 ---
 

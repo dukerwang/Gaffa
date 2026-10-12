@@ -2,6 +2,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { getDepartureCompensationRate } from '@/lib/transfers/compensation';
 import { initialAuctionExpiry } from '@/lib/auction/timer';
 import { getLeagueAuctionSettings } from '@/lib/auction/leagueAuctionSettings';
+import { isRedraft, leagueFeatures } from '@/lib/leagues/features';
+import { getTransferDayWindow } from '@/lib/transferDay/window';
 
 export async function executeDrop(
     admin: SupabaseClient,
@@ -48,8 +50,11 @@ export async function executeDrop(
 
     const marketValue = Number(player.market_value || 0);
 
-    // Severance fee: 20% of market value (rounded down), minimum €2m — charged on plain drops only
-    const severanceFee = actionType === 'drop' ? Math.max(2, Math.floor(marketValue * 0.2)) : 0;
+    // Severance fee: 20% of market value (rounded down), minimum €2m — charged on
+    // plain drops only, and never in a redraft league, where dropping is routine.
+    const { data: league } = await admin.from('leagues').select('is_dynasty').eq('id', team.league_id).single();
+    const severanceFee =
+        actionType === 'drop' && leagueFeatures(league).severance ? Math.max(2, Math.floor(marketValue * 0.2)) : 0;
 
     // Priced off the league's configured rate, not a literal. This path used to
     // hardcode 0.8 while the relegation sweep used COMPENSATION_RATE = 1.0, so
@@ -184,8 +189,11 @@ export async function executeDrop(
         // Single 72h pre-first-bid window. This path used AUCTION_THRESHOLD (50)
         // to pick between 96h and 48h while the timer and the resolver used 40
         // for the same decision — market value no longer affects duration at all.
+        // Redraft: a dropped player is up for auction until the next Transfer
+        // Day, so nobody can drop a player straight into a friend's hands.
         const { quietHours } = await getLeagueAuctionSettings(admin, team.league_id);
-        const auctionExpiry = initialAuctionExpiry(Date.now(), quietHours, marketValue);
+        const nextTransferDay = isRedraft(league) ? (await getTransferDayWindow(admin)).nextSettleAt : null;
+        const auctionExpiry = nextTransferDay ?? initialAuctionExpiry(Date.now(), quietHours, marketValue);
 
         await admin.from('waiver_claims').insert({
             league_id: team.league_id,

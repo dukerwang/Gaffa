@@ -16,6 +16,9 @@
  */
 
 import { effectiveSlots } from '@/lib/facilities/facilities';
+import { freeAgentMinimumBid, isRedraft } from '@/lib/leagues/features';
+import { getTransferDayWindow } from '@/lib/transferDay/window';
+import { getLockedPlTeamIds } from '@/lib/fixtures/lockout';
 import type { createAdminClient } from '@/lib/supabase/admin';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import {
@@ -159,6 +162,7 @@ export interface TransfersLeague {
   max_loan_outs: number | null;
   max_loan_ins: number | null;
   free_agent_bid_floor: number | null;
+  is_dynasty: boolean | null;
 }
 
 export interface TransfersTeam {
@@ -287,6 +291,16 @@ export interface TransfersModel {
    * same way it never reads `playerMap` for its main table.
    */
   newTransfers: EnrichedPlayer[];
+  /**
+   * Redraft only: when bids settle, and whether free agents can be signed
+   * instantly right now (migration 174). Null in a dynasty league.
+   */
+  transferDay: {
+    nextSettleAt: string | null;
+    instantOpen: boolean;
+    /** FPL team ids whose match has kicked off in the instant-signing gameweek. */
+    kickedOffClubIds: number[];
+  } | null;
 }
 
 // ── Builder ───────────────────────────────────────────────────
@@ -302,7 +316,7 @@ export async function buildTransfersModel(
       .from('leagues')
       .select(`id, name, roster_size, taxi_size, taxi_age_limit, status, roster_locked,
                total_gameweeks, current_season, previous_season, loan_slot_buyback_fee,
-               loan_bonus_cap_default, max_loan_outs, max_loan_ins, free_agent_bid_floor`)
+               loan_bonus_cap_default, max_loan_outs, max_loan_ins, free_agent_bid_floor, is_dynasty`)
       .eq('id', leagueId)
       .single(),
     admin
@@ -526,7 +540,7 @@ export async function buildTransfersModel(
         : null,
       bid_count: a.bid_count ?? 0,
       bids: Array.isArray(a.bids) ? a.bids : [],
-      minimum_bid: listing ? listing.min_bid : Math.floor(marketValue * freeAgentBidFloor),
+      minimum_bid: listing ? listing.min_bid : freeAgentMinimumBid(marketValue, league, freeAgentBidFloor),
       first_bid_at: a.first_bid_at,
       expires_at: a.expires_at,
       opens_at: a.opens_at ?? null,
@@ -610,7 +624,21 @@ export async function buildTransfersModel(
         (l.lender_team_id === myTeam.id || l.borrower_team_id === myTeam.id),
     ).length;
 
+  let transferDay: TransfersModel['transferDay'] = null;
+  if (isRedraft(league)) {
+    try {
+      const window = await getTransferDayWindow(admin);
+      const kickedOff = window.instantOpen && window.instantGameweek != null
+        ? await getLockedPlTeamIds(admin, window.instantGameweek)
+        : new Set<number>();
+      transferDay = { nextSettleAt: window.nextSettleAt, instantOpen: window.instantOpen, kickedOffClubIds: [...kickedOff] };
+    } catch (err) {
+      console.error('[buildTransfersModel] Transfer Day window failed:', err);
+    }
+  }
+
   return {
+    transferDay,
     serverNow: new Date().toISOString(),
     currentGameweek: fplStatus.currentGw,
     league: { ...league, taxi_size: mySlots.academy, max_loan_outs: mySlots.loansOut },

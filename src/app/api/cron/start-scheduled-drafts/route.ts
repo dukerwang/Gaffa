@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendEmailToUsers } from '@/lib/email/sendEmailToUsers';
 import { getDraftStartedEmail } from '@/lib/email/templates';
+import { PRE_DRAFT_STATUSES } from '@/lib/leagues/status';
 
 export const maxDuration = 60; // 1 minute execution limit
 
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   const { data: eligibleLeagues, error: fetchError } = await admin
     .from('leagues')
     .select('*')
-    .eq('status', 'setup')
+    .in('status', [...PRE_DRAFT_STATUSES])
     .lte('draft_scheduled_at', new Date().toISOString())
     .not('draft_scheduled_at', 'is', null);
 

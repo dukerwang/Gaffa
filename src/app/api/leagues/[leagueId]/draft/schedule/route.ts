@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendEmailToUsers } from '@/lib/email/sendEmailToUsers';
 import { getDraftScheduledEmail, getDraftCancelledEmail } from '@/lib/email/templates';
+import { isAwaitingDraft } from '@/lib/leagues/status';
 
 interface Props {
   params: Promise<{ leagueId: string }>;
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
   if (!league) return NextResponse.json({ error: 'League not found' }, { status: 404 });
   if (league.commissioner_id !== user.id) return NextResponse.json({ error: 'Not commissioner' }, { status: 403 });
-  if (league.status !== 'setup') return NextResponse.json({ error: 'League is not in setup phase' }, { status: 400 });
+  if (!isAwaitingDraft(league.status)) return NextResponse.json({ error: 'League is not waiting for a draft' }, { status: 400 });
 
   const body = await req.json();
   const { scheduledAt } = body; // ISO String (or null to clear)

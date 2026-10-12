@@ -8,6 +8,7 @@ import type { EnrichedPlayer, RosterPlayer, TransfersListing } from '@/lib/trans
 import type { SquadEntry } from './ClubClient';
 import { money, signedMoney, statusMeta, valueOf } from './clubDerive';
 import { calculateAgeInYears } from '@/lib/transfers/academyEligibility';
+import type { LeagueFeatures } from '@/lib/leagues/features';
 import styles from './club.module.css';
 
 interface Props {
@@ -17,6 +18,8 @@ interface Props {
   /** False on a rival's club: the file stays, every control that mutates it goes. */
   viewerIsOwner: boolean;
   academyAgeLimit: number;
+  /** The league format's systems: redraft has no academy or listings. */
+  features: Pick<LeagueFeatures, 'academy' | 'listings'>;
   /** Held players: whether Activate is open right now (closed mid-gameweek). */
   hold: { holding: boolean; activationOpen: boolean };
   onAfter: () => void;
@@ -27,7 +30,7 @@ const ACQ_LABEL: Record<string, string> = {
   waiver: 'Auction', draft: 'Drafted', trade: 'Traded in', free_agent: 'Free agent', retained_return: 'Returned',
 };
 
-export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, academyAgeLimit, hold, onAfter }: Props) {
+export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, academyAgeLimit, features, hold, onAfter }: Props) {
   // The inline card is the object only; the game log and scouting live in the
   // opened card, one tap away.
   const { openPlayer } = usePlayerCard();
@@ -117,7 +120,7 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
     // IR where he qualifies. The server re-checks room and eligibility.
     if (hold.activationOpen) {
       primary.push({ label: 'Activate', run: () => activate('bench') });
-      if (age != null && age <= academyAgeLimit) primary.push({ label: 'Activate to Academy', run: () => activate('taxi') });
+      if (features.academy && age != null && age <= academyAgeLimit) primary.push({ label: 'Activate to Academy', run: () => activate('taxi') });
       const f = p.fpl_status;
       if (f === 'i' || f === 'd' || f === 'u') primary.push({ label: 'Activate to IR', run: () => activate('ir') });
     }
@@ -128,7 +131,7 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
   else {
     const f = p.fpl_status;
     if (f === 'i' || f === 'd' || f === 'u') primary.push({ label: 'Place on IR', run: () => call(`/api/teams/${teamId}/ir`, { playerId: entry.playerId, action: 'move_to_ir' }) });
-    if (age != null && age <= academyAgeLimit) primary.push({ label: 'Send to Academy', run: () => call(`/api/teams/${teamId}/taxi`, { playerId: entry.playerId, action: 'move_to_taxi' }) });
+    if (features.academy && age != null && age <= academyAgeLimit) primary.push({ label: 'Send to Academy', run: () => call(`/api/teams/${teamId}/taxi`, { playerId: entry.playerId, action: 'move_to_taxi' }) });
   }
 
   return (
@@ -179,7 +182,7 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
             </button>
           ))}
 
-          {!loaned && (
+          {!loaned && features.listings && (
             listingLive ? (
               <span className={styles.act} aria-disabled="true">Locked — will sell</span>
             ) : (

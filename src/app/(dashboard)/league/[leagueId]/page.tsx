@@ -14,6 +14,7 @@ import { Market, Fronts, Matchweek, StandingsTable, TeamOfWeek } from './_home/S
 import Rail from './_home/Rail';
 import { HeroTabProvider } from './_home/HeroTabContext';
 import styles from './_home/home.module.css';
+import { isAwaitingDraft } from '@/lib/leagues/status';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,7 +67,7 @@ export default async function LeaguePage({ params }: Props) {
 
   // ── 1. Pre-draft early return ───────────────────────────────
   // Leagues that have not drafted yet skip every active-league fetch below.
-  if (league.status === 'setup' || league.status === 'drafting') {
+  if (isAwaitingDraft(league.status) || league.status === 'drafting') {
     const { data: preDraftTeams } = await admin
       .from('teams')
       .select(

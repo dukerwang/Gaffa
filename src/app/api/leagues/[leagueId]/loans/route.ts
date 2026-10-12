@@ -5,6 +5,7 @@ import { loadLoanOutSlots } from '@/lib/facilities/server';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import { HOLD_FREEZE_MESSAGE, isHolding } from '@/lib/roster/holds';
 import { CARETAKER_DEAL_MESSAGE, isCaretakerClub } from '@/lib/leagues/caretaker';
+import { FEATURE_OFF_MESSAGE, leagueFeatures } from '@/lib/leagues/features';
 import { buildEffectivePpgMap } from '@/lib/transfers/effectivePpg';
 import { getCurrentFplSeason, previousSeason as seasonBefore } from '@/lib/season/currentSeason';
 
@@ -228,11 +229,12 @@ export async function POST(req: NextRequest, { params }: Props) {
   // 4. Fetch league config
   const { data: league } = await admin
     .from('leagues')
-    .select('roster_locked, total_gameweeks, loan_slot_buyback_fee, loan_bonus_cap_default, max_loan_outs, max_loan_ins')
+    .select('roster_locked, total_gameweeks, loan_slot_buyback_fee, loan_bonus_cap_default, max_loan_outs, max_loan_ins, is_dynasty')
     .eq('id', leagueId)
     .single();
 
   if (!league) return NextResponse.json({ error: 'League not found' }, { status: 404 });
+  if (!leagueFeatures(league).loans) return NextResponse.json({ error: FEATURE_OFF_MESSAGE.loans }, { status: 403 });
 
   if (league.roster_locked) {
     return NextResponse.json({ error: 'Rosters are locked. Loan proposals are not permitted.' }, { status: 403 });

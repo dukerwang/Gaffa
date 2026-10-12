@@ -34,6 +34,8 @@ interface Props {
   myUserId?: string | null;
   /** Every club in the league, for the commissioner's controls once the draft has started. */
   commissionerClubs?: CommissionerClub[] | null;
+  /** The expansion draft page, when this viewer should see it. */
+  expansionHref?: string | null;
 }
 
 export default function SettingsClient({
@@ -45,6 +47,7 @@ export default function SettingsClient({
   initialPrefs,
   myUserId = null,
   commissionerClubs = null,
+  expansionHref = null,
 }: Props) {
   const { theme, setTheme } = useTheme();
   const [prefs, setPrefs] = useState<NotificationPrefs>(initialPrefs);
@@ -185,6 +188,12 @@ export default function SettingsClient({
             {crestHref && (
               <Link href={crestHref} className={styles.linkRow} onClick={() => window.dispatchEvent(new Event('navigation-start'))}>
                 <span>Edit crest</span>
+                <Icon name="chevron-right" size={16} className={styles.linkChevron} />
+              </Link>
+            )}
+            {expansionHref && (
+              <Link href={expansionHref} className={styles.linkRow} onClick={() => window.dispatchEvent(new Event('navigation-start'))}>
+                <span>Expansion Draft</span>
                 <Icon name="chevron-right" size={16} className={styles.linkChevron} />
               </Link>
             )}
