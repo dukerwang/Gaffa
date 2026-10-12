@@ -1273,6 +1273,9 @@ svg {
 .g-portrait-lg { width: 104px; height: 120px; --g-portrait-zoom: 156.25%; --g-portrait-zoom-alt: 142%; --g-portrait-inset: -3px; --g-crest: 28px; }  /* hero */
 .g-portrait-md { width: 66px;  height: 78px;  --g-portrait-zoom: 156.25%; --g-portrait-zoom-alt: 142%; --g-portrait-inset: -2px; --g-crest: 22px; }  /* lot  */
 .g-portrait-sm { width: 44px;  height: 44px;  --g-portrait-zoom: 150%;    --g-portrait-zoom-alt: 136%; --g-portrait-inset: -2px; --g-crest: 16px; }  /* row  */
+.g-portrait-cmp { width: 54px; height: 60px; --g-portrait-zoom: 150%; --g-portrait-zoom-alt: 136%; --g-portrait-inset: 0px;  --g-crest: 17px; }  /* matchup pitch card */
+.g-portrait-xs  { width: 44px; height: 46px; --g-portrait-zoom: 150%; --g-portrait-zoom-alt: 136%; --g-portrait-inset: 3px;  --g-crest: 15px; }  /* matchup pitch card, phone */
+.g-portrait-xxs { width: 36px; height: 36px; --g-portrait-zoom: 150%; --g-portrait-zoom-alt: 136%; --g-portrait-inset: -2px; --g-crest: 14px; }  /* team sheet row */
 
 .g-portrait-frame {
   display: block;
@@ -1322,7 +1325,7 @@ svg {
   filter: drop-shadow(0 9px 11px rgba(40, 30, 16, .32));
 }
 .g-portrait-img-alt { width: var(--g-portrait-zoom-alt); }
-.g-portrait-sm .g-portrait-img { filter: drop-shadow(0 4px 6px rgba(40, 30, 16, .30)); }
+.g-portrait-sm .g-portrait-img, .g-portrait-xxs .g-portrait-img { filter: drop-shadow(0 4px 6px rgba(40, 30, 16, .30)); }
 [data-theme="dark"] .g-portrait-img { filter: drop-shadow(0 10px 13px rgba(0, 0, 0, .66)); }
 [data-theme="dark"] .g-portrait-sm .g-portrait-img { filter: drop-shadow(0 5px 7px rgba(0, 0, 0, .62)); }
 
@@ -1381,6 +1384,8 @@ svg {
 }
 .g-portrait-md .g-portrait-fallback { font-size: 26px; }
 .g-portrait-sm .g-portrait-fallback { font-size: 17px; }
+.g-portrait-cmp .g-portrait-fallback { font-size: 20px; }
+.g-portrait-xs .g-portrait-fallback, .g-portrait-xxs .g-portrait-fallback { font-size: 15px; }
 
 /* ============================================================
    GAFFA 2.0 — THE DIALOG CONTROLS.  Added 2026-08-17.
