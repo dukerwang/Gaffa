@@ -36,6 +36,19 @@ Tests run under **vitest** (`npm test` → `vitest run`). `vitest.config.ts` inc
 
 `.claude/launch.json` defines dev servers on ports 3000 / 3010 (`next dev`) and 3005 (`next start`). Another session may already own one — check before starting or killing a server.
 
+### Previewing a branch in the Browser pane
+
+The desktop app launches every `.claude/launch.json` config from the main checkout, so `gaffa-dev` shows `main`, not your worktree. Use the `gaffa-preview` config instead. It runs `scripts/preview.sh`, which serves the folder named in `.claude/preview-target`:
+
+1. Write your worktree's path into the main checkout's target file: `echo "$PWD" > "/Users/dukewang/Fantasy Futbol/.claude/preview-target"`.
+2. Call `preview_start` with `gaffa-preview`. If the result says `reused` and `.claude/preview-serving` names a different folder, call `preview_stop` and start it again.
+
+The script clones `node_modules` and links `.env.local` into the worktree when they're missing, and stops an earlier server for the same folder, because Next.js allows only one dev server per folder.
+
+When you change something visible in the app, start the preview yourself before handing over and leave it running, so Duke can look without asking for it (2026-10-12). Don't edit `launch.json` to point at a worktree.
+
+A dev server whose parent dies leaves `next-server` running on its own, holding gigabytes of memory. `scripts/preview.sh` stops its whole process tree when the app stops it, and `scripts/reap-dev-servers.sh` stops orphans: it runs at every session start (the `SessionStart` hook in `.claude/settings.json`), and `--list` shows every dev server with its memory and folder.
+
 ## Architecture
 
 ### Stack
