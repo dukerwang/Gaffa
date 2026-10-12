@@ -185,7 +185,7 @@
 /* Same 22px band + 7px gap as .tag over .outLine, so the two figures share a baseline. */
 .feeK { display: flex; align-items: center; justify-content: flex-end; height: 22px; margin-bottom: 7px; line-height: 1; font-family: var(--font-label); font-size: var(--t-10); font-weight: 700; letter-spacing: 0.1em; color: var(--color-text-muted); }
 .link { display: grid; place-items: center; margin-top: 29px; color: var(--color-text-muted); }
-.outcome { min-width: 0; }
+.outcome { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
 .tag {
   display: inline-flex;
   align-items: center;
@@ -203,7 +203,7 @@
 .outLine { display: flex; align-items: baseline; gap: var(--s2); margin-top: 7px; }
 .outBig { font-family: var(--font-serif); font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--color-text-primary); }
 .outD { font-size: var(--t-12); color: var(--color-text-muted); }
-.choice { display: flex; gap: var(--s2); margin-top: var(--s2); }
+.choice { display: flex; align-self: stretch; gap: var(--s2); margin-top: var(--s2); }
 .opt { flex: 1 1 0; min-width: 0; border-radius: 8px; background: var(--color-bg-inset); padding: var(--s2) 10px; }
 .optK { font-family: var(--font-label); font-size: var(--t-11); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); }
 .optV { font-size: var(--t-13); font-weight: 600; margin-top: 2px; white-space: nowrap; color: var(--color-text-primary); }

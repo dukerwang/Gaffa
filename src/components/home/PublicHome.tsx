@@ -332,8 +332,8 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
 
             <div>
               <p className={styles.prose}>
-                {comparison.scorer.name} scored in Matchweek {comparison.gameweek}. {comparison.hero.name} didn&rsquo;t,
-                and he rated higher than {comparison.scorer.name}
+                {`${comparison.scorer.name} scored in Matchweek ${comparison.gameweek}. ${comparison.hero.name} didn’t, `}
+                {`and he rated higher than ${comparison.scorer.name}`}
                 {comparison.heroWhy ? `, with ${comparison.heroWhy}.` : '.'}
               </p>
               <p className={styles.prose}>
