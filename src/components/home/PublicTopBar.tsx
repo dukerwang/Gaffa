@@ -10,13 +10,14 @@ import styles from './PublicHome.module.css';
  * would cost every anonymous visit a round of authenticated fetches that all
  * come back 401.
  */
-export default function PublicTopBar() {
+/** `heroBrand`: the page opens on its own wordmark, so the bar shows only the crest until it scrolls away. */
+export default function PublicTopBar({ heroBrand = false }: { heroBrand?: boolean }) {
   return (
     <nav className={bar.topBar}>
       <div className={bar.inner}>
         <Link href="/" className={bar.brand}>
           <span className={bar.brandIcon}><Icon name="gaffa" size={20} strokeWidth={2} /></span>
-          <span className={`${bar.brandName} ${bar.brandNameKeep}`}>Gaffa</span>
+          <span className={`${bar.brandName} ${bar.brandNameKeep} ${heroBrand ? styles.topName : ''}`}>Gaffa</span>
         </Link>
         <div className={styles.topNav}>
           <Link href="/guide" className={`${styles.topLink} ${styles.topGuide}`}>Guide</Link>

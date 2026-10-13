@@ -107,8 +107,8 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
             </h1>
             <p className={styles.heroLine}>Fantasy football, played like the real thing.</p>
             <p className={styles.heroP}>
-              Players score the way their match went. Buy and sell in a transfer market tied to the real Premier
-              League, and play for four trophies every season.
+              Players score the way their match went. Win players at open auction in a transfer market tied to the real
+              Premier League, and play for four trophies every season.
             </p>
             <div className={styles.heroActions} id="hero-actions">
               <Link href={createHref} className={`${styles.btn} ${styles.btnPrimary}`}>Create a League</Link>
@@ -202,8 +202,27 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
                     <span className={`${styles.tag} ${styles.tagAuction}`}>Auction</span>
                     <div className={styles.outLine}>
                       <span className={styles.outBig}>{money(arrival.winningBid)}</span>
-                      <span className={styles.outD}>Sold after {arrival.bids} {arrival.bids === 1 ? 'bid' : 'bids'}</span>
+                      <span className={styles.outD}>
+                        {arrival.bids} {arrival.bids === 1 ? 'bid' : 'bids'}
+                        {arrival.clubs > 1 ? ` from ${arrival.clubs} clubs` : ''}
+                      </span>
                     </div>
+                    {arrival.openingBid != null && arrival.bidAmounts.length > 1 && (
+                      <div className={styles.climb} aria-label={`Bidding opened at ${money(arrival.openingBid)}`}>
+                        <span className={styles.climbEnd}>{money(arrival.openingBid)}</span>
+                        <span className={styles.climbTrack} aria-hidden="true">
+                          {arrival.bidAmounts.map((amount, i) => (
+                            <span
+                              key={i}
+                              className={styles.climbTick}
+                              style={{
+                                left: `${((amount - arrival.openingBid!) / Math.max(1, arrival.winningBid - arrival.openingBid!)) * 100}%`,
+                              }}
+                            />
+                          ))}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -249,9 +268,19 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
           )}
 
           <div>
+            <h3 className={styles.leadT}>Open Auctions</h3>
+            <p className={styles.lead}>
+              Every signing is an open auction, free agents included. There are no waivers and no sealed bids. You
+              see the top bid and which club holds it, and every new bid resets the clock.
+            </p>
+            {arrival?.openingBid != null && arrival.clubs > 1 && (
+              <p className={styles.prose}>
+                {`${arrival.player.name} opened at ${money(arrival.openingBid)} and went for ${money(arrival.winningBid)} after ${arrival.bids} bids from ${arrival.clubs} clubs.`}
+              </p>
+            )}
             <p className={styles.prose}>
               When a Premier League club signs a player, he joins Gaffa too, and any signing worth €50m or more goes
-              to auction in every league.
+              straight to auction in every league.
             </p>
             <p className={styles.prose}>
               When a player leaves the league, his manager chooses between 60% of his value now and keeping his

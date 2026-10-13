@@ -56,6 +56,12 @@ export interface ShowcaseArrival {
   value: number;
   winningBid: number;
   bids: number;
+  /** The first bid, where the open bidding started. */
+  openingBid: number | null;
+  /** Every bid's amount, oldest first. */
+  bidAmounts: number[];
+  /** How many clubs bid. Counted, never named. */
+  clubs: number;
 }
 
 export interface ShowcaseDeparture {
@@ -233,7 +239,7 @@ async function loadComparison(admin: AdminClient): Promise<ShowcaseComparison | 
 async function loadArrival(admin: AdminClient): Promise<ShowcaseArrival | null> {
   const { data } = await admin
     .from('auction_state')
-    .select(`highest_bid, bid_count, market_value_at_auction, player:players!player_id(${PLAYER_FIELDS})`)
+    .select(`highest_bid, bid_count, bids, market_value_at_auction, player:players!player_id(${PLAYER_FIELDS})`)
     .eq('player_id', EXAMPLES.arrival)
     .eq('kind', 'free_agent')
     .eq('status', 'resolved')
@@ -242,11 +248,17 @@ async function loadArrival(admin: AdminClient): Promise<ShowcaseArrival | null> 
     .maybeSingle();
   if (!data) return null;
   const row = data as any;
+  // `bids` is the auction's own history, oldest first. Only the amounts and a
+  // count of distinct clubs leave this function.
+  const history: any[] = Array.isArray(row.bids) ? row.bids : [];
   return {
     player: toPlayer(one(row.player)),
     value: Number(row.market_value_at_auction),
     winningBid: Number(row.highest_bid),
     bids: Number(row.bid_count ?? 0),
+    openingBid: history.length ? Number(history[0].amount) : null,
+    bidAmounts: history.map((b) => Number(b.amount)),
+    clubs: new Set(history.map((b) => b.team_id)).size,
   };
 }
 

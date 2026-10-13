@@ -37,7 +37,7 @@ export default async function RootPage() {
 
   return (
     <>
-      <PublicTopBar />
+      <PublicTopBar heroBrand />
       <div className={shell.ground}>
         <main className={shell.main}>
           <PublicHome

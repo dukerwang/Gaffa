@@ -80,6 +80,8 @@
   color: var(--shelf-ink);
 }
 .markCrest { flex: none; width: 0.82em; height: 0.82em; transform: translateY(-0.04em); }
+/* The crest is drawn for 20px; at display size its lines need the weight of the letters beside it. */
+.markCrest circle, .markCrest path { stroke-width: 8; }
 .heroLine {
   margin: 22px 0 0;
   font-family: var(--font-serif);
@@ -461,3 +463,22 @@
 @media (prefers-reduced-motion: reduce) {
   .dock { transition: none; }
 }
+
+/* ---------- open auctions ---------- */
+.leadT { margin: 0 0 var(--s2); font-family: var(--font-serif); font-weight: 700; font-size: 22px; line-height: 1.15; letter-spacing: -0.02em; color: var(--color-text-primary); }
+.lead { margin: 0 0 var(--s3); font-size: 16px; line-height: 1.55; color: var(--color-text-primary); text-wrap: pretty; }
+
+/* Every bid in the example auction, placed along the climb from the opening
+   bid to the winning one. */
+.climb { display: flex; align-items: center; gap: var(--s2); margin-top: 10px; max-width: 280px; }
+.climbEnd { flex: none; font-size: var(--t-11); font-variant-numeric: tabular-nums; color: var(--color-text-muted); }
+.climbTrack { position: relative; flex: 1; height: 12px; }
+.climbTrack::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; border-radius: 1px; background: var(--color-tint-accent); }
+.climbTick { position: absolute; top: 1px; width: 2px; height: 10px; margin-left: -1px; border-radius: 1px; background: var(--color-accent); }
+
+/* The hero's wordmark is the brand on this page, so the top bar's name waits
+   until the hero has scrolled past instead of stacking a second logo on top. */
+@supports (animation-timeline: scroll()) {
+  .topName { animation: topNameIn linear both; animation-timeline: scroll(root); animation-range: 90px 190px; }
+}
+@keyframes topNameIn { from { opacity: 0; } to { opacity: 1; } }
