@@ -379,7 +379,7 @@ A marquee signing sits there long enough for everyone to plan a bid. A cheap rot
 
 **Nothing settles overnight.** A lot due to expire between 23:00 and the end of your league's quiet hours (default 08:00 local) moves to **midday** instead. One exception: an uncontested weekend lot — a single bid, under €20m, on a Saturday or Sunday — settles at **06:45**, ahead of the early kickoff, so a last-minute streamer is available to play.
 
-**Auctions over €50m open at midday**, rather than the moment the overnight sync sweeps the player in. Bidding is blind either way, but the "new auction" notice isn't: released at 4am it only reaches whoever happens to be awake.
+**Auctions over €50m open at midday**, rather than the moment the overnight sync sweeps the player in. The bidding runs the same whenever it opens, but the "new auction" notice doesn't: released at 4am, it only reaches whoever happens to be awake.
 
 When the clock hits zero, **a free-agent auction settles immediately** — the winning bid lands even if that player's Premier League club has already kicked off. There is no seller XI to protect. The card reads **settling** until the win posts, not "ended."
 
