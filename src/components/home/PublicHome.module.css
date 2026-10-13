@@ -470,9 +470,9 @@
 
 /* Every bid in the example auction as a step line, from the opening bid to
    the winning one. */
-.climb { display: flex; align-items: flex-end; gap: var(--s2); width: 100%; max-width: 280px; margin-top: 10px; }
+.climb { display: flex; align-items: flex-end; gap: var(--s2); width: 100%; max-width: 220px; margin-top: 10px; }
 .climbEnd { flex: none; font-size: var(--t-11); line-height: 1; font-variant-numeric: tabular-nums; color: var(--color-text-muted); }
-.climbChart { flex: 1; height: 24px; overflow: visible; }
+.climbChart { flex: 1; height: 36px; overflow: visible; }
 .climbChart polyline { fill: none; stroke: var(--color-accent); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 
 /* The hero's wordmark is the brand on this page, so the top bar's name waits
