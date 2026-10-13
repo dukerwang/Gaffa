@@ -149,10 +149,16 @@
 .capBadge { width: 14px; height: 14px; object-fit: contain; flex: none; }
 .ratedFoot { margin: 0; padding: var(--s3) var(--s4) 14px; border-top: var(--line); background: var(--color-bg-card-alt); font-size: var(--t-13); line-height: 1.5; color: var(--color-text-secondary); }
 
+/* The cut-out is a square drawn wider than its tile and pinned to the bottom,
+   so its height follows the tile's width while the plinth's height is fixed.
+   Each width below gets the plinth that leaves the same headroom (about 9px,
+   5% of the cut-out) above the photo, so the head clears the rank label.
+   Tile widths: 167px above 1100px, 140px from 861px, 132px on mobile. */
 @media (min-width: 861px) {
-  /* The trio's tiles are a little narrower than the dashboard's six, so the
-     plinth is shortened to keep the same headroom above the cut-out. */
   .plinth { height: 196px; }
+}
+@media (min-width: 861px) and (max-width: 1100px) {
+  .plinth { height: 166px; }
 }
 
 /* ---------- section lockups ---------- */
@@ -354,6 +360,9 @@
   }
   .trio::-webkit-scrollbar { display: none; }
   .tile { flex: none; width: 132px; scroll-snap-align: start; }
+  /* The dashboard's 148px mobile plinth crops the head, which it can afford
+     because it hides the rank label. This card shows the rank. */
+  .tile .plinth { height: 162px; }
   .tileName { margin-top: var(--s2); font-size: var(--t-12); }
   .cap { margin-top: 3px; }
   .ratedFoot { padding: 10px var(--s3) var(--s3); font-size: var(--t-12); }
