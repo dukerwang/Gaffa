@@ -74,6 +74,17 @@ function rolesSentence(players: ShowcaseRated[]): string {
   return `${roles.charAt(0).toUpperCase()}${roles.slice(1)}, each rated against players in the same position. Any position can top the week.`;
 }
 
+/** A step line through every bid, first to last, rising from the opening bid to the winning one. */
+function climbPoints(amounts: number[]): string {
+  const lo = amounts[0];
+  const span = Math.max(1, amounts[amounts.length - 1] - lo);
+  const x = (i: number) => ((i / (amounts.length - 1)) * 100).toFixed(2);
+  const y = (a: number) => (23 - ((a - lo) / span) * 22).toFixed(2);
+  const pts = [`0,${y(lo)}`];
+  for (let i = 1; i < amounts.length; i++) pts.push(`${x(i)},${y(amounts[i - 1])}`, `${x(i)},${y(amounts[i])}`);
+  return pts.join(' ');
+}
+
 function ArrowIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -210,17 +221,9 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
                     {arrival.openingBid != null && arrival.bidAmounts.length > 1 && (
                       <div className={styles.climb} aria-label={`Bidding opened at ${money(arrival.openingBid)}`}>
                         <span className={styles.climbEnd}>{money(arrival.openingBid)}</span>
-                        <span className={styles.climbTrack} aria-hidden="true">
-                          {arrival.bidAmounts.map((amount, i) => (
-                            <span
-                              key={i}
-                              className={styles.climbTick}
-                              style={{
-                                left: `${((amount - arrival.openingBid!) / Math.max(1, arrival.winningBid - arrival.openingBid!)) * 100}%`,
-                              }}
-                            />
-                          ))}
-                        </span>
+                        <svg className={styles.climbChart} viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+                          <polyline points={climbPoints(arrival.bidAmounts)} />
+                        </svg>
                       </div>
                     )}
                   </div>
