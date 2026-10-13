@@ -292,7 +292,7 @@ async function fetchShowcase(): Promise<Showcase> {
 }
 
 // The examples are settled records, so a day between refreshes is plenty.
-const getCachedShowcase = unstable_cache(fetchShowcase, ['public-showcase-examples'], { revalidate: 86_400 });
+const getCachedShowcase = unstable_cache(fetchShowcase, ['public-showcase-examples-v2'], { revalidate: 86_400 });
 
 export async function loadShowcase(): Promise<Showcase> {
   if (process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST)) return fetchShowcase();
