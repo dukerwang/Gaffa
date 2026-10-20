@@ -1274,6 +1274,25 @@ svg {
 .g-portrait-md { width: 66px;  height: 78px;  --g-portrait-zoom: 156.25%; --g-portrait-zoom-alt: 142%; --g-portrait-inset: -2px; --g-crest: 22px; }  /* lot  */
 .g-portrait-sm { width: 44px;  height: 44px;  --g-portrait-zoom: 150%;    --g-portrait-zoom-alt: 136%; --g-portrait-inset: -2px; --g-crest: 16px; }  /* row  */
 
+/* A portrait that steps down to row size on a phone (<Portrait phoneSize="sm">).
+   The frame takes sm's box and the image takes sm's crop. A per-player crop
+   arrives as inline --g-portrait-*-phone properties solved for sm, since the
+   inline md crop would sit wrong in the smaller frame. Keep the numbers in step
+   with .g-portrait-sm above and SIZE_DEFAULTS.sm in portraitCrop.ts. */
+@media (max-width: 600px) {
+  .g-portrait-phone-sm { width: 44px; height: 44px; --g-crest: 16px; }
+  .g-portrait-phone-sm .g-portrait-img {
+    top: var(--g-portrait-inset-phone, -2px);
+    width: var(--g-portrait-zoom-phone, 150%);
+    filter: drop-shadow(0 4px 6px rgba(40, 30, 16, .30));
+  }
+  .g-portrait-phone-sm .g-portrait-img-alt { width: 136%; top: -2px; }
+  .g-portrait-phone-sm .g-portrait-fallback { font-size: 17px; }
+}
+@media (max-width: 600px) {
+  [data-theme="dark"] .g-portrait-phone-sm .g-portrait-img { filter: drop-shadow(0 5px 7px rgba(0, 0, 0, .62)); }
+}
+
 .g-portrait-frame {
   display: block;
   position: relative;

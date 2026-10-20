@@ -1099,33 +1099,27 @@
     }
     .pitchNodeWrap {
         min-width: 64px;
-        max-width: 78px;
+        max-width: 92px;
         gap: 3px;
     }
     .pitchNode { min-width: 60px; }
-    /* The wrapper above shrinks, but Portrait's own g-portrait-md class is a
-       fixed 66x78 regardless of viewport — left alone, its height alone blows
-       past the 80px row budget below, and the smallest zone (GK, last before
-       the pitch's overflow:hidden edge) is what visibly gets clipped. Step it
-       down to row size (g-portrait-sm's own numbers) so the node actually
-       fits its row on narrow screens. */
-    .pitchNodeWrap :global(.g-portrait-md) {
-        width: 44px;
-        height: 44px;
-        --g-portrait-zoom: 150%;
-        --g-portrait-zoom-alt: 136%;
-        --g-portrait-inset: 4px;
-        --g-crest: 16px;
-    }
-    /* The fallback initial (no cut-out on file) sizes off .g-portrait-md's own
-       26px rule, which assumes the 66x78 frame above — left alone it renders
-       nearly as tall as the shrunk 44x44 frame itself, next to photographed
-       teammates' properly-proportioned crop. Match g-portrait-sm's 17px. */
-    .pitchNodeWrap :global(.g-portrait-md) :global(.g-portrait-fallback) {
-        font-size: 17px;
-    }
+    /* The portrait steps down to row size through <Portrait phoneSize="sm">,
+       which carries the matching crop with it: resizing .g-portrait-md here
+       left each player's crop solved for the 66x78 box, so heads sat low in
+       the 44x44 frame. */
     .nodeChipBody { padding: 3px var(--s1) var(--s1); gap: 2px; }
-    .nodePlayerNameCenter { font-size: var(--t-10); }
+    /* One line, so "J." never strands above "Acheampo…". The chip is as wide
+       as the node allows (92px) and a long surname steps down a size before it
+       reaches an ellipsis. */
+    .nodePlayerNameCenter {
+        font-size: var(--t-10);
+        display: block;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        letter-spacing: 0;
+        word-break: normal;
+    }
+    .nodeNameLong { font-size: 9px; letter-spacing: -0.01em; }
     .nodePtsBadge { font-size: var(--t-10); top: -10px; right: -20px; }
     .nodeLockBadge { top: -6px; left: -6px; width: 17px; height: 17px; }
     .pitchZones { padding: var(--s8) 0 var(--s3); }
@@ -1995,24 +1989,9 @@
 .benchCard .benchSlotTag { z-index: 1; }
 
 @media (max-width: 600px) {
-    /* Match the pitch. Its nodes step the shared 66x78 lot portrait down to
-       44x44 on phones (see .pitchNodeWrap above) while the bench kept the full
-       desktop size, so a substitute rendered larger than the eleven he might
-       come on for — and the taller card is what pushed the badges into each
-       other in the first place. */
-    .benchCard :global(.g-portrait-md) {
-        width: 44px;
-        height: 44px;
-        --g-portrait-zoom: 150%;
-        --g-portrait-zoom-alt: 136%;
-        --g-portrait-inset: 4px;
-        --g-crest: 16px;
-    }
-
-    .benchCard :global(.g-portrait-md) :global(.g-portrait-fallback) {
-        font-size: 17px;
-    }
-
+    /* Match the pitch: the bench portrait steps down to row size through
+       <Portrait phoneSize="sm"> too, so a substitute isn't larger than the
+       eleven he might come on for. */
     .benchCard {
         padding: var(--s5) var(--s1) var(--s2);
         gap: var(--s1);
