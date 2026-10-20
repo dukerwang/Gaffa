@@ -1,0 +1,95 @@
+/* Gaffa UI Primitive: Disclosure */
+
+.root {
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  min-height: 48px;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text-primary);
+  --press-scale: 1;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-17);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.meta {
+  font-family: var(--font-serif);
+  font-size: var(--t-15);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+.chevron {
+  display: inline-flex;
+  color: var(--color-text-muted);
+  transition: transform var(--dur-base) var(--ease-out-strong);
+}
+
+.root[data-open] .chevron {
+  transform: rotate(180deg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .header:hover .chevron {
+    color: var(--color-text-primary);
+  }
+}
+
+.header:focus-visible {
+  outline-offset: -2px;
+  border-radius: var(--r-control);
+}
+
+.panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-base) var(--ease-out-strong);
+}
+
+.root[data-open] .panel {
+  grid-template-rows: 1fr;
+}
+
+.inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.content {
+  padding-bottom: var(--s4);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity var(--dur-fast) ease, transform var(--dur-base) var(--ease-out-strong);
+}
+
+.root[data-open] .content {
+  opacity: 1;
+  transform: none;
+  transition-delay: 40ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .chevron {
+    transition: none;
+  }
+  .content {
+    transform: none;
+  }
+}

@@ -10,6 +10,39 @@
   border-radius: var(--r-control);
   gap: 2px;
   user-select: none;
+  position: relative;
+  isolation: isolate;
+}
+
+/* The one moving part. Positioned from the container's padding edge, which is
+   where offsetLeft measures from, so its x is the segment's x. */
+.thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  z-index: -1;
+  border-radius: calc(var(--r-control) - 2px);
+  background: var(--color-bg-card);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  pointer-events: none;
+}
+
+.thumb[data-ready] {
+  transition: transform var(--dur-base) var(--ease-in-out-strong),
+              width var(--dur-base) var(--ease-in-out-strong);
+}
+
+:global([data-theme='dark']) .thumb {
+  /* A step lighter than any dark surface the control can sit on, elevated included. */
+  background: color-mix(in oklab, var(--color-bg-elevated) 86%, white);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thumb[data-ready] {
+    transition: none;
+  }
 }
 
 .fullWidth {
@@ -84,16 +117,9 @@
   }
 }
 
-/* Active Segment */
+/* Active Segment: the thumb carries the surface, the label only darkens. */
 .active {
-  background: var(--color-bg-card);
   color: var(--color-text-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-:global([data-theme='dark']) .active {
-  background: var(--color-bg-elevated);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .segment:disabled {

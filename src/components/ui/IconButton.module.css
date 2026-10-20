@@ -1,0 +1,77 @@
+/* Gaffa UI Primitive: IconButton */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--r-control);
+  color: var(--color-text-secondary);
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: background-color var(--dur-fast) ease,
+              color var(--dur-fast) ease,
+              border-color var(--dur-fast) ease,
+              transform var(--dur-fast) var(--ease-out-strong);
+  --press-scale: 0.92;
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.size_sm { width: 28px; height: 28px; }
+.size_md { width: 36px; height: 36px; }
+.size_lg { width: 44px; height: 44px; }
+
+/* sm and md still reach 44px under a finger. */
+@media (pointer: coarse) {
+  .size_sm::before,
+  .size_md::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+  }
+  .size_sm::before {
+    inset: -8px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .variant_ghost:hover:not(:disabled) {
+    background: var(--color-bg-card-hover);
+    color: var(--color-text-primary);
+  }
+}
+
+.variant_secondary {
+  background: var(--color-bg-card);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .variant_secondary:hover:not(:disabled) {
+    border-color: var(--color-border-strong);
+    background: var(--color-bg-card-hover);
+  }
+}
+
+.variant_danger {
+  color: var(--color-danger);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .variant_danger:hover:not(:disabled) {
+    background: var(--color-danger-dim);
+  }
+}
+
+.button[aria-expanded='true'] {
+  background: var(--color-bg-card-hover);
+  color: var(--color-text-primary);
+}

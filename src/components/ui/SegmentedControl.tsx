@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React from 'react';
+import { useSlidingIndicator } from './internal/useSlidingIndicator';
 import styles from './SegmentedControl.module.css';
 
 export interface SegmentOption<T extends string = string> {
@@ -26,7 +27,9 @@ export interface SegmentedControlProps<T extends string = string> {
  * Controlled view/filter toggle with accessible tablist keyboard navigation.
  * - Sofia Sans Semi Condensed typography (--font-label)
  * - ArrowLeft / ArrowRight / Home / End keyboard support
- * - Tactile active pill with subtle elevation
+ * - One thumb that slides between segments instead of each segment fading its
+ *   own background, so the eye follows the change rather than reading two
+ *   separate states
  */
 export function SegmentedControl<T extends string = string>({
   options,
@@ -37,7 +40,7 @@ export function SegmentedControl<T extends string = string>({
   ariaLabel = 'View options',
   className,
 }: SegmentedControlProps<T>) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { containerRef, indicator } = useSlidingIndicator<HTMLDivElement>(value);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
     const enabledOptions = options.filter((o) => !o.disabled);
@@ -83,6 +86,16 @@ export function SegmentedControl<T extends string = string>({
         .filter(Boolean)
         .join(' ')}
     >
+      <span
+        aria-hidden="true"
+        className={styles.thumb}
+        data-ready={indicator.ready || undefined}
+        style={{
+          width: indicator.width,
+          transform: `translateX(${indicator.x}px)`,
+          opacity: indicator.width ? 1 : 0,
+        }}
+      />
       {options.map((option, index) => {
         const isSelected = option.value === value;
         return (
@@ -93,6 +106,7 @@ export function SegmentedControl<T extends string = string>({
             aria-selected={isSelected}
             tabIndex={isSelected ? 0 : -1}
             data-value={option.value}
+            data-indicator-key={option.value}
             disabled={option.disabled}
             onClick={() => !option.disabled && onChange(option.value)}
             onKeyDown={(e) => handleKeyDown(e, index)}

@@ -1,0 +1,88 @@
+/* Gaffa UI Primitive: Menu. Items borrow Select's .option. */
+
+.menu {
+  min-width: 200px;
+}
+
+.item {
+  width: 100%;
+  border: none;
+  background: none;
+  font-family: var(--font-sans);
+  text-align: left;
+  --press-scale: 1;
+}
+
+.item:focus-visible {
+  outline: none;
+  background: var(--color-bg-card-hover);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .item:hover:not(:disabled) {
+    background: var(--color-bg-card-hover);
+  }
+}
+
+:global([data-theme='dark']) .item:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :global([data-theme='dark']) .item:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+.item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--color-text-muted);
+}
+
+.label {
+  flex: 1;
+}
+
+.shortcut {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--color-text-muted);
+  padding: 1px 5px;
+  border-radius: var(--r-micro);
+  background: var(--color-bg-inset);
+}
+
+.danger,
+.danger .icon {
+  color: var(--color-danger);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .danger:hover:not(:disabled) {
+    background: var(--color-danger-dim);
+  }
+}
+
+.danger:focus-visible {
+  background: var(--color-danger-dim);
+}
+
+.separator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--color-border-subtle);
+}
+
+.chevron {
+  display: inline-flex;
+  transition: transform var(--dur-base) var(--ease-out-strong);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}

@@ -1,0 +1,101 @@
+/* Gaffa UI Primitive: Tabs
+   A hairline rule with one travelling 2px underline. The rule is the
+   container's own bottom border, so the underline sits on it exactly. */
+
+.list {
+  position: relative;
+  display: flex;
+  gap: var(--s5);
+  border-bottom: 1px solid var(--color-border-subtle);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.list::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  font-family: var(--font-label);
+  font-size: var(--t-15);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--dur-fast) ease;
+  /* Tabs are pressed tens of times a day; the underline is the feedback. */
+  --press-scale: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tab:not([aria-selected='true']):not(:disabled):hover {
+    color: var(--color-text-primary);
+  }
+}
+
+.tab[aria-selected='true'] {
+  color: var(--color-text-primary);
+}
+
+.tab:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+  border-radius: var(--r-control);
+}
+
+.count {
+  font-family: var(--font-label);
+  font-size: var(--t-11);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-control);
+  background: var(--color-bg-inset);
+  color: var(--color-text-secondary);
+  transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease;
+}
+
+.tab[aria-selected='true'] .count {
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+}
+
+.indicator {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--color-accent-ink);
+  pointer-events: none;
+}
+
+.indicator[data-ready] {
+  transition: transform var(--dur-base) var(--ease-in-out-strong),
+              width var(--dur-base) var(--ease-in-out-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator[data-ready] {
+    transition: none;
+  }
+}

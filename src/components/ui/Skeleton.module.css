@@ -1,0 +1,67 @@
+/* Gaffa UI Primitive: Skeleton */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.bone {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: var(--color-bg-inset);
+  border-radius: var(--r-control);
+}
+
+.bone::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-bg-card) 70%, transparent) 50%,
+    transparent 100%
+  );
+  animation: sheen 1.6s linear infinite;
+}
+
+:global([data-theme='dark']) .bone::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%);
+}
+
+@keyframes sheen {
+  /* Pause on the far side, so the sheen reads as a pass rather than a loop. */
+  60%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.text {
+  height: 0.8em;
+  min-height: 10px;
+  width: 100%;
+}
+
+.block {
+  width: 100%;
+  height: 48px;
+}
+
+.circle {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-round);
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bone::after {
+    animation: none;
+    display: none;
+  }
+}

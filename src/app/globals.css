@@ -303,6 +303,13 @@
   --dur-base:    220ms;  /* entrances, panel reveals                        */
   --dur-slow:    420ms;  /* a value settling into place, a meter animating  */
   --ease-standard: cubic-bezier(.22, 1, .36, 1);
+  /* The kit's three curves (src/components/ui). Strong ease-out for anything
+     entering or answering a press; ease-in-out for something already on screen
+     moving to a new place (a tab underline, a segmented thumb); the drawer
+     curve for sheets, which wants a fast start and a long, soft landing. */
+  --ease-out-strong:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer:        cubic-bezier(0.32, 0.72, 0, 1);
 
   /* --- Breakpoints ---
      Documented, NOT tokenised: custom properties do not resolve inside a media

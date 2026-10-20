@@ -1,0 +1,90 @@
+/* Gaffa UI Primitive: HoldButton
+   Two copies of the label: the resting one, and a filled one clipped from the
+   right. Clipping one layer keeps the colour change perfectly in step with the
+   fill edge, which a colour transition on the text never manages. */
+
+.button {
+  position: relative;
+  display: inline-grid;
+  min-height: 44px;
+  padding: 0 var(--s5);
+  border-radius: var(--r-control);
+  border: 1px solid var(--hold-color);
+  background: transparent;
+  color: var(--hold-color);
+  font-family: var(--font-label);
+  font-size: var(--t-15);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  transition: transform var(--dur-fast) var(--ease-out-strong);
+  --press-scale: 0.97;
+}
+
+.variant_danger {
+  --hold-color: var(--color-danger);
+  --hold-ink: var(--color-text-inverse);
+}
+
+.variant_primary {
+  --hold-color: var(--color-accent);
+  --hold-ink: var(--color-text-inverse);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.base,
+.fill {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.fill {
+  position: absolute;
+  inset: -1px;
+  background: var(--hold-color);
+  color: var(--hold-ink);
+  clip-path: inset(0 100% 0 0);
+  /* Letting go: drain fast. */
+  transition: clip-path 200ms var(--ease-out-strong);
+}
+
+/* Holding: fill on a linear clock, because it is a timer. */
+.button[data-holding] .fill {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path var(--hold-ms) linear;
+}
+
+.button[data-confirmed] .fill {
+  clip-path: inset(0 0 0 0);
+  transition: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:not(:disabled):not([data-confirmed]):hover {
+    background: color-mix(in srgb, var(--hold-color) 8%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The fill is the timer itself, not decoration, so it stays. */
+  .button {
+    transition: none;
+  }
+}
