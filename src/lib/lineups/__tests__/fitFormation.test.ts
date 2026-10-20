@@ -43,6 +43,50 @@ describe('fitFormation', () => {
     expect(r.rows.find(([slot]) => slot === 'LW')?.[1]).toBe('AM');
   });
 
+  describe('left and right within a pair', () => {
+    const pairOf = (slot: GranularPosition, fit: ReturnType<typeof fitFormation>) =>
+      (FORMATION_SLOTS[fit.formation] as GranularPosition[])
+        .map((s, i) => (s === slot ? fit.playerIds[i] : null))
+        .filter(Boolean);
+
+    it('puts the left-footed centre-back on the left', () => {
+      const xi: FitPlayer[] = [
+        { id: 'gk', primary_position: 'GK' },
+        { id: 'lb', primary_position: 'LB' },
+        { id: 'lacroix', primary_position: 'CB', preferred_foot: 'right' },
+        { id: 'colwill', primary_position: 'CB', preferred_foot: 'left' },
+        { id: 'rb', primary_position: 'RB' },
+        { id: 'dm1', primary_position: 'DM' },
+        { id: 'dm2', primary_position: 'DM' },
+        { id: 'am', primary_position: 'AM' },
+        { id: 'lw', primary_position: 'LW' },
+        { id: 'rw', primary_position: 'RW' },
+        { id: 'st', primary_position: 'ST' },
+      ];
+      expect(pairOf('CB', fitFormation(xi))).toEqual(['colwill', 'lacroix']);
+    });
+
+    it('sides two attacking midfielders by their wide listings, whatever their foot', () => {
+      // Palmer is left-footed and lists RW; Rogers lists LW.
+      const xi: FitPlayer[] = [
+        { id: 'gk', primary_position: 'GK' },
+        { id: 'cb1', primary_position: 'CB' },
+        { id: 'cb2', primary_position: 'CB' },
+        { id: 'cb3', primary_position: 'CB' },
+        { id: 'lwb', primary_position: 'LWB' },
+        { id: 'cm1', primary_position: 'CM' },
+        { id: 'cm2', primary_position: 'CM' },
+        { id: 'rwb', primary_position: 'RWB' },
+        { id: 'palmer', primary_position: 'AM', secondary_positions: ['RW', 'CM'], preferred_foot: 'left' },
+        { id: 'rogers', primary_position: 'AM', secondary_positions: ['LW', 'CM'], preferred_foot: 'right' },
+        { id: 'st', primary_position: 'ST' },
+      ];
+      const fit = fitFormation(xi);
+      expect(fit.formation).toBe('3-4-2-1');
+      expect(pairOf('AM', fit)).toEqual(['rogers', 'palmer']);
+    });
+  });
+
   it('leaves slots empty when fewer than eleven are known', () => {
     const fit = fitFormation(side('GK', 'CB', 'CB', 'ST'));
     expect(fit.playerIds.filter(Boolean)).toHaveLength(4);

@@ -16,3 +16,5 @@ export type { KbdProps } from './Kbd';
 export { Icon } from './Icon';
 export { default as NavigationLink } from './NavigationLink';
 export { default as FormattedText } from './FormattedText';
+export { Picker } from './Picker';
+export type { PickerProps, PickerOption, PickerGroup } from './Picker';

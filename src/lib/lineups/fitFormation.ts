@@ -14,12 +14,17 @@ import { VALID_FORMATIONS } from './lineupSerializer';
  *
  * The result is a best fit from listed positions. A centre-back the manager
  * played at full-back is placed by his listing, not his afternoon.
+ *
+ * A listing never says which of two centre-backs is on the left, so where a
+ * formation has two or more slots of one position, the players in them are
+ * ordered left to right by their lean (see `lean`).
  */
 
 export interface FitPlayer {
   id: string;
   primary_position: GranularPosition | null;
   secondary_positions?: GranularPosition[] | null;
+  preferred_foot?: 'left' | 'right' | 'both' | null;
 }
 
 export interface FittedLineup {
@@ -65,6 +70,52 @@ function playerFit(slot: GranularPosition, p: FitPlayer): number {
   let best = p.primary_position ? affinity(slot, p.primary_position) : 0;
   for (const s of p.secondary_positions ?? []) best = Math.max(best, affinity(slot, s) - 1);
   return best;
+}
+
+const LEFT = new Set<GranularPosition>(['LB', 'LWB', 'LW']);
+const RIGHT = new Set<GranularPosition>(['RB', 'RWB', 'RW']);
+const ATTACKING = new Set<GranularPosition>(['AM', 'ST']);
+
+/**
+ * Which side of a pair a player belongs on: negative is left, positive right,
+ * zero is no preference. Two signals, weighted by the slot:
+ *
+ *   - a sided listing (LW, RB, LWB...) among his positions, which says where
+ *     he has actually played wide;
+ *   - his preferred foot.
+ *
+ * In defence and central midfield the foot decides and a sided listing breaks
+ * a tie: a left-footed centre-back plays on the left. In attacking midfield and
+ * up front the listing decides, because attackers are often inverted; an
+ * attacking midfielder with no sided listing goes to the side opposite his foot
+ * (a left-footer cutting in from the right), a striker to the side of it.
+ */
+function lean(p: FitPlayer, slot: GranularPosition): number {
+  let sided = 0;
+  for (const pos of [p.primary_position, ...(p.secondary_positions ?? [])]) {
+    if (pos && LEFT.has(pos)) sided -= 1;
+    if (pos && RIGHT.has(pos)) sided += 1;
+  }
+  const foot = p.preferred_foot === 'left' ? -1 : p.preferred_foot === 'right' ? 1 : 0;
+  if (!ATTACKING.has(slot)) return 2 * foot + Math.sign(sided);
+  return 2 * Math.sign(sided) + (slot === 'AM' ? -foot : foot);
+}
+
+/** Orders the players within each run of same-position slots left to right. Slots are listed left to right. */
+function orderSides(slots: GranularPosition[], ids: (string | null)[], byId: Map<string, FitPlayer>): (string | null)[] {
+  const out = [...ids];
+  const groups = new Map<GranularPosition, number[]>();
+  slots.forEach((slot, i) => groups.set(slot, [...(groups.get(slot) ?? []), i]));
+  for (const [slot, idx] of groups) {
+    if (idx.length < 2) continue;
+    // Only filled slots trade places; an empty one stays where it is.
+    const filled = idx.filter((i) => out[i] && byId.has(out[i]!));
+    const sorted = filled
+      .map((i) => out[i]!)
+      .sort((a, b) => lean(byId.get(a)!, slot) - lean(byId.get(b)!, slot));
+    filled.forEach((i, k) => (out[i] = sorted[k]));
+  }
+  return out;
 }
 
 function popcount(n: number): number {
@@ -121,5 +172,7 @@ export function fitFormation(players: FitPlayer[]): FittedLineup {
     if (!best || score > best.score) best = { formation, score, ids };
   }
   // SAFETY: VALID_FORMATIONS is a non-empty constant, so the loop always sets best.
-  return { formation: best!.formation, playerIds: best!.ids };
+  const slots = FORMATION_SLOTS[best!.formation] as GranularPosition[];
+  const byId = new Map(players.map((p) => [p.id, p]));
+  return { formation: best!.formation, playerIds: orderSides(slots, best!.ids, byId) };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Formation, GranularPosition, Player } from '@/types';
 import { FORMATION_SLOTS } from '@/types';
 import { serializeLineup, VALID_FORMATIONS, type SerializedLineup } from '@/lib/lineups/lineupSerializer';
@@ -12,7 +12,6 @@ import PositionBadge from '@/components/players/PositionBadge';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { clubBadgePath, resolveClub } from '@/lib/clubs/registry';
 import {
-  fixtureDay,
   fixtureKey,
   fixtureTitle,
   kickoffDay,
@@ -23,6 +22,7 @@ import {
 } from '@/lib/lineups/builderFixtures';
 import { fitFormation } from '@/lib/lineups/fitFormation';
 import LineupPlayerPickerModal from './LineupPlayerPickerModal';
+import { ClubPicker, MatchPicker } from './BuilderPickers';
 import styles from './lineup-builder.module.css';
 
 /* eslint-disable @next/next/no-img-element */
@@ -65,6 +65,16 @@ function xiFromSource(source: SideSource | null, playerById: Map<string, Player>
   const players = source.playerIds.map((id) => playerById.get(id)).filter((p): p is Player => !!p);
   const fit = fitFormation(players);
   return xiFromIds(fit.formation, fit.playerIds, playerById);
+}
+
+/**
+ * What a side opens with. A played match opens on its real starters. A match not
+ * yet played opens empty, for your own prediction; its last XI is one tap away
+ * (Use Last XI) rather than filled in, so an upcoming match never reads as if
+ * its lineup were already known.
+ */
+function openingXI(source: SideSource | null, playerById: Map<string, Player>): XI {
+  return source?.kind === 'started' ? xiFromSource(source, playerById) : xiFromSource(null, playerById);
 }
 
 const idsOf = (xi: XI) => Array.from({ length: 11 }, (_, i) => xi.assignments[i]?.id ?? null);
@@ -127,10 +137,10 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
       [fixtureKey(initialFixture)]: {
         home: linkedHome
           ? xiFromIds(initialState.formation, initialState.playerIds, playerById)
-          : xiFromSource(source?.home ?? null, playerById),
+          : openingXI(source?.home ?? null, playerById),
         away: initialState.away
           ? xiFromIds(initialState.away.formation, initialState.away.playerIds, playerById)
-          : xiFromSource(source?.away ?? null, playerById),
+          : openingXI(source?.away ?? null, playerById),
       },
     };
   });
@@ -164,17 +174,23 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
   const sideClub = fixture ? { slug: fixture[side], name: side === 'home' ? fixture.homeName : fixture.awayName } : null;
   const clubOptions = useMemo(() => (sideClub ? [sideClub] : leagueClubs), [sideClub?.slug, leagueClubs]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Each side's XI as the match gave it: the way back after edits, and what a link can leave out.
+  // Each side's opening XI: the way back after edits, and what a link can leave out.
   const sourceXIs = useMemo(() => {
     if (!matchKey) return null;
     const pair = lineups[matchKey];
     return {
-      home: pair?.home ? xiFromSource(pair.home, playerById) : null,
-      away: pair?.away ? xiFromSource(pair.away, playerById) : null,
+      home: openingXI(pair?.home ?? null, playerById),
+      away: openingXI(pair?.away ?? null, playerById),
     };
   }, [matchKey, lineups, playerById]);
   const sourceXI = sourceXIs?.[side] ?? null;
-  const edited = sourceXI !== null && !sameXI(sourceXI, active);
+  const edited = source?.kind === 'started' && sourceXI !== null && !sameXI(sourceXI, active);
+  // For a match not yet played: the club's last XI, offered rather than filled in.
+  const lastXI = useMemo(
+    () => (source?.kind === 'last' ? xiFromSource(source, playerById) : null),
+    [source, playerById],
+  );
+  const canUseLast = lastXI !== null && !sameXI(lastXI, active);
 
   // Active slot being edited in modal
   const [activeSlot, setActiveSlot] = useState<{ slotIndex: number; pos: GranularPosition } | null>(null);
@@ -202,8 +218,8 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
     const pair = matchKey ? matchXIs[matchKey] : null;
     const home = pair?.home ?? soloXI;
     // A side left as the match gave it stays out of the link, which rebuilds it from the match.
-    const homeAsGiven = pair && sourceXIs?.home ? sameXI(sourceXIs.home, pair.home) : false;
-    const awayAsGiven = pair && sourceXIs?.away ? sameXI(sourceXIs.away, pair.away) : false;
+    const homeAsGiven = pair && sourceXIs ? sameXI(sourceXIs.home, pair.home) : false;
+    const awayAsGiven = pair && sourceXIs ? sameXI(sourceXIs.away, pair.away) : false;
     const serialized = serializeLineup({
       formation: home.formation,
       title,
@@ -303,8 +319,13 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
   const handleRestore = useCallback(() => {
     if (!sourceXI) return;
     updateActive(() => sourceXI);
-    setFeedbackNotice(source?.kind === 'started' ? 'Starting XI restored' : 'Last XI restored');
-  }, [sourceXI, source?.kind, updateActive]);
+    setFeedbackNotice('Starting XI restored');
+  }, [sourceXI, updateActive]);
+
+  const handleUseLast = useCallback(() => {
+    if (!lastXI) return;
+    updateActive(() => lastXI);
+  }, [lastXI, updateActive]);
 
   const handleSelectFixture = useCallback(
     (key: string) => {
@@ -323,8 +344,8 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
             : {
                 ...prev,
                 [k]: {
-                  home: xiFromSource(lineups[k]?.home ?? null, playerById),
-                  away: xiFromSource(lineups[k]?.away ?? null, playerById),
+                  home: openingXI(lineups[k]?.home ?? null, playerById),
+                  away: openingXI(lineups[k]?.away ?? null, playerById),
                 },
               },
         );
@@ -345,88 +366,93 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
     }
   }, []);
 
+  // The image, prepared when the pointer or focus reaches Share, so the click can hand
+  // it to the share sheet at once. Safari refuses share() and clipboard writes that
+  // arrive long after the click, and drawing eleven portraits takes a moment.
+  const shareKey = [title, formation, fixture ? fixtureKey(fixture) : '', side, idsOf(active).join()].join('|');
+  const prepared = useRef<{ key: string; blob: Promise<Blob | null> } | null>(null);
+  const prepareImage = useCallback((): Promise<Blob | null> => {
+    if (prepared.current?.key === shareKey) return prepared.current.blob;
+    // SAFETY: FORMATION_SLOTS maps every supported Formation to an array of 11 GranularPositions.
+    const slotsList: LineupExportSlot[] = (FORMATION_SLOTS[formation] as GranularPosition[]).map((pos, slotIndex) => ({
+      slotIndex,
+      pos,
+      player: assignments[slotIndex] ?? null,
+    }));
+    const blob = exportLineupToBlob({
+      title: title || 'Starting XI',
+      formation,
+      slots: slotsList,
+      matchweek: fixture?.gameweek ?? null,
+      club: sideClub ? { name: sideClub.name, slug: sideClub.slug } : null,
+    });
+    prepared.current = { key: shareKey, blob };
+    // A failed attempt must not stick: the next try draws again.
+    blob.catch(() => {
+      if (prepared.current?.blob === blob) prepared.current = null;
+    });
+    return blob;
+  }, [shareKey, formation, assignments, title, fixture, sideClub?.name, sideClub?.slug]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleShare = useCallback(async () => {
     setIsExporting(true);
+    const name = title || 'Starting XI';
+    let blob: Blob | null;
     try {
-      // SAFETY: FORMATION_SLOTS maps every supported Formation to an array of 11 GranularPositions.
-      const slotsList: LineupExportSlot[] = (FORMATION_SLOTS[formation] as GranularPosition[]).map(
-        (pos, slotIndex) => ({
-          slotIndex,
-          pos,
-          player: assignments[slotIndex] ?? null,
-        })
-      );
+      blob = await prepareImage();
+    } catch (err) {
+      console.error('Lineup image export failed:', err);
+      setFeedbackNotice(`Couldn't create the image (${err instanceof Error ? err.name : 'unknown error'})`);
+      setIsExporting(false);
+      return;
+    }
+    if (!blob) {
+      setFeedbackNotice("Couldn't create the image");
+      setIsExporting(false);
+      return;
+    }
 
-      const blob = await exportLineupToBlob({
-        title: title || 'Starting XI',
-        formation,
-        slots: slotsList,
-        matchweek: fixture?.gameweek ?? null,
-        club: sideClub ? { name: sideClub.name, slug: sideClub.slug } : null,
-      });
-
-      if (!blob) {
-        setFeedbackNotice('Could not generate image');
-        setIsExporting(false);
+    const file = new File([blob], 'lineup.png', { type: 'image/png' });
+    try {
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: name, text: `Check out my ${name} on Gaffa:` });
         return;
       }
-
-      const file = new File([blob], 'lineup.png', { type: 'image/png' });
-
-      // If Web Share API with files is supported (mobile iOS/Android)
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: title || 'Starting XI',
-            text: `Check out my ${title || 'Starting XI'} on Gaffa:`,
-          });
-          setIsExporting(false);
-          return;
-        } catch (shareErr) {
-          // If user cancelled, just exit gracefully
-          if (shareErr instanceof Error && shareErr.name === 'AbortError') {
-            setIsExporting(false);
-            return;
-          }
-        }
-      }
-
-      // Fallback: Copy image to clipboard
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            'image/png': blob,
-          }),
-        ]);
-        setFeedbackNotice('Lineup image copied to clipboard');
-      } catch {
-        // If clipboard write failed, trigger download
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${(title || 'lineup').toLowerCase().replace(/\s+/g, '_')}.png`;
-        a.click();
-        URL.revokeObjectURL(url);
-        setFeedbackNotice('Lineup image downloaded');
-      }
     } catch (err) {
-      console.error('Share export error:', err);
-      setFeedbackNotice('Error generating share image');
+      if (err instanceof Error && err.name === 'AbortError') return;
+      console.warn('Share sheet unavailable, falling back:', err);
     } finally {
       setIsExporting(false);
     }
-  }, [assignments, formation, title, fixture, sideClub?.name, sideClub?.slug]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      setFeedbackNotice('Lineup image copied to clipboard');
+    } catch {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${name.toLowerCase().replace(/\s+/g, '_')}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setFeedbackNotice('Lineup image downloaded');
+    }
+  }, [prepareImage, title]);
 
   const slotPositions = FORMATION_SLOTS[formation] as GranularPosition[];
   const caption = feedbackNotice ?? `${filledCount} of 11 picked`;
+  const lastLabel = source?.kind === 'last'
+    ? `Last XI · vs. ${source.from.opponentName} (${source.from.atHome ? 'H' : 'A'}) · ${kickoffDay(source.from.kickoff)}`
+    : null;
   const provenance = !fixture
     ? null
-    : !source
-      ? 'No lineup yet'
-      : source.kind === 'started'
-        ? `Starting XI · ${kickoffDay(source.from.kickoff)}`
-        : `Last XI · vs. ${source.from.opponentName} (${source.from.atHome ? 'H' : 'A'}) · ${kickoffDay(source.from.kickoff)}`;
+    : source?.kind === 'started'
+      ? `Starting XI · ${kickoffDay(source.from.kickoff)}`
+      : lastLabel && !canUseLast
+        ? lastLabel
+        : fixture.finished
+          ? 'No lineup recorded'
+          : `Kicks off ${kickoffDay(fixture.kickoff)}`;
 
   return (
     <div className={styles.page}>
@@ -456,6 +482,8 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
                 type="button"
                 className={`${styles.iconBtn} ${styles.iconBtnPrimary}`}
                 onClick={handleShare}
+                onPointerEnter={() => void prepareImage().catch(() => {})}
+                onFocus={() => void prepareImage().catch(() => {})}
                 disabled={isExporting}
                 aria-busy={isExporting}
                 aria-label="Share XI"
@@ -556,25 +584,10 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
                 </button>
               </div>
               {fixtureOptions.length > 0 && (
-                <label className={styles.pickFrom}>
+                <div className={styles.pickFrom}>
                   <span className="g-label">Match</span>
-                  <select
-                    className={styles.select}
-                    value={fixture ? fixtureKey(fixture) : ''}
-                    onChange={(e) => handleSelectFixture(e.target.value)}
-                  >
-                    <option value="">Any Match</option>
-                    {fixturesByWeek.map(([week, list]) => (
-                      <optgroup key={week} label={week}>
-                        {list.map((f) => (
-                          <option key={fixtureKey(f)} value={fixtureKey(f)}>
-                            {fixtureTitle(f)} · {fixtureDay(f)}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </label>
+                  <MatchPicker weeks={fixturesByWeek} value={fixture} onChange={handleSelectFixture} />
+                </div>
               )}
               {fixture ? (
                 <div className={styles.provenance}>
@@ -584,23 +597,17 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
                       Restore
                     </button>
                   )}
+                  {canUseLast && lastLabel && (
+                    <button type="button" className={styles.textBtn} onClick={handleUseLast} title={lastLabel}>
+                      Use Last XI
+                    </button>
+                  )}
                 </div>
               ) : (
-                <label className={styles.pickFrom}>
+                <div className={styles.pickFrom}>
                   <span className="g-label">Pick From</span>
-                  <select
-                    className={styles.select}
-                    value={clubFilter || ''}
-                    onChange={(e) => setClubFilter(e.target.value || null)}
-                  >
-                    <option value="">All Clubs</option>
-                    {clubOptions.map((c) => (
-                      <option key={c.slug} value={c.slug}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                  <ClubPicker clubs={clubOptions} value={clubFilter} onChange={setClubFilter} ariaLabel="Pick From" />
+                </div>
               )}
             </div>
             <ol className={styles.railList}>

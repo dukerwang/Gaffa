@@ -28,6 +28,12 @@
  *             for periodic drift correction on players already priced. Slower
  *             (one search + one profile fetch per player, ~3s apart), meant for
  *             an infrequent full pass rather than the daily gap-fill.
+ *   --foot    target active players with no preferred_foot and write only the
+ *             foot, never a market value; players who have started a match this
+ *             season go first. Writes each foot as it resolves (with --apply),
+ *             so a run cut short by a rate limit keeps what it found. Every
+ *             other run writes the foot too, wherever it writes a value.
+ *   --limit N stop after N players (any mode).
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -43,10 +49,20 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const APPLY = process.argv.includes('--apply');
 const ALL = process.argv.includes('--all');
 const FULL = process.argv.includes('--full');
+const FOOT_ONLY = process.argv.includes('--foot');
+const LIMIT = (() => {
+  const i = process.argv.indexOf('--limit');
+  const n = i >= 0 ? Number(process.argv[i + 1]) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : Infinity;
+})();
+
+type Foot = 'left' | 'right' | 'both';
 
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
-const REQUEST_DELAY_MS = 1500;
+// Foot mode walks hundreds of players in one go, and Transfermarkt starts
+// answering 429 after a couple of dozen at the default pace.
+const REQUEST_DELAY_MS = process.argv.includes('--foot') ? 4000 : 1500;
 const NAME_THRESHOLD = 0.6;
 
 // Retry a single request a few times with backoff — covers transient network
@@ -182,7 +198,7 @@ async function searchPlayer(name: string): Promise<Candidate[]> {
   return [];
 }
 
-async function fetchProfile(url: string): Promise<{ value: number | null; club: string; asOf: string | null }> {
+async function fetchProfile(url: string): Promise<{ value: number | null; club: string; asOf: string | null; foot: Foot | null }> {
   const html = await tmFetch(`https://www.transfermarkt.com${url}`);
   const block = html.match(/data-header__market-value-wrapper[^>]*>([\s\S]{0,400}?)<\/a>/);
   let value: number | null = null;
@@ -192,7 +208,10 @@ async function fetchProfile(url: string): Promise<{ value: number | null; club: 
   }
   const clubMatch = html.match(/data-header__club[^>]*>[\s\S]{0,250}?title="([^"]+)"/);
   const asOfMatch = block?.[1].match(/Last update:\s*([\d/]+)/);
-  return { value, club: clubMatch?.[1] ?? 'Unknown', asOf: asOfMatch?.[1] ?? null };
+  // The info table's "Foot:" row: left, right or both. Read for the Lineup Builder's left/right placement.
+  const footMatch = html.match(/>Foot:<\/span>\s*<span[^>]*>\s*(left|right|both)\s*</i);
+  const foot = (footMatch?.[1].toLowerCase() as Foot | undefined) ?? null;
+  return { value, club: clubMatch?.[1] ?? 'Unknown', asOf: asOfMatch?.[1] ?? null, foot };
 }
 
 async function main() {
@@ -215,7 +234,7 @@ async function main() {
 
   const { data: players, error } = await db
     .from('players')
-    .select('id, name, pl_team, market_value, market_value_updated_at, is_active, fpl_id');
+    .select('id, name, pl_team, market_value, market_value_updated_at, is_active, fpl_id, preferred_foot');
   if (error || !players) {
     console.error('[db] fetch failed:', error?.message);
     process.exit(1);
@@ -228,6 +247,7 @@ async function main() {
   const targets = players.filter((p) => {
     const owned = rosterCount.get(p.id) ?? 0;
     if (!ALL && owned === 0) return false;
+    if (FOOT_ONLY) return p.is_active && !p.preferred_foot;
     if (FULL) return true;
     // Never had a Transfermarkt value written — the most reliable signal there
     // is. Comparing against the *current* FPL cost misses rows carrying a stale
@@ -243,10 +263,28 @@ async function main() {
     return cost != null && Math.abs(Number(p.market_value) - cost) < 0.001;
   });
 
+  if (FOOT_ONLY) {
+    // Starters first: the Lineup Builder sides them, so their feet matter most.
+    const started = new Set<string>();
+    for (let page = 0; ; page++) {
+      const { data } = await db
+        .from('player_stats')
+        .select('player_id')
+        .eq('stats->>started', 'true')
+        .order('id')
+        .range(page * 1000, page * 1000 + 999);
+      for (const r of data ?? []) started.add(r.player_id);
+      if (!data || data.length < 1000) break;
+    }
+    targets.sort((a, b) => Number(started.has(b.id)) - Number(started.has(a.id)));
+  }
+  if (targets.length > LIMIT) targets.length = LIMIT;
+
   console.log(`[scope] ${targets.length} player(s) ${FULL ? 'in full-refresh scope' : 'need a Transfermarkt lookup'}${ALL ? '' : ' (rostered only)'}`);
   console.log(`[mode]  ${APPLY ? 'APPLY — will write' : 'DRY RUN'}\n`);
 
-  const results: { id: string; name: string; from: number; to: number; club: string; matched: string; score: number; how: 'full' | 'token'; asOf: string | null }[] = [];
+  const results: { id: string; name: string; from: number; to: number; club: string; matched: string; score: number; how: 'full' | 'token'; asOf: string | null; foot: Foot | null }[] = [];
+  const feet: { id: string; name: string; foot: Foot; matched: string; score: number; how: 'full' | 'token' }[] = [];
   const failures: { name: string; reason: string }[] = [];
   let consecutiveFailures = 0;
 
@@ -276,6 +314,21 @@ async function main() {
       const profile = await fetchProfile(best.c.url);
       consecutiveFailures = 0;
       await sleep(REQUEST_DELAY_MS);
+      if (FOOT_ONLY) {
+        if (!profile.foot) {
+          console.log('no foot on profile');
+          failures.push({ name: p.name, reason: 'no foot on profile' });
+          continue;
+        }
+        feet.push({ id: p.id, name: p.name, foot: profile.foot, matched: best.c.name, score: best.score, how: best.how });
+        if (APPLY) {
+          const { error: upErr } = await db.from('players').update({ preferred_foot: profile.foot }).eq('id', p.id);
+          console.log(upErr ? `${profile.foot}  FAILED to write: ${upErr.message}` : `${profile.foot}  [${profile.club}] written`);
+        } else {
+          console.log(`${profile.foot}  [${profile.club}]`);
+        }
+        continue;
+      }
       if (profile.value == null) {
         console.log('no market value on profile');
         failures.push({ name: p.name, reason: 'no value on profile' });
@@ -285,6 +338,7 @@ async function main() {
       results.push({
         id: p.id, name: p.name, from: Number(p.market_value), to: profile.value,
         club: profile.club, matched: best.c.name, score: best.score, how: best.how, asOf: profile.asOf,
+        foot: profile.foot,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -297,6 +351,16 @@ async function main() {
         consecutiveFailures = 0;
       }
     }
+  }
+
+  if (FOOT_ONLY) {
+    console.log(`\n=== ${feet.length} foot/feet resolved, ${failures.length} unresolved ===\n`);
+    for (const f of feet) {
+      const flag = f.how === 'token' ? ' <== token match, verify' : '';
+      console.log(`  ${f.name.padEnd(32)} ${f.foot.padEnd(6)} match:"${f.matched}" ${f.score.toFixed(2)}${flag}`);
+    }
+    if (!APPLY) console.log('\nDry run. Re-run with --apply to write these.');
+    return;
   }
 
   console.log(`\n=== ${results.length} value(s) resolved, ${failures.length} unresolved ===\n`);
@@ -326,7 +390,12 @@ async function main() {
   for (const r of results) {
     const { error: upErr } = await db
       .from('players')
-      .update({ market_value: r.to, market_value_updated_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .update({
+        market_value: r.to,
+        market_value_updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...(r.foot ? { preferred_foot: r.foot } : {}),
+      })
       .eq('id', r.id);
     if (upErr) console.error(`  FAILED ${r.name}: ${upErr.message}`);
     else written++;

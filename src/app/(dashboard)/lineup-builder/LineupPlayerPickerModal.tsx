@@ -7,6 +7,7 @@ import Portrait from '@/components/players/Portrait';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { resolveClub } from '@/lib/clubs/registry';
 import { fold } from '@/lib/text/fold';
+import { ClubPicker } from './BuilderPickers';
 import styles from './lineup-builder.module.css';
 
 interface Props {
@@ -151,19 +152,14 @@ export default function LineupPlayerPickerModal({
               onChange={(e) => setSearch(e.target.value)}
             />
             {clubOptions.length > 1 && (
-            <select
-              className={`${styles.input} ${styles.clubSelect}`}
-              aria-label="Filter by club"
-              value={selectedClub}
-              onChange={(e) => setSelectedClub(e.target.value)}
-            >
-              <option value="all">All Clubs</option>
-              {clubOptions.map((c) => (
-                <option key={c.slug} value={c.slug}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              <div className={styles.clubSelect}>
+                <ClubPicker
+                  clubs={clubOptions}
+                  value={selectedClub === 'all' ? null : selectedClub}
+                  onChange={(slug) => setSelectedClub(slug ?? 'all')}
+                  ariaLabel="Filter by club"
+                />
+              </div>
             )}
           </div>
           <div className={styles.filterTabs}>

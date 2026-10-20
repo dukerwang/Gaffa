@@ -200,6 +200,8 @@ export interface Player {
   pl_team_changed_at: string | null; // set by syncPlayers when this row is new or its club just changed; null once stale
   primary_position: GranularPosition | null;
   secondary_positions: GranularPosition[];
+  /** From Transfermarkt (migration 176). Places a left-footed centre-back on the left of a pair. */
+  preferred_foot?: 'left' | 'right' | 'both' | null;
   market_value: number | null; // in millions EUR (from Transfermarkt)
   market_value_updated_at: string | null;
   adp: number | null;
