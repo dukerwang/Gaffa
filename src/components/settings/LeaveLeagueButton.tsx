@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/components/ui/toast';
 
 interface Props {
   leagueId: string;
@@ -43,7 +44,9 @@ export default function LeaveLeagueButton({ leagueId, isCommissioner, started = 
       router.push('/dashboard');
       router.refresh();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : (deletes ? 'Failed to delete the league.' : 'Failed to leave the league.'));
+      toast.error(deletes ? 'League not deleted' : 'League not left', {
+        description: err instanceof Error ? err.message : 'Try again.',
+      });
       setLoading(false);
     }
   };

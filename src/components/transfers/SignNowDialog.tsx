@@ -7,6 +7,7 @@ import PositionBadge from '@/components/players/PositionBadge';
 import Modal from './Modal';
 import styles from './BidDialog.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { toast } from '@/components/ui/toast';
 
 const money = (n: number) => `€${n}m`;
 
@@ -51,6 +52,10 @@ export default function SignNowDialog({ open, onClose, leagueId, player, rosterF
         setMessage(json.error ?? 'Could not sign that player.');
         return;
       }
+      const dropped = myRoster.find((r) => r.id === dropId);
+      toast.success(`${getPlayerDisplayName(player, 'full')} signed`, {
+        description: dropped ? `${getPlayerDisplayName(dropped, 'full')} released to make room.` : undefined,
+      });
       onDone();
       onClose();
     } catch {

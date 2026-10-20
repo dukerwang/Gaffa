@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { getPlayerDisplayName, playerInitial } from '@/lib/players/displayName';
 import { ResponsiveModal, Button } from '@/components/ui';
 import styles from './DepartureDecisionModal.module.css';
+import { toast } from '@/components/ui/toast';
 
 export interface DepartureLike {
   id: string;
@@ -72,6 +73,11 @@ export default function DepartureDecisionModal({ req, leagueId, slots, rosterCou
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }),
       });
       if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error ?? 'Action failed'); return; }
+      const name = getPlayerDisplayName({ name: dep.name, web_name: dep.webName }, 'full');
+      if (action === 'release') toast.success(`${name} released`, { description: `Compensation ${money(dep.compensation)}` });
+      else if (action === 'retain') toast.success(`Rights to ${name} retained`, { description: `${slots.remaining - 1} of ${slots.total} retained slots left` });
+      else if (action === 'relinquish') toast(onLoan ? `${name} dropped` : `Rights to ${name} relinquished`);
+      else toast(`${name} declined`, { description: 'He goes to auction.' });
       onDone();
     } catch {
       setErr('Could not reach the server. Try again.');

@@ -18,6 +18,8 @@ import TransfersSubNav from '@/components/transfers/TransfersSubNav';
 import ListingCard from '@/components/transfers/ListingCard';
 import type { LoanDirection, ProposeMode } from '@/components/transfers/ProposeBuilder';
 import { setServerClock } from '@/components/transfers/useTick';
+import { toast } from '@/components/ui/toast';
+import { dealToast } from '@/components/transfers/dealToast';
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import styles from './deals.module.css';
 
@@ -149,7 +151,7 @@ export default function DealsClient({
       (l.lender_team_id === me || l.borrower_team_id === me),
   );
 
-  const act = async (kind: 'trade' | 'loan', id: string, action: 'accept' | 'reject' | 'cancel') => {
+  const act = async (kind: 'trade' | 'loan', id: string, action: 'accept' | 'reject' | 'cancel', who?: string) => {
     setBusyId(id);
     setError(null);
     try {
@@ -167,6 +169,7 @@ export default function DealsClient({
         setError(data.error ?? 'That could not be completed.');
         return;
       }
+      dealToast(kind, action, who);
       refresh();
     } catch {
       setError('Could not reach the server. Try again.');
@@ -175,7 +178,7 @@ export default function DealsClient({
     }
   };
 
-  const loanSideAction = async (loanId: string, kind: 'recall' | 'slot-buyback') => {
+  const loanSideAction = async (loanId: string, kind: 'recall' | 'slot-buyback', playerName?: string) => {
     setBusyId(loanId);
     setError(null);
     try {
@@ -185,6 +188,8 @@ export default function DealsClient({
         setError(data.error ?? 'That could not be completed.');
         return;
       }
+      if (kind === 'recall') toast.success(playerName ? `${playerName} recalled` : 'Player recalled');
+      else toast.success('Slot bought back', { description: 'You can sign a player while this loan runs.' });
       refresh();
     } catch {
       setError('Could not reach the server. Try again.');
@@ -270,7 +275,7 @@ export default function DealsClient({
                 type="button"
                 className={`${styles.dealBtn} ${styles.dealBtnYes}`}
                 disabled={busyId === p.id}
-                onClick={() => act('trade', p.id, 'accept')}
+                onClick={() => act('trade', p.id, 'accept', them)}
               >
                 Accept
               </button>
@@ -286,7 +291,7 @@ export default function DealsClient({
                 type="button"
                 className={styles.dealBtn}
                 disabled={busyId === p.id}
-                onClick={() => act('trade', p.id, 'reject')}
+                onClick={() => act('trade', p.id, 'reject', them)}
               >
                 Decline
               </button>
@@ -296,7 +301,7 @@ export default function DealsClient({
               type="button"
               className={styles.dealBtn}
               disabled={busyId === p.id}
-              onClick={() => act('trade', p.id, 'cancel')}
+              onClick={() => act('trade', p.id, 'cancel', them)}
             >
               Withdraw
             </button>
@@ -345,7 +350,7 @@ export default function DealsClient({
                 type="button"
                 className={`${styles.dealBtn} ${styles.dealBtnYes}`}
                 disabled={busyId === l.id}
-                onClick={() => act('loan', l.id, 'accept')}
+                onClick={() => act('loan', l.id, 'accept', other)}
               >
                 Accept
               </button>
@@ -361,7 +366,7 @@ export default function DealsClient({
                 type="button"
                 className={styles.dealBtn}
                 disabled={busyId === l.id}
-                onClick={() => act('loan', l.id, 'reject')}
+                onClick={() => act('loan', l.id, 'reject', other)}
               >
                 Decline
               </button>
@@ -371,7 +376,7 @@ export default function DealsClient({
               type="button"
               className={styles.dealBtn}
               disabled={busyId === l.id}
-              onClick={() => act('loan', l.id, 'cancel')}
+              onClick={() => act('loan', l.id, 'cancel', other)}
             >
               Withdraw
             </button>
@@ -400,7 +405,7 @@ export default function DealsClient({
                     if (window.confirm(
                       `Recall ${l.player ? getPlayerDisplayName(l.player, 'full') : 'this player'} early? You will pay a €25m penalty to the borrower.`,
                     )) {
-                      loanSideAction(l.id, 'recall');
+                      loanSideAction(l.id, 'recall', l.player ? getPlayerDisplayName(l.player, 'full') : undefined);
                     }
                   }}
                 >

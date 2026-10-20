@@ -18,6 +18,7 @@ import Modal from './Modal';
 import GwRangeSlider from './GwRangeSlider';
 import styles from './ProposeBuilder.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { toast } from '@/components/ui/toast';
 import { describeDeal } from '@/lib/transfers/describeDeal';
 import { listingStance } from '@/lib/transfers/listingStance';
 import { fold } from '@/lib/text/fold';
@@ -448,6 +449,12 @@ export default function ProposeBuilder({
         const data = await res.json();
         if (!res.ok) return setError(data.error ?? 'That proposal was refused.');
       }
+      const to = target?.team_name ?? 'the other club';
+      const isCounter = Boolean(mode === 'loan' ? parentLoanId : parentTradeId);
+      toast.success(
+        isCounter ? `Counter sent to ${to}` : mode === 'loan' ? `Loan proposal sent to ${to}` : `Offer sent to ${to}`,
+        { description: mode === 'loan' && loanPlayer ? getPlayerDisplayName(loanPlayer, 'full') : undefined },
+      );
       onDone();
       onClose();
     } catch {

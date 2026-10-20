@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/context/ThemeContext';
 import { Icon } from '@/components/ui/Icon';
+import { toast } from '@/components/ui/toast';
 import NotificationsToggle from '@/components/layout/NotificationsToggle';
 import LeaveLeagueButton from '@/components/settings/LeaveLeagueButton';
 import PlatformAdminSection from '@/components/settings/PlatformAdminSection';
@@ -82,7 +83,9 @@ export default function SettingsClient({
       const data = await res.json();
       setPrefs(resolvePrefs(data.prefs));
     } catch {
+      // The switch flips back on its own; without a word it reads as a misclick.
       setPrefs(previous);
+      toast.error('Setting not saved', { description: 'Try again.' });
     } finally {
       setPending(null);
     }
