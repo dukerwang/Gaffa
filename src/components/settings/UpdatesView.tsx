@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { Icon } from '@/components/ui/Icon';
 import type { ProductUpdate } from '@/lib/updates/getProductUpdates';
 import styles from './updates.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface Props {
   updates: ProductUpdate[];
@@ -39,7 +40,7 @@ export default function UpdatesView({ updates }: Props) {
       <h1 className={styles.pageTitle}>What&rsquo;s New</h1>
 
       {updates.length === 0 ? (
-        <p className={styles.empty}>Nothing published yet — check back soon.</p>
+        <EmptyState>Nothing published yet — check back soon.</EmptyState>
       ) : (
         groups.map((group) => (
           <section key={group.month} className={styles.monthGroup}>

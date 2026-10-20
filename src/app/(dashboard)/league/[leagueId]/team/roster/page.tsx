@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import NavigationLink from '@/components/ui/NavigationLink';
 import { loadClubView } from '@/lib/teams/loadClubView';
 import ClubClient from './ClubClient';
-import styles from './club.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,10 +31,10 @@ export default async function MyClubPage({ params }: Props) {
 
   if (!props) {
     return (
-      <div className={styles.empty}>
-        <h2>No team found</h2>
-        <NavigationLink href="/dashboard">&larr; Back to Dashboard</NavigationLink>
-      </div>
+      <EmptyState
+        title="No team found"
+        action={<NavigationLink href="/dashboard">&larr; Back to Dashboard</NavigationLink>}
+      />
     );
   }
 

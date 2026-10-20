@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import styles from './finance.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -335,7 +336,7 @@ export default function FinanceClient({
           </div>
 
           {filtered.length === 0 ? (
-            <p className={styles.emptyText}>No transactions found.</p>
+            <EmptyState size="compact">No transactions found.</EmptyState>
           ) : (
             <>
               <div className={styles.ledgerTableWrap}>

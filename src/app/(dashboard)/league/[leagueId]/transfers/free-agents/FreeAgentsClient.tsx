@@ -13,6 +13,7 @@ import { setServerClock, useTick, formatAuctionClock, isClosing } from '@/compon
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import styles from './free-agents.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import EmptyState from '@/components/ui/EmptyState';
 
 const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
 const SignNowDialog = dynamic(() => import('@/components/transfers/SignNowDialog'), { ssr: false });
@@ -347,7 +348,7 @@ export default function FreeAgentsClient({
         </table>
 
         {!loading && rows.length === 0 && !error && (
-          <p className={styles.empty}>Nobody unowned matches that.</p>
+          <EmptyState size="compact">Nobody unowned matches that.</EmptyState>
         )}
       </div>
 

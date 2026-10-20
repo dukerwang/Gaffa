@@ -19,6 +19,7 @@ import { getHoldState } from '@/lib/roster/holds';
 import { buildProjectionMap } from '@/lib/projections/currentProjection';
 import type { RawStats } from '@/types';
 import styles from './my-team.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,14 +71,16 @@ export default async function MyTeamPage({ params }: Props) {
 
   if (!team) {
     return (
-      <div className={styles.empty}>
-        <p className={styles.emptyIcon}>&#128085;</p>
-        <h2 className={styles.emptyTitle}>No team found</h2>
-        <p className={styles.emptyText}>You do not have a team in this league.</p>
-        <a href="/dashboard" className={styles.backLink}>
-          &larr; Back to dashboard
-        </a>
-      </div>
+      <EmptyState
+        title="No team found"
+        action={
+          <a href="/dashboard" className={styles.backLink}>
+            &larr; Back to dashboard
+          </a>
+        }
+      >
+        You do not have a team in this league.
+      </EmptyState>
     );
   }
 

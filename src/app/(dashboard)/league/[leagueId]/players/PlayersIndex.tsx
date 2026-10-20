@@ -21,6 +21,7 @@ import { isPlayerMapped } from '@/lib/players/playerMapping';
 import { POS_FILTER_OPTIONS, resolveActivePosition, type PosFilter, type PosType } from '@/lib/players/positionFilter';
 import styles from './playersIndex.module.css';
 import { fold } from '@/lib/text/fold';
+import EmptyState from '@/components/ui/EmptyState';
 
 /**
  * The players index. Cards is the default view.
@@ -571,7 +572,7 @@ export default function PlayersIndex({
       </div>
 
       {filtered.length === 0 && (
-        <p className={styles.empty}>No players match these filters.</p>
+        <EmptyState>No players match these filters.</EmptyState>
       )}
 
       {shown < filtered.length && (

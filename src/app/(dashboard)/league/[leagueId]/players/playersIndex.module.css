@@ -519,13 +519,6 @@
   color: var(--color-text-muted);
 }
 
-.empty {
-  padding: var(--s10) var(--s6);
-  text-align: center;
-  color: var(--color-text-muted);
-  font-style: italic;
-}
-
 .more { display: flex; justify-content: center; padding: 0 var(--s6) var(--s6); }
 
 .moreBtn {

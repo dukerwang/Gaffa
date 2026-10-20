@@ -116,12 +116,6 @@
   white-space: nowrap;
 }
 
-.empty {
-  font-size: var(--t-13);
-  color: var(--color-text-muted);
-  padding: var(--s4) 0 var(--s5);
-}
-
 /* The wash carries the alarm, so the message is ink — danger on danger-dim was
    3.91 in dark, the same "both at once" defect the tint tokens are checked for.
    The rule down the left is the second carrier. */

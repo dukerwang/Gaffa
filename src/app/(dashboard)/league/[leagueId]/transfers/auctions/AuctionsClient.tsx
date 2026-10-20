@@ -17,6 +17,7 @@ import { setServerClock, useTick, formatAuctionClock, isClosing } from '@/compon
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import AuctionTimingHelp from '@/components/transfers/AuctionTimingHelp';
 import styles from './auctions.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
 
@@ -239,11 +240,11 @@ export default function AuctionsClient({
           )}
 
           {visible.length === 0 ? (
-            <p className={styles.empty}>
+            <EmptyState size="compact">
               {biddableAuctions.length === 0
                 ? 'The room is empty. Nothing is under the hammer.'
                 : 'No lot matches that filter.'}
-            </p>
+            </EmptyState>
           ) : (
             visible.map((a) => (
               <Lot
@@ -314,7 +315,7 @@ export default function AuctionsClient({
           </div>
 
           {ticker.length === 0 ? (
-            <p className={styles.empty}>No bids yet.</p>
+            <EmptyState size="compact">No bids yet.</EmptyState>
           ) : (
             ticker.map((e) => (
               <div key={e.id} className={styles.event}>

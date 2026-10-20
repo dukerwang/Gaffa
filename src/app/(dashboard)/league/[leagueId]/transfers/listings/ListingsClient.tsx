@@ -15,6 +15,7 @@ import { setServerClock } from '@/components/transfers/useTick';
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import styles from './listings.module.css';
 import { fold } from '@/lib/text/fold';
+import EmptyState from '@/components/ui/EmptyState';
 
 const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
 const ProposeBuilder = dynamic(() => import('@/components/transfers/ProposeBuilder'), { ssr: false });
@@ -285,11 +286,11 @@ export default function ListingsClient({
       </div>
 
       {visible.length === 0 ? (
-        <p className={styles.empty}>
+        <EmptyState size="compact">
           {model.listings.length === 0
             ? 'No club has listed a player yet.'
             : 'No listing matches those filters.'}
-        </p>
+        </EmptyState>
       ) : (
         <div className={styles.grid}>
           {visible.map((l) => (

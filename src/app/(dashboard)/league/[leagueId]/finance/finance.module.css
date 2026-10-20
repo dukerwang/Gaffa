@@ -390,15 +390,6 @@
 
 /* ── Empty state ────────────────────────────────────────── */
 
-.emptyText {
-  font-family: var(--font-sans);
-  font-size: var(--t-13);
-  color: var(--color-text-muted);
-  padding: var(--s6) 0;
-  margin: 0;
-  text-align: center;
-}
-
 /* ── Responsive ─────────────────────────────────────────── */
 
 @media (max-width: 600px) {

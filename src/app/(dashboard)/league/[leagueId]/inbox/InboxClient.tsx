@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
 import FormattedText from '@/components/ui/FormattedText';
 import styles from './Inbox.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface Notification {
   id: string;
@@ -262,19 +263,11 @@ export default function InboxClient({ leagueId, leagueName }: InboxClientProps) 
           })}
         </div>
       ) : (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>
-            <Icon name="mail" size={48} strokeWidth={1} />
-          </div>
-          <h2 className={styles.emptyTitle}>
-            {filter === 'unread' ? 'No Unread Alerts' : 'Inbox Is Empty'}
-          </h2>
-          <p className={styles.emptyDesc}>
-            {filter === 'unread'
-              ? 'You have catch up on all events! Switch back to "All Alerts" to review historical ledger logs.'
-              : 'There are no active notifications for your manager profile in this league yet.'}
-          </p>
-        </div>
+        <EmptyState title={filter === 'unread' ? 'No Unread Alerts' : 'Inbox Is Empty'}>
+          {filter === 'unread'
+            ? 'You have catch up on all events! Switch back to "All Alerts" to review historical ledger logs.'
+            : 'There are no active notifications for your manager profile in this league yet.'}
+        </EmptyState>
       )}
     </div>
   );
