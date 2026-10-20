@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element -- rendered by next/og (Satori), not the DOM */
+/* eslint-disable @next/next/no-img-element -- rendered by Satori, not the DOM */
 import type { GranularPosition, Player } from '@/types';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { portraitInitials, portraitSources } from '@/lib/players/photo';
@@ -8,13 +8,13 @@ import type { SharedXI } from './sharedXI';
 import { getZone, ZONE_ORDER, type PitchZone } from './pitchZones';
 
 /**
- * The Lineup Builder's share card, rendered on the server by next/og: the green
+ * The Lineup Builder's share card, laid out by Satori on the server: the green
  * shelf with the title, the banded pitch, each player as the app's portrait over
  * a white name chip, and the topbar's wordmark at the foot. The page's link
  * preview and Save Image both use it, so there is one picture of an XI.
  *
- * Laid out at 1080x1350 in design units; `k` scales every length, so k = 2 is a
- * sharp 2160x2700 render of the same card.
+ * Laid out at 1080x1350 in design units and rasterised at CARD_SCALE by
+ * renderCard.tsx, which assembles it from parts (see `part` on LineupCard).
  */
 
 export const CARD_W = 1080;
@@ -29,8 +29,18 @@ const PITCH_BAND = '#386A4B';
 const CARD = '#FCFAF7';
 const INK = '#1B1915';
 const POS_COLOR: Record<GranularPosition, string> = {
-  GK: '#926500', CB: '#0076B2', LB: '#5667B9', RB: '#5667B9', LWB: '#008295', RWB: '#008295',
-  DM: '#7B56B9', CM: '#915397', AM: '#A34E71', LW: '#00866F', RW: '#00866F', ST: '#AD4C42',
+  GK: '#926500',
+  CB: '#0076B2',
+  LB: '#5667B9',
+  RB: '#5667B9',
+  LWB: '#008295',
+  RWB: '#008295',
+  DM: '#7B56B9',
+  CM: '#915397',
+  AM: '#A34E71',
+  LW: '#00866F',
+  RW: '#00866F',
+  ST: '#AD4C42',
 };
 
 export interface CardAssets {
@@ -72,21 +82,25 @@ export async function loadCardAssets(xi: SharedXI, origin: string): Promise<Card
       if (!player) return;
       const slug = resolveClub(player.pl_team)?.slug;
       if (slug) slugs.add(slug);
-      const sources = player.photo_url ? portraitSources(player.photo_url, player.photo_version) : [];
+      const sources = player.photo_url
+        ? portraitSources(player.photo_url, player.photo_version)
+        : [];
       for (let i = 0; i < sources.length; i++) {
-        const img = await fetchImage(sources[i], { headers: { Referer: 'https://www.premierleague.com/' } });
+        const img = await fetchImage(sources[i], {
+          headers: { Referer: 'https://www.premierleague.com/' },
+        });
         if (img) {
           photos.set(player.id, { ...img, alt: i > 0 });
           break;
         }
       }
-    }),
+    })
   );
   await Promise.all(
     [...slugs].map(async (slug) => {
       const img = await fetchImage(`${origin}/team-logos/${slug}.png`);
       if (img) crests.set(slug, img);
-    }),
+    })
   );
   return { photos, crests };
 }
@@ -99,7 +113,16 @@ function contain(w: number, h: number, box: number) {
 /** The Gaffa mark, the same paths as <Icon name="gaffa">; keep the two in step. */
 function GaffaMark({ size, color }: { size: number; color: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 128 128" fill="none" stroke={color} strokeWidth={4.2} strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 128 128"
+      fill="none"
+      stroke={color}
+      strokeWidth={4.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <circle cx="64" cy="64" r="56" />
       <g transform="translate(35.2, 82.8) scale(0.06)">
         <path
@@ -111,13 +134,24 @@ function GaffaMark({ size, color }: { size: number; color: string }) {
       <path d="M 24.8 104 C 34 88, 42 82, 50 82 M 103.2 104 C 94 88, 86 82, 78 82" />
       <path d="M 50 82 L 44 94 H 49 L 64 116 L 79 94 H 84 L 78 82" />
       <path d="M 54 82 L 64 96 L 74 82" />
-      <path fill={color} stroke="none" d="M 61 82 H 67 L 66 90 L 67.5 106 L 64 111 L 60.5 106 L 62 90 Z" />
+      <path
+        fill={color}
+        stroke="none"
+        d="M 61 82 H 67 L 66 90 L 67.5 106 L 64 111 L 60.5 106 L 62 90 Z"
+      />
     </svg>
   );
 }
 
 /** Left/right pairs share a hue, so their badges also clip the outer corner (PositionBadge.module.css). */
-const BADGE_SIDE: Partial<Record<GranularPosition, 'l' | 'r'>> = { LB: 'l', LWB: 'l', LW: 'l', RB: 'r', RWB: 'r', RW: 'r' };
+const BADGE_SIDE: Partial<Record<GranularPosition, 'l' | 'r'>> = {
+  LB: 'l',
+  LWB: 'l',
+  LW: 'l',
+  RB: 'r',
+  RWB: 'r',
+  RW: 'r',
+};
 
 /**
  * One player: the position badge above his head, the lot-size portrait at the
@@ -220,7 +254,9 @@ function PlayerNode({
   if (player) {
     let img = null;
     if (photo) {
-      const custom = photo.alt ? null : customPortraitCrop('md', player.portrait_head_top_pct, player.portrait_head_width_pct);
+      const custom = photo.alt
+        ? null
+        : customPortraitCrop('md', player.portrait_head_top_pct, player.portrait_head_width_pct);
       const zoom = (photo.alt ? 142 : (custom?.zoomPct ?? 156.25)) / 100;
       const iw = fw * zoom;
       const ih = iw * (photo.h / photo.w);
@@ -251,13 +287,22 @@ function PlayerNode({
             overflow: 'hidden',
             borderRadius: u(4 * P),
             boxShadow: `inset 0 0 0 ${u(1 * P)}px #D9D5CF`,
-            backgroundImage: 'radial-gradient(75.6% 57.6% at 50% 25.6%, #F4F3F1 0%, #E2DFDA 67%, #D2CEC7 100%)',
+            backgroundImage:
+              'radial-gradient(75.6% 57.6% at 50% 25.6%, #F4F3F1 0%, #E2DFDA 67%, #D2CEC7 100%)',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
           {img ?? (
-            <div style={{ display: 'flex', fontFamily: 'Newsreader', fontSize: u(26 * P), letterSpacing: u(-0.78 * P), color: '#635D51' }}>
+            <div
+              style={{
+                display: 'flex',
+                fontFamily: 'Newsreader',
+                fontSize: u(26 * P),
+                letterSpacing: u(-0.78 * P),
+                color: '#635D51',
+              }}
+            >
               {portraitInitials(player.name)}
             </div>
           )}
@@ -299,7 +344,14 @@ function PlayerNode({
       }}
     >
       {player ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: u(nodeW) }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            width: u(nodeW),
+          }}
+        >
           <div style={{ display: 'flex', marginBottom: u(badgeGap) }}>{badge}</div>
           {portrait}
           <div
@@ -335,7 +387,14 @@ function PlayerNode({
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: u(nodeW) }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            width: u(nodeW),
+          }}
+        >
           <div style={{ display: 'flex', marginBottom: u(badgeGap) }}>{badge}</div>
           <div
             style={{
@@ -394,7 +453,7 @@ export function cardNodes(xi: SharedXI): { S: number; nodes: CardNode[] } {
 }
 
 const PAD = 48;
-const SHELF_H = 210;
+export const SHELF_H = 210;
 
 /** The pitch's box, and the field markings' box inset within it. */
 function pitchFrame() {
@@ -412,11 +471,36 @@ function pitchFrame() {
  * route rasterises each tile on its own small canvas and lays it on the card:
  * see /share/xi/image for why.
  */
-export function NodeTile({ node, S, assets, margin }: { node: CardNode; S: number; assets: CardAssets; margin: number }) {
+export function NodeTile({
+  node,
+  S,
+  assets,
+  margin,
+}: {
+  node: CardNode;
+  S: number;
+  assets: CardAssets;
+  margin: number;
+}) {
   const { nodeW, total } = nodeBox(S);
   return (
-    <div style={{ display: 'flex', position: 'relative', width: nodeW + margin * 2, height: total + margin * 2 }}>
-      <PlayerNode pos={node.pos} player={node.player} assets={assets} x={margin + nodeW / 2} y={margin + total / 2} S={S} k={1} />
+    <div
+      style={{
+        display: 'flex',
+        position: 'relative',
+        width: nodeW + margin * 2,
+        height: total + margin * 2,
+      }}
+    >
+      <PlayerNode
+        pos={node.pos}
+        player={node.player}
+        assets={assets}
+        x={margin + nodeW / 2}
+        y={margin + total / 2}
+        S={S}
+        k={1}
+      />
     </div>
   );
 }
@@ -424,21 +508,35 @@ export function NodeTile({ node, S, assets, margin }: { node: CardNode; S: numbe
 /** A node's tile box on the card, for compositing NodeTile at (left, top). */
 export function nodeTileBox(node: CardNode, S: number, margin: number) {
   const { nodeW, total } = nodeBox(S);
-  return { left: node.x - nodeW / 2 - margin, top: node.y - total / 2 - margin, width: nodeW + margin * 2, height: total + margin * 2 };
+  return {
+    left: node.x - nodeW / 2 - margin,
+    top: node.y - total / 2 - margin,
+    width: nodeW + margin * 2,
+    height: total + margin * 2,
+  };
 }
 
 export function LineupCard({
   xi,
   assets,
   k = 1,
-  withPlayers = true,
+  part = 'full',
 }: {
   xi: SharedXI;
   assets: CardAssets;
   k?: number;
-  /** False draws the card without its players, for the image route to lay tiles on. */
-  withPlayers?: boolean;
+  /**
+   * `full` is the whole card. The image route draws it in pieces (see
+   * renderCard.tsx): `base` is what every card shares (the shelf's stripes, the
+   * pitch and its markings, the wordmark), rendered once into a checked-in PNG;
+   * `header` is this card's title, subtitle and crest alone, on a transparent
+   * strip the height of the shelf.
+   */
+  part?: 'full' | 'base' | 'header';
 }) {
+  const withBase = part !== 'header';
+  const withHeader = part !== 'base';
+  const withPlayers = part === 'full';
   const u = (n: number) => n * k;
   const pad = PAD;
   const shelfH = SHELF_H;
@@ -469,105 +567,221 @@ export function LineupCard({
         position: 'relative',
         display: 'flex',
         width: u(CARD_W),
-        height: u(CARD_H),
-        background: TOPBAR,
+        height: u(part === 'header' ? SHELF_H : CARD_H),
+        ...(withBase ? { background: TOPBAR } : {}),
         fontFamily: 'Label',
       }}
     >
-      {Array.from({ length: Math.ceil(CARD_W / 36) }, (_, i) =>
-        i % 2 === 1 ? (
-          <div key={i} style={{ position: 'absolute', left: u(i * 36), top: 0, width: u(36), height: u(shelfH), background: 'rgba(255,255,255,0.05)' }} />
-        ) : null,
-      )}
+      {withBase &&
+        Array.from({ length: Math.ceil(CARD_W / 36) }, (_, i) =>
+          i % 2 === 1 ? (
+            <div
+              key={i}
+              style={{
+                position: 'absolute',
+                left: u(i * 36),
+                top: 0,
+                width: u(36),
+                height: u(shelfH),
+                background: 'rgba(255,255,255,0.05)',
+              }}
+            />
+          ) : null
+        )}
 
-      <div
-        style={{
-          position: 'absolute',
-          left: u(pad),
-          top: u(46),
-          width: u(titleRoom),
-          display: 'flex',
-          fontFamily: 'Newsreader',
-          fontSize: u(titleFont),
-          lineHeight: 1,
-          letterSpacing: u(-titleFont * 0.02),
-          color: '#FFFFFF',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {xi.title}
-      </div>
-      <div
-        style={{
-          position: 'absolute',
-          left: u(pad),
-          top: u(134),
-          width: u(titleRoom),
-          display: 'flex',
-          fontSize: u(24),
-          color: 'rgba(255,255,255,0.7)',
-          whiteSpace: 'pre',
-          overflow: 'hidden',
-        }}
-      >
-        {subtitle}
-      </div>
-      {crest && (
-        <div style={{ position: 'absolute', right: u(pad), top: u(52), width: u(crestBox), height: u(crestBox), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {withHeader && (
+        <div
+          style={{
+            position: 'absolute',
+            left: u(pad),
+            top: u(46),
+            width: u(titleRoom),
+            display: 'flex',
+            fontFamily: 'Newsreader',
+            fontSize: u(titleFont),
+            lineHeight: 1,
+            letterSpacing: u(-titleFont * 0.02),
+            color: '#FFFFFF',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {xi.title}
+        </div>
+      )}
+      {withHeader && (
+        <div
+          style={{
+            position: 'absolute',
+            left: u(pad),
+            top: u(134),
+            width: u(titleRoom),
+            display: 'flex',
+            fontSize: u(24),
+            color: 'rgba(255,255,255,0.7)',
+            whiteSpace: 'pre',
+            overflow: 'hidden',
+          }}
+        >
+          {subtitle}
+        </div>
+      )}
+      {withHeader && crest && (
+        <div
+          style={{
+            position: 'absolute',
+            right: u(pad),
+            top: u(52),
+            width: u(crestBox),
+            height: u(crestBox),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <img alt="" src={crest.src} {...contain(crest.w, crest.h, u(crestBox))} />
         </div>
       )}
 
-      <div
-        style={{
-          position: 'absolute',
-          left: u(px),
-          top: u(py),
-          width: u(pw),
-          height: u(ph),
-          borderRadius: u(20),
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        {Array.from({ length: Math.ceil(ph / 60) }, (_, i) => (
-          <div key={i} style={{ width: u(pw), height: u(60), flexShrink: 0, background: i % 2 === 0 ? PITCH : PITCH_BAND }} />
-        ))}
-      </div>
-      <div style={{ position: 'absolute', left: u(fX), top: u(fY), width: u(fW), height: u(fH), border: line, display: 'flex' }} />
-      <div style={{ position: 'absolute', left: u(fX), top: u(fY + fH / 2 - 1.5), width: u(fW), height: u(3), background: 'rgba(255,255,255,0.4)', display: 'flex' }} />
-      <div style={{ position: 'absolute', left: u(fX + fW / 2 - 70), top: u(fY + fH / 2 - 70), width: u(140), height: u(140), borderRadius: u(70), border: line, display: 'flex' }} />
-      <div style={{ position: 'absolute', left: u(fX + (fW - boxW) / 2), top: u(fY), width: u(boxW), height: u(boxH), border: line, display: 'flex' }} />
-      <div style={{ position: 'absolute', left: u(fX + (fW - boxW) / 2), top: u(fY + fH - boxH), width: u(boxW), height: u(boxH), border: line, display: 'flex' }} />
+      {withBase && (
+        <div
+          style={{
+            position: 'absolute',
+            left: u(px),
+            top: u(py),
+            width: u(pw),
+            height: u(ph),
+            borderRadius: u(20),
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {Array.from({ length: Math.ceil(ph / 60) }, (_, i) => (
+            <div
+              key={i}
+              style={{
+                width: u(pw),
+                height: u(60),
+                flexShrink: 0,
+                background: i % 2 === 0 ? PITCH : PITCH_BAND,
+              }}
+            />
+          ))}
+        </div>
+      )}
+      {withBase && (
+        <div
+          style={{
+            position: 'absolute',
+            left: u(fX),
+            top: u(fY),
+            width: u(fW),
+            height: u(fH),
+            border: line,
+            display: 'flex',
+          }}
+        />
+      )}
+      {withBase && (
+        <div
+          style={{
+            position: 'absolute',
+            left: u(fX),
+            top: u(fY + fH / 2 - 1.5),
+            width: u(fW),
+            height: u(3),
+            background: 'rgba(255,255,255,0.4)',
+            display: 'flex',
+          }}
+        />
+      )}
+      {withBase && (
+        <div
+          style={{
+            position: 'absolute',
+            left: u(fX + fW / 2 - 70),
+            top: u(fY + fH / 2 - 70),
+            width: u(140),
+            height: u(140),
+            borderRadius: u(70),
+            border: line,
+            display: 'flex',
+          }}
+        />
+      )}
+      {withBase && (
+        <div
+          style={{
+            position: 'absolute',
+            left: u(fX + (fW - boxW) / 2),
+            top: u(fY),
+            width: u(boxW),
+            height: u(boxH),
+            border: line,
+            display: 'flex',
+          }}
+        />
+      )}
+      {withBase && (
+        <div
+          style={{
+            position: 'absolute',
+            left: u(fX + (fW - boxW) / 2),
+            top: u(fY + fH - boxH),
+            width: u(boxW),
+            height: u(boxH),
+            border: line,
+            display: 'flex',
+          }}
+        />
+      )}
 
       {withPlayers &&
         nodes.map((n, i) => (
-          <PlayerNode key={i} pos={n.pos} player={n.player} assets={assets} x={n.x} y={n.y} S={S} k={k} />
+          <PlayerNode
+            key={i}
+            pos={n.pos}
+            player={n.player}
+            assets={assets}
+            x={n.x}
+            y={n.y}
+            S={S}
+            k={k}
+          />
         ))}
 
       {/* The topbar's lockup: mark, then GAFFA.LIVE in the bold serif at the topbar's tracking. */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          bottom: u(16),
-          width: u(CARD_W),
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          opacity: 0.85,
-        }}
-      >
-        <div style={{ display: 'flex', marginRight: u(10), marginTop: u(-3) }}>
-          <GaffaMark size={u(30)} color="#FFFFFF" />
+      {withBase && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            bottom: u(16),
+            width: u(CARD_W),
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            opacity: 0.85,
+          }}
+        >
+          <div style={{ display: 'flex', marginRight: u(10), marginTop: u(-3) }}>
+            <GaffaMark size={u(30)} color="#FFFFFF" />
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              fontFamily: 'Wordmark',
+              fontSize: u(22),
+              letterSpacing: u(22 * 0.12),
+              color: '#FFFFFF',
+            }}
+          >
+            GAFFA.LIVE
+          </div>
         </div>
-        <div style={{ display: 'flex', fontFamily: 'Wordmark', fontSize: u(22), letterSpacing: u(22 * 0.12), color: '#FFFFFF' }}>
-          GAFFA.LIVE
-        </div>
-      </div>
+      )}
     </div>
   );
 }
