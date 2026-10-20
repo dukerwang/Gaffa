@@ -261,13 +261,11 @@ manager can choose; the Caretaker is something that happens to a club.
 
 ## Before You Publish
 
-1. **The academy age rule needs your call.** `f291aff5` (2026-09-15) changed
-   academy eligibility to use a player's age on 1 August, and the post says so.
-   The user guide (§12) still says a player stops qualifying once he turns 21,
-   which didn't match the code even before that commit: the check is age 21 or
-   younger. Confirm the 1 August rule is the one you want, and the guide gets
-   fixed to match. If it isn't, take the paragraph out of the post and revert
-   the rule.
+1. **Academy age rule: confirmed by Duke on 2026-10-19.** The user guide (§12)
+   now says it: 21 or younger on 1 August, judged once a season. Six database
+   functions still use a player's age today (auction settlement, trades,
+   arrivals, loan recalls, held activation, returning loanees). Migration 176
+   brings them in line, and it should be applied before the post goes out.
 2. **Signed-in pages haven't been opened in a browser.** The Gameweeks and
    Matchup pages were checked through their loaders on a temporary public
    route. Caretaker settings, the inactivity warning, the redraft UI, Transfer
