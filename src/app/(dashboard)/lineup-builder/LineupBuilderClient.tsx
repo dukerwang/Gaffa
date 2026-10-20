@@ -4,7 +4,6 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import type { Formation, GranularPosition, Player } from '@/types';
 import { FORMATION_SLOTS } from '@/types';
 import { serializeLineup, VALID_FORMATIONS, type SerializedLineup } from '@/lib/lineups/lineupSerializer';
-import { exportLineupToBlob, type LineupExportSlot } from '@/lib/lineups/lineupImageExport';
 import ReadOnlyFormationBoard, { type FormationBoardSlot } from '@/components/formation/ReadOnlyFormationBoard';
 import Portrait from '@/components/players/Portrait';
 import { Icon } from '@/components/ui/Icon';
@@ -63,7 +62,7 @@ function xiFromIds(formation: Formation, ids: (string | null)[], playerById: Map
 function xiFromSource(source: SideSource | null, playerById: Map<string, Player>): XI {
   if (!source) return xiFromIds('4-3-3', [], playerById);
   const players = source.playerIds.map((id) => playerById.get(id)).filter((p): p is Player => !!p);
-  const fit = fitFormation(players);
+  const fit = fitFormation(players, source.layout);
   return xiFromIds(fit.formation, fit.playerIds, playerById);
 }
 
@@ -356,88 +355,102 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
     [fixture, fixtureOptions, lineups, playerById],
   );
 
-  const handleCopyLink = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setFeedbackNotice('Link copied to clipboard');
-    } catch {
-      setFeedbackNotice('Failed to copy link');
-    }
-  }, []);
+  // What gets shared is a link to the public /share/xi page, whose link preview is
+  // the lineup card itself (rendered by /share/xi/image). The builder's own URL is
+  // kept current by the effect above, so its query is the XI.
+  const shareQuery = () => window.location.search.replace(/^\?/, '');
+  const shareUrl = () => `${window.location.origin}/share/xi?${shareQuery()}`;
+  const imageUrl = (scale: 1 | 2) => `/share/xi/image?${shareQuery()}${scale === 1 ? '&scale=1' : ''}`;
 
-  // The image, prepared when the pointer or focus reaches Share, so the click can hand
-  // it to the share sheet at once. Safari refuses share() and clipboard writes that
-  // arrive long after the click, and drawing eleven portraits takes a moment.
-  const shareKey = [title, formation, fixture ? fixtureKey(fixture) : '', side, idsOf(active).join()].join('|');
-  const prepared = useRef<{ key: string; blob: Promise<Blob | null> } | null>(null);
-  const prepareImage = useCallback((): Promise<Blob | null> => {
-    if (prepared.current?.key === shareKey) return prepared.current.blob;
-    // SAFETY: FORMATION_SLOTS maps every supported Formation to an array of 11 GranularPositions.
-    const slotsList: LineupExportSlot[] = (FORMATION_SLOTS[formation] as GranularPosition[]).map((pos, slotIndex) => ({
-      slotIndex,
-      pos,
-      player: assignments[slotIndex] ?? null,
-    }));
-    const blob = exportLineupToBlob({
-      title: fixture ? fixtureTitle(fixture) : title || 'Starting XI',
-      formation,
-      slots: slotsList,
-      matchweek: fixture?.gameweek ?? null,
-      club: sideClub ? { name: sideClub.name, slug: sideClub.slug } : null,
+  // Render the preview card ahead of the share, so the CDN has it by the time the
+  // recipient's (or the sender's) messaging app asks for it.
+  const warmed = useRef<string | null>(null);
+  const warmPreview = useCallback(() => {
+    const url = imageUrl(1);
+    if (warmed.current === url) return;
+    warmed.current = url;
+    void fetch(url).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const copyLink = useCallback(async (notice: string) => {
+    try {
+      await navigator.clipboard.writeText(shareUrl());
+      setCopied(true);
+      setFeedbackNotice(notice);
+    } catch {
+      setFeedbackNotice("Couldn't copy the link");
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCopyLink = useCallback(() => {
+    warmPreview();
+    void copyLink('Link copied');
+  }, [copyLink, warmPreview]);
+
+  // The share sheet gets the link alone: no message text, no attachment. The
+  // preview carries the lineup and the title says whose it is.
+  const handleShare = useCallback(async () => {
+    warmPreview();
+    if (navigator.share) {
+      try {
+        await navigator.share({ url: shareUrl() });
+        return;
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+      }
+    }
+    await copyLink('Link copied. Paste it anywhere to share the XI.');
+  }, [copyLink, warmPreview]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save Image: the same card, at 2x. On a phone the share sheet offers Save
+  // Image; elsewhere it downloads. Fetched when the pointer or focus arrives, so
+  // the click can hand it over at once (Safari refuses a share that comes long
+  // after the tap).
+  const prepared = useRef<{ url: string; blob: Promise<Blob> } | null>(null);
+  const prepareImage = useCallback((): Promise<Blob> => {
+    const url = imageUrl(2);
+    if (prepared.current?.url === url) return prepared.current.blob;
+    const blob = fetch(url).then((res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.blob();
     });
-    prepared.current = { key: shareKey, blob };
-    // A failed attempt must not stick: the next try draws again.
+    prepared.current = { url, blob };
     blob.catch(() => {
       if (prepared.current?.blob === blob) prepared.current = null;
     });
     return blob;
-  }, [shareKey, formation, assignments, title, fixture, sideClub?.name, sideClub?.slug]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleShare = useCallback(async () => {
+  const handleSaveImage = useCallback(async () => {
     setIsExporting(true);
-    const name = fixture ? fixtureTitle(fixture) : title || 'Starting XI';
-    let blob: Blob | null;
+    const name = (fixture ? `${sideClub?.name ?? ''} ${fixtureTitle(fixture)}` : title || 'Starting XI').trim();
+    const filename = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'lineup'}.png`;
     try {
-      blob = await prepareImage();
-    } catch (err) {
-      console.error('Lineup image export failed:', err);
-      setFeedbackNotice(`Couldn't create the image (${err instanceof Error ? err.name : 'unknown error'})`);
-      setIsExporting(false);
-      return;
-    }
-    if (!blob) {
-      setFeedbackNotice("Couldn't create the image");
-      setIsExporting(false);
-      return;
-    }
-
-    const file = new File([blob], 'lineup.png', { type: 'image/png' });
-    try {
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: name, text: `Check out my ${name} on Gaffa:` });
-        return;
+      const blob = await prepareImage();
+      const file = new File([blob], filename, { type: 'image/png' });
+      const phone = window.matchMedia('(pointer: coarse)').matches;
+      if (phone && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+          return;
+        } catch (err) {
+          if (err instanceof Error && err.name === 'AbortError') return;
+        }
       }
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = href;
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(href), 1000);
+      setFeedbackNotice('Image saved');
     } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') return;
-      console.warn('Share sheet unavailable, falling back:', err);
+      console.error('Lineup image failed:', err);
+      setFeedbackNotice("Couldn't create the image. Try again.");
     } finally {
       setIsExporting(false);
     }
-
-    try {
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      setFeedbackNotice('Lineup image copied to clipboard');
-    } catch {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${name.toLowerCase().replace(/\s+/g, '_')}.png`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setFeedbackNotice('Lineup image downloaded');
-    }
-  }, [prepareImage, title, fixture]);
+  }, [prepareImage, fixture, sideClub?.name, title]);
 
   const slotPositions = FORMATION_SLOTS[formation] as GranularPosition[];
   const caption = feedbackNotice ?? `${filledCount} of 11 picked`;
@@ -518,20 +531,31 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
               </button>
               <button
                 type="button"
-                className={`${styles.iconBtn} ${styles.iconBtnPrimary}`}
-                onClick={handleShare}
+                className={styles.iconBtn}
+                onClick={handleSaveImage}
                 onPointerEnter={() => void prepareImage().catch(() => {})}
                 onFocus={() => void prepareImage().catch(() => {})}
                 disabled={isExporting}
                 aria-busy={isExporting}
-                aria-label="Share XI"
-                data-tip={isExporting ? 'Generating' : 'Share XI'}
+                aria-label="Save Image"
+                data-tip={isExporting ? 'Creating Image' : 'Save Image'}
               >
                 {isExporting ? (
                   <span className={styles.spinner} aria-hidden="true" />
                 ) : (
-                  <Icon name="share-out" size={18} strokeWidth={1.75} />
+                  <Icon name="download" size={18} strokeWidth={1.75} />
                 )}
+              </button>
+              <button
+                type="button"
+                className={`${styles.iconBtn} ${styles.iconBtnPrimary}`}
+                onClick={handleShare}
+                onPointerEnter={warmPreview}
+                onFocus={warmPreview}
+                aria-label="Share XI"
+                data-tip="Share XI"
+              >
+                <Icon name="share-out" size={18} strokeWidth={1.75} />
               </button>
             </div>
           </div>
