@@ -1,0 +1,54 @@
+/* Gaffa UI Primitive: Popover
+   Lifted off the page, so a shadow and no border (UI_RULES 7).
+
+   z-index sits above ResponsiveModal's scrim (a literal 1000, older than the
+   --z-* scale) because a Select can open inside a modal. When the modal moves
+   onto --z-modal, this can move onto --z-dropdown. */
+
+.popover {
+  position: fixed;
+  z-index: 1100;
+  background: var(--color-bg-card);
+  border-radius: var(--r-shell);
+  box-shadow: 0 0 0 1px rgba(27, 25, 21, 0.06), var(--shadow-lg);
+  padding: var(--s1);
+  max-width: min(360px, calc(100vw - 16px));
+  max-height: min(420px, calc(100dvh - 32px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none;
+
+  transform-origin: var(--popover-origin);
+  transition: opacity 150ms var(--ease-out-strong),
+              transform 180ms var(--ease-out-strong);
+}
+
+.popover[data-state='closed'] {
+  opacity: 0;
+  transform: scale(0.96) translateY(-4px);
+  pointer-events: none;
+  transition-duration: 120ms;
+}
+
+.popover[data-state='closed'][data-side='top'] {
+  transform: scale(0.96) translateY(4px);
+}
+
+.popover[data-state='open'] {
+  opacity: 1;
+  transform: none;
+}
+
+:global([data-theme='dark']) .popover {
+  background: var(--color-bg-elevated);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), var(--shadow-lg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover,
+  .popover[data-state='closed'],
+  .popover[data-state='closed'][data-side='top'] {
+    transform: none;
+    transition: opacity 120ms ease;
+  }
+}

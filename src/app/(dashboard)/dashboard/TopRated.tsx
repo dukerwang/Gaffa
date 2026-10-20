@@ -28,23 +28,30 @@ export default function TopRated({
 
   return (
     <section className={styles.section} aria-labelledby="top-rated">
-      <div className={`${styles.lock} ${styles.topLock}`}>
+      <div className={styles.lock}>
         <h2 id="top-rated" className={styles.lockT}>Top Rated</h2>
-        <SegmentedControl<Scope>
-          className={styles.seg}
-          ariaLabel="Top Rated scope"
-          value={scope}
-          onChange={setScope}
-          options={[
-            { value: 'matchweek', label: matchweek ? `Matchweek ${matchweek.gameweek}` : 'Matchweek', disabled: !matchweek },
-            { value: 'season', label: 'Season', disabled: season.length === 0 },
-          ]}
-        />
-        {ratingsHref && (
-          <NavigationLink href={ratingsHref} className={styles.lockLink}>
-            All Ratings &rarr;
-          </NavigationLink>
-        )}
+        {/* The switch sits at the head's far end, apart from the title, so the
+            title reads on its own and the switch reads as its instrument. */}
+        <div className={styles.topEnd}>
+          <SegmentedControl<Scope>
+            variant="ink"
+            ariaLabel="Top Rated scope"
+            value={scope}
+            onChange={setScope}
+            options={[
+              { value: 'matchweek', label: matchweek ? `Matchweek ${matchweek.gameweek}` : 'Matchweek', disabled: !matchweek },
+              { value: 'season', label: 'Season', disabled: season.length === 0 },
+            ]}
+          />
+          {ratingsHref && (
+            <>
+              <span className={styles.topRule} aria-hidden="true" />
+              <NavigationLink href={ratingsHref} className={`${styles.lockLink} ${styles.topLinkHead}`}>
+                All Ratings &rarr;
+              </NavigationLink>
+            </>
+          )}
+        </div>
       </div>
 
       <div className={styles.tiles}>
@@ -80,6 +87,14 @@ export default function TopRated({
           </button>
         ))}
       </div>
+
+      {/* On a phone the head holds only the title and the switch; the link
+          moves under the rail. */}
+      {ratingsHref && (
+        <NavigationLink href={ratingsHref} className={`${styles.lockLink} ${styles.topLinkFoot}`}>
+          All Ratings &rarr;
+        </NavigationLink>
+      )}
     </section>
   );
 }

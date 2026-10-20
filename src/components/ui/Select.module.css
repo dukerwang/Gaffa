@@ -1,0 +1,182 @@
+/* Gaffa UI Primitive: Select (trigger + listbox options).
+   Menu reuses .option for its items so both lists read as one family. */
+
+.field {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fullWidth {
+  display: flex;
+  width: 100%;
+}
+
+.fieldLabel {
+  font-family: var(--font-label);
+  font-size: var(--t-13);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--color-text-secondary);
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  width: 100%;
+  min-width: 0;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--t-15);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+  /* A field, not a button: no press shrink. */
+  --press-scale: 1;
+}
+
+.size_sm {
+  min-height: 32px;
+  font-size: var(--t-13);
+}
+
+.size_md {
+  min-height: 40px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .trigger:hover:not(:disabled) {
+    border-color: var(--color-border-strong);
+  }
+}
+
+.trigger[aria-expanded='true'] {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-dim);
+}
+
+.trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.valueText,
+.placeholder {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placeholder {
+  color: var(--color-text-muted);
+}
+
+.chevron {
+  display: inline-flex;
+  color: var(--color-text-muted);
+  transition: transform var(--dur-base) var(--ease-out-strong);
+}
+
+.trigger[aria-expanded='true'] .chevron {
+  transform: rotate(180deg);
+  color: var(--color-text-primary);
+}
+
+.leading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.leading img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+/* --- Options --- */
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 6px 8px 6px 10px;
+  border-radius: calc(var(--r-shell) - 4px);
+  color: var(--color-text-primary);
+  font-size: var(--t-15);
+  cursor: pointer;
+  user-select: none;
+  /* Highlight follows the pointer instantly: a list is scanned, not watched. */
+}
+
+.option[data-active] {
+  background: var(--color-bg-card-hover);
+}
+
+:global([data-theme='dark']) .option[data-active] {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.option[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.option[aria-selected='true'] .optionLabel {
+  font-weight: 600;
+}
+
+@media (pointer: coarse) {
+  .option {
+    min-height: 44px;
+  }
+}
+
+.optionText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.optionLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+
+.optionDesc {
+  font-size: var(--t-12);
+  color: var(--color-text-muted);
+  line-height: 1.3;
+}
+
+.check {
+  display: inline-flex;
+  width: 16px;
+  flex-shrink: 0;
+  color: var(--color-accent-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}

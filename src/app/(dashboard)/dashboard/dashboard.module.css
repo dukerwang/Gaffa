@@ -390,7 +390,10 @@
 .lockLink { margin-left: auto; font-size: var(--t-13); font-weight: 600; white-space: nowrap; color: var(--color-accent-ink); text-decoration: none; }
 @media (hover: hover) and (pointer: fine) { .lockLink:hover { text-decoration: underline; } }
 
-.seg { margin-left: 6px; }
+.topEnd { margin-left: auto; display: flex; align-items: center; gap: var(--s4); flex: none; }
+.topRule { width: 1px; height: 18px; background: var(--color-border); }
+.topEnd .lockLink { margin-left: 0; }
+.topLinkFoot { display: none; }
 
 .mwTile {
   flex: none;
@@ -633,8 +636,8 @@
   .lockT { font-size: 25px; letter-spacing: -0.028em; }
   .lockTSm { font-size: 23px; }
   .lockSub { margin-top: 5px; }
-  .topLock { flex-wrap: wrap; row-gap: var(--s3); }
-  .seg { margin-left: 0; order: 3; flex-basis: 100%; }
+  .topRule, .topLinkHead { display: none; }
+  .topLinkFoot { display: block; width: fit-content; margin: var(--s3) 0 0 auto; }
   .mwTile { width: 46px; height: 46px; border-radius: 11px; }
   .mwTileK { font-size: 9px; }
   .mwTileV { font-size: 23px; }

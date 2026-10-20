@@ -41,6 +41,13 @@
     transition: none;
     transform: none;
   }
+  .loading .contentWrapper {
+    filter: none;
+    transform: none;
+  }
+  .spinnerSlot {
+    animation: none;
+  }
 }
 
 .button:focus-visible {
@@ -148,12 +155,18 @@
   display: inline-flex;
   align-items: center;
   gap: var(--s2);
-  transition: opacity var(--dur-fast) var(--ease-standard);
+  transition: opacity var(--dur-fast) var(--ease-out-strong),
+              filter var(--dur-fast) var(--ease-out-strong),
+              transform var(--dur-fast) var(--ease-out-strong);
 }
 
+/* Label and spinner cross through a slight blur, so the swap reads as one
+   button changing state rather than two things trading places. The label
+   keeps its box, so the button never changes width. */
 .loading .contentWrapper {
-  visibility: hidden;
   opacity: 0;
+  filter: blur(2px);
+  transform: scale(0.96);
 }
 
 .spinnerSlot {
@@ -162,6 +175,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: spinnerIn var(--dur-fast) var(--ease-out-strong);
+}
+
+@keyframes spinnerIn {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+    transform: scale(0.8);
+  }
 }
 
 .spinner {
@@ -170,7 +192,7 @@
   border: 2px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
-  animation: spin 0.65s linear infinite;
+  animation: spin 0.6s linear infinite;
   display: inline-block;
   flex-shrink: 0;
 }
