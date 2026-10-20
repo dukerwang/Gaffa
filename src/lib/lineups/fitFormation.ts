@@ -1,6 +1,7 @@
 import type { Formation, GranularPosition } from '@/types';
 import { FORMATION_SLOTS } from '@/types';
 import { VALID_FORMATIONS } from './lineupSerializer';
+import { slotSides } from './pitchZones';
 
 /**
  * Lays a real starting XI out on one of Gaffa's formations.
@@ -18,6 +19,10 @@ import { VALID_FORMATIONS } from './lineupSerializer';
  * A listing never says which of two centre-backs is on the left, so where a
  * formation has two or more slots of one position, the players in them are
  * ordered left to right by their lean (see `lean`).
+ *
+ * When the match feed says where they stood (a MatchLayout), that wins: each
+ * player's side comes from his place in his line, slots are scored against it,
+ * and the Gaffa shape that matches the real formation is preferred.
  */
 
 export interface FitPlayer {
@@ -25,6 +30,16 @@ export interface FitPlayer {
   primary_position: GranularPosition | null;
   secondary_positions?: GranularPosition[] | null;
   preferred_foot?: 'left' | 'right' | 'both' | null;
+}
+
+/**
+ * Where the starters actually stood, from the Premier League's match feed
+ * (pl_match_lineups): the formation label and the lines, goalkeeper first, each
+ * left to right as player ids.
+ */
+export interface MatchLayout {
+  formation: string | null;
+  lines: string[][];
 }
 
 export interface FittedLineup {
@@ -102,7 +117,12 @@ function lean(p: FitPlayer, slot: GranularPosition): number {
 }
 
 /** Orders the players within each run of same-position slots left to right. Slots are listed left to right. */
-function orderSides(slots: GranularPosition[], ids: (string | null)[], byId: Map<string, FitPlayer>): (string | null)[] {
+function orderSides(
+  slots: GranularPosition[],
+  ids: (string | null)[],
+  byId: Map<string, FitPlayer>,
+  side: Map<string, number>,
+): (string | null)[] {
   const out = [...ids];
   const groups = new Map<GranularPosition, number[]>();
   slots.forEach((slot, i) => groups.set(slot, [...(groups.get(slot) ?? []), i]));
@@ -110,9 +130,12 @@ function orderSides(slots: GranularPosition[], ids: (string | null)[], byId: Map
     if (idx.length < 2) continue;
     // Only filled slots trade places; an empty one stays where it is.
     const filled = idx.filter((i) => out[i] && byId.has(out[i]!));
-    const sorted = filled
-      .map((i) => out[i]!)
-      .sort((a, b) => lean(byId.get(a)!, slot) - lean(byId.get(b)!, slot));
+    const group = filled.map((i) => out[i]!);
+    // Where they really stood, when the feed says for all of them; otherwise their lean.
+    const known = group.every((id) => side.has(id));
+    const sorted = group.sort((a, b) =>
+      known ? side.get(a)! - side.get(b)! : lean(byId.get(a)!, slot) - lean(byId.get(b)!, slot),
+    );
     filled.forEach((i, k) => (out[i] = sorted[k]));
   }
   return out;
@@ -125,12 +148,37 @@ function popcount(n: number): number {
 }
 
 /** Best assignment of up to eleven players to one formation's slots, by bitmask DP. */
-function assign(slots: GranularPosition[], players: FitPlayer[]): { score: number; ids: (string | null)[] } {
+/** Points lost per unit of distance between a player's real side and his slot's (sides run -1 to 1). */
+const SIDE_COST = 3;
+/** Points a Gaffa shape gains for being the one the side really played. */
+const SHAPE_BONUS = 12;
+
+/** The feed's formation labels, as the Gaffa shape that draws them. */
+const SHAPE_FOR_LABEL: Record<string, Formation> = {
+  '4-3-3': '4-3-3', '4-1-4-1': '4-3-3', '4-2-3-1': '4-2-1-3', '4-4-1-1': '4-2-1-3', '4-2-2-2': '4-2-2-2',
+  '3-4-1-2': '3-4-1-2', '3-5-2': '3-5-2', '3-1-4-2': '3-5-2', '3-4-3': '3-4-3', '3-4-2-1': '3-4-2-1',
+  '5-3-2': '5-3-2', '5-4-1': '5-3-2', '4-3-1-2': '4-3-1-2', '4-1-2-1-2': '4-3-1-2', '4-3-2-1': '4-3-2-1',
+  '4-4-2': '4-2-4', '4-2-4': '4-2-4', '5-2-3': '5-2-3', '5-2-1-2': '5-3-2', '3-5-1-1': '3-4-2-1',
+};
+
+function assign(
+  formation: Formation,
+  players: FitPlayer[],
+  side: Map<string, number>,
+): { score: number; ids: (string | null)[] } {
+  const slots = FORMATION_SLOTS[formation] as GranularPosition[];
+  const sides = slotSides(formation);
   const n = slots.length;
   // Pad to one player per slot; a pad fits nowhere and scores nothing, which leaves that slot empty.
   const pool: (FitPlayer | null)[] = [...players.slice(0, n)];
   while (pool.length < n) pool.push(null);
-  const w = slots.map((slot) => pool.map((p) => (p ? playerFit(slot, p) : 0)));
+  const w = slots.map((slot, i) =>
+    pool.map((p) => {
+      if (!p) return 0;
+      const x = side.get(p.id);
+      return playerFit(slot, p) - (x === undefined ? 0 : SIDE_COST * Math.abs(x - sides[i]));
+    }),
+  );
 
   const size = 1 << n;
   const dp = new Float64Array(size).fill(-Infinity);
@@ -165,14 +213,22 @@ function assign(slots: GranularPosition[], players: FitPlayer[]): { score: numbe
  * The formation that best fits these starters, and who goes where. Ties go to
  * the earlier formation in VALID_FORMATIONS, so the result is deterministic.
  */
-export function fitFormation(players: FitPlayer[]): FittedLineup {
+export function fitFormation(players: FitPlayer[], layout?: MatchLayout | null): FittedLineup {
+  // Each player's real side, -1 (left) to 1 (right), from his place in his line.
+  const side = new Map<string, number>();
+  for (const line of layout?.lines ?? []) {
+    line.forEach((id, i) => side.set(id, line.length === 1 ? 0 : -1 + (2 * i) / (line.length - 1)));
+  }
+  const shape = layout?.formation ? SHAPE_FOR_LABEL[layout.formation.trim()] : undefined;
+
   let best: { formation: Formation; score: number; ids: (string | null)[] } | null = null;
   for (const formation of VALID_FORMATIONS) {
-    const { score, ids } = assign(FORMATION_SLOTS[formation] as GranularPosition[], players);
-    if (!best || score > best.score) best = { formation, score, ids };
+    const fit = assign(formation, players, side);
+    const score = fit.score + (formation === shape ? SHAPE_BONUS : 0);
+    if (!best || score > best.score) best = { formation, score, ids: fit.ids };
   }
   // SAFETY: VALID_FORMATIONS is a non-empty constant, so the loop always sets best.
   const slots = FORMATION_SLOTS[best!.formation] as GranularPosition[];
   const byId = new Map(players.map((p) => [p.id, p]));
-  return { formation: best!.formation, playerIds: orderSides(slots, best!.ids, byId) };
+  return { formation: best!.formation, playerIds: orderSides(slots, best!.ids, byId, side) };
 }

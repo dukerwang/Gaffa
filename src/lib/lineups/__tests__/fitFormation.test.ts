@@ -87,6 +87,36 @@ describe('fitFormation', () => {
     });
   });
 
+  it('follows where the match feed says they stood', () => {
+    // Chelsea at Brentford: three right-footed-or-unknown centre-backs the listings
+    // cannot side; the feed has Colwill left, Lacroix centre, Fofana right.
+    const xi: FitPlayer[] = [
+      { id: 'martinez', primary_position: 'GK' },
+      { id: 'fofana', primary_position: 'CB', preferred_foot: 'right' },
+      { id: 'lacroix', primary_position: 'CB', preferred_foot: 'right' },
+      { id: 'colwill', primary_position: 'CB', preferred_foot: 'left' },
+      { id: 'chavarria', primary_position: 'LWB' },
+      { id: 'barco', primary_position: 'CM' },
+      { id: 'henderson', primary_position: 'DM', secondary_positions: ['CM'] },
+      { id: 'neto', primary_position: 'RW', secondary_positions: ['LW', 'RWB', 'LWB'] },
+      { id: 'rogers', primary_position: 'AM', secondary_positions: ['LW', 'CM'] },
+      { id: 'palmer', primary_position: 'AM', secondary_positions: ['RW', 'CM'] },
+      { id: 'welbeck', primary_position: 'ST' },
+    ];
+    const layout = {
+      formation: '3-4-2-1',
+      lines: [['martinez'], ['colwill', 'lacroix', 'fofana'], ['chavarria', 'barco', 'henderson', 'neto'], ['rogers', 'palmer'], ['welbeck']],
+    };
+    const fit = fitFormation(xi, layout);
+    expect(fit.formation).toBe('3-4-2-1');
+    const slots = FORMATION_SLOTS['3-4-2-1'] as GranularPosition[];
+    const at = (pos: GranularPosition) => slots.map((s, i) => (s === pos ? fit.playerIds[i] : null)).filter(Boolean);
+    expect(at('CB')).toEqual(['colwill', 'lacroix', 'fofana']);
+    expect(at('CM')).toEqual(['barco', 'henderson']);
+    expect(at('RWB')).toEqual(['neto']);
+    expect(at('AM')).toEqual(['rogers', 'palmer']);
+  });
+
   it('leaves slots empty when fewer than eleven are known', () => {
     const fit = fitFormation(side('GK', 'CB', 'CB', 'ST'));
     expect(fit.playerIds.filter(Boolean)).toHaveLength(4);

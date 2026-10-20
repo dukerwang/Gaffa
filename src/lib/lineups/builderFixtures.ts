@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { CLUB_BY_SLUG } from '@/lib/clubs/registry';
 import { fetchAllPages } from '@/lib/supabase/pagination';
+import type { MatchLayout } from './fitFormation';
 
 /** A Premier League match the Lineup Builder can build an XI for. */
 export interface BuilderFixture {
@@ -29,6 +30,8 @@ export interface SideSource {
   playerIds: string[];
   /** The match the XI started, for the provenance line. Same as the selected match when kind is `started`. */
   from: { opponentName: string; atHome: boolean; kickoff: string | null };
+  /** Where they stood in that match, from the PL feed (pl_match_lineups), when it has been fetched. */
+  layout?: MatchLayout | null;
 }
 
 /** fixtureKey -> each side's opening XI, or null when there is none to show. */
@@ -160,6 +163,20 @@ export async function loadBuilderFixtures(
     }
   }
 
+  // Where each side's starters stood, for every played match above.
+  const layouts = new Map<string, MatchLayout>();
+  for (const [s, list] of bySeason) {
+    const { data } = await admin
+      .from('pl_match_lineups')
+      .select('fpl_fixture_id, club_slug, formation, lines')
+      .eq('season', s)
+      .in('fpl_fixture_id', list.map((f) => f.id));
+    for (const r of data ?? []) {
+      layouts.set(`${s}:${r.fpl_fixture_id}|${r.club_slug}`, { formation: r.formation, lines: r.lines as string[][] });
+    }
+  }
+  const layoutOf = (f: BuilderFixture, club: string) => layouts.get(`${fixtureKey(f)}|${club}`) ?? null;
+
   // Each club's most recent XI before a given kickoff.
   const playedDesc = [...played].sort((a, b) => Date.parse(b.kickoff ?? '') - Date.parse(a.kickoff ?? ''));
   const lastXI = (club: string, before: BuilderFixture): SideSource | null => {
@@ -173,6 +190,7 @@ export async function loadBuilderFixtures(
           kind: 'last',
           playerIds: ids,
           from: { opponentName: side === 'home' ? f.awayName : f.homeName, atHome: side === 'home', kickoff: f.kickoff },
+          layout: layoutOf(f, club),
         };
       }
     }
@@ -189,6 +207,7 @@ export async function loadBuilderFixtures(
           kind: 'started',
           playerIds: ids,
           from: { opponentName: side === 'home' ? f.awayName : f.homeName, atHome: side === 'home', kickoff: f.kickoff },
+          layout: layoutOf(f, side === 'home' ? f.home : f.away),
         };
       }
       return lastXI(side === 'home' ? f.home : f.away, f);
