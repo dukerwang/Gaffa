@@ -620,6 +620,8 @@
   .doorsMobile .doorIcon { width: 36px; height: 36px; border-radius: 10px; }
   .doorsMobile .doorSub { line-height: 1.45; margin-top: 3px; }
   .doorsMobile .card:hover { transform: none; }
+  /* The third door takes the full row, laid out like the desktop rail's. */
+  .doorsMobile .doorWide { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 13px; }
 
   .heroShelf { padding: 26px 0 28px; }
   .heroH { font-size: 31px; line-height: 1.1; letter-spacing: -0.03em; max-width: none; }

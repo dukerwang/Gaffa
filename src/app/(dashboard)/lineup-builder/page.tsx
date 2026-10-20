@@ -3,6 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { fetchAllPages } from '@/lib/supabase/pagination';
 import type { Player } from '@/types';
 import { deserializeLineup } from '@/lib/lineups/lineupSerializer';
+import { loadBuilderFixtures } from '@/lib/lineups/builderFixtures';
+import { getCurrentFplSeason } from '@/lib/season/currentSeason';
 import LineupBuilderClient from './LineupBuilderClient';
 
 export const metadata: Metadata = {
@@ -22,20 +24,25 @@ export default async function LineupBuilderPage({ searchParams }: Props) {
 
   const admin = createAdminClient();
 
-  const allPlayers: Player[] = await fetchAllPages<Player>((from, to) =>
-    admin
-      .from('players')
-      .select('*')
-      .eq('is_active', true)
-      .order('name', { ascending: true })
-      .order('id', { ascending: true })
-      .range(from, to),
-  );
+  const [allPlayers, { fixtures, linked }] = await Promise.all([
+    fetchAllPages<Player>((from, to) =>
+      admin
+        .from('players')
+        .select('*')
+        .eq('is_active', true)
+        .order('name', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, to),
+    ),
+    getCurrentFplSeason().then((season) => loadBuilderFixtures(admin, season, initialState.fixture ?? null)),
+  ]);
 
   return (
     <LineupBuilderClient
       allPlayers={allPlayers}
       initialState={initialState}
+      fixtures={fixtures}
+      initialFixture={linked}
     />
   );
 }

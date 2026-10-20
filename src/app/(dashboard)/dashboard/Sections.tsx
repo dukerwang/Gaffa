@@ -81,6 +81,20 @@ export function Doors({ className }: { className?: string }) {
           <span className={styles.doorSub}>Enter an invite code from your commissioner.</span>
         </span>
       </NavigationLink>
+      <NavigationLink href="/lineup-builder" className={`${styles.card} ${styles.door} ${styles.doorWide} ${className ?? ''}`}>
+        <span className={styles.doorIcon} aria-hidden="true">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="4" y="2.5" width="16" height="19" rx="1.5" />
+            <path d="M4 12h16" />
+            <circle cx="12" cy="12" r="2.6" />
+            <path d="M8.5 2.5v3.2h7V2.5M8.5 21.5v-3.2h7v3.2" />
+          </svg>
+        </span>
+        <span>
+          <span className={styles.doorTitle}>Lineup Builder</span>
+          <span className={styles.doorSub}>Pick any Premier League XI and share it.</span>
+        </span>
+      </NavigationLink>
     </>
   );
 }

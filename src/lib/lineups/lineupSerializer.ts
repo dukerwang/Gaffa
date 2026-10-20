@@ -4,6 +4,8 @@ export interface SerializedLineup {
   formation: Formation;
   title: string;
   clubFilter?: string | null;
+  /** The Premier League match the XI is for. FPL fixture ids restart every season, so the season travels with it. */
+  fixture?: { season: string; id: number } | null;
   /** Array of 11 player IDs, where empty string or null means unfilled */
   playerIds: (string | null)[];
 }
@@ -40,6 +42,10 @@ export function serializeLineup(lineup: SerializedLineup): string {
   if (lineup.clubFilter) {
     params.set('c', lineup.clubFilter);
   }
+  if (lineup.fixture) {
+    params.set('m', String(lineup.fixture.id));
+    params.set('s', lineup.fixture.season);
+  }
 
   // Comma-separated list of player IDs (or empty string for unfilled slots)
   const ids = lineup.playerIds.map((id) => id ?? '').join(',');
@@ -62,6 +68,12 @@ export function deserializeLineup(searchParams: URLSearchParams | Record<string,
   const formation: Formation = isFormation(rawFormation) ? rawFormation : DEFAULT_FORMATION;
   const title = get('t') ?? '';
   const clubFilter = get('c') ?? null;
+  const matchId = Number(get('m'));
+  const matchSeason = get('s');
+  const fixture =
+    Number.isInteger(matchId) && matchId > 0 && matchSeason && /^\d{4}-\d{2}$/.test(matchSeason)
+      ? { season: matchSeason, id: matchId }
+      : null;
 
   const rawPlayers = get('p');
   const playerIds: (string | null)[] = Array(11).fill(null);
@@ -79,6 +91,7 @@ export function deserializeLineup(searchParams: URLSearchParams | Record<string,
     formation,
     title,
     clubFilter,
+    fixture,
     playerIds,
   };
 }

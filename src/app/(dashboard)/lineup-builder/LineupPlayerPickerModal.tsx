@@ -6,7 +6,7 @@ import PositionBadge from '@/components/players/PositionBadge';
 import Portrait from '@/components/players/Portrait';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { resolveClub } from '@/lib/clubs/registry';
-import clubsData from '@/lib/clubs/clubs.json';
+import { fold } from '@/lib/text/fold';
 import styles from './lineup-builder.module.css';
 
 interface Props {
@@ -18,6 +18,10 @@ interface Props {
   onRemovePlayer: () => void;
   onClose: () => void;
   initialClubFilter?: string | null;
+  /** Clubs the picker offers, as slugs: every club with an active player, or the two in the chosen match. */
+  clubOptions: { slug: string; name: string }[];
+  /** True when the XI is for one match, so only its two clubs' players are offered. */
+  matchOnly: boolean;
 }
 
 const PAGE_LIMIT = 50;
@@ -28,6 +32,13 @@ type PosCategory = (typeof POS_CATEGORIES)[number];
 const DEF_POS: GranularPosition[] = ['CB', 'LB', 'RB', 'LWB', 'RWB'];
 const MID_POS: GranularPosition[] = ['DM', 'CM', 'AM'];
 const ATT_POS: GranularPosition[] = ['LW', 'RW', 'ST'];
+
+/** A player belongs to every group he can play in, so an AM who also plays LW is an attacker too. */
+function inCategory(player: Player, cat: PosCategory): boolean {
+  if (cat === 'ALL') return true;
+  if (getCategory(player.primary_position) === cat) return true;
+  return (player.secondary_positions ?? []).some((pos) => getCategory(pos) === cat);
+}
 
 function getCategory(pos?: GranularPosition | null): PosCategory {
   if (!pos) return 'ALL';
@@ -47,9 +58,13 @@ export default function LineupPlayerPickerModal({
   onRemovePlayer,
   onClose,
   initialClubFilter,
+  clubOptions,
+  matchOnly,
 }: Props) {
   const [search, setSearch] = useState('');
-  const [selectedClub, setSelectedClub] = useState<string>(initialClubFilter || 'all');
+  const [selectedClub, setSelectedClub] = useState<string>(
+    initialClubFilter && clubOptions.some((c) => c.slug === initialClubFilter) ? initialClubFilter : 'all',
+  );
   const [posCategory, setPosCategory] = useState<PosCategory>(getCategory(slotPos));
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -66,35 +81,36 @@ export default function LineupPlayerPickerModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  // Filter players
+  // Folded once per pool, not per keystroke: "joao" has to find "João".
+  const searchIndex = useMemo(() => {
+    const index = new Map<string, { key: string; club: string | null }>();
+    for (const p of allPlayers) {
+      index.set(p.id, {
+        key: [p.name, p.web_name, p.full_name, getPlayerDisplayName(p, 'full')].map(fold).join(' '),
+        club: resolveClub(p.pl_team)?.slug ?? null,
+      });
+    }
+    return index;
+  }, [allPlayers]);
+
+  const clubSlugs = useMemo(() => new Set(clubOptions.map((c) => c.slug)), [clubOptions]);
+
   const filteredPlayers = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = fold(search);
     const matches = allPlayers.filter((p) => {
-      // Club filter
-      if (selectedClub !== 'all') {
-        const pClub = p.pl_team?.toLowerCase();
-        if (pClub !== selectedClub.toLowerCase()) return false;
-      }
-
-      // Position category filter
-      if (posCategory !== 'ALL') {
-        const cat = getCategory(p.primary_position);
-        if (cat !== posCategory) return false;
-      }
-
-      // Search query
-      if (q) {
-        const nameMatch = p.name.toLowerCase().includes(q) || (p.web_name && p.web_name.toLowerCase().includes(q));
-        if (!nameMatch) return false;
-      }
-
+      const entry = searchIndex.get(p.id);
+      const club = entry?.club ?? null;
+      if (matchOnly && (!club || !clubSlugs.has(club))) return false;
+      if (selectedClub !== 'all' && club !== selectedClub) return false;
+      if (!inCategory(p, posCategory)) return false;
+      if (q && !entry?.key.includes(q)) return false;
       return true;
     });
-    // Players who naturally play the slot come first; the rest keep A to Z order.
-    return [...matches].sort(
-      (a, b) => Number(b.primary_position === slotPos) - Number(a.primary_position === slotPos),
-    );
-  }, [allPlayers, search, selectedClub, posCategory, slotPos]);
+    // Natural fits for the slot first, then players who list it as a secondary; the rest keep A to Z order.
+    const fit = (p: Player) =>
+      p.primary_position === slotPos ? 2 : (p.secondary_positions ?? []).includes(slotPos) ? 1 : 0;
+    return [...matches].sort((a, b) => fit(b) - fit(a));
+  }, [allPlayers, searchIndex, clubSlugs, matchOnly, search, selectedClub, posCategory, slotPos]);
 
   const visible = filteredPlayers.slice(0, PAGE_LIMIT);
 
@@ -140,8 +156,8 @@ export default function LineupPlayerPickerModal({
               value={selectedClub}
               onChange={(e) => setSelectedClub(e.target.value)}
             >
-              <option value="all">All Clubs</option>
-              {clubsData.map((c) => (
+              <option value="all">{matchOnly ? 'Both Clubs' : 'All Clubs'}</option>
+              {clubOptions.map((c) => (
                 <option key={c.slug} value={c.slug}>
                   {c.name}
                 </option>
@@ -172,6 +188,7 @@ export default function LineupPlayerPickerModal({
                 const isAssigned = assignedPlayerIds.has(player.id);
                 const isCurrent = currentPlayer?.id === player.id;
                 const clubName = resolveClub(player.pl_team)?.name ?? player.pl_team ?? '';
+                const also = (player.secondary_positions ?? []).filter((pos) => pos !== player.primary_position);
 
                 return (
                   <button
@@ -192,7 +209,10 @@ export default function LineupPlayerPickerModal({
                       />
                       <span className={styles.playerText}>
                         <span className={styles.playerName}>{getPlayerDisplayName(player, 'full')}</span>
-                        <span className={styles.playerClub}>{clubName}</span>
+                        <span className={styles.playerClub}>
+                          {clubName}
+                          {also.length > 0 && <> &middot; Also {also.join(', ')}</>}
+                        </span>
                       </span>
                     </span>
                     <span className={styles.playerTags}>

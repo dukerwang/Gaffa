@@ -46,4 +46,21 @@ describe('lineupSerializer', () => {
     const parsed = deserializeLineup(new URLSearchParams('f=invalid-formation'));
     expect(parsed.formation).toBe('4-3-3');
   });
+
+  it('round-trips the match with its season', () => {
+    const qs = serializeLineup({
+      formation: '4-2-1-3',
+      title: 'Chelsea vs. Tottenham',
+      clubFilter: 'chelsea',
+      fixture: { season: '2026-27', id: 74 },
+      playerIds: Array(11).fill(null),
+    });
+    expect(deserializeLineup(new URLSearchParams(qs)).fixture).toEqual({ season: '2026-27', id: 74 });
+  });
+
+  it('drops a match without a valid season, since fixture ids restart every season', () => {
+    expect(deserializeLineup(new URLSearchParams('m=74')).fixture).toBeNull();
+    expect(deserializeLineup(new URLSearchParams('m=74&s=2026')).fixture).toBeNull();
+    expect(deserializeLineup(new URLSearchParams('m=abc&s=2026-27')).fixture).toBeNull();
+  });
 });
