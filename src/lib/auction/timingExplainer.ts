@@ -28,7 +28,7 @@ export function explainAuctionTiming(marketValue: number, state: AuctionTimingSt
       return `He's ${tierValuePhrase(marketValue)}, with a ${hours}-hour minimum window before closing.`;
     }
     case 'live':
-      return "Each bid extends the clock to keep active bidding open. Deadlines falling overnight, and bids placed overnight, roll over to midday instead.";
+      return "Each bid extends the clock to keep active bidding open. Deadlines falling before midday, and bids placed before midday, roll over to midday instead.";
     case 'settling':
       return "This is settling: the clock hit zero, but the result hasn't posted yet.";
   }

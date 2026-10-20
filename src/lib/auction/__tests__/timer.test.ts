@@ -140,6 +140,41 @@ describe('applyQuietHours', () => {
     });
 });
 
+describe('applyQuietHours: the morning up to noon', () => {
+    const ny: QuietHours = { start: '00:00', end: '08:00', timeZone: 'America/New_York' };
+
+    it('pushes a close just past 08:00 to noon (Neto: Tue 08:33 EDT)', () => {
+        expect(applyQuietHours(at('2026-10-20T12:33:42.000Z'), ny, { marketValue: 60, bidCount: 2 }))
+            .toBe(at('2026-10-20T16:00:00.000Z'));
+    });
+
+    it('pushes an 11:59 close to noon and leaves a 12:00 close alone', () => {
+        expect(applyQuietHours(at('2026-10-20T15:59:00.000Z'), ny, { marketValue: 60, bidCount: 2 }))
+            .toBe(at('2026-10-20T16:00:00.000Z'));
+        const noon = at('2026-10-20T16:00:00.000Z');
+        expect(applyQuietHours(noon, ny, { marketValue: 60, bidCount: 2 })).toBe(noon);
+    });
+
+    it('moves a €60m lot to noon on a Saturday, never 06:45', () => {
+        // Sat 2026-10-17 03:00 EDT, one bid, but €60m.
+        expect(applyQuietHours(at('2026-10-17T07:00:00.000Z'), ny, { marketValue: 60, bidCount: 1 }))
+            .toBe(at('2026-10-17T16:00:00.000Z'));
+    });
+
+    it('lets an uncontested weekend streamer close between 06:45 and noon', () => {
+        const sat0900 = at('2026-10-17T13:00:00.000Z'); // Sat 09:00 EDT
+        expect(applyQuietHours(sat0900, ny, { marketValue: 10, bidCount: 1 })).toBe(sat0900);
+        // ...but not before 06:45: Sat 03:00 EDT goes to 06:45 EDT (10:45 UTC).
+        expect(applyQuietHours(at('2026-10-17T07:00:00.000Z'), ny, { marketValue: 10, bidCount: 1 }))
+            .toBe(at('2026-10-17T10:45:00.000Z'));
+    });
+
+    it('sends a weekday streamer to noon, not 06:45', () => {
+        expect(applyQuietHours(at('2026-10-20T07:00:00.000Z'), ny, { marketValue: 10, bidCount: 1 }))
+            .toBe(at('2026-10-20T16:00:00.000Z'));
+    });
+});
+
 describe('calculateExpiresAt', () => {
     it('honours tier floors on fresh auctions', () => {
         // Tier 1 (< €25m): 12h floor
@@ -231,8 +266,8 @@ describe('calculateExpiresAt: bids placed overnight', () => {
             .toBe(at('2026-10-19T16:00:00.000Z'));
     });
 
-    it('leaves a daytime bid on the same clock as before', () => {
-        const first = at('2026-10-18T12:33:42.000Z');
+    it('leaves an afternoon bid and an afternoon close on the same clock as before', () => {
+        const first = at('2026-10-18T18:00:00.000Z'); // Sun 14:00 EDT
         const last = at('2026-10-20T00:47:12.000Z'); // Mon 20:47 EDT
         expect(Date.parse(calculateExpiresAt(first, last, ny, { marketValue: 60, bidCount: 2 })))
             .toBe(first + 48 * H);
