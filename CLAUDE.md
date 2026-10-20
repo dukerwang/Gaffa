@@ -69,7 +69,7 @@ Player and stat data flows from three external sources into Supabase, then throu
 1. **FPL API** → `/api/sync/players` — base player metadata, injury status, live gameweek stats.
 2. **SoFIFA** (scraped) → `/api/sync/sofifa-players` — granular primary/secondary tactical positions.
 3. **Transfermarkt** (scraped, fuzzy name-matched, threshold 0.72) → market values; a new arrival ≥ £50m auto-triggers a system auction.
-4. **Live ingestion**: `/api/sync/stats?mode=fpl_live` fetches live events, runs them through `src/lib/scoring/engine.ts` to produce match ratings and fantasy points, writes to `player_stats`.
+4. **Live ingestion**: `/api/sync/stats?mode=fpl_live` fetches live events, runs them through `src/lib/scoring/engine.ts` to produce match ratings and fantasy points, writes to `player_stats`. Each row's stats JSON also carries `started` (from FPL's `starts`, split per match by `src/lib/fixtures/starters.ts`), which the Lineup Builder reads to show a match's starting XIs. Anything that rewrites `stats` wholesale must keep it; the legacy `/api/admin/backfill-scoring-v2` route does not. `scripts/backfill_match_starters.ts` restores it for the season FPL is still serving.
 5. **Gameweek resolution**: when FPL marks a gameweek finished *and* the post-lockdown stats pass has run, the matchup processor (`src/lib/scoring/matchupProcessor.ts`) resolves head-to-head scores, applies auto-subs and role-aware re-scoring, and advances cup tournaments.
 
 ### FPL's 2026/27 lockdown, and why scores are provisional until it passes

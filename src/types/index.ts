@@ -338,6 +338,13 @@ export interface RawStats {
    * are retained for breakdown UI and historical compatibility.
    */
   fpl_def_contrib?: number;
+  /**
+   * Whether he was in the starting XI for this match, from FPL's `starts`.
+   * Written by the live stats sync; the Lineup Builder reads it to show a
+   * match's starting lineups. Absent on rows synced before 2026-10-20 and
+   * not backfilled. See src/lib/fixtures/starters.ts.
+   */
+  started?: boolean;
 }
 
 export interface DraftPick {

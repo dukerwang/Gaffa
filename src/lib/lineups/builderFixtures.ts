@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { CLUB_BY_SLUG } from '@/lib/clubs/registry';
+import { fetchAllPages } from '@/lib/supabase/pagination';
 
 /** A Premier League match the Lineup Builder can build an XI for. */
 export interface BuilderFixture {
@@ -15,8 +16,25 @@ export interface BuilderFixture {
   finished: boolean;
 }
 
-/** How many matchweeks the picker offers, starting from the one in progress. */
+export type MatchSide = 'home' | 'away';
+
+/** Where a side's opening XI comes from. */
+export interface SideSource {
+  /** `started`: this match's real starting XI. `last`: the club's most recent one, for a match not yet played. */
+  kind: 'started' | 'last';
+  /** The starters, in no particular order; the builder lays them out with fitFormation. */
+  playerIds: string[];
+  /** The match the XI started, for the provenance line. Same as the selected match when kind is `started`. */
+  from: { opponentName: string; atHome: boolean; kickoff: string | null };
+}
+
+/** fixtureKey -> each side's opening XI, or null when there is none to show. */
+export type MatchLineups = Record<string, Record<MatchSide, SideSource | null>>;
+
+/** The picker offers the matchweek in progress, the two after it and the two before it. */
 const WEEKS_AHEAD = 3;
+/** Also how far back a club's last XI can come from; two matchweeks covers a blank week. */
+const WEEKS_BACK = 2;
 
 interface FixtureRow {
   season: string;
@@ -42,18 +60,28 @@ function toBuilderFixture(row: FixtureRow): BuilderFixture {
   };
 }
 
+export const fixtureKey = (f: { season: string; id: number }) => `${f.season}:${f.id}`;
+
 const COLUMNS = 'season, fpl_fixture_id, gameweek, home_club, away_club, kickoff_time, finished';
 
+const kickedOff = (f: BuilderFixture, now: number) => f.kickoff !== null && Date.parse(f.kickoff) <= now;
+
 /**
- * The matchweek in progress and the two after it, plus the match a shared link
+ * The matchweek in progress with two either side of it, plus the match a shared link
  * names when that match has dropped out of the window, so an old link still
  * opens on its own fixture. Empty in the close season.
+ *
+ * Each match comes with both sides' opening XIs: the real starters once it has
+ * kicked off (the stats sync flags them, see src/lib/fixtures/starters.ts),
+ * otherwise each club's most recent starting XI. `clubOf` resolves a player to
+ * his club slug today; a starter who has since left both clubs is dropped.
  */
 export async function loadBuilderFixtures(
   admin: SupabaseClient,
   season: string,
   linked: { season: string; id: number } | null,
-): Promise<{ fixtures: BuilderFixture[]; linked: BuilderFixture | null }> {
+  clubOf: (playerId: string) => string | null,
+): Promise<{ fixtures: BuilderFixture[]; linked: BuilderFixture | null; lineups: MatchLineups }> {
   const { data: next } = await admin
     .from('pl_fixtures')
     .select('gameweek')
@@ -69,7 +97,7 @@ export async function loadBuilderFixtures(
       .from('pl_fixtures')
       .select(COLUMNS)
       .eq('season', season)
-      .gte('gameweek', next.gameweek)
+      .gte('gameweek', next.gameweek - WEEKS_BACK)
       .lt('gameweek', next.gameweek + WEEKS_AHEAD)
       .order('kickoff_time', { ascending: true })
       .order('fpl_fixture_id', { ascending: true });
@@ -90,7 +118,78 @@ export async function loadBuilderFixtures(
     }
   }
 
-  return { fixtures, linked: linkedFixture };
+  const now = Date.now();
+  const listed = linkedFixture && !fixtures.some((f) => fixtureKey(f) === fixtureKey(linkedFixture!))
+    ? [linkedFixture, ...fixtures]
+    : fixtures;
+
+  // Starters for every match that has kicked off, in this season's window or the linked one.
+  const played = [...fixtures, ...(linkedFixture ? [linkedFixture] : [])].filter((f) => kickedOff(f, now));
+  const startersByFixture = new Map<string, Record<MatchSide, string[]>>();
+  const bySeason = new Map<string, BuilderFixture[]>();
+  for (const f of played) bySeason.set(f.season, [...(bySeason.get(f.season) ?? []), f]);
+  for (const [s, list] of bySeason) {
+    const byId = new Map(list.map((f) => [f.id, f]));
+    const rows = await fetchAllPages<{ player_id: string; match_id: number }>((from, to) =>
+      admin
+        .from('player_stats')
+        .select('player_id, match_id')
+        .eq('season', s)
+        .in('match_id', [...byId.keys()])
+        .eq('stats->>started', 'true')
+        .order('id', { ascending: true })
+        .range(from, to),
+    );
+    for (const r of rows) {
+      const f = byId.get(r.match_id);
+      const club = clubOf(r.player_id);
+      if (!f || !club) continue;
+      const side: MatchSide | null = club === f.home ? 'home' : club === f.away ? 'away' : null;
+      if (!side) continue;
+      const key = fixtureKey(f);
+      const entry = startersByFixture.get(key) ?? { home: [], away: [] };
+      entry[side].push(r.player_id);
+      startersByFixture.set(key, entry);
+    }
+  }
+
+  // Each club's most recent XI before a given kickoff.
+  const playedDesc = [...played].sort((a, b) => Date.parse(b.kickoff ?? '') - Date.parse(a.kickoff ?? ''));
+  const lastXI = (club: string, before: BuilderFixture): SideSource | null => {
+    const cutoff = before.kickoff ? Date.parse(before.kickoff) : now;
+    for (const f of playedDesc) {
+      if (fixtureKey(f) === fixtureKey(before) || Date.parse(f.kickoff ?? '') >= cutoff) continue;
+      const side: MatchSide | null = f.home === club ? 'home' : f.away === club ? 'away' : null;
+      const ids = side ? startersByFixture.get(fixtureKey(f))?.[side] : undefined;
+      if (side && ids?.length) {
+        return {
+          kind: 'last',
+          playerIds: ids,
+          from: { opponentName: side === 'home' ? f.awayName : f.homeName, atHome: side === 'home', kickoff: f.kickoff },
+        };
+      }
+    }
+    return null;
+  };
+
+  const lineups: MatchLineups = {};
+  for (const f of listed) {
+    const started = startersByFixture.get(fixtureKey(f));
+    const sideFor = (side: MatchSide): SideSource | null => {
+      const ids = started?.[side];
+      if (ids?.length) {
+        return {
+          kind: 'started',
+          playerIds: ids,
+          from: { opponentName: side === 'home' ? f.awayName : f.homeName, atHome: side === 'home', kickoff: f.kickoff },
+        };
+      }
+      return lastXI(side === 'home' ? f.home : f.away, f);
+    };
+    lineups[fixtureKey(f)] = { home: sideFor('home'), away: sideFor('away') };
+  }
+
+  return { fixtures, linked: linkedFixture, lineups };
 }
 
 /** "Chelsea vs. Tottenham", the title a match gives a lineup by default. */
@@ -103,12 +202,16 @@ export function fixtureTitle(f: BuilderFixture): string {
  * the server render and the browser agree, and because the date a Premier
  * League match is listed under is its UK date.
  */
-export function fixtureDay(f: BuilderFixture): string {
-  if (!f.kickoff) return 'Date TBC';
+export function kickoffDay(kickoff: string | null): string {
+  if (!kickoff) return 'Date TBC';
   return new Intl.DateTimeFormat('en-GB', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
     timeZone: 'Europe/London',
-  }).format(new Date(f.kickoff));
+  }).format(new Date(kickoff));
+}
+
+export function fixtureDay(f: BuilderFixture): string {
+  return kickoffDay(f.kickoff);
 }

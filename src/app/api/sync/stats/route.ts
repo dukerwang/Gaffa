@@ -19,6 +19,7 @@ import { buildPerformanceGroups } from '@/lib/scoring/perfBand';
 import { resolveAllStalledGameweeks, processMatchupsForGameweek } from '@/lib/scoring/matchupProcessor';
 import { getCurrentFplSeason, getLatestReferenceStatsSeason } from '@/lib/season/currentSeason';
 import { snapshotCurrentFplFixtures } from '@/lib/fixtures/upsertFixtures';
+import { startedFixtures } from '@/lib/fixtures/starters';
 import { recomputePositionRanks, type RecomputeResult } from '@/lib/stats/seasonStats';
 import type { GranularPosition, FplLivePlayerStats } from '@/types';
 import { createClient } from '@supabase/supabase-js';
@@ -278,6 +279,12 @@ async function syncFplLiveRatings(
               .not('match_id', 'in', `(${realFixtureIds.join(',')})`);
           }
 
+          // Per-match starts, for the Lineup Builder's starting lineups.
+          const started = startedFixtures(
+            el.stats.starts,
+            el.explain.filter((ex: { fixture: number }) => ex.fixture < SYNTHETIC_MATCH_ID_FLOOR),
+          );
+
           for (const ex of el.explain) {
             const fixtureId = ex.fixture;
             const fixtureMinutes = ex.stats.find((s: any) => s.identifier === 'minutes')?.value ?? 0;
@@ -355,7 +362,7 @@ async function syncFplLiveRatings(
                 match_id: fixtureId,
                 gameweek,
                 season: fplSeason,
-                stats: rawStats,
+                stats: { ...rawStats, started: started.has(fixtureId) },
                 fantasy_points: v2.fantasyPoints,
                 match_rating: v2.rating,
                 // The explanation, banded, snapshotted alongside the score it
@@ -399,7 +406,7 @@ async function syncFplLiveRatings(
               match_id: fixtureId,
               gameweek,
               season: fplSeason,
-              stats: rawStats,
+              stats: { ...rawStats, started: false },
               fantasy_points: v2.fantasyPoints,
               match_rating: v2.rating,
               perf: buildPerformanceGroups(
