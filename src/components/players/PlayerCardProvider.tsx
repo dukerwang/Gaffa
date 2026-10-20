@@ -1,6 +1,8 @@
 'use client';
 
 import {
+  type ComponentProps,
+  type ComponentType,
   createContext,
   useCallback,
   useContext,
@@ -10,7 +12,6 @@ import {
   useState,
 } from 'react';
 import { useParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import type { Player, PlayerOwnership } from '@/types';
 import {
   fetchBack,
@@ -22,8 +23,24 @@ import {
   warmPortraitPhotos,
 } from '@/lib/players/cardCache';
 
-const loadModal = () => import('./PlayerDetailsModal');
-const PlayerDetailsModal = dynamic(loadModal, { ssr: false });
+/**
+ * The card's code, loaded on demand and kept out of every page's bundle.
+ *
+ * Not `next/dynamic`: that renders through React.lazy, which suspends on the
+ * first render even when the chunk is already downloaded, and React holds a
+ * suspended reveal for about 300ms. Every page's first card paid that wait.
+ * Holding the loaded component in state renders it straight away.
+ */
+type ModalComponent = ComponentType<ComponentProps<typeof import('./PlayerDetailsModal').default>>;
+let modalPromise: Promise<ModalComponent> | null = null;
+const loadModal = (): Promise<ModalComponent> => {
+  modalPromise ??= import('./PlayerDetailsModal').then((m) => m.default);
+  // A failed chunk load (a deploy mid-session) shouldn't stick.
+  modalPromise.catch(() => {
+    modalPromise = null;
+  });
+  return modalPromise;
+};
 
 /** Player shape the prefetch helpers take. `press` marks a pointer press. */
 type PrefetchTarget = {
@@ -124,6 +141,7 @@ export function PlayerCardProvider({ children }: { children: React.ReactNode }) 
   /** Which position slot to evaluate the card under, if the caller named one. */
   const [focusPosition, setFocusPosition] = useState<string | null>(null);
   const [isResolving, setIsResolving] = useState(false);
+  const [Modal, setModal] = useState<ModalComponent | null>(null);
 
   // Guards against a slow resolve landing after the user opened someone else.
   const requestSeq = useRef(0);
@@ -260,14 +278,41 @@ export function PlayerCardProvider({ children }: { children: React.ReactNode }) 
   // Fetch the card's code once the page is idle, so the first card opened on a
   // page doesn't wait on it. It stays out of the page's own bundle.
   useEffect(() => {
-    const load = () => void loadModal();
+    let active = true;
+    const load = () => {
+      loadModal()
+        .then((component) => {
+          if (active) setModal(() => component);
+        })
+        .catch(() => {});
+    };
     if (typeof window.requestIdleCallback === 'function') {
       const id = window.requestIdleCallback(load, { timeout: 4000 });
-      return () => window.cancelIdleCallback(id);
+      return () => {
+        active = false;
+        window.cancelIdleCallback(id);
+      };
     }
     const id = window.setTimeout(load, 2000);
-    return () => window.clearTimeout(id);
+    return () => {
+      active = false;
+      window.clearTimeout(id);
+    };
   }, []);
+
+  // A card opened before the idle load finished loads the code now.
+  useEffect(() => {
+    if (!player || Modal) return;
+    let active = true;
+    loadModal()
+      .then((component) => {
+        if (active) setModal(() => component);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [player, Modal]);
 
   const value = useMemo<PlayerCardContextValue>(
     () => ({
@@ -289,8 +334,8 @@ export function PlayerCardProvider({ children }: { children: React.ReactNode }) 
             pulled the card chunk — and everything it statically imports — into
             every dashboard route whether or not a card was ever opened, which
             also made the speculative import() in prefetchPlayer a no-op. */}
-        {player && (
-          <PlayerDetailsModal
+        {player && Modal && (
+          <Modal
             player={player}
             ownership={ownership}
             onClose={closePlayer}
