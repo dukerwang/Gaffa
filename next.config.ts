@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     '/guide': ['./docs/USER_GUIDE.md'],
     '/league/[leagueId]/guide': ['./docs/USER_GUIDE.md'],
     // The Lineup Builder's share card reads its fonts from disk.
-    '/share/xi/image': ['./src/assets/fonts/**'],
+    '/share/xi/image': ['./src/assets/fonts/**', './src/assets/card-base@2x.png'],
   },
 };
 
