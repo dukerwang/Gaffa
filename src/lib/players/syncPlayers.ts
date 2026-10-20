@@ -75,7 +75,7 @@ export async function syncPlayersFromFpl(admin: SupabaseClient): Promise<SyncPla
   // Fetch FPL bootstrap
   const fplRes = await fetch(FPL_URL, {
     headers: { 'User-Agent': 'FantasyFutbol/1.0' },
-    next: { revalidate: 0 },
+    cache: 'no-store',
   });
 
   if (!fplRes.ok) {

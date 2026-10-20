@@ -1,3 +1,4 @@
+import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
@@ -431,15 +432,10 @@ export default async function MyTeamPage({ params }: Props) {
  */
 async function latestStartedGameweek(): Promise<number> {
   try {
-    const res = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', {
-      headers: { 'User-Agent': 'FantasyFutbol/1.0' },
-      next: { revalidate: 300 },
-    });
-    if (!res.ok) return 0;
-    const data = await res.json();
+    const data = await getBootstrapSlim();
     const now = new Date();
     let gw = 0;
-    for (const ev of data.events as { id: number; deadline_time: string | null }[]) {
+    for (const ev of data.events) {
       if (ev.deadline_time && new Date(ev.deadline_time) <= now) gw = Math.max(gw, ev.id);
     }
     return gw;

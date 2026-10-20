@@ -1,11 +1,5 @@
 import { clubByFplCode } from '@/lib/clubs/registry';
-
-interface FplTeamRaw {
-  id: number;
-  code: number;
-  name: string;
-  short_name: string;
-}
+import { getBootstrapSlim, type FplTeamSlim } from '@/lib/fpl/bootstrapSlim';
 
 interface FplFixtureRaw {
   id: number;
@@ -45,19 +39,18 @@ export interface GwFixture {
  */
 export async function getGameweekFixtures(gameweek: number, limit?: number): Promise<GwFixture[]> {
   try {
-    const [bootstrapRes, fixturesRes] = await Promise.all([
-      fetch('https://fantasy.premierleague.com/api/bootstrap-static/', { next: { revalidate: 300 } }),
+    // FPL team ids are seasonal: both reads are of the live season, so the
+    // ids in one line up with the other.
+    const [bootstrap, fixturesRes] = await Promise.all([
+      getBootstrapSlim(),
       fetch(`https://fantasy.premierleague.com/api/fixtures/?event=${gameweek}`, { next: { revalidate: 60 } }),
     ]);
 
-    if (!bootstrapRes.ok || !fixturesRes.ok) return [];
+    if (!fixturesRes.ok) return [];
 
-    const bootstrap = await bootstrapRes.json();
     const rawFixtures = await fixturesRes.json();
 
-    const teamsById = new Map<number, FplTeamRaw>(
-      ((bootstrap.teams ?? []) as FplTeamRaw[]).map((t) => [t.id, t])
-    );
+    const teamsById = new Map<number, FplTeamSlim>(bootstrap.teams.map((t) => [t.id, t]));
     const badgeFor = (teamId: number): string | null => {
       const team = teamsById.get(teamId);
       const club = team ? clubByFplCode(team.code) : null;

@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     let currentGw = 1;
     try {
         const fplRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', {
-            next: { revalidate: 0 },
+            cache: 'no-store',
         });
         if (!fplRes.ok) throw new Error('FPL fetch failed');
         const fplData = await fplRes.json();

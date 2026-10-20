@@ -1,3 +1,4 @@
+import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
@@ -320,24 +321,21 @@ async function readFplGameweekState(): Promise<{ currentFplGw: number; isFinishe
     let currentFplGw = 1;
     let isFinished = false;
     try {
-        const fplRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', { next: { revalidate: 3600 } });
-        if (fplRes.ok) {
-            const fplData = await fplRes.json();
-            const currentEvent = (fplData.events as any[]).find((e: any) => e.is_current);
-            if (currentEvent) {
-                currentFplGw = currentEvent.id;
-                isFinished = currentEvent.finished;
-            } else {
-                // Fallback to deadline check if no event is marked current
-                const now = new Date();
-                for (const ev of fplData.events as any[]) {
-                    if (ev.deadline_time && new Date(ev.deadline_time) <= now) {
-                        currentFplGw = Math.max(currentFplGw, ev.id);
-                    }
+        const { events } = await getBootstrapSlim();
+        const currentEvent = events.find((e) => e.is_current);
+        if (currentEvent) {
+            currentFplGw = currentEvent.id;
+            isFinished = !!currentEvent.finished;
+        } else {
+            // Fallback to deadline check if no event is marked current
+            const now = new Date();
+            for (const ev of events) {
+                if (ev.deadline_time && new Date(ev.deadline_time) <= now) {
+                    currentFplGw = Math.max(currentFplGw, ev.id);
                 }
-                const fallbackEvent = (fplData.events as any[]).find((e: any) => e.id === currentFplGw);
-                isFinished = fallbackEvent?.finished ?? false;
             }
+            const fallbackEvent = events.find((e) => e.id === currentFplGw);
+            isFinished = fallbackEvent?.finished ?? false;
         }
     } catch { /* FPL unreachable */ }
     return { currentFplGw, isFinished };

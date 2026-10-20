@@ -36,7 +36,7 @@ const FPL_BASE = 'https://fantasy.premierleague.com/api';
 async function fetchCompletedGws(): Promise<number[]> {
   const res = await fetch(`${FPL_BASE}/bootstrap-static/`, {
     headers: { 'User-Agent': 'FantasyFutbol/1.0' },
-    next: { revalidate: 0 },
+    cache: 'no-store',
   });
   if (!res.ok) throw new Error(`bootstrap-static error: ${res.status}`);
   const data = await res.json();

@@ -111,7 +111,7 @@ async function handleResolveStalled() {
   let currentGw = 0;
   let fplEvents: any[] = [];
   try {
-    const fplRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', { next: { revalidate: 0 } });
+    const fplRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', { cache: 'no-store' });
     if (!fplRes.ok) return NextResponse.json({ error: 'Failed to fetch FPL data' }, { status: 502 });
 
     const fplData = await fplRes.json();

@@ -1,3 +1,5 @@
+import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
+
 export interface FplStatus {
   currentGw: number;
   isFinished: boolean;
@@ -12,21 +14,12 @@ export interface FplStatus {
 }
 
 /**
- * Fetches the current FPL gameweek and its finished status.
- * Results are cached for 5 minutes.
+ * Fetches the current FPL gameweek and its finished status, from the slim
+ * bootstrap cache (refreshed every 5 minutes).
  */
 export async function getFplStatus(): Promise<FplStatus> {
   try {
-    const fplRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', {
-      next: { revalidate: 300 },
-    });
-    
-    if (!fplRes.ok) {
-      return { currentGw: 1, isFinished: false, isLive: false, nextGwIsClose: false, nextDeadline: null, nextGw: null, displayGw: 1 };
-    }
-
-    const fplData = await fplRes.json();
-    const events = (fplData.events ?? []) as any[];
+    const { events } = await getBootstrapSlim();
 
     // If the last event in the list is finished, the entire season is complete (offseason)
     const lastEvent = events[events.length - 1];
@@ -46,12 +39,12 @@ export async function getFplStatus(): Promise<FplStatus> {
       }
     }
 
-    const currentEvent = events.find((e: any) => e.id === currentGw);
+    const currentEvent = events.find((e) => e.id === currentGw);
     const isFinished = currentEvent?.finished ?? false;
     const isLive = hasKickedOff && !isFinished;
 
     let nextGwIsClose = false;
-    const nextGW = events.find((e: any) => !e.finished && e.is_next);
+    const nextGW = events.find((e) => !e.finished && e.is_next);
     if (nextGW) {
       const daysUntil = (new Date(nextGW.deadline_time).getTime() - Date.now()) / 86400000;
       if (daysUntil <= 3) nextGwIsClose = true;

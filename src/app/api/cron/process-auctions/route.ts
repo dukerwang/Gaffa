@@ -208,7 +208,7 @@ export async function POST(req: NextRequest) {
   const lockedPlTeamIds = new Set<number>();
   let currentFplGw = 0;
   try {
-    const fplRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
+    const fplRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', { cache: 'no-store' });
     if (fplRes.ok) {
       const fplData = await fplRes.json();
       const events = fplData.events as { deadline_time: string | null; id: number; finished: boolean }[];

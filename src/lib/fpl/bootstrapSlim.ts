@@ -1,12 +1,18 @@
 /**
  * The few fields of FPL's bootstrap-static payload that per-request code needs:
- * the gameweek calendar and the season's team list.
+ * the gameweek calendar and the season's team list. Anything that needs
+ * `elements` (the ~800 player rows that make up most of the 2.4MB) reads FPL
+ * directly with `cache: 'no-store'`; that is the sync routes and plPresence.
  *
  * bootstrap-static is about 2.4MB of JSON in 2026-27, and Next's Data Cache
  * refuses anything over 2MB ("items over 2MB can not be cached"). So a plain
  * `fetch(..., { next: { revalidate } })` of it caches nothing: every caller
  * downloads and parses the whole payload on every request. This keeps a slim
- * copy (a few KB) in the cache instead, refreshed hourly.
+ * copy (a few KB) in the cache instead, refreshed every five minutes.
+ *
+ * Only `finished`, `is_current` and `is_next` can go stale; callers that work
+ * from `deadline_time` compare it against the clock at read time. Five minutes
+ * matches what most readers asked of the full fetch before it moved here.
  *
  * Outside the Next.js runtime (tsx scripts) there is no incremental cache, so
  * `unstable_cache` throws; the fallback reads FPL directly.
@@ -19,6 +25,8 @@ export interface FplEventSlim {
   id: number;
   deadline_time: string;
   finished?: boolean;
+  is_current?: boolean;
+  is_next?: boolean;
 }
 
 export interface FplTeamSlim {
@@ -47,6 +55,8 @@ async function readBootstrapSlim(): Promise<FplBootstrapSlim> {
       id: e.id,
       deadline_time: e.deadline_time,
       finished: e.finished,
+      is_current: e.is_current,
+      is_next: e.is_next,
     })),
     teams: ((data.teams ?? []) as FplTeamSlim[]).map((t) => ({
       id: t.id,
@@ -57,13 +67,15 @@ async function readBootstrapSlim(): Promise<FplBootstrapSlim> {
   };
 }
 
-const cachedBootstrapSlim = unstable_cache(readBootstrapSlim, ['fpl-bootstrap-slim-v1'], {
-  revalidate: 3600,
+// Bump the key whenever the shape changes, or a cached entry of the old shape
+// is served to code expecting the new one.
+const cachedBootstrapSlim = unstable_cache(readBootstrapSlim, ['fpl-bootstrap-slim-v2'], {
+  revalidate: 300,
 });
 
 /**
  * One read however many helpers ask at once. Held for a minute only: a warm
- * instance outlives many requests, and the hourly refresh belongs to the cache.
+ * instance outlives many requests, and the refresh belongs to the cache.
  */
 const INFLIGHT_TTL_MS = 60_000;
 let inflight: Promise<FplBootstrapSlim> | null = null;
