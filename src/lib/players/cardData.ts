@@ -29,6 +29,7 @@ import {
 import { getClubFixtureLog, type ClubFixtureLog } from '@/lib/fixtures/lockout';
 import { loadReferenceStats } from '@/lib/scoring/matchups';
 import { resolveClub } from '@/lib/clubs/registry';
+import { getBootstrapSlim, type FplTeamSlim } from '@/lib/fpl/bootstrapSlim';
 import {
   buildPerformanceGroups,
   buildSeasonPerformanceGroups,
@@ -498,33 +499,84 @@ export async function fetchPlayerOwnership(
  * FPL calls are issued together — element-summary does not need the team map
  * to start, only to be interpreted.
  */
+/**
+ * A current-season card's three FPL reads, started together: the team list
+ * (from the slim cached bootstrap, since the full payload is past the Data
+ * Cache's 2MB limit), the fixture list, and the player's element-summary,
+ * which waits only on his fpl_id. A missing team list only costs opponent
+ * names, as before. Any other failure rejects when the caller awaits it, and
+ * the caller falls back to the DB-only log. An early return that never awaits
+ * it leaves no unhandled rejection behind.
+ */
+type FplReads = { teams: FplTeamSlim[]; fixtures: any[]; summary: any | null };
+
+function startFplReads(
+  playerPromise: PromiseLike<{ data: { fpl_id?: number | null } | null }>,
+): Promise<FplReads> {
+  const reads = Promise.all([
+    getBootstrapSlim()
+      .then((b) => b.teams)
+      .catch((): FplTeamSlim[] => []),
+    fetch(`${FPL_BASE}/fixtures/`, {
+      headers: { 'User-Agent': USER_AGENT },
+      next: { revalidate: 3600 },
+    }).then((r) => (r.ok ? r.json() : [])),
+    Promise.resolve(playerPromise).then(({ data }) =>
+      data?.fpl_id
+        ? fetch(`${FPL_BASE}/element-summary/${data.fpl_id}/`, {
+            headers: { 'User-Agent': USER_AGENT },
+            next: { revalidate: 300 },
+          }).then((r) => (r.ok ? r.json() : null))
+        : null,
+    ),
+  ]).then(([teams, fixtures, summary]) => ({ teams, fixtures: fixtures as any[], summary }));
+  // Mark the rejection handled; the caller still sees it when it awaits.
+  reads.catch(() => {});
+  return reads;
+}
+
 export async function fetchPlayerBack(
   admin: SupabaseClient,
   playerId: string,
   leagueId?: string | null,
   explicitSeason?: string | null,
 ): Promise<PlayerCardBack> {
-  const season = await resolveCardSeason(admin, leagueId, explicitSeason);
-
-  const refSeasonPromise = getLatestReferenceStatsSeason(admin);
-
-  const [{ data: playerRow }, { data: dbStats }, { data: historyData }, refSeason] = await Promise.all([
+  // Everything that doesn't depend on the season starts before it resolves, and
+  // a current-season card's FPL reads start as soon as the season does, rather
+  // than each wave waiting on the one before. `Promise.resolve` turns each
+  // Postgrest builder into a promise that runs once: awaiting the bare builder
+  // twice would send the query twice.
+  const playerPromise = Promise.resolve(
     admin
       .from('players')
       .select('fpl_id, pl_team_id, pl_team, name, primary_position, secondary_positions, projected_points, projected_season, projected_gameweek')
       .eq('id', playerId)
       .maybeSingle(),
-    admin
-      .from('player_stats')
-      .select('match_id, gameweek, fantasy_points, match_rating, stats, perf')
-      .eq('player_id', playerId)
-      .eq('season', season.targetSeason),
+  );
+  const historyPromise = Promise.resolve(
     admin
       .from('season_player_stats_archive')
       .select('season, total_points, ppg, form_rating, overall_rank, position_ranks')
       .eq('player_id', playerId)
       .order('season', { ascending: false }),
-    refSeasonPromise,
+  );
+  const refStatsPromise = getLatestReferenceStatsSeason(admin).then(
+    (refSeason) => loadReferenceStats(admin, refSeason) as Promise<RefStatsMap>,
+  );
+
+  const season = await resolveCardSeason(admin, leagueId, explicitSeason);
+
+  const fplPromise = season.isCurrentFplSeason ? startFplReads(playerPromise) : null;
+
+  const [{ data: playerRow }, { data: dbStats }, { data: historyData }, refStats] = await Promise.all([
+    playerPromise,
+    admin
+      .from('player_stats')
+      .select('match_id, gameweek, fantasy_points, match_rating, stats, perf')
+      .eq('player_id', playerId)
+      .eq('season', season.targetSeason),
+    historyPromise,
+    refStatsPromise,
   ]);
 
   const history = (historyData ?? []) as PlayerSeasonArchive[];
@@ -550,9 +602,6 @@ export async function fetchPlayerBack(
     (playerRow as any)?.primary_position,
     (playerRow as any)?.secondary_positions,
   );
-  // Ref stats for re-scoring secondaries — same source positional ranks use.
-  const refStats = (await loadReferenceStats(admin, refSeason)) as RefStatsMap;
-
   const withPositionScores = (log: GamelogEntry[]): GamelogEntry[] =>
     attachPositionScores(log, primaryPos, positions, refStats);
 
@@ -715,41 +764,20 @@ export async function fetchPlayerBack(
   const statsMap = new Map(stats.map((s) => [Number(s.match_id), s]));
 
   try {
-    const [bootRes, fixRes, histRes] = await Promise.all([
-      fetch(`${FPL_BASE}/bootstrap-static/`, {
-        headers: { 'User-Agent': USER_AGENT },
-        next: { revalidate: 3600 },
-      }),
-      fetch(`${FPL_BASE}/fixtures/`, {
-        headers: { 'User-Agent': USER_AGENT },
-        next: { revalidate: 3600 },
-      }),
-      dbPlayer.fpl_id
-        ? fetch(`${FPL_BASE}/element-summary/${dbPlayer.fpl_id}/`, {
-            headers: { 'User-Agent': USER_AGENT },
-            next: { revalidate: 300 },
-          })
-        : Promise.resolve(null),
-    ]);
+    if (!fplPromise) throw new Error('FPL reads were not started for a current-season card');
+    const { teams, fixtures, summary } = await fplPromise;
 
     const teamMap = new Map<number, { name: string; short: string }>();
     const fixtureMap = new Map<number, any>();
-
-    if (bootRes.ok) {
-      const bootData = await bootRes.json();
-      bootData.teams?.forEach((t: any) => teamMap.set(t.id, { name: t.name, short: t.short_name }));
-    }
-    if (fixRes.ok) {
-      const fixData = await fixRes.json();
-      fixData.forEach((f: any) => fixtureMap.set(f.id, f));
-    }
+    for (const t of teams) teamMap.set(t.id, { name: t.name, short: t.short_name });
+    for (const f of fixtures) fixtureMap.set(f.id, f);
 
     let gamelog: GamelogEntry[] = [];
     let historyFetched = false;
     let histData: any = null;
 
-    if (histRes && histRes.ok) {
-      histData = await histRes.json();
+    if (summary) {
+      histData = summary;
       historyFetched = true;
       gamelog = (histData.history ?? []).map((h: any) => {
         const dbEntry =
@@ -832,7 +860,7 @@ export async function fetchPlayerBack(
       kickoff_time?: string;
     } | null = null;
 
-    if (histRes && histRes.ok) {
+    if (histData) {
       const nextFpl = (histData.fixtures ?? []).find((f: any) => !f.finished);
       if (nextFpl && nextFpl.event != null) {
         const isHome = nextFpl.is_home;
