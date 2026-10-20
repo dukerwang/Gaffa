@@ -170,8 +170,11 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
     [updateActive],
   );
 
-  const sideClub = fixture ? { slug: fixture[side], name: side === 'home' ? fixture.homeName : fixture.awayName } : null;
-  const clubOptions = useMemo(() => (sideClub ? [sideClub] : leagueClubs), [sideClub?.slug, leagueClubs]); // eslint-disable-line react-hooks/exhaustive-deps
+  const sideClub = useMemo(
+    () => (fixture ? { slug: fixture[side], name: side === 'home' ? fixture.homeName : fixture.awayName } : null),
+    [fixture, side],
+  );
+  const clubOptions = useMemo(() => (sideClub ? [sideClub] : leagueClubs), [sideClub, leagueClubs]);
 
   // Each side's opening XI: the way back after edits, and what a link can leave out.
   const sourceXIs = useMemo(() => {
@@ -196,7 +199,6 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
 
   // Status feedback message (e.g. "Copied to clipboard")
   const [feedbackNotice, setFeedbackNotice] = useState<string | null>(null);
-  const [isExporting, setIsExporting] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -360,13 +362,13 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
   // kept current by the effect above, so its query is the XI.
   const shareQuery = () => window.location.search.replace(/^\?/, '');
   const shareUrl = () => `${window.location.origin}/share/xi?${shareQuery()}`;
-  const imageUrl = (scale: 1 | 2) => `/share/xi/image?${shareQuery()}${scale === 1 ? '&scale=1' : ''}`;
+  const imageUrl = () => `/share/xi/image?${shareQuery()}`;
 
   // Render the preview card ahead of the share, so the CDN has it by the time the
   // recipient's (or the sender's) messaging app asks for it.
   const warmed = useRef<string | null>(null);
   const warmPreview = useCallback(() => {
-    const url = imageUrl(1);
+    const url = imageUrl();
     if (warmed.current === url) return;
     warmed.current = url;
     void fetch(url).catch(() => {});
@@ -401,56 +403,6 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
     }
     await copyLink('Link copied. Paste it anywhere to share the XI.');
   }, [copyLink, warmPreview]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Save Image: the same card, at 2x. On a phone the share sheet offers Save
-  // Image; elsewhere it downloads. Fetched when the pointer or focus arrives, so
-  // the click can hand it over at once (Safari refuses a share that comes long
-  // after the tap).
-  const prepared = useRef<{ url: string; blob: Promise<Blob> } | null>(null);
-  const prepareImage = useCallback((): Promise<Blob> => {
-    const url = imageUrl(2);
-    if (prepared.current?.url === url) return prepared.current.blob;
-    const blob = fetch(url).then((res) => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.blob();
-    });
-    prepared.current = { url, blob };
-    blob.catch(() => {
-      if (prepared.current?.blob === blob) prepared.current = null;
-    });
-    return blob;
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleSaveImage = useCallback(async () => {
-    setIsExporting(true);
-    const name = (fixture ? `${sideClub?.name ?? ''} ${fixtureTitle(fixture)}` : title || 'Starting XI').trim();
-    const filename = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'lineup'}.png`;
-    try {
-      const blob = await prepareImage();
-      const file = new File([blob], filename, { type: 'image/png' });
-      const phone = window.matchMedia('(pointer: coarse)').matches;
-      if (phone && navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file] });
-          return;
-        } catch (err) {
-          if (err instanceof Error && err.name === 'AbortError') return;
-        }
-      }
-      const href = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = href;
-      a.download = filename;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(href), 1000);
-      setFeedbackNotice('Image saved');
-    } catch (err) {
-      console.error('Lineup image failed:', err);
-      setFeedbackNotice("Couldn't create the image. Try again.");
-    } finally {
-      setIsExporting(false);
-    }
-  }, [prepareImage, fixture, sideClub?.name, title]);
 
   const slotPositions = FORMATION_SLOTS[formation] as GranularPosition[];
   const caption = feedbackNotice ?? `${filledCount} of 11 picked`;
@@ -528,23 +480,6 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
                 data-tip={copied ? 'Copied' : 'Copy Link'}
               >
                 <Icon name={copied ? 'check' : 'copy'} size={18} strokeWidth={1.75} />
-              </button>
-              <button
-                type="button"
-                className={styles.iconBtn}
-                onClick={handleSaveImage}
-                onPointerEnter={() => void prepareImage().catch(() => {})}
-                onFocus={() => void prepareImage().catch(() => {})}
-                disabled={isExporting}
-                aria-busy={isExporting}
-                aria-label="Save Image"
-                data-tip={isExporting ? 'Creating Image' : 'Save Image'}
-              >
-                {isExporting ? (
-                  <span className={styles.spinner} aria-hidden="true" />
-                ) : (
-                  <Icon name="download" size={18} strokeWidth={1.75} />
-                )}
               </button>
               <button
                 type="button"

@@ -13,6 +13,9 @@ interface Props {
 }
 
 /** The query as a string, without Next's internal params, for the image and builder links. */
+/** The card for a query; the same URL everywhere, so the CDN serves it after the first render. */
+const imageUrl = (query: string) => `/share/xi/image?${query}`;
+
 function queryOf(params: Record<string, string | undefined>): string {
   const q = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v !== undefined) q.set(k, v);
@@ -40,7 +43,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const query = queryOf(await searchParams);
   const xi = await resolve(query);
   const { heading, line } = describe(xi);
-  const image = { url: `/share/xi/image?${query}&scale=1`, width: 1080, height: 1350, alt: `${heading}, ${line}` };
+  const image = { url: imageUrl(query), width: 1080, height: 1350, alt: `${heading}, ${line}` };
   // Absolute on the host that served the page: gaffa.live redirects to www, and a
   // link previewer that won't follow the redirect would show no picture.
   const h = await headers();
@@ -67,12 +70,17 @@ export default async function SharedXIPage({ searchParams }: Props) {
           <h1 className={styles.h1}>{heading}</h1>
           <p className={styles.line}>{line}</p>
         </div>
-        <Link href={`/lineup-builder?${query}`} className={styles.cta}>
-          Open in Lineup Builder
-        </Link>
+        <div className={styles.actions}>
+          <a href={imageUrl(query)} download={`${heading.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`} className={styles.secondary}>
+            Save Image
+          </a>
+          <Link href={`/lineup-builder?${query}`} className={styles.cta}>
+            Open in Lineup Builder
+          </Link>
+        </div>
       </header>
       {/* eslint-disable-next-line @next/next/no-img-element -- a generated PNG, already sized */}
-      <img className={styles.card} src={`/share/xi/image?${query}`} alt={`${heading}: ${line}`} width={1080} height={1350} />
+      <img className={styles.card} src={imageUrl(query)} alt={`${heading}: ${line}`} width={1080} height={1350} />
     </div>
   );
 }

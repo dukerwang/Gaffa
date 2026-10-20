@@ -114,14 +114,23 @@ function GaffaMark({ size, color }: { size: number; color: string }) {
   );
 }
 
+/** Left/right pairs share a hue, so their badges also clip the outer corner (PositionBadge.module.css). */
+const BADGE_SIDE: Partial<Record<GranularPosition, 'l' | 'r'>> = { LB: 'l', LWB: 'l', LW: 'l', RB: 'r', RWB: 'r', RW: 'r' };
+
+/**
+ * One player, drawn as the Lineup Builder's pitch draws him (the "standard"
+ * node in ReadOnlyFormationBoard): the lot-size portrait at the board's 0.88
+ * scale, then a white chip with the position badge above the name. Every
+ * length is the site's CSS px times `S`, the card's zoom on the board, so the
+ * two stay in proportion. Port changes from the site here line for line.
+ */
 function PlayerNode({
   pos,
   player,
   assets,
   x,
   y,
-  s,
-  maxChip,
+  S,
   k,
 }: {
   pos: GranularPosition;
@@ -129,36 +138,130 @@ function PlayerNode({
   assets: CardAssets;
   x: number;
   y: number;
-  s: number;
-  maxChip: number;
+  S: number;
   k: number;
 }) {
   const u = (n: number) => n * k;
-  const fw = 66 * s;
-  const fh = 78 * s;
-  const badgeH = 26;
-  const chipH = 34;
-  const total = badgeH + 6 + fh + 8 + chipH;
-  const name = player ? getPlayerDisplayName(player.name, 'smart') : '';
-  // Newsreader Bold runs about 0.6em a character with capitals; shrink to fit the chip, never below 16.
-  const nameSize = Math.max(16, Math.min(22, (maxChip - 24) / (Math.max(name.length, 1) * 0.6)));
+  const nodeW = 114 * S; // .nodeWrap at its widest
+  const P = 0.88 * S; // .portraitWrap .g-portrait-md { transform: scale(0.88) }
+  const fw = 66 * P;
+  const fh = 78 * P;
+  const badgeFont = 10 * S;
+  // .nodeChip: 1px border, 3px padding, the badge (10px type + 2px padding twice), 2px gap, the name at 11px x 1.15.
+  const chipH = (1 + 3 + (badgeFont / S + 4) + 2 + 11 * 1.15 + 3 + 1) * S;
+  const gap = (78 * 0.12 + 2) * S; // the scaled portrait keeps its full layout height, then .starterButton's 2px
+  const total = fh + gap + chipH;
+  const name = player ? getPlayerDisplayName(player, 'smart', 11) : '';
   const photo = player ? assets.photos.get(player.id) : undefined;
   const crestSlug = player ? resolveClub(player.pl_team)?.slug : undefined;
   const crest = crestSlug ? assets.crests.get(crestSlug) : undefined;
+  const side = BADGE_SIDE[pos];
+  // The site clips the outer top corner (5px across, 42% down). Satori clips the
+  // badge's text along with it, so the cut is drawn instead: a triangle in the
+  // chip's colour laid over that corner.
+  const badgeH = (10 + 4) * S;
+  const cutW = 5 * S;
+  const cutH = badgeH * 0.42;
+  const cutCorner = side ? (
+    <svg
+      width={u(cutW)}
+      height={u(cutH)}
+      viewBox={`0 0 ${cutW} ${cutH}`}
+      style={{ position: 'absolute', top: 0, ...(side === 'l' ? { left: 0 } : { right: 0 }) }}
+    >
+      <polygon points={side === 'l' ? `0,0 ${cutW},0 0,${cutH}` : `0,0 ${cutW},0 ${cutW},${cutH}`} fill={CARD} />
+    </svg>
+  ) : null;
 
-  let photoEl = null;
-  if (player && photo) {
-    const custom = photo.alt ? null : customPortraitCrop('md', player.portrait_head_top_pct, player.portrait_head_width_pct);
-    const zoom = (photo.alt ? 142 : (custom?.zoomPct ?? 156.25)) / 100;
-    const iw = fw * zoom;
-    const ih = iw * (photo.h / photo.w);
-    photoEl = (
-      <img alt=""
-        src={photo.src}
-        width={u(iw)}
-        height={u(ih)}
-        style={{ position: 'absolute', left: u((fw - iw) / 2), top: u((custom?.insetPx ?? -2) * s) }}
-      />
+  const badge = (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: `${u(2 * S)}px ${u(5 * S)}px`,
+        borderRadius: u(2 * S),
+        background: POS_COLOR[pos],
+        color: '#FFFFFF',
+        fontFamily: 'Label',
+        fontSize: u(badgeFont),
+        letterSpacing: u(badgeFont * 0.04),
+        lineHeight: 1,
+        position: 'relative',
+      }}
+    >
+      {pos}
+      {cutCorner}
+    </div>
+  );
+
+  let portrait = null;
+  if (player) {
+    let img = null;
+    if (photo) {
+      const custom = photo.alt ? null : customPortraitCrop('md', player.portrait_head_top_pct, player.portrait_head_width_pct);
+      const zoom = (photo.alt ? 142 : (custom?.zoomPct ?? 156.25)) / 100;
+      const iw = fw * zoom;
+      const ih = iw * (photo.h / photo.w);
+      img = (
+        <img
+          alt=""
+          src={photo.src}
+          width={u(iw)}
+          height={u(ih)}
+          style={{
+            position: 'absolute',
+            left: u((fw - iw) / 2),
+            top: u((custom?.insetPx ?? -2) * P),
+            // .g-portrait-img's drop shadow, which gives the cut-out its depth.
+            filter: `drop-shadow(0 ${u(9 * P)}px ${u(11 * P)}px rgba(40, 30, 16, 0.32))`,
+          }}
+        />
+      );
+    }
+    portrait = (
+      <div style={{ display: 'flex', position: 'relative', width: u(fw), height: u(fh) }}>
+        <div
+          style={{
+            display: 'flex',
+            position: 'relative',
+            width: u(fw),
+            height: u(fh),
+            overflow: 'hidden',
+            borderRadius: u(4 * P),
+            boxShadow: `inset 0 0 0 ${u(1 * P)}px #D9D5CF`,
+            backgroundImage: 'radial-gradient(75.6% 57.6% at 50% 25.6%, #F4F3F1 0%, #E2DFDA 67%, #D2CEC7 100%)',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {img ?? (
+            <div style={{ display: 'flex', fontFamily: 'Newsreader', fontSize: u(26 * P), letterSpacing: u(-0.78 * P), color: '#635D51' }}>
+              {portraitInitials(player.name)}
+            </div>
+          )}
+        </div>
+        {crest && (
+          // .g-portrait-crest: off the frame's lower-left corner, outside its clip.
+          <div
+            style={{
+              position: 'absolute',
+              left: u(-7 * P),
+              bottom: u(-7 * P),
+              width: u(22 * P),
+              height: u(22 * P),
+              borderRadius: u(11 * P),
+              background: CARD,
+              boxShadow: `0 ${u(1 * P)}px ${u(3 * P)}px rgba(58, 44, 26, 0.28)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <img alt="" src={crest.src} {...contain(crest.w, crest.h, u(22 * P * 0.64))} />
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -166,114 +269,71 @@ function PlayerNode({
     <div
       style={{
         position: 'absolute',
-        left: u(x - maxChip / 2),
+        left: u(x - nodeW / 2),
         top: u(y - total / 2),
-        width: u(maxChip),
+        width: u(nodeW),
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: u(badgeH),
-          minWidth: u(44),
-          padding: `0 ${u(10)}px`,
-          borderRadius: u(5),
-          background: POS_COLOR[pos],
-          color: '#FFFFFF',
-          fontFamily: 'Label',
-          fontSize: u(17),
-        }}
-      >
-        {pos}
-      </div>
       {player ? (
-        <div style={{ display: 'flex', position: 'relative', marginTop: u(6), width: u(fw), height: u(fh) }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: u(nodeW) }}>
+          {portrait}
           <div
             style={{
               display: 'flex',
-              position: 'relative',
-              width: u(fw),
-              height: u(fh),
-              overflow: 'hidden',
-              borderRadius: u(6 * s),
-              border: `${u(3)}px solid rgba(255,255,255,0.9)`,
-              backgroundImage: 'radial-gradient(circle at 50% 26%, #F6F3EC 0%, #E6E2DA 67%, #DAD5CA 100%)',
+              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
+              marginTop: u(gap),
+              width: u(nodeW),
+              padding: `${u(3 * S)}px ${u(4 * S)}px`,
+              background: CARD,
+              border: `${u(1 * S)}px solid #FFFFFF`,
+              borderRadius: u(4 * S),
+              boxShadow: `0 ${u(2 * S)}px ${u(4 * S)}px rgba(0, 0, 0, 0.15)`,
             }}
           >
-            {photoEl ?? (
-              <div style={{ display: 'flex', fontFamily: 'Newsreader', fontSize: u(30 * s), color: INK }}>
-                {portraitInitials(player.name)}
-              </div>
-            )}
-          </div>
-          {crest && (
+            {badge}
             <div
               style={{
-                position: 'absolute',
-                left: u(2 * s),
-                bottom: u(2 * s),
-                width: u(22 * s),
-                height: u(22 * s),
-                borderRadius: u(11 * s),
-                background: CARD,
                 display: 'flex',
-                alignItems: 'center',
                 justifyContent: 'center',
+                marginTop: u(2 * S),
+                width: '100%',
+                fontFamily: 'Newsreader',
+                fontSize: u(11 * S),
+                lineHeight: 1.15,
+                color: INK,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
             >
-              <img alt="" src={crest.src} {...contain(crest.w, crest.h, u(15 * s))} />
+              {name}
             </div>
-          )}
+          </div>
         </div>
       ) : (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginTop: u(6),
-            width: u(fw),
-            height: u(fh),
-            borderRadius: u(6 * s),
-            border: `${u(3)}px dashed rgba(255,255,255,0.75)`,
-            background: 'rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.9)',
-            fontFamily: 'Label',
-            fontSize: u(44),
-          }}
-        >
-          +
-        </div>
-      )}
-      {player && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginTop: u(8),
-            height: u(chipH),
-            minWidth: u(96),
-            maxWidth: u(maxChip),
-            padding: `0 ${u(11)}px`,
-            borderRadius: u(6),
-            background: CARD,
-            color: INK,
-            fontFamily: 'Newsreader',
-            fontSize: u(nameSize),
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {name}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: u(nodeW) }}>
+          <div style={{ display: 'flex', marginBottom: u(2 * S) }}>{badge}</div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: u(fw),
+              height: u(fh),
+              borderRadius: u(4 * P),
+              border: `${u(1.5 * S)}px dashed rgba(255,255,255,0.75)`,
+              background: 'rgba(255,255,255,0.08)',
+              color: 'rgba(255,255,255,0.9)',
+              fontFamily: 'Label',
+              fontSize: u(22 * S),
+            }}
+          >
+            +
+          </div>
         </div>
       )}
     </div>
@@ -316,8 +376,10 @@ export function LineupCard({ xi, assets, k = 1 }: { xi: SharedXI; assets: CardAs
   const rows = ZONE_ORDER.filter((z) => (zoned.get(z)?.length ?? 0) > 0);
   const top = fY + 20;
   const rowH = (fH - 40) / rows.length;
-  // 66x78 is the app's lot-size portrait; shrink it on 6-row formations so rows never overlap.
-  const s = Math.min(1.35, Math.max(0.9, (rowH - 84) / 78));
+  // The card's zoom on the site's board: as large as the busiest row allows across
+  // (a node is 114px wide on the site) and the rows allow down (about 117px tall).
+  const widest = Math.max(...rows.map((z) => zoned.get(z)?.length ?? 0));
+  const S = Math.min(2, (fW / widest - 14) / 114, (rowH * 0.84) / 117);
 
   return (
     <div
@@ -404,7 +466,6 @@ export function LineupCard({ xi, assets, k = 1 }: { xi: SharedXI; assets: CardAs
         const cy = top + rowH * r + rowH / 2;
         return inRow.map((slot, c) => {
           const cx = fX + (fW / (inRow.length + 1)) * (c + 1);
-          const maxChip = Math.min(240, fW / (inRow.length + 1) - 8);
           return (
             <PlayerNode
               key={`${zone}-${c}`}
@@ -413,8 +474,7 @@ export function LineupCard({ xi, assets, k = 1 }: { xi: SharedXI; assets: CardAs
               assets={assets}
               x={cx}
               y={cy}
-              s={s}
-              maxChip={maxChip}
+              S={S}
               k={k}
             />
           );
