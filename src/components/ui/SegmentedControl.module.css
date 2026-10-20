@@ -134,3 +134,125 @@
   font-size: 1.1em;
   flex-shrink: 0;
 }
+
+/* --- Variant: ink ---
+   No tray. The labels sit in muted ink on the page itself; the chosen one is
+   a second copy, inverted and clipped to its segment. */
+
+.variant_ink {
+  background: none;
+  padding: 0;
+  gap: 2px;
+}
+
+.variant_ink .segment {
+  color: var(--color-text-muted);
+  border-radius: var(--r-control);
+}
+
+.variant_ink .size_md {
+  min-height: 30px;
+  padding: 0 var(--s3);
+  font-size: var(--t-15);
+}
+
+.variant_ink .size_sm {
+  min-height: 26px;
+  padding: 0 10px;
+  font-size: var(--t-13);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .variant_ink .segment:not(.active):not(:disabled):hover {
+    color: var(--color-text-primary);
+    background: none;
+  }
+  :global([data-theme='dark']) .variant_ink .segment:not(.active):not(:disabled):hover {
+    background: none;
+  }
+}
+
+.inkLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--color-text-primary);
+  border-radius: var(--r-control);
+  pointer-events: none;
+}
+
+.inkLayer .segment {
+  color: var(--color-bg-primary);
+  flex-shrink: 0;
+}
+
+.fullWidth .inkLayer .segment {
+  flex: 1;
+}
+
+.inkLayer[data-ready] {
+  transition: clip-path var(--dur-base) var(--ease-in-out-strong);
+}
+
+/* --- Variant: underline ---
+   Text and a travelling 2px rule; the lightest switch in the kit. */
+
+.variant_underline {
+  background: none;
+  padding: 0 0 6px;
+  gap: var(--s4);
+  border-radius: 0;
+}
+
+.variant_underline .segment {
+  padding: 0;
+  min-height: 0;
+  border-radius: 0;
+  color: var(--color-text-muted);
+  font-size: var(--t-15);
+  --press-scale: 1;
+}
+
+.variant_underline .size_sm {
+  font-size: var(--t-13);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .variant_underline .segment:not(.active):not(:disabled):hover,
+  :global([data-theme='dark']) .variant_underline .segment:not(.active):not(:disabled):hover {
+    color: var(--color-text-primary);
+    background: none;
+  }
+}
+
+.variant_underline .active {
+  color: var(--color-text-primary);
+}
+
+.variant_underline .thumb,
+:global([data-theme='dark']) .variant_underline .thumb {
+  top: auto;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-accent-ink);
+  box-shadow: none;
+}
+
+/* Small targets still reach 44px under a finger. */
+@media (pointer: coarse) {
+  .variant_ink .segment::before,
+  .variant_underline .segment::before {
+    content: '';
+    position: absolute;
+    inset: -8px -2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inkLayer[data-ready] {
+    transition: none;
+  }
+}

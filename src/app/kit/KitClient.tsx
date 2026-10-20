@@ -25,6 +25,7 @@ import {
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
 import { useTheme } from '@/context/ThemeContext';
+import TopRatedPrototypes from './TopRatedPrototypes';
 import styles from './kit.module.css';
 
 const photo = (code: number) =>
@@ -104,6 +105,8 @@ export default function KitClient() {
         <span className={styles.plateRule} aria-hidden="true" />
         <Switch size="sm" checked={slowMo} onChange={setSlowMo} label="Slow Motion" />
       </div>
+
+      <TopRatedPrototypes />
 
       <main className={styles.grid}>
         <BiddingBoard />

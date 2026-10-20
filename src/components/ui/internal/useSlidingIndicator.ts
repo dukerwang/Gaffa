@@ -5,6 +5,8 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 interface Indicator {
   x: number;
   width: number;
+  /** The container's own width, for clipping a layer to the active item. */
+  containerWidth: number;
   /** False until the first measurement lands, so the indicator never slides in from 0. */
   ready: boolean;
 }
@@ -19,7 +21,7 @@ interface Indicator {
  */
 export function useSlidingIndicator<T extends HTMLElement>(activeKey: string) {
   const containerRef = useRef<T>(null);
-  const [indicator, setIndicator] = useState<Indicator>({ x: 0, width: 0, ready: false });
+  const [indicator, setIndicator] = useState<Indicator>({ x: 0, width: 0, containerWidth: 0, ready: false });
   const measuredOnce = useRef(false);
 
   const measure = useCallback(() => {
@@ -29,7 +31,12 @@ export function useSlidingIndicator<T extends HTMLElement>(activeKey: string) {
       `[data-indicator-key="${CSS.escape(activeKey)}"]`,
     );
     if (!item) return;
-    setIndicator({ x: item.offsetLeft, width: item.offsetWidth, ready: measuredOnce.current });
+    setIndicator({
+      x: item.offsetLeft,
+      width: item.offsetWidth,
+      containerWidth: container.clientWidth,
+      ready: measuredOnce.current,
+    });
     if (!measuredOnce.current) {
       measuredOnce.current = true;
       // Enable the transition after the unanimated first placement has painted.
