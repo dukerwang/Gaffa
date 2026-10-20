@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import { Hanken_Grotesk, JetBrains_Mono, Newsreader, Sofia_Sans_Semi_Condensed } from 'next/font/google';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { Toaster } from '@/components/ui/Toaster';
 import './globals.css';
 
 /**
@@ -107,7 +108,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
           }}
         />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          {/* Mounted once for the whole app, so any client component can call
+              toast() from @/components/ui with no provider of its own. */}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
