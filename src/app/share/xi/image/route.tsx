@@ -33,13 +33,19 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const params = Object.fromEntries(url.searchParams.entries());
 
+  const t0 = performance.now();
   const xi = await resolveSharedXI(createAdminClient(), params);
+  const t1 = performance.now();
   const [assets, fontData] = await Promise.all([loadCardAssets(xi, url.origin), loadFonts()]);
+  const t2 = performance.now();
   const png = await renderCardPng(xi, assets, fontData);
+  const t3 = performance.now();
 
   return new Response(new Uint8Array(png), {
     headers: {
       'Content-Type': 'image/png',
+      // Where a render's time goes, readable in the browser's network panel.
+      'Server-Timing': `lineup;dur=${(t1 - t0).toFixed(0)}, assets;dur=${(t2 - t1).toFixed(0)}, render;dur=${(t3 - t2).toFixed(0)}`,
       'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
     },
   });
