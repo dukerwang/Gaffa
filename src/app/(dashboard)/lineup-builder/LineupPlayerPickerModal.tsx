@@ -20,7 +20,7 @@ interface Props {
   initialClubFilter?: string | null;
   /** Clubs the picker offers, as slugs: every club with an active player, or the two in the chosen match. */
   clubOptions: { slug: string; name: string }[];
-  /** True when the XI is for one match, so only its two clubs' players are offered. */
+  /** True when the XI is one side of a match, so only that club's players are offered. */
   matchOnly: boolean;
 }
 
@@ -150,19 +150,21 @@ export default function LineupPlayerPickerModal({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            {clubOptions.length > 1 && (
             <select
               className={`${styles.input} ${styles.clubSelect}`}
               aria-label="Filter by club"
               value={selectedClub}
               onChange={(e) => setSelectedClub(e.target.value)}
             >
-              <option value="all">{matchOnly ? 'Both Clubs' : 'All Clubs'}</option>
+              <option value="all">All Clubs</option>
               {clubOptions.map((c) => (
                 <option key={c.slug} value={c.slug}>
                   {c.name}
                 </option>
               ))}
             </select>
+            )}
           </div>
           <div className={styles.filterTabs}>
             {POS_CATEGORIES.map((cat) => (

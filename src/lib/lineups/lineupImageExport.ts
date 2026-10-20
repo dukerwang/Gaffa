@@ -16,6 +16,8 @@ export interface LineupExportData {
   slots: LineupExportSlot[];
   /** Set when the XI is for a Premier League match. */
   matchweek?: number | null;
+  /** The club this XI is, when it is one side of a match. Named in the subtitle, crest in the corner. */
+  club?: { name: string; slug: string } | null;
 }
 
 type PitchZone = 'ATT' | 'AMZ' | 'CMZ' | 'DMZ' | 'WBZ' | 'DEF' | 'GK';
@@ -110,15 +112,30 @@ export async function exportLineupToBlob(data: LineupExportData): Promise<Blob |
   const pad = 48;
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
+  const crestSize = 96;
+  const crest = data.club ? await loadImage(`/team-logos/${data.club.slug}.png`, 2500, false) : null;
+  if (crest) {
+    // Contained in a square box, since badges are not all square.
+    const k = crestSize / Math.max(crest.naturalWidth || 1, crest.naturalHeight || 1);
+    const cw = (crest.naturalWidth || crestSize) * k;
+    const ch = (crest.naturalHeight || crestSize) * k;
+    ctx.drawImage(crest, width - pad - crestSize + (crestSize - cw) / 2, 52 + (crestSize - ch) / 2, cw, ch);
+  }
+  const titleRoom = width - pad * 2 - (crest ? crestSize + 24 : 0);
   ctx.fillStyle = '#FFFFFF';
   ctx.font = `700 64px ${serif}`;
-  ctx.fillText(fitText(ctx, data.title.trim() || 'Starting XI', width - pad * 2), pad, 108);
+  ctx.fillText(fitText(ctx, data.title.trim() || 'Starting XI', titleRoom), pad, 108);
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
   ctx.font = `700 24px ${label}`;
-  const subtitle = [data.formation, data.matchweek ? `MATCHWEEK ${data.matchweek}` : null, 'GAFFA LINEUP BUILDER']
+  const subtitle = [
+    data.formation,
+    data.club ? data.club.name.toUpperCase() : null,
+    data.matchweek ? `MATCHWEEK ${data.matchweek}` : null,
+    'GAFFA LINEUP BUILDER',
+  ]
     .filter(Boolean)
     .join('  ·  ');
-  ctx.fillText(subtitle, pad, 156);
+  ctx.fillText(fitText(ctx, subtitle, titleRoom), pad, 156);
 
   const px = pad;
   const py = shelfH - 24;

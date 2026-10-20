@@ -58,6 +58,27 @@ describe('lineupSerializer', () => {
     expect(deserializeLineup(new URLSearchParams(qs)).fixture).toEqual({ season: '2026-27', id: 74 });
   });
 
+  it('carries an edited away side and the side showing, and leaves an untouched match short', () => {
+    const away = { formation: '3-5-2' as const, playerIds: ['a1', ...Array(10).fill(null)] };
+    const qs = serializeLineup({
+      formation: '4-3-3',
+      title: '',
+      fixture: { season: '2026-27', id: 64 },
+      playerIds: [],
+      away,
+      side: 'away',
+    });
+    const parsed = deserializeLineup(new URLSearchParams(qs));
+    expect(parsed.away).toEqual(away);
+    expect(parsed.side).toBe('away');
+    expect(parsed.playerIds.every((id) => id === null)).toBe(true);
+    expect(new URLSearchParams(qs).has('f')).toBe(false);
+
+    const bare = deserializeLineup(new URLSearchParams('m=64&s=2026-27'));
+    expect(bare.away).toBeNull();
+    expect(bare.side).toBe('home');
+  });
+
   it('drops a match without a valid season, since fixture ids restart every season', () => {
     expect(deserializeLineup(new URLSearchParams('m=74')).fixture).toBeNull();
     expect(deserializeLineup(new URLSearchParams('m=74&s=2026')).fixture).toBeNull();

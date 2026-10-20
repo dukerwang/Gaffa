@@ -10,38 +10,80 @@ import Portrait from '@/components/players/Portrait';
 import { Icon } from '@/components/ui/Icon';
 import PositionBadge from '@/components/players/PositionBadge';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
-import { resolveClub } from '@/lib/clubs/registry';
-import { fixtureDay, fixtureTitle, type BuilderFixture } from '@/lib/lineups/builderFixtures';
+import { clubBadgePath, resolveClub } from '@/lib/clubs/registry';
+import {
+  fixtureDay,
+  fixtureKey,
+  fixtureTitle,
+  kickoffDay,
+  type BuilderFixture,
+  type MatchLineups,
+  type MatchSide,
+  type SideSource,
+} from '@/lib/lineups/builderFixtures';
+import { fitFormation } from '@/lib/lineups/fitFormation';
 import LineupPlayerPickerModal from './LineupPlayerPickerModal';
 import styles from './lineup-builder.module.css';
+
+/* eslint-disable @next/next/no-img-element */
 
 interface Props {
   allPlayers: Player[];
   initialState: SerializedLineup;
-  /** This matchweek's and the next two's Premier League matches. */
+  /** Two matchweeks either side of the one in progress. */
   fixtures: BuilderFixture[];
   /** The match a shared link names, when it names one that exists. */
   initialFixture: BuilderFixture | null;
+  /** Each listed match's opening XIs: its starters once played, otherwise each club's last XI. */
+  lineups: MatchLineups;
 }
 
 const FORMATIONS: readonly Formation[] = VALID_FORMATIONS;
 
 const BACK_LINES = ['3', '4', '5'] as const;
 
-const fixtureKey = (f: { season: string; id: number }) => `${f.season}:${f.id}`;
+const SIDES: readonly MatchSide[] = ['home', 'away'];
 
-export default function LineupBuilderClient({ allPlayers, initialState, fixtures, initialFixture }: Props) {
-  const [formation, setFormation] = useState<Formation>(initialState.formation);
+/** One XI: a shape and who fills each of its eleven slots. */
+interface XI {
+  formation: Formation;
+  assignments: Record<number, Player | null>;
+}
+
+function xiFromIds(formation: Formation, ids: (string | null)[], playerById: Map<string, Player>): XI {
+  const assignments: Record<number, Player | null> = {};
+  for (let i = 0; i < 11; i++) {
+    const id = ids[i];
+    assignments[i] = id ? playerById.get(id) ?? null : null;
+  }
+  return { formation, assignments };
+}
+
+/** A side's opening XI, laid out on the formation its starters fit best. Empty when there is none. */
+function xiFromSource(source: SideSource | null, playerById: Map<string, Player>): XI {
+  if (!source) return xiFromIds('4-3-3', [], playerById);
+  const players = source.playerIds.map((id) => playerById.get(id)).filter((p): p is Player => !!p);
+  const fit = fitFormation(players);
+  return xiFromIds(fit.formation, fit.playerIds, playerById);
+}
+
+const idsOf = (xi: XI) => Array.from({ length: 11 }, (_, i) => xi.assignments[i]?.id ?? null);
+const sameXI = (a: XI, b: XI) => a.formation === b.formation && idsOf(a).join() === idsOf(b).join();
+
+export default function LineupBuilderClient({ allPlayers, initialState, fixtures, initialFixture, lineups }: Props) {
   const [title, setTitle] = useState<string>(initialState.title);
   const [fixture, setFixture] = useState<BuilderFixture | null>(initialFixture);
-  const [clubFilter, setClubFilter] = useState<string | null>(() => {
-    const c = initialState.clubFilter ?? null;
-    // A shared match link only ever narrows to one of its own two clubs.
-    if (c && initialFixture && c !== initialFixture.home && c !== initialFixture.away) return null;
-    return c;
-  });
+  const [side, setSide] = useState<MatchSide>(initialState.side ?? 'home');
+  const [clubFilter, setClubFilter] = useState<string | null>(initialFixture ? null : initialState.clubFilter ?? null);
 
-  // An old link's match can sit outside this matchweek's window; it still heads the list.
+  // Map of all players by ID for fast lookup
+  const playerById = useMemo(() => {
+    const map = new Map<string, Player>();
+    for (const p of allPlayers) map.set(p.id, p);
+    return map;
+  }, [allPlayers]);
+
+  // An old link's match can sit outside the window; it still heads the list.
   const fixtureOptions = useMemo(
     () =>
       initialFixture && !fixtures.some((f) => fixtureKey(f) === fixtureKey(initialFixture))
@@ -70,33 +112,69 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
       .map(([slug, name]) => ({ slug, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [allPlayers]);
-  const clubOptions = useMemo(
-    () =>
-      fixture
-        ? [
-            { slug: fixture.home, name: fixture.homeName },
-            { slug: fixture.away, name: fixture.awayName },
-          ]
-        : leagueClubs,
-    [fixture, leagueClubs],
+
+  // The free-form XI, and each match's two, kept apart so switching between them loses nothing.
+  const [soloXI, setSoloXI] = useState<XI>(() =>
+    initialFixture
+      ? xiFromIds('4-3-3', [], playerById)
+      : xiFromIds(initialState.formation, initialState.playerIds, playerById),
+  );
+  const [matchXIs, setMatchXIs] = useState<Record<string, Record<MatchSide, XI>>>(() => {
+    if (!initialFixture) return {};
+    const source = lineups[fixtureKey(initialFixture)];
+    const linkedHome = initialState.playerIds.some(Boolean);
+    return {
+      [fixtureKey(initialFixture)]: {
+        home: linkedHome
+          ? xiFromIds(initialState.formation, initialState.playerIds, playerById)
+          : xiFromSource(source?.home ?? null, playerById),
+        away: initialState.away
+          ? xiFromIds(initialState.away.formation, initialState.away.playerIds, playerById)
+          : xiFromSource(source?.away ?? null, playerById),
+      },
+    };
+  });
+
+  const matchKey = fixture ? fixtureKey(fixture) : null;
+  const source: SideSource | null = matchKey ? lineups[matchKey]?.[side] ?? null : null;
+  const active: XI = (matchKey && matchXIs[matchKey]?.[side]) || soloXI;
+  const { formation, assignments } = active;
+
+  const updateActive = useCallback(
+    (fn: (xi: XI) => XI) => {
+      if (!matchKey) {
+        setSoloXI(fn);
+        return;
+      }
+      setMatchXIs((prev) => {
+        const pair = prev[matchKey];
+        if (!pair) return prev;
+        return { ...prev, [matchKey]: { ...pair, [side]: fn(pair[side]) } };
+      });
+    },
+    [matchKey, side],
+  );
+  const setFormation = useCallback((f: Formation) => updateActive((xi) => ({ ...xi, formation: f })), [updateActive]);
+  const setAssignments = useCallback(
+    (fn: (prev: Record<number, Player | null>) => Record<number, Player | null>) =>
+      updateActive((xi) => ({ ...xi, assignments: fn(xi.assignments) })),
+    [updateActive],
   );
 
-  // Map of all players by ID for fast lookup
-  const playerById = useMemo(() => {
-    const map = new Map<string, Player>();
-    for (const p of allPlayers) map.set(p.id, p);
-    return map;
-  }, [allPlayers]);
+  const sideClub = fixture ? { slug: fixture[side], name: side === 'home' ? fixture.homeName : fixture.awayName } : null;
+  const clubOptions = useMemo(() => (sideClub ? [sideClub] : leagueClubs), [sideClub?.slug, leagueClubs]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Slot assignments (0..10)
-  const [assignments, setAssignments] = useState<Record<number, Player | null>>(() => {
-    const initial: Record<number, Player | null> = {};
-    for (let i = 0; i < 11; i++) {
-      const pid = initialState.playerIds[i];
-      initial[i] = pid ? playerById.get(pid) ?? null : null;
-    }
-    return initial;
-  });
+  // Each side's XI as the match gave it: the way back after edits, and what a link can leave out.
+  const sourceXIs = useMemo(() => {
+    if (!matchKey) return null;
+    const pair = lineups[matchKey];
+    return {
+      home: pair?.home ? xiFromSource(pair.home, playerById) : null,
+      away: pair?.away ? xiFromSource(pair.away, playerById) : null,
+    };
+  }, [matchKey, lineups, playerById]);
+  const sourceXI = sourceXIs?.[side] ?? null;
+  const edited = sourceXI !== null && !sameXI(sourceXI, active);
 
   // Active slot being edited in modal
   const [activeSlot, setActiveSlot] = useState<{ slotIndex: number; pos: GranularPosition } | null>(null);
@@ -121,21 +199,24 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
 
   // Sync URL query params whenever state changes
   useEffect(() => {
-    const playerIds = Array(11)
-      .fill(null)
-      .map((_, i) => assignments[i]?.id ?? null);
-
+    const pair = matchKey ? matchXIs[matchKey] : null;
+    const home = pair?.home ?? soloXI;
+    // A side left as the match gave it stays out of the link, which rebuilds it from the match.
+    const homeAsGiven = pair && sourceXIs?.home ? sameXI(sourceXIs.home, pair.home) : false;
+    const awayAsGiven = pair && sourceXIs?.away ? sameXI(sourceXIs.away, pair.away) : false;
     const serialized = serializeLineup({
-      formation,
+      formation: home.formation,
       title,
-      clubFilter,
+      clubFilter: fixture ? null : clubFilter,
       fixture: fixture ? { season: fixture.season, id: fixture.id } : null,
-      playerIds,
+      playerIds: homeAsGiven ? [] : idsOf(home),
+      away: pair && !awayAsGiven ? { formation: pair.away.formation, playerIds: idsOf(pair.away) } : null,
+      side,
     });
 
     const newUrl = `${window.location.pathname}?${serialized}`;
     window.history.replaceState(null, '', newUrl);
-  }, [formation, title, clubFilter, fixture, assignments]);
+  }, [title, clubFilter, fixture, matchKey, matchXIs, soloXI, side, sourceXIs]);
 
   // Set of player IDs currently assigned to avoid duplicates
   const assignedPlayerIds = useMemo(() => {
@@ -200,7 +281,7 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
 
       setActiveSlot(null);
     },
-    [activeSlot]
+    [activeSlot, setAssignments]
   );
 
   const handleRemovePlayer = useCallback(() => {
@@ -210,14 +291,20 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
       [activeSlot.slotIndex]: null,
     }));
     setActiveSlot(null);
-  }, [activeSlot]);
+  }, [activeSlot, setAssignments]);
 
   const handleReset = useCallback(() => {
     const empty: Record<number, Player | null> = {};
     for (let i = 0; i < 11; i++) empty[i] = null;
-    setAssignments(empty);
+    setAssignments(() => empty);
     setFeedbackNotice('Lineup cleared');
-  }, []);
+  }, [setAssignments]);
+
+  const handleRestore = useCallback(() => {
+    if (!sourceXI) return;
+    updateActive(() => sourceXI);
+    setFeedbackNotice(source?.kind === 'started' ? 'Starting XI restored' : 'Last XI restored');
+  }, [sourceXI, source?.kind, updateActive]);
 
   const handleSelectFixture = useCallback(
     (key: string) => {
@@ -228,10 +315,24 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
         const auto = !t || (fixture !== null && t === fixtureTitle(fixture));
         return auto ? (next ? fixtureTitle(next) : '') : prev;
       });
-      setClubFilter((prev) => (next && prev && prev !== next.home && prev !== next.away ? null : prev));
+      if (next) {
+        const k = fixtureKey(next);
+        setMatchXIs((prev) =>
+          prev[k]
+            ? prev
+            : {
+                ...prev,
+                [k]: {
+                  home: xiFromSource(lineups[k]?.home ?? null, playerById),
+                  away: xiFromSource(lineups[k]?.away ?? null, playerById),
+                },
+              },
+        );
+      }
+      setSide('home');
       setFixture(next);
     },
-    [fixture, fixtureOptions],
+    [fixture, fixtureOptions, lineups, playerById],
   );
 
   const handleCopyLink = useCallback(async () => {
@@ -261,6 +362,7 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
         formation,
         slots: slotsList,
         matchweek: fixture?.gameweek ?? null,
+        club: sideClub ? { name: sideClub.name, slug: sideClub.slug } : null,
       });
 
       if (!blob) {
@@ -314,10 +416,17 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
     } finally {
       setIsExporting(false);
     }
-  }, [assignments, formation, title, fixture]);
+  }, [assignments, formation, title, fixture, sideClub?.name, sideClub?.slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const slotPositions = FORMATION_SLOTS[formation] as GranularPosition[];
   const caption = feedbackNotice ?? `${filledCount} of 11 picked`;
+  const provenance = !fixture
+    ? null
+    : !source
+      ? 'No lineup yet'
+      : source.kind === 'started'
+        ? `Starting XI · ${kickoffDay(source.from.kickoff)}`
+        : `Last XI · vs. ${source.from.opponentName} (${source.from.atHome ? 'H' : 'A'}) · ${kickoffDay(source.from.kickoff)}`;
 
   return (
     <div className={styles.page}>
@@ -361,6 +470,27 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
             </div>
           </div>
           <div className={styles.meterRow}>
+            {fixture && (
+              <div className={styles.sideSwitch} role="radiogroup" aria-label="Side">
+                {SIDES.map((s) => {
+                  const name = s === 'home' ? fixture.homeName : fixture.awayName;
+                  const badge = clubBadgePath(fixture[s]);
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      role="radio"
+                      aria-checked={side === s}
+                      className={`${styles.sideBtn} ${side === s ? styles.sideBtnOn : ''}`}
+                      onClick={() => setSide(s)}
+                    >
+                      {badge && <img src={badge} alt="" width={20} height={20} className={styles.sideCrest} />}
+                      <span className={styles.sideName}>{name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <div
               className={styles.meter}
               role="progressbar"
@@ -420,7 +550,7 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
           <aside className={styles.rail} aria-label="Starting XI">
             <div className={styles.railHead}>
               <div className={styles.railTitleRow}>
-                <h2 className={styles.railH}>Starting XI</h2>
+                <h2 className={styles.railH}>{sideClub ? `${sideClub.name} XI` : 'Starting XI'}</h2>
                 <button type="button" className={styles.textBtn} onClick={handleReset} disabled={filledCount === 0}>
                   Clear XI
                 </button>
@@ -446,21 +576,32 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
                   </select>
                 </label>
               )}
-              <label className={styles.pickFrom}>
-                <span className="g-label">Pick From</span>
-                <select
-                  className={styles.select}
-                  value={clubFilter || ''}
-                  onChange={(e) => setClubFilter(e.target.value || null)}
-                >
-                  <option value="">{fixture ? 'Both Clubs' : 'All Clubs'}</option>
-                  {clubOptions.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {fixture ? (
+                <div className={styles.provenance}>
+                  <span className={styles.provenanceText}>{provenance}</span>
+                  {edited && (
+                    <button type="button" className={styles.textBtn} onClick={handleRestore}>
+                      Restore
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <label className={styles.pickFrom}>
+                  <span className="g-label">Pick From</span>
+                  <select
+                    className={styles.select}
+                    value={clubFilter || ''}
+                    onChange={(e) => setClubFilter(e.target.value || null)}
+                  >
+                    <option value="">All Clubs</option>
+                    {clubOptions.map((c) => (
+                      <option key={c.slug} value={c.slug}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
             </div>
             <ol className={styles.railList}>
               {slotPositions.map((pos, i) => {
@@ -512,7 +653,7 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
           onSelectPlayer={handleSelectPlayer}
           onRemovePlayer={handleRemovePlayer}
           onClose={() => setActiveSlot(null)}
-          initialClubFilter={clubFilter}
+          initialClubFilter={sideClub ? sideClub.slug : clubFilter}
           clubOptions={clubOptions}
           matchOnly={fixture !== null}
         />
