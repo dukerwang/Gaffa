@@ -63,14 +63,19 @@
   font-weight: 700;
   font-size: clamp(44px, 6.4vw, 84px);
   line-height: 1;
-  letter-spacing: 0.14em;
-  margin-right: -0.14em;
+  /* Tracking is proportional, so the topbar's 0.12em reads looser at 84px.
+     Display sizes want it tighter. */
+  letter-spacing: 0.08em;
+  margin-right: -0.08em;
   text-transform: uppercase;
   color: var(--shelf-ink);
+  /* Capitals sit in the top of the line box with the descender space empty
+     below, which made the lockup read high. Trim the box to the capitals. */
+  text-box: trim-both cap alphabetic;
   animation: sealIn 600ms var(--ease-out-expo) 120ms both;
 }
 .descriptor {
-  margin-top: 14px;
+  margin-top: 18px;
   font-family: var(--font-label);
   font-size: var(--t-13);
   font-weight: 600;
@@ -103,6 +108,9 @@
   margin: 8px 0 6px;
 }
 .matchweekD { font-size: var(--t-13); color: var(--shelf-soft); }
+@supports not (text-box: trim-both cap alphabetic) {
+  .shelfH { padding-top: 0.13em; }
+}
 @keyframes sealIn { from { opacity: 0; transform: translateY(8px); } }
 @keyframes sealDraw { from { stroke-dashoffset: 352; } }
 @media (prefers-reduced-motion: reduce) {
