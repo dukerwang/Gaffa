@@ -17,6 +17,7 @@ import type { HeadToHead, Tally } from '@/lib/heritage/headToHead';
 import { outcomeFor, type Result } from '@/lib/heritage/results';
 import HeritageNav from '../../HeritageNav';
 import styles from '../../heritage.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface Side {
   teamId: string;
@@ -145,9 +146,9 @@ export default function PairingView({ leagueId, h2h, subject, opponent, isViewer
       </div>
 
       {h2h.played === 0 ? (
-        <p className={styles.empty}>
+        <EmptyState>
           These two haven’t met in a completed fixture yet.
-        </p>
+        </EmptyState>
       ) : (
         <>
           <div className={styles.block}>

@@ -61,3 +61,6 @@ export type { SkeletonProps } from './Skeleton';
 
 export { Disclosure } from './Disclosure';
 export type { DisclosureProps } from './Disclosure';
+
+export { default as EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';

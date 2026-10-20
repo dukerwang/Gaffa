@@ -13,6 +13,7 @@ import type { CrestConfig } from '@/components/crest/types';
 import type { HeadToHead } from '@/lib/heritage/headToHead';
 import HeritageNav from '../HeritageNav';
 import styles from '../heritage.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface Club {
   teamId: string;
@@ -74,9 +75,9 @@ export default function RivalriesView({ leagueId, pairings, clubs, viewerTeamId 
       <HeritageNav leagueId={leagueId} active="Head-to-Head" />
 
       {pairings.length === 0 ? (
-        <p className={styles.empty}>
+        <EmptyState>
           No club has played another yet. You’ll see records after the first completed gameweek.
-        </p>
+        </EmptyState>
       ) : (
         <>
           {mine.length > 0 && (
