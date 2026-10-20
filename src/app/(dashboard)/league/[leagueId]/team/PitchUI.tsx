@@ -395,9 +395,9 @@ function RowScore({ cell }: { cell: ScoreCell }) {
 export default function PitchUI({
     teamId,
     teamName,
-    allEntries,
-    irEntries,
-    taxiEntries,
+    allEntries: serverAllEntries,
+    irEntries: serverIrEntries,
+    taxiEntries: serverTaxiEntries,
     taxiAgeLimit = DEFAULT_TAXI_AGE_LIMIT,
     season,
     initialFormation,
@@ -415,7 +415,7 @@ export default function PitchUI({
     lineupWeekLabel,
     activeRosterCount,
     maxRosterSize,
-    capacity,
+    capacity: serverCapacity,
     leagueId,
     facilityOffers,
     lineupLocked = false,
@@ -424,6 +424,49 @@ export default function PitchUI({
     projectionGameweek,
 }: Props) {
     const router = useRouter();
+
+    // Academy and IR moves show at once. The routes write the new status, but
+    // router.refresh() re-runs the whole server page, which takes seconds; until
+    // then the player stayed in Reserves and a second try was refused ("already
+    // in the academy"). Each move records the player's new tier here, and the
+    // overrides clear when the refreshed entries arrive.
+    const [movedTo, setMovedTo] = useState<Record<string, 'taxi' | 'ir' | 'bench'>>({});
+    useEffect(() => { setMovedTo({}); }, [serverAllEntries, serverTaxiEntries, serverIrEntries]);
+    const recordMove = useCallback((moves: Record<string, 'taxi' | 'ir' | 'bench'>) => {
+        setMovedTo((prev) => ({ ...prev, ...moves }));
+    }, []);
+    const { allEntries, taxiEntries, irEntries } = useMemo(() => {
+        const everyone = [...serverAllEntries, ...serverTaxiEntries, ...serverIrEntries];
+        const tierOf = (e: RosterEntry & { player: Player }): 'taxi' | 'ir' | 'bench' =>
+            movedTo[e.player.id] ?? (e.status === 'taxi' || e.status === 'ir' ? e.status : 'bench');
+        const inTier = (tier: 'taxi' | 'ir' | 'bench') => everyone.filter((e) => tierOf(e) === tier);
+        const withStatus = (e: RosterEntry & { player: Player }, status: 'taxi' | 'ir' | 'bench') =>
+            e.status === status || (status === 'bench' && e.status === 'active') ? e : { ...e, status };
+        return {
+            allEntries: inTier('bench').map((e) => withStatus(e, 'bench')),
+            taxiEntries: inTier('taxi').map((e) => withStatus(e, 'taxi')),
+            irEntries: inTier('ir').map((e) => withStatus(e, 'ir')),
+        };
+    }, [serverAllEntries, serverTaxiEntries, serverIrEntries, movedTo]);
+    // The counts follow the same moves, since they also decide which tiers
+    // accept a player (a full Academy, an open squad slot).
+    const capacity = useMemo(() => {
+        if (!serverCapacity) return serverCapacity;
+        const academy = serverCapacity.academy + (taxiEntries.length - serverTaxiEntries.length);
+        const ir = serverCapacity.ir + (irEntries.length - serverIrEntries.length);
+        const active = serverCapacity.active + (allEntries.length - serverAllEntries.length);
+        return {
+            ...serverCapacity,
+            academy,
+            ir,
+            active,
+            open: Math.max(0, serverCapacity.limit - active),
+            isFull: active >= serverCapacity.limit,
+            isOver: active > serverCapacity.limit,
+            atFloor: active <= serverCapacity.floor,
+        };
+    }, [serverCapacity, allEntries, taxiEntries, irEntries, serverAllEntries, serverTaxiEntries, serverIrEntries]);
+
     const scoringStartedTeamIds = scoringLockedTeamIds ?? lockedTeamIds;
     const scoringLineupSet = useMemo(() => new Set(scoringLineupPlayerIds ?? []), [scoringLineupPlayerIds]);
     const isIrLocked = useCallback((player: Player | undefined) => !!player && isIrChangeLocked({
@@ -958,6 +1001,7 @@ export default function PitchUI({
                 return;
             }
             unassignPlayer(playerId);
+            recordMove({ [playerId]: 'taxi' });
             setLineupSelection(null);
             router.refresh();
         } catch {
@@ -965,7 +1009,7 @@ export default function PitchUI({
         } finally {
             setSidebarLoading(false);
         }
-    }, [teamId, unassignPlayer, router]);
+    }, [teamId, unassignPlayer, recordMove, router]);
 
     // ── Move active player directly to IR ──
     const handleMoveToIr = useCallback(async (playerId: string) => {
@@ -983,6 +1027,7 @@ export default function PitchUI({
                 return;
             }
             unassignPlayer(playerId);
+            recordMove({ [playerId]: 'ir' });
             setLineupSelection(null);
             router.refresh();
         } catch {
@@ -990,7 +1035,7 @@ export default function PitchUI({
         } finally {
             setSidebarLoading(false);
         }
-    }, [teamId, unassignPlayer, router]);
+    }, [teamId, unassignPlayer, recordMove, router]);
 
     // ── Taxi swap: swap an active player with an academy player ──
     const handleTaxiSwap = useCallback(async (outgoingTaxiId: string, incomingActiveId: string) => {
@@ -1013,13 +1058,14 @@ export default function PitchUI({
                 return;
             }
             unassignPlayer(incomingActiveId);
+            recordMove({ [incomingActiveId]: 'taxi', [outgoingTaxiId]: 'bench' });
             router.refresh();
         } catch {
             setSidebarError('Could not reach the server. Try again.');
         } finally {
             setSidebarLoading(false);
         }
-    }, [teamId, unassignPlayer, router]);
+    }, [teamId, unassignPlayer, recordMove, router]);
 
     type DirectPlacement = { type: 'starter'; slotIndex: number } | { type: 'bench'; slot: BenchSlot };
 
@@ -1039,6 +1085,7 @@ export default function PitchUI({
                 const d = await res.json();
                 failSidebar(d, 'Failed to activate');
             } else {
+                recordMove({ [playerId]: 'bench' });
                 if (placement?.type === 'starter') {
                     setAssignments((prev) => ({ ...prev, [placement.slotIndex]: playerId }));
                     setSaveError(null);
@@ -1055,7 +1102,7 @@ export default function PitchUI({
         } finally {
             setSidebarLoading(false);
         }
-    }, [holding, teamId, router]);
+    }, [holding, teamId, recordMove, router]);
 
     // ── IR swap: swap an active player with an IR player ──
     const handleIrSwap = useCallback(async (outgoingIrId: string, incomingActiveId: string) => {
@@ -1078,13 +1125,14 @@ export default function PitchUI({
                 return;
             }
             unassignPlayer(incomingActiveId);
+            recordMove({ [incomingActiveId]: 'ir', [outgoingIrId]: 'bench' });
             router.refresh();
         } catch {
             setSidebarError('Could not reach the server. Try again.');
         } finally {
             setSidebarLoading(false);
         }
-    }, [teamId, unassignPlayer, router]);
+    }, [teamId, unassignPlayer, recordMove, router]);
 
     // ── IR standalone activate ──
     const handleIrActivate = useCallback(async (playerId: string, placement?: DirectPlacement) => {
@@ -1102,6 +1150,7 @@ export default function PitchUI({
                 const d = await res.json();
                 failSidebar(d, 'Failed to activate from IR');
             } else {
+                recordMove({ [playerId]: 'bench' });
                 if (placement?.type === 'starter') {
                     setAssignments((prev) => ({ ...prev, [placement.slotIndex]: playerId }));
                     setSaveError(null);
@@ -1118,7 +1167,7 @@ export default function PitchUI({
         } finally {
             setSidebarLoading(false);
         }
-    }, [holding, teamId, router]);
+    }, [holding, teamId, recordMove, router]);
 
     // ── Starter node click ──
     const handleStarterClick = useCallback(
@@ -2153,7 +2202,7 @@ export default function PitchUI({
                                 {teamName && <span className={`g-label ${styles.pitchLabelLeft}`}>{teamName}</span>}
                                 {activeRosterCount !== undefined && (
                                     <span className={`g-label ${styles.pitchLabelRight}`}>
-                                        {activeRosterCount}/{maxRosterSize} Active Roster
+                                        {capacity?.active ?? activeRosterCount}/{maxRosterSize} Active Roster
                                     </span>
                                 )}
                             </div>
