@@ -1,7 +1,6 @@
 import type { CSSProperties } from 'react';
 import NavigationLink from '@/components/ui/NavigationLink';
-import CrestBadge from '@/components/crest/CrestBadge';
-import type { CrestConfig } from '@/components/crest/types';
+import { Icon } from '@/components/ui/Icon';
 import type { DashboardModel, FixtureRow } from '@/lib/dashboard/buildDashboardModel';
 import LocalTime from './LocalTime';
 import styles from './dashboard.module.css';
@@ -10,48 +9,67 @@ import styles from './dashboard.module.css';
 
 export function Shelf({ model }: { model: DashboardModel }) {
   const { cards, counts } = model;
-  const crests = cards.slice(0, 3);
-  const more = cards.length - crests.length;
   const clubs = `${cards.length} ${cards.length === 1 ? 'club' : 'clubs'}`;
   const playing = counts.live ? ` · ${counts.live} playing now` : '';
+  const deadline =
+    cards
+      .map((c) => c.match?.deadline)
+      .filter((d): d is string => Boolean(d))
+      .sort()[0] ?? null;
 
   return (
     <div className={styles.shelf}>
       <div className={styles.shelfInner}>
-        <div className={styles.stack} aria-hidden="true">
-          {crests.map((c) => (
-            <span key={c.leagueId} className={styles.stackItem}>
-              <CrestBadge
-                config={c.myCrest as CrestConfig | null}
-                size={20}
-                teamName={c.myTeamName}
-                interactive={false}
-              />
-            </span>
-          ))}
-          {more > 0 && <span className={styles.stackMore}>+{more}</span>}
-        </div>
-        <div className={styles.shelfTitle}>
-          <h1 className={styles.shelfH}>Your Leagues</h1>
-          <div className={styles.shelfSub}>
-            {clubs}
-            {playing}
-            <span className={styles.shelfDesktopOnly}> &middot; Matchweek {model.gameweek}</span>
+        <div className={styles.hero}>
+          <Icon name="gaffa" size={112} className={styles.seal} aria-hidden="true" />
+          <div className={styles.wordmark}>
+            <h1 className={styles.shelfH}>Gaffa</h1>
+            <div className={styles.descriptor}>Dynasty Fantasy Football</div>
+          </div>
+          <div className={styles.matchweek}>
+            <span className={styles.matchweekK}>Matchweek</span>
+            <div className={styles.matchweekV}>{model.gameweek}</div>
+            {deadline && (
+              <div className={styles.matchweekD}>
+                <LocalTime iso={deadline} variant="dayTime" prefix="Deadline " />
+              </div>
+            )}
           </div>
         </div>
-        <div className={styles.pills}>
-          {counts.live > 0 && (
-            <span className={styles.pill}>
-              <span className={styles.pillDot} aria-hidden="true" />
-              {counts.live} Live
-            </span>
-          )}
-          {counts.drafting > 0 && <span className={styles.pill}>{counts.drafting} Drafting</span>}
-          {counts.setup > 0 && <span className={styles.pill}>{counts.setup} Pre-Draft</span>}
-          {counts.offseason > 0 && <span className={styles.pill}>{counts.offseason} Offseason</span>}
+        <div className={styles.shelfLabel}>
+          <h2 className={styles.shelfLabelH}>Your Leagues</h2>
+          <span className={styles.shelfSub}>
+            {clubs}
+            {playing}
+          </span>
+          <div className={styles.pills}>
+            {counts.live > 0 && (
+              <span className={styles.pill}>
+                <span className={styles.pillDot} aria-hidden="true" />
+                {counts.live} Live
+              </span>
+            )}
+            {counts.drafting > 0 && <span className={styles.pill}>{counts.drafting} Drafting</span>}
+            {counts.setup > 0 && <span className={styles.pill}>{counts.setup} Pre-Draft</span>}
+            {counts.offseason > 0 && <span className={styles.pill}>{counts.offseason} Offseason</span>}
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export function Closer() {
+  return (
+    <footer className={styles.closer}>
+      <div className={styles.closerInner}>
+        <Icon name="gaffa" size={56} className={styles.closerMark} aria-hidden="true" />
+        <div>
+          <div className={styles.closerName}>Gaffa</div>
+          <div className={styles.closerSub}>Dynasty Fantasy Football</div>
+        </div>
+      </div>
+    </footer>
   );
 }
 

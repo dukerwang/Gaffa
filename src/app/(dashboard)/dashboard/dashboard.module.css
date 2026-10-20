@@ -29,51 +29,106 @@
   --shelf-soft: color-mix(in oklab, var(--color-text-inverse) 68%, var(--color-topbar));
   position: relative;
   margin-top: calc(var(--space-8) * -1);
-  padding: var(--s8) 0 96px;
+  padding: var(--s10) 0 112px;
   color: var(--shelf-ink);
   border-image: repeating-linear-gradient(90deg, var(--shelf-a) 0 36px, var(--shelf-b) 36px 72px) fill 0 / 0 / 0 100vmax;
 }
 
-.shelfInner {
+.shelfInner { display: flex; flex-direction: column; }
+
+/* The lockup is the topbar's wordmark scaled up beside the mark, so the brand
+   has one voice at every size. Tracked caps pair with the mark's line weight;
+   a heavy lowercase display face fought it. */
+.hero {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas: 'stack title pills';
-  align-items: end;
-  gap: var(--s6);
+  align-items: center;
+  gap: 28px;
 }
-.shelfTitle { grid-area: title; min-width: 0; }
+.seal {
+  display: block;
+  width: 112px;
+  height: 112px;
+  color: var(--color-bg);
+  animation: sealIn 500ms var(--ease-out-expo) both;
+}
+.seal circle {
+  stroke-dasharray: 352;
+  animation: sealDraw 900ms var(--ease-out-expo) both;
+}
+.wordmark { min-width: 0; }
 .shelfH {
   margin: 0;
   font-family: var(--font-serif);
   font-weight: 700;
-  font-size: var(--t-40);
+  font-size: clamp(44px, 6.4vw, 84px);
   line-height: 1;
-  letter-spacing: -0.034em;
+  /* Tracking is proportional, so the topbar's 0.12em reads looser at 84px.
+     Display sizes want it tighter. */
+  letter-spacing: 0.08em;
+  margin-right: -0.08em;
+  text-transform: uppercase;
   color: var(--shelf-ink);
+  /* Capitals sit in the top of the line box with the descender space empty
+     below, which made the lockup read high. Trim the box to the capitals. */
+  text-box: trim-both cap alphabetic;
+  animation: sealIn 600ms var(--ease-out-expo) 120ms both;
 }
-.shelfSub { font-size: var(--t-13); color: var(--shelf-soft); margin-top: var(--s2); }
-
-.stack { grid-area: stack; display: flex; }
-.stackItem {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: var(--r-round);
-  background: var(--color-bg-card);
-  border: 3px solid var(--color-topbar);
-  margin-left: -12px;
+.descriptor {
+  margin-top: 18px;
+  font-family: var(--font-label);
+  font-size: var(--t-13);
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--shelf-soft);
+  animation: sealIn 600ms var(--ease-out-expo) 220ms both;
 }
-.stackItem:first-child { margin-left: 0; }
-.stackMore {
-  composes: stackItem;
+.matchweek {
+  justify-self: end;
+  padding-left: 28px;
+  border-left: 1px solid color-mix(in oklab, var(--shelf-ink) 22%, transparent);
+  animation: sealIn 600ms var(--ease-out-expo) 320ms both;
+}
+.matchweekK {
+  display: block;
   font-family: var(--font-label);
   font-size: var(--t-12);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--shelf-soft);
+}
+.matchweekV {
+  font-family: var(--font-serif);
   font-weight: 700;
-  color: var(--color-text-primary);
+  font-size: 56px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin: 8px 0 6px;
+}
+.matchweekD { font-size: var(--t-13); color: var(--shelf-soft); }
+@supports not (text-box: trim-both cap alphabetic) {
+  .shelfH { padding-top: 0.13em; }
+}
+@keyframes sealIn { from { opacity: 0; transform: translateY(8px); } }
+@keyframes sealDraw { from { stroke-dashoffset: 352; } }
+@media (prefers-reduced-motion: reduce) {
+  .seal, .seal circle, .shelfH, .descriptor, .matchweek { animation: none; }
 }
 
-.pills { grid-area: pills; display: flex; flex-wrap: wrap; gap: var(--s2); padding-bottom: 2px; }
+.shelfLabel { display: flex; align-items: center; gap: var(--s3); margin-top: 48px; }
+.shelfLabelH {
+  margin: 0;
+  font-family: var(--font-label);
+  font-size: var(--t-13);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.shelfSub { font-size: var(--t-13); color: var(--shelf-soft); }
+
+.pills { margin-left: auto; display: flex; flex-wrap: wrap; gap: var(--s2); }
 .pill {
   display: inline-flex;
   align-items: center;
@@ -542,19 +597,27 @@
 
 /* ---------- mobile: one column, composed for the thumb ---------- */
 @media (max-width: 860px) {
-  .shelf { margin-top: calc(var(--space-4) * -1); padding: 18px 0 66px; }
-  .shelfInner {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: 'title stack' 'pills pills';
-    gap: 14px var(--s3);
+  .shelf { margin-top: calc(var(--space-4) * -1); padding: 24px 0 80px; }
+  .hero { grid-template-columns: auto minmax(0, 1fr); gap: 14px 18px; }
+  .seal { width: 76px; height: 76px; }
+  .shelfH { font-size: clamp(34px, 11vw, 48px); }
+  .descriptor { font-size: var(--t-11); letter-spacing: 0.2em; margin-top: 12px; }
+  .matchweek {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 14px 0 0;
+    border-left: 0;
+    border-top: 1px solid color-mix(in oklab, var(--shelf-ink) 20%, transparent);
   }
-  .shelfH { font-size: 29px; letter-spacing: -0.032em; }
-  .shelfSub { font-size: var(--t-12); margin-top: 6px; }
-  .stackItem { width: 34px; height: 34px; border-width: 2px; margin-left: -10px; }
-  .pills { padding-bottom: 0; }
+  .matchweekK { order: -1; }
+  .matchweekV { font-size: 28px; margin: 0; }
+  .shelfLabel { margin-top: 24px; flex-wrap: wrap; }
+  .pills { margin-left: 0; width: 100%; }
   .pill { height: 26px; padding: 0 10px; font-size: var(--t-11); gap: 6px; }
   .pillDot { width: 6px; height: 6px; }
-  .shelfDesktopOnly { display: none; }
 
   .leagueRow { margin-top: -48px; grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .cardGrid { gap: 14px; }
@@ -633,3 +696,18 @@
   .firstGrid { grid-template-columns: minmax(0, 1fr); gap: 30px; margin-top: var(--s8); }
   .pair .plinth { height: 150px; }
 }
+
+/* ---------- closing band: bookends the shelf ---------- */
+.closer {
+  position: relative;
+  margin-top: var(--s16);
+  padding: var(--s12) 0;
+  color: var(--shelf-ink);
+  --shelf-ink: var(--color-text-inverse);
+  --shelf-soft: color-mix(in oklab, var(--color-text-inverse) 68%, var(--color-topbar));
+  border-image: repeating-linear-gradient(90deg, var(--color-topbar) 0 36px, color-mix(in oklab, var(--color-topbar) 94%, white) 36px 72px) fill 0 / 0 / 0 100vmax;
+}
+.closerInner { display: flex; align-items: center; gap: var(--s5); }
+.closerMark { width: 56px; height: 56px; color: var(--color-bg); flex: none; }
+.closerName { font-family: var(--font-serif); font-weight: 700; font-size: var(--t-24, 24px); letter-spacing: 0.14em; text-transform: uppercase; }
+.closerSub { margin-top: 6px; font-family: var(--font-label); font-size: var(--t-12); font-weight: 600; letter-spacing: 0.28em; text-transform: uppercase; color: var(--shelf-soft); }
