@@ -25,6 +25,7 @@ const ProposeBuilder = dynamic(() => import('@/components/transfers/ProposeBuild
 const ListingEditor = dynamic(() => import('@/components/transfers/ListingEditor'), { ssr: false });
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { describeDeal } from '@/lib/transfers/describeDeal';
+import EmptyState from '@/components/ui/EmptyState';
 
 /**
  * Deals — your business only.
@@ -494,7 +495,7 @@ export default function DealsClient({
           </div>
 
           {answerCount === 0 ? (
-            <p className={styles.empty}>Your inbox is clear.</p>
+            <EmptyState size="compact">Your inbox is clear.</EmptyState>
           ) : (
             <>
               {toAnswer.map((p) => <TradeCard key={p.id} p={p} incoming />)}
@@ -524,7 +525,7 @@ export default function DealsClient({
           </div>
 
           {myListings.length === 0 ? (
-            <p className={styles.empty}>You have nobody on the market.</p>
+            <EmptyState size="compact">You have nobody on the market.</EmptyState>
           ) : (
             <div className={styles.listingGrid}>
               {myListings.map((l) => (

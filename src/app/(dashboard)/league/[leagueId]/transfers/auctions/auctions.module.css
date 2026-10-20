@@ -775,13 +775,6 @@
   color: var(--color-text-primary);
 }
 
-.empty {
-  padding: var(--s8) var(--s6);
-  text-align: center;
-  font-size: var(--t-13);
-  color: var(--color-text-muted);
-}
-
 /* ── Responsive ─────────────────────────────────────────── */
 
 @media (max-width: 1080px) {

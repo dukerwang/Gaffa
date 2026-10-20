@@ -360,13 +360,6 @@
 
 .chev { color: var(--color-text-muted); font-size: var(--t-17); line-height: 1; text-align: right; }
 
-.empty {
-  font-size: var(--t-13);
-  color: var(--color-text-secondary);
-  line-height: 1.55;
-  padding: var(--s5) 0;
-}
-
 /* ── Rail card ────────────────────────────────────────── */
 .railPad { padding: var(--s5); }
 .railId { display: flex; align-items: center; gap: var(--s3); min-width: 0; }

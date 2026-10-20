@@ -378,13 +378,6 @@
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-.empty {
-  padding: var(--s12) var(--s6);
-  text-align: center;
-  font-size: var(--t-13);
-  color: var(--color-text-muted);
-}
-
 /* ── Narrower ─────────────────────────────────────────── */
 @media (max-width: 1000px) {
   .search { width: 150px; }

@@ -9,6 +9,7 @@ import SquadPeekButton from '@/components/teams/SquadPeekButton';
 import { clubHref } from '@/lib/teams/clubHref';
 import { isDrawMargin } from '@/lib/scoring/drawBand';
 import styles from './standings.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 export const dynamic = 'force-dynamic';
 
@@ -164,7 +165,7 @@ export default async function StandingsPage({ params }: Props) {
           just arithmetic on the same standings rather than a second surface. */}
       <div className={styles.panel}>
         {standings.length === 0 ? (
-          <p className={styles.emptyState}>No completed matches yet — check back after Gameweek 1.</p>
+          <EmptyState>No completed matches yet — check back after Gameweek 1.</EmptyState>
         ) : (
           <>
             <div className={styles.podium}>

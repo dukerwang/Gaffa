@@ -17,6 +17,7 @@ import type { SeasonXI, XIPlayer } from '@/lib/heritage/seasonXI';
 import type { GranularPosition } from '@/types';
 import HeritageNav from '../HeritageNav';
 import styles from '../heritage.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface Club {
   teamId: string;
@@ -116,10 +117,10 @@ export default function SeasonsView({
       <HeritageNav leagueId={leagueId} active="Seasons" />
 
       {!selected ? (
-        <p className={styles.empty}>
+        <EmptyState>
           No completed seasons yet. {currentSeason} is the league&rsquo;s first, and you&rsquo;ll see
           it here once it ends.
-        </p>
+        </EmptyState>
       ) : (
         <>
           <div className={styles.block}>
@@ -223,9 +224,9 @@ export default function SeasonsView({
                 </div>
               </div>
             ) : (
-              <p className={styles.empty}>
+              <EmptyState>
                 Gaffa has no saved lineups for {selected}, so it can’t show the winning side.
-              </p>
+              </EmptyState>
             )}
           </div>
         </>

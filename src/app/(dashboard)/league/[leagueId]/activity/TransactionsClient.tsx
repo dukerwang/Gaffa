@@ -16,6 +16,7 @@ import {
 } from '@/lib/transactions/buildRegister';
 import type { GranularPosition } from '@/types';
 import styles from './transactions.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 /**
  * A season as a window in time. `transactions` carries no season column, so the
@@ -352,11 +353,11 @@ export default function TransactionsClient({
       </div>
 
       {groups.length === 0 ? (
-        <p className={styles.empty}>
+        <EmptyState>
           {entries.length === 0
             ? `No player has changed hands in ${leagueName} yet.`
             : 'Nothing matches these filters.'}
-        </p>
+        </EmptyState>
       ) : (
         <div key={isClient ? 'local' : 'utc'} className={styles.feed}>
           {groups.map((g) => (
