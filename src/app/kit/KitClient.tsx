@@ -18,7 +18,6 @@ import {
   Skeleton,
   Switch,
   Tabs,
-  Toaster,
   Tooltip,
   toast,
 } from '@/components/ui';
@@ -121,7 +120,6 @@ export default function KitClient() {
         <DisclosureBoard />
       </main>
 
-      <Toaster />
     </div>
   );
 }

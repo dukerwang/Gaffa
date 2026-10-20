@@ -50,5 +50,6 @@ is a decision of Duke's; change them freely, and say why.
 
 ## Adoption
 
-`<Toaster />` is mounted only on `/kit` so far. Mount it once in
-`src/app/layout.tsx` before calling `toast()` from app pages.
+`<Toaster />` is mounted once in `src/app/layout.tsx`, so any client component
+can call `toast()` from `@/components/ui`. Don't mount a second one: each
+Toaster renders every toast, so two would show each notice twice.
