@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Formation, GranularPosition, Player } from '@/types';
 import { FORMATION_SLOTS } from '@/types';
 import { serializeLineup, VALID_FORMATIONS, type SerializedLineup } from '@/lib/lineups/lineupSerializer';
@@ -380,7 +380,7 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
       player: assignments[slotIndex] ?? null,
     }));
     const blob = exportLineupToBlob({
-      title: title || 'Starting XI',
+      title: fixture ? fixtureTitle(fixture) : title || 'Starting XI',
       formation,
       slots: slotsList,
       matchweek: fixture?.gameweek ?? null,
@@ -396,7 +396,7 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
 
   const handleShare = useCallback(async () => {
     setIsExporting(true);
-    const name = title || 'Starting XI';
+    const name = fixture ? fixtureTitle(fixture) : title || 'Starting XI';
     let blob: Blob | null;
     try {
       blob = await prepareImage();
@@ -437,7 +437,7 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       setFeedbackNotice('Lineup image downloaded');
     }
-  }, [prepareImage, title]);
+  }, [prepareImage, title, fixture]);
 
   const slotPositions = FORMATION_SLOTS[formation] as GranularPosition[];
   const caption = feedbackNotice ?? `${filledCount} of 11 picked`;
@@ -459,15 +459,53 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
       <div className={`g-panel ${styles.board}`}>
         <div className={styles.head}>
           <div className={styles.titleRow}>
-            <input
-              type="text"
-              className={styles.titleInput}
-              value={title}
-              maxLength={60}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Name Your Lineup"
-              aria-label="Lineup name"
-            />
+            {fixture ? (
+              // A match's title is its two sides; choosing one shows that club's XI.
+              <div
+                className={styles.matchTitle}
+                role="radiogroup"
+                aria-label="Side"
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    const next: MatchSide = e.key === 'ArrowLeft' ? 'home' : 'away';
+                    setSide(next);
+                    e.currentTarget.querySelector<HTMLButtonElement>(`[data-side="${next}"]`)?.focus();
+                  }
+                }}
+              >
+                {SIDES.map((s, i) => {
+                  const badge = clubBadgePath(fixture[s]);
+                  return (
+                    <Fragment key={s}>
+                      {i === 1 && <span className={styles.matchVs}>vs.</span>}
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={side === s}
+                        tabIndex={side === s ? 0 : -1}
+                        data-side={s}
+                        className={`${styles.matchSide} ${side === s ? styles.matchSideOn : ''}`}
+                        onClick={() => setSide(s)}
+                      >
+                        {badge && <img src={badge} alt="" width={30} height={30} className={styles.matchCrest} />}
+                        <span>{s === 'home' ? fixture.homeName : fixture.awayName}</span>
+                      </button>
+                    </Fragment>
+                  );
+                })}
+              </div>
+            ) : (
+              <input
+                type="text"
+                className={styles.titleInput}
+                value={title}
+                maxLength={60}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Name Your Lineup"
+                aria-label="Lineup name"
+              />
+            )}
             <div className={styles.actions}>
               <button
                 type="button"
@@ -498,27 +536,6 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
             </div>
           </div>
           <div className={styles.meterRow}>
-            {fixture && (
-              <div className={styles.sideSwitch} role="radiogroup" aria-label="Side">
-                {SIDES.map((s) => {
-                  const name = s === 'home' ? fixture.homeName : fixture.awayName;
-                  const badge = clubBadgePath(fixture[s]);
-                  return (
-                    <button
-                      key={s}
-                      type="button"
-                      role="radio"
-                      aria-checked={side === s}
-                      className={`${styles.sideBtn} ${side === s ? styles.sideBtnOn : ''}`}
-                      onClick={() => setSide(s)}
-                    >
-                      {badge && <img src={badge} alt="" width={20} height={20} className={styles.sideCrest} />}
-                      <span className={styles.sideName}>{name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
             <div
               className={styles.meter}
               role="progressbar"
