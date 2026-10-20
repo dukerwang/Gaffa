@@ -434,34 +434,36 @@ export function cardNodes(xi: SharedXI): { S: number; nodes: CardNode[] } {
   for (const z of ZONE_ORDER) zoned.set(z, []);
   for (const slot of xi.slots) zoned.get(getZone(slot.pos, xi.formation))?.push(slot);
   const rows = ZONE_ORDER.filter((z) => (zoned.get(z)?.length ?? 0) > 0);
-  const top = fY + 20;
-  const rowH = (fH - 40) / rows.length;
+  const top = fY + 8;
+  const rowH = (fH - 16) / rows.length;
   // The card's zoom on the site's board: as large as the busiest row allows across
   // (a node is 114px wide on the site) and the rows allow down.
   const widest = Math.max(...rows.map((z) => zoned.get(z)?.length ?? 0));
-  const S = Math.min(2, (fW / widest - 14) / 114, (rowH * 0.84) / nodeBox(1).total);
+  const S = Math.min(2, (fW / widest - 14) / 114, (rowH * 0.92) / nodeBox(1).total);
   const nodes = rows.flatMap((zone, r) => {
     const inRow = zoned.get(zone) ?? [];
     return inRow.map((slot, c) => ({
       pos: slot.pos,
       player: slot.player,
-      x: fX + (fW / (inRow.length + 1)) * (c + 1),
+      // Rows of four or more split the width into equal cells so their chips never
+      // meet; shorter rows sit at thirds, as the site's pitch spaces them.
+      x: fX + fW * (inRow.length >= 4 ? (c + 0.5) / inRow.length : (c + 1) / (inRow.length + 1)),
       y: top + rowH * r + rowH / 2,
     }));
   });
   return { S, nodes };
 }
 
-const PAD = 48;
-export const SHELF_H = 210;
+const PAD = 28;
+export const SHELF_H = 150;
 
 /** The pitch's box, and the field markings' box inset within it. */
 function pitchFrame() {
   const px = PAD;
-  const py = SHELF_H - 24;
+  const py = SHELF_H - 16;
   const pw = CARD_W - PAD * 2;
-  const ph = CARD_H - py - 64;
-  const inset = 26;
+  const ph = CARD_H - py - 52;
+  const inset = 16;
   return { px, py, pw, ph, fX: px + inset, fY: py + inset, fW: pw - inset * 2, fH: ph - inset * 2 };
 }
 
@@ -541,10 +543,10 @@ export function LineupCard({
   const pad = PAD;
   const shelfH = SHELF_H;
   const crest = xi.club ? assets.crests.get(xi.club.slug) : undefined;
-  const crestBox = 96;
+  const crestBox = 76;
   const titleRoom = CARD_W - pad * 2 - (crest ? crestBox + 24 : 0);
   // Newsreader Bold runs up to about 0.56em a character; shrink a long title to fit.
-  const titleFont = Math.max(40, Math.min(64, titleRoom / (Math.max(xi.title.length, 1) * 0.56)));
+  const titleFont = Math.max(40, Math.min(54, titleRoom / (Math.max(xi.title.length, 1) * 0.56)));
   const subtitle = [
     xi.formation,
     xi.club ? xi.club.name.toUpperCase() : null,
@@ -594,7 +596,7 @@ export function LineupCard({
           style={{
             position: 'absolute',
             left: u(pad),
-            top: u(46),
+            top: u(30),
             width: u(titleRoom),
             display: 'flex',
             fontFamily: 'Newsreader',
@@ -615,10 +617,10 @@ export function LineupCard({
           style={{
             position: 'absolute',
             left: u(pad),
-            top: u(134),
+            top: u(98),
             width: u(titleRoom),
             display: 'flex',
-            fontSize: u(24),
+            fontSize: u(21),
             color: 'rgba(255,255,255,0.7)',
             whiteSpace: 'pre',
             overflow: 'hidden',
@@ -632,7 +634,7 @@ export function LineupCard({
           style={{
             position: 'absolute',
             right: u(pad),
-            top: u(52),
+            top: u(30),
             width: u(crestBox),
             height: u(crestBox),
             display: 'flex',
@@ -758,7 +760,7 @@ export function LineupCard({
           style={{
             position: 'absolute',
             left: 0,
-            bottom: u(16),
+            bottom: u(12),
             width: u(CARD_W),
             display: 'flex',
             justifyContent: 'center',
@@ -767,14 +769,14 @@ export function LineupCard({
           }}
         >
           <div style={{ display: 'flex', marginRight: u(10), marginTop: u(-3) }}>
-            <GaffaMark size={u(30)} color="#FFFFFF" />
+            <GaffaMark size={u(26)} color="#FFFFFF" />
           </div>
           <div
             style={{
               display: 'flex',
               fontFamily: 'Wordmark',
-              fontSize: u(22),
-              letterSpacing: u(22 * 0.12),
+              fontSize: u(19),
+              letterSpacing: u(19 * 0.12),
               color: '#FFFFFF',
             }}
           >
