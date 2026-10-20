@@ -8,7 +8,7 @@ import { buildDashboardModel } from '@/lib/dashboard/buildDashboardModel';
 import LeagueCard from './LeagueCard';
 import TopRated from './TopRated';
 import FirstRun from './FirstRun';
-import { AboutGaffa, Doors, Matchweek, Shelf } from './Sections';
+import { AboutGaffa, Closer, Doors, Matchweek, Shelf } from './Sections';
 import styles from './dashboard.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -75,6 +75,8 @@ export default async function DashboardPage() {
       <div className={styles.doorsMobile}>
         <Doors />
       </div>
+
+      <Closer />
     </div>
   );
 }
