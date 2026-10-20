@@ -283,7 +283,7 @@
   letter-spacing: -0.02em;
   color: var(--color-text-primary);
 }
-.pickFrom { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: var(--s3); }
+.pickFrom { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: var(--s3); min-width: 0; }
 .pickFrom > :first-child { white-space: nowrap; }
 .select {
   flex: 1 1 auto;
@@ -298,6 +298,39 @@
   border-radius: var(--r-control);
 }
 .select:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* ---------- picker rows (BuilderPickers) ---------- */
+.pickCrest { flex: none; object-fit: contain; }
+.pickValue { display: inline-flex; align-items: center; gap: var(--s2); min-width: 0; max-width: 100%; }
+.pickValueText { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pickValueMeta { flex: none; font-size: var(--t-12); color: var(--color-text-muted); }
+.pickAny { color: var(--color-text-secondary); }
+/* A fixture row, read like the dashboard's: home right-aligned, score or time centred, away left. */
+.fxRow { display: grid; grid-template-columns: minmax(0, 1fr) 52px minmax(0, 1fr); align-items: center; gap: var(--s2); }
+.fxSideHome, .fxSideAway { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+.fxSideHome { justify-content: flex-end; text-align: right; }
+.fxName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fxScore {
+  justify-self: center;
+  font-family: var(--font-serif);
+  font-size: var(--t-15);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--color-text-primary);
+}
+.fxTime {
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.15;
+  font-family: var(--font-label);
+  font-size: var(--t-11, 11px);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--color-text-muted);
+}
 
 .railList { list-style: none; margin: 0; padding: 0; }
 .railList li + li { border-top: 1px solid var(--color-border-subtle); }
@@ -430,7 +463,7 @@
 .searchSection { display: flex; flex-direction: column; gap: var(--s3); padding: 0 var(--s4) var(--s3); }
 .searchRow { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
 .searchRow .input { flex: 1 1 180px; width: auto; }
-.searchRow .clubSelect { flex: 0 1 180px; }
+.searchRow .clubSelect { flex: 0 1 200px; min-width: 0; }
 .filterTabs { display: flex; gap: var(--s1); overflow-x: auto; }
 
 .playerList {

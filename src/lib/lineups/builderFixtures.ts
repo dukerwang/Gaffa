@@ -14,6 +14,9 @@ export interface BuilderFixture {
   awayName: string;
   kickoff: string | null;
   finished: boolean;
+  /** Null until played. */
+  homeScore: number | null;
+  awayScore: number | null;
 }
 
 export type MatchSide = 'home' | 'away';
@@ -44,6 +47,8 @@ interface FixtureRow {
   away_club: string;
   kickoff_time: string | null;
   finished: boolean;
+  home_score: number | null;
+  away_score: number | null;
 }
 
 function toBuilderFixture(row: FixtureRow): BuilderFixture {
@@ -57,12 +62,14 @@ function toBuilderFixture(row: FixtureRow): BuilderFixture {
     awayName: CLUB_BY_SLUG.get(row.away_club)?.name ?? row.away_club,
     kickoff: row.kickoff_time,
     finished: row.finished,
+    homeScore: row.home_score,
+    awayScore: row.away_score,
   };
 }
 
 export const fixtureKey = (f: { season: string; id: number }) => `${f.season}:${f.id}`;
 
-const COLUMNS = 'season, fpl_fixture_id, gameweek, home_club, away_club, kickoff_time, finished';
+const COLUMNS = 'season, fpl_fixture_id, gameweek, home_club, away_club, kickoff_time, finished, home_score, away_score';
 
 const kickedOff = (f: BuilderFixture, now: number) => f.kickoff !== null && Date.parse(f.kickoff) <= now;
 
@@ -210,6 +217,14 @@ export function kickoffDay(kickoff: string | null): string {
     month: 'short',
     timeZone: 'Europe/London',
   }).format(new Date(kickoff));
+}
+
+/** "15:00", UK time, for the same reason as kickoffDay. */
+export function kickoffTime(kickoff: string | null): string {
+  if (!kickoff) return 'TBC';
+  return new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }).format(
+    new Date(kickoff),
+  );
 }
 
 export function fixtureDay(f: BuilderFixture): string {
