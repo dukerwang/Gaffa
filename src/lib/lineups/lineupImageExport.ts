@@ -218,33 +218,6 @@ export async function exportLineupToBlob(data: LineupExportData): Promise<Blob |
 const MARK_BALL =
   'M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm200-500 54-18 16-54q-32-48-77-82.5T574-786l-54 38v56l160 112Zm-400 0 160-112v-56l-54-38q-54 17-99 51.5T210-652l16 54 54 18Zm-42 308 46-4 30-54-58-174-56-20-40 30q0 65 18 118.5T238-272Zm242 112q26 0 51-4t49-12l28-60-26-44H378l-26 44 28 60q24 8 49 12t51 4Zm-90-200h180l56-160-146-102-144 102 54 160Zm332 88q42-50 60-103.5T800-494l-40-28-56 18-58 174 30 54 46 4Z';
 
-/**
- * The Gaffa mark, the same paths as <Icon name="gaffa"> (keep the two in step),
- * drawn with Path2D in its 128-unit box at (x, y). Drawn as paths rather than
- * loaded as an SVG image because Safari can taint a canvas that draws one.
- */
-function drawGaffaMark(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(size / 128, size / 128);
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-  ctx.lineWidth = 4.2;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.arc(64, 64, 56, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.stroke(new Path2D('M 24.8 104 C 34 88, 42 82, 50 82 M 103.2 104 C 94 88, 86 82, 78 82'));
-  ctx.stroke(new Path2D('M 50 82 L 44 94 H 49 L 64 116 L 79 94 H 84 L 78 82'));
-  ctx.stroke(new Path2D('M 54 82 L 64 96 L 74 82'));
-  ctx.fill(new Path2D('M 61 82 H 67 L 66 90 L 67.5 106 L 64 111 L 60.5 106 L 62 90 Z'));
-  ctx.translate(35.2, 82.8);
-  ctx.scale(0.06, 0.06);
-  ctx.fill(new Path2D(MARK_BALL));
-  ctx.restore();
-}
-
 /** The topbar's lockup, the mark then the name in the bold tracked serif, centred on (cx, baseline). */
 function drawWordmark(ctx: CanvasRenderingContext2D, serif: string, cx: number, baseline: number) {
   const color = '#FFFFFF';
@@ -261,8 +234,36 @@ function drawWordmark(ctx: CanvasRenderingContext2D, serif: string, cx: number, 
   let x = cx - (markSize + gap + textW) / 2;
 
   ctx.globalAlpha = 0.85;
-  // The topbar lifts its mark 2px at 20px; the same lift, scaled.
-  drawGaffaMark(ctx, x, baseline - markSize + 5, markSize, color);
+
+  // The Gaffa mark: the same paths as <Icon name="gaffa"> (keep the two in step),
+  // drawn with Path2D in its 128-unit box, because Safari can taint a canvas that
+  // draws an SVG image. The topbar lifts its mark 2px at 20px; the same lift, scaled.
+  //
+  // Drawn here rather than in a helper on purpose. As a separate helper called
+  // from this one, the production minifier inlined both and left `baseline` as an
+  // undefined free name, so every export threw a ReferenceError on gaffa.live
+  // (2026-10-20) while working in dev, where nothing is minified. Check the built
+  // chunk for a bare `baseline` before splitting this out again.
+  ctx.save();
+  ctx.translate(x, baseline - markSize + 5);
+  ctx.scale(markSize / 128, markSize / 128);
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 4.2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.arc(64, 64, 56, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.stroke(new Path2D('M 24.8 104 C 34 88, 42 82, 50 82 M 103.2 104 C 94 88, 86 82, 78 82'));
+  ctx.stroke(new Path2D('M 50 82 L 44 94 H 49 L 64 116 L 79 94 H 84 L 78 82'));
+  ctx.stroke(new Path2D('M 54 82 L 64 96 L 74 82'));
+  ctx.fill(new Path2D('M 61 82 H 67 L 66 90 L 67.5 106 L 64 111 L 60.5 106 L 62 90 Z'));
+  ctx.translate(35.2, 82.8);
+  ctx.scale(0.06, 0.06);
+  ctx.fill(new Path2D(MARK_BALL));
+  ctx.restore();
+
   x += markSize + gap;
   ctx.fillStyle = color;
   ctx.textAlign = 'left';
