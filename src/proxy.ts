@@ -34,7 +34,10 @@ export async function proxy(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup');
   const isApiRoute = pathname.startsWith('/api/');
   const isGoogleVerification = pathname.startsWith('/google') && pathname.endsWith('.html');
-  const isPublicRoute = pathname === '/terms' || pathname === '/privacy' || pathname.startsWith('/share');
+  // The Lineup Builder needs no account: shared XI links land there, and a friend
+  // who opens one should see the lineup, not a sign-in page.
+  const isPublicRoute =
+    pathname === '/terms' || pathname === '/privacy' || pathname.startsWith('/share') || pathname === '/lineup-builder';
   const isAuthCallback = pathname.startsWith('/auth/callback');
 
   // Redirect unauthenticated users away from protected routes (API routes handle their own auth)

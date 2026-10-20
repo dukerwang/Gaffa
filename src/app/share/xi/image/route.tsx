@@ -21,7 +21,7 @@ function loadFonts() {
 /**
  * GET /share/xi/image?<Lineup Builder query>
  *
- * The XI a builder link describes, as a 1080x1350 PNG: the link preview
+ * The XI a builder link describes, as a 1080x1920 PNG: the link preview
  * iMessage and others show for /share/xi, the picture on that page, and the
  * file its Save Image link downloads. One URL for all three, so after the
  * first render it comes from the CDN. (A 2x render took 27s on Vercel against

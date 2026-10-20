@@ -13,12 +13,12 @@ import { getZone, ZONE_ORDER, type PitchZone } from './pitchZones';
  * a white name chip, and the topbar's wordmark at the foot. The page's link
  * preview and Save Image both use it, so there is one picture of an XI.
  *
- * Laid out at 1080x1350 in design units; `k` scales every length, so k = 2 is a
- * sharp 2160x2700 render of the same card.
+ * 1080x1920, a phone screen's shape (and Instagram Stories'): a whole XI on a
+ * 4:5 card left the names near 5pt on a phone. `k` scales every length.
  */
 
 export const CARD_W = 1080;
-export const CARD_H = 1350;
+export const CARD_H = 1920;
 
 // The light theme's tokens, fixed: the card is a poster people post elsewhere.
 const TOPBAR = '#185B37';
@@ -119,10 +119,14 @@ const BADGE_SIDE: Partial<Record<GranularPosition, 'l' | 'r'>> = { LB: 'l', LWB:
 
 /**
  * One player, drawn as the Lineup Builder's pitch draws him (the "standard"
- * node in ReadOnlyFormationBoard): the lot-size portrait at the board's 0.88
- * scale, then a white chip with the position badge above the name. Every
- * length is the site's CSS px times `S`, the card's zoom on the board, so the
- * two stay in proportion. Port changes from the site here line for line.
+ * node in ReadOnlyFormationBoard): the lot-size portrait with the site's crop,
+ * lit ground, cut-out shadow and corner crest, then a white chip with the
+ * position badge above the name.
+ *
+ * Proportions are the site's, but the type is sized for a phone: the card is
+ * looked at on a phone at about a third of its pixel width, so the name and
+ * badge are set larger than a straight scale of the site would make them
+ * (otherwise they land near 5pt on screen).
  */
 function PlayerNode({
   pos,
@@ -130,7 +134,10 @@ function PlayerNode({
   assets,
   x,
   y,
-  S,
+  nodeW,
+  portraitH,
+  nameFont,
+  badgeFont,
   k,
 }: {
   pos: GranularPosition;
@@ -138,29 +145,32 @@ function PlayerNode({
   assets: CardAssets;
   x: number;
   y: number;
-  S: number;
+  nodeW: number;
+  portraitH: number;
+  nameFont: number;
+  badgeFont: number;
   k: number;
 }) {
   const u = (n: number) => n * k;
-  const nodeW = 114 * S; // .nodeWrap at its widest
-  const P = 0.88 * S; // .portraitWrap .g-portrait-md { transform: scale(0.88) }
+  const P = portraitH / 78; // the md portrait is 66x78; P scales its internals
   const fw = 66 * P;
   const fh = 78 * P;
-  const badgeFont = 10 * S;
-  // .nodeChip: 1px border, 3px padding, the badge (10px type + 2px padding twice), 2px gap, the name at 11px x 1.15.
-  const chipH = (1 + 3 + (badgeFont / S + 4) + 2 + 11 * 1.15 + 3 + 1) * S;
-  const gap = (78 * 0.12 + 2) * S; // the scaled portrait keeps its full layout height, then .starterButton's 2px
+  const gap = 10;
+  const badgeH = badgeFont * 1.4;
+  const chipH = nodeChipHeight(nameFont, badgeFont);
   const total = fh + gap + chipH;
   const name = player ? getPlayerDisplayName(player, 'smart', 11) : '';
+  // Newsreader Bold runs up to about 0.62em a character; shrink a long name to fit the chip, not below 70%.
+  const fitName = Math.max(nameFont * 0.7, Math.min(nameFont, (nodeW - 20) / (Math.max(name.length, 1) * 0.62)));
   const photo = player ? assets.photos.get(player.id) : undefined;
   const crestSlug = player ? resolveClub(player.pl_team)?.slug : undefined;
   const crest = crestSlug ? assets.crests.get(crestSlug) : undefined;
   const side = BADGE_SIDE[pos];
-  // The site clips the outer top corner (5px across, 42% down). Satori clips the
-  // badge's text along with it, so the cut is drawn instead: a triangle in the
-  // chip's colour laid over that corner.
-  const badgeH = (10 + 4) * S;
-  const cutW = 5 * S;
+
+  // The site clips the outer top corner (5px of a 10px-type badge across, 42% down).
+  // Satori clips the badge's text along with a clip-path, so the cut is drawn
+  // instead: a triangle in the chip's colour laid over that corner.
+  const cutW = badgeFont * 0.5;
   const cutH = badgeH * 0.42;
   const cutCorner = side ? (
     <svg
@@ -179,15 +189,16 @@ function PlayerNode({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: `${u(2 * S)}px ${u(5 * S)}px`,
-        borderRadius: u(2 * S),
+        position: 'relative',
+        height: u(badgeH),
+        padding: `0 ${u(badgeFont * 0.5)}px`,
+        borderRadius: u(badgeFont * 0.2),
         background: POS_COLOR[pos],
         color: '#FFFFFF',
         fontFamily: 'Label',
         fontSize: u(badgeFont),
         letterSpacing: u(badgeFont * 0.04),
         lineHeight: 1,
-        position: 'relative',
       }}
     >
       {pos}
@@ -229,7 +240,7 @@ function PlayerNode({
             height: u(fh),
             overflow: 'hidden',
             borderRadius: u(4 * P),
-            boxShadow: `inset 0 0 0 ${u(1 * P)}px #D9D5CF`,
+            boxShadow: `inset 0 0 0 ${u(Math.max(1, P))}px #D9D5CF`,
             backgroundImage: 'radial-gradient(75.6% 57.6% at 50% 25.6%, #F4F3F1 0%, #E2DFDA 67%, #D2CEC7 100%)',
             alignItems: 'center',
             justifyContent: 'center',
@@ -265,20 +276,11 @@ function PlayerNode({
     );
   }
 
+  const column = { display: 'flex', flexDirection: 'column', alignItems: 'center', width: u(nodeW) } as const;
   return (
-    <div
-      style={{
-        position: 'absolute',
-        left: u(x - nodeW / 2),
-        top: u(y - total / 2),
-        width: u(nodeW),
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-      }}
-    >
+    <div style={{ position: 'absolute', left: u(x - nodeW / 2), top: u(y - total / 2), ...column }}>
       {player ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: u(nodeW) }}>
+        <div style={column}>
           {portrait}
           <div
             style={{
@@ -287,11 +289,11 @@ function PlayerNode({
               alignItems: 'center',
               marginTop: u(gap),
               width: u(nodeW),
-              padding: `${u(3 * S)}px ${u(4 * S)}px`,
+              padding: `${u(6)}px ${u(8)}px`,
               background: CARD,
-              border: `${u(1 * S)}px solid #FFFFFF`,
-              borderRadius: u(4 * S),
-              boxShadow: `0 ${u(2 * S)}px ${u(4 * S)}px rgba(0, 0, 0, 0.15)`,
+              border: `${u(2)}px solid #FFFFFF`,
+              borderRadius: u(8),
+              boxShadow: `0 ${u(3)}px ${u(8)}px rgba(0, 0, 0, 0.18)`,
             }}
           >
             {badge}
@@ -299,10 +301,10 @@ function PlayerNode({
               style={{
                 display: 'flex',
                 justifyContent: 'center',
-                marginTop: u(2 * S),
+                marginTop: u(4),
                 width: '100%',
                 fontFamily: 'Newsreader',
-                fontSize: u(11 * S),
+                fontSize: u(fitName),
                 lineHeight: 1.15,
                 color: INK,
                 whiteSpace: 'nowrap',
@@ -315,8 +317,8 @@ function PlayerNode({
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: u(nodeW) }}>
-          <div style={{ display: 'flex', marginBottom: u(2 * S) }}>{badge}</div>
+        <div style={column}>
+          <div style={{ display: 'flex', marginBottom: u(6) }}>{badge}</div>
           <div
             style={{
               display: 'flex',
@@ -325,11 +327,11 @@ function PlayerNode({
               width: u(fw),
               height: u(fh),
               borderRadius: u(4 * P),
-              border: `${u(1.5 * S)}px dashed rgba(255,255,255,0.75)`,
+              border: `${u(3)}px dashed rgba(255,255,255,0.75)`,
               background: 'rgba(255,255,255,0.08)',
               color: 'rgba(255,255,255,0.9)',
               fontFamily: 'Label',
-              fontSize: u(22 * S),
+              fontSize: u(fh * 0.4),
             }}
           >
             +
@@ -340,13 +342,20 @@ function PlayerNode({
   );
 }
 
+/** The chip's height: border, padding, badge, gap, the name's line, padding, border. */
+function nodeChipHeight(nameFont: number, badgeFont: number) {
+  return 2 + 6 + badgeFont * 1.4 + 4 + nameFont * 1.15 + 6 + 2;
+}
+
 export function LineupCard({ xi, assets, k = 1 }: { xi: SharedXI; assets: CardAssets; k?: number }) {
   const u = (n: number) => n * k;
-  const pad = 48;
-  const shelfH = 210;
+  const pad = 44;
+  const shelfH = 236;
   const crest = xi.club ? assets.crests.get(xi.club.slug) : undefined;
-  const crestBox = 96;
+  const crestBox = 110;
   const titleRoom = CARD_W - pad * 2 - (crest ? crestBox + 24 : 0);
+  // Newsreader Bold at -0.02em tracking runs up to about 0.56em a character; shrink a long title to fit.
+  const titleFont = Math.max(44, Math.min(76, titleRoom / (Math.max(xi.title.length, 1) * 0.56)));
   const subtitle = [
     xi.formation,
     xi.club ? xi.club.name.toUpperCase() : null,
@@ -358,10 +367,10 @@ export function LineupCard({ xi, assets, k = 1 }: { xi: SharedXI; assets: CardAs
 
   // The pitch, and the field markings inset within it.
   const px = pad;
-  const py = shelfH - 24;
+  const py = shelfH - 22;
   const pw = CARD_W - pad * 2;
-  const ph = CARD_H - py - 64;
-  const inset = 26;
+  const ph = CARD_H - py - 76;
+  const inset = 22;
   const fX = px + inset;
   const fY = py + inset;
   const fW = pw - inset * 2;
@@ -374,12 +383,17 @@ export function LineupCard({ xi, assets, k = 1 }: { xi: SharedXI; assets: CardAs
   for (const z of ZONE_ORDER) zoned.set(z, []);
   for (const slot of xi.slots) zoned.get(getZone(slot.pos, xi.formation))?.push(slot);
   const rows = ZONE_ORDER.filter((z) => (zoned.get(z)?.length ?? 0) > 0);
-  const top = fY + 20;
-  const rowH = (fH - 40) / rows.length;
-  // The card's zoom on the site's board: as large as the busiest row allows across
-  // (a node is 114px wide on the site) and the rows allow down (about 117px tall).
+  const top = fY + 14;
+  const rowH = (fH - 28) / rows.length;
+  // Every node in a card is the same size, set by the busiest row across and the rows down.
   const widest = Math.max(...rows.map((z) => zoned.get(z)?.length ?? 0));
-  const S = Math.min(2, (fW / widest - 14) / 114, (rowH * 0.84) / 117);
+  // Rows of four or more split the width into equal cells; shorter rows sit at
+  // thirds or quarters, as the site's pitch spaces them.
+  const xAt = (c: number, n: number) => fX + fW * (n >= 4 ? (c + 0.5) / n : (c + 1) / (n + 1));
+  const nodeW = Math.min(250, (widest >= 4 ? fW / widest : fW / (widest + 1)) - 12);
+  const nameFont = 31;
+  const badgeFont = 20;
+  const portraitH = Math.min(rowH * 0.92 - 10 - nodeChipHeight(nameFont, badgeFont), (nodeW * 0.8 * 78) / 66);
 
   return (
     <div
@@ -402,13 +416,13 @@ export function LineupCard({ xi, assets, k = 1 }: { xi: SharedXI; assets: CardAs
         style={{
           position: 'absolute',
           left: u(pad),
-          top: u(46),
+          top: u(56),
           width: u(titleRoom),
           display: 'flex',
           fontFamily: 'Newsreader',
-          fontSize: u(64),
+          fontSize: u(titleFont),
           lineHeight: 1,
-          letterSpacing: u(-1.2),
+          letterSpacing: u(-titleFont * 0.02),
           color: '#FFFFFF',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
@@ -421,10 +435,10 @@ export function LineupCard({ xi, assets, k = 1 }: { xi: SharedXI; assets: CardAs
         style={{
           position: 'absolute',
           left: u(pad),
-          top: u(134),
+          top: u(158),
           width: u(titleRoom),
           display: 'flex',
-          fontSize: u(24),
+          fontSize: u(28),
           color: 'rgba(255,255,255,0.7)',
           whiteSpace: 'pre',
           overflow: 'hidden',
@@ -433,7 +447,7 @@ export function LineupCard({ xi, assets, k = 1 }: { xi: SharedXI; assets: CardAs
         {subtitle}
       </div>
       {crest && (
-        <div style={{ position: 'absolute', right: u(pad), top: u(52), width: u(crestBox), height: u(crestBox), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', right: u(pad), top: u(58), width: u(crestBox), height: u(crestBox), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img alt="" src={crest.src} {...contain(crest.w, crest.h, u(crestBox))} />
         </div>
       )}
@@ -465,7 +479,7 @@ export function LineupCard({ xi, assets, k = 1 }: { xi: SharedXI; assets: CardAs
         const inRow = zoned.get(zone) ?? [];
         const cy = top + rowH * r + rowH / 2;
         return inRow.map((slot, c) => {
-          const cx = fX + (fW / (inRow.length + 1)) * (c + 1);
+          const cx = xAt(c, inRow.length);
           return (
             <PlayerNode
               key={`${zone}-${c}`}
@@ -474,7 +488,10 @@ export function LineupCard({ xi, assets, k = 1 }: { xi: SharedXI; assets: CardAs
               assets={assets}
               x={cx}
               y={cy}
-              S={S}
+              nodeW={nodeW}
+              portraitH={portraitH}
+              nameFont={nameFont}
+              badgeFont={badgeFont}
               k={k}
             />
           );
@@ -486,7 +503,7 @@ export function LineupCard({ xi, assets, k = 1 }: { xi: SharedXI; assets: CardAs
         style={{
           position: 'absolute',
           left: 0,
-          bottom: u(16),
+          bottom: u(22),
           width: u(CARD_W),
           display: 'flex',
           justifyContent: 'center',
@@ -495,9 +512,9 @@ export function LineupCard({ xi, assets, k = 1 }: { xi: SharedXI; assets: CardAs
         }}
       >
         <div style={{ display: 'flex', marginRight: u(10), marginTop: u(-3) }}>
-          <GaffaMark size={u(30)} color="#FFFFFF" />
+          <GaffaMark size={u(36)} color="#FFFFFF" />
         </div>
-        <div style={{ display: 'flex', fontFamily: 'Wordmark', fontSize: u(22), letterSpacing: u(22 * 0.12), color: '#FFFFFF' }}>
+        <div style={{ display: 'flex', fontFamily: 'Wordmark', fontSize: u(26), letterSpacing: u(26 * 0.12), color: '#FFFFFF' }}>
           GAFFA.LIVE
         </div>
       </div>
