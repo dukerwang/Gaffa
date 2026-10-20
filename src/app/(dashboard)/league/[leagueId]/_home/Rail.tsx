@@ -65,6 +65,23 @@ export default function Rail({ model }: { model: HomeModel }) {
           ))}
         </div>
       </div>
+
+      {/* Not tied to the league: the builder picks from every Premier League squad. */}
+      <NavigationLink href="/lineup-builder" className={styles.toolCard}>
+        <span className={styles.toolIcon} aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="4" y="2.5" width="16" height="19" rx="1.5" />
+            <path d="M4 12h16" />
+            <circle cx="12" cy="12" r="2.6" />
+            <path d="M8.5 2.5v3.2h7V2.5M8.5 21.5v-3.2h7v3.2" />
+          </svg>
+        </span>
+        <span className={styles.toolText}>
+          <span className={styles.toolT}>Lineup Builder</span>
+          <span className={styles.toolSub}>Pick any Premier League XI and share it.</span>
+        </span>
+        <span className={styles.toolArrow} aria-hidden="true">&rarr;</span>
+      </NavigationLink>
     </aside>
   );
 }

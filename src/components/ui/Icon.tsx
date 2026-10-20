@@ -28,6 +28,7 @@ type IconName =
   | 'plus'
   | 'minus'
   | 'share'
+  | 'share-out'
   | 'copy'
   | 'external-link';
 
@@ -200,6 +201,14 @@ export const Icon: React.FC<IconProps> = ({
         <circle cx="18" cy="19" r="3" />
         <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
         <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+      </>
+    ),
+    // The box-and-arrow share glyph iOS, macOS and most of the web use.
+    'share-out': (
+      <>
+        <path d="M12 3v12" />
+        <path d="m8 7 4-4 4 4" />
+        <path d="M8 10H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2" />
       </>
     ),
     copy: (

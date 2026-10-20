@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Formation, GranularPosition, Player } from '@/types';
 import { FORMATION_SLOTS } from '@/types';
-import clubsData from '@/lib/clubs/clubs.json';
 import { serializeLineup, VALID_FORMATIONS, type SerializedLineup } from '@/lib/lineups/lineupSerializer';
 import { exportLineupToBlob, type LineupExportSlot } from '@/lib/lineups/lineupImageExport';
 import ReadOnlyFormationBoard, { type FormationBoardSlot } from '@/components/formation/ReadOnlyFormationBoard';
@@ -12,22 +11,75 @@ import { Icon } from '@/components/ui/Icon';
 import PositionBadge from '@/components/players/PositionBadge';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { resolveClub } from '@/lib/clubs/registry';
+import { fixtureDay, fixtureTitle, type BuilderFixture } from '@/lib/lineups/builderFixtures';
 import LineupPlayerPickerModal from './LineupPlayerPickerModal';
 import styles from './lineup-builder.module.css';
 
 interface Props {
   allPlayers: Player[];
   initialState: SerializedLineup;
+  /** This matchweek's and the next two's Premier League matches. */
+  fixtures: BuilderFixture[];
+  /** The match a shared link names, when it names one that exists. */
+  initialFixture: BuilderFixture | null;
 }
 
 const FORMATIONS: readonly Formation[] = VALID_FORMATIONS;
 
 const BACK_LINES = ['3', '4', '5'] as const;
 
-export default function LineupBuilderClient({ allPlayers, initialState }: Props) {
+const fixtureKey = (f: { season: string; id: number }) => `${f.season}:${f.id}`;
+
+export default function LineupBuilderClient({ allPlayers, initialState, fixtures, initialFixture }: Props) {
   const [formation, setFormation] = useState<Formation>(initialState.formation);
   const [title, setTitle] = useState<string>(initialState.title);
-  const [clubFilter, setClubFilter] = useState<string | null>(initialState.clubFilter ?? null);
+  const [fixture, setFixture] = useState<BuilderFixture | null>(initialFixture);
+  const [clubFilter, setClubFilter] = useState<string | null>(() => {
+    const c = initialState.clubFilter ?? null;
+    // A shared match link only ever narrows to one of its own two clubs.
+    if (c && initialFixture && c !== initialFixture.home && c !== initialFixture.away) return null;
+    return c;
+  });
+
+  // An old link's match can sit outside this matchweek's window; it still heads the list.
+  const fixtureOptions = useMemo(
+    () =>
+      initialFixture && !fixtures.some((f) => fixtureKey(f) === fixtureKey(initialFixture))
+        ? [initialFixture, ...fixtures]
+        : fixtures,
+    [fixtures, initialFixture],
+  );
+  const fixturesByWeek = useMemo(() => {
+    const current = fixtures[0]?.season;
+    const weeks = new Map<string, BuilderFixture[]>();
+    for (const f of fixtureOptions) {
+      const label = !current || f.season === current ? `Matchweek ${f.gameweek}` : `${f.season} Matchweek ${f.gameweek}`;
+      weeks.set(label, [...(weeks.get(label) ?? []), f]);
+    }
+    return [...weeks.entries()];
+  }, [fixtureOptions, fixtures]);
+
+  // Every club with an active player, by name. clubs.json also keeps relegated clubs, which have no one to pick.
+  const leagueClubs = useMemo(() => {
+    const bySlug = new Map<string, string>();
+    for (const p of allPlayers) {
+      const club = resolveClub(p.pl_team);
+      if (club) bySlug.set(club.slug, club.name);
+    }
+    return [...bySlug.entries()]
+      .map(([slug, name]) => ({ slug, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [allPlayers]);
+  const clubOptions = useMemo(
+    () =>
+      fixture
+        ? [
+            { slug: fixture.home, name: fixture.homeName },
+            { slug: fixture.away, name: fixture.awayName },
+          ]
+        : leagueClubs,
+    [fixture, leagueClubs],
+  );
 
   // Map of all players by ID for fast lookup
   const playerById = useMemo(() => {
@@ -52,6 +104,13 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
   // Status feedback message (e.g. "Copied to clipboard")
   const [feedbackNotice, setFeedbackNotice] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1600);
+    return () => clearTimeout(t);
+  }, [copied]);
 
   // Clear notice after 3 seconds
   useEffect(() => {
@@ -70,12 +129,13 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
       formation,
       title,
       clubFilter,
+      fixture: fixture ? { season: fixture.season, id: fixture.id } : null,
       playerIds,
     });
 
     const newUrl = `${window.location.pathname}?${serialized}`;
     window.history.replaceState(null, '', newUrl);
-  }, [formation, title, clubFilter, assignments]);
+  }, [formation, title, clubFilter, fixture, assignments]);
 
   // Set of player IDs currently assigned to avoid duplicates
   const assignedPlayerIds = useMemo(() => {
@@ -159,9 +219,25 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
     setFeedbackNotice('Lineup cleared');
   }, []);
 
+  const handleSelectFixture = useCallback(
+    (key: string) => {
+      const next = fixtureOptions.find((f) => fixtureKey(f) === key) ?? null;
+      // A match names the lineup unless you've named it yourself.
+      setTitle((prev) => {
+        const t = prev.trim();
+        const auto = !t || (fixture !== null && t === fixtureTitle(fixture));
+        return auto ? (next ? fixtureTitle(next) : '') : prev;
+      });
+      setClubFilter((prev) => (next && prev && prev !== next.home && prev !== next.away ? null : prev));
+      setFixture(next);
+    },
+    [fixture, fixtureOptions],
+  );
+
   const handleCopyLink = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
       setFeedbackNotice('Link copied to clipboard');
     } catch {
       setFeedbackNotice('Failed to copy link');
@@ -184,6 +260,7 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
         title: title || 'Starting XI',
         formation,
         slots: slotsList,
+        matchweek: fixture?.gameweek ?? null,
       });
 
       if (!blob) {
@@ -237,7 +314,7 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
     } finally {
       setIsExporting(false);
     }
-  }, [assignments, formation, title]);
+  }, [assignments, formation, title, fixture]);
 
   const slotPositions = FORMATION_SLOTS[formation] as GranularPosition[];
   const caption = feedbackNotice ?? `${filledCount} of 11 picked`;
@@ -246,7 +323,7 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
     <div className={styles.page}>
       <div className={`g-panel ${styles.board}`}>
         <div className={styles.head}>
-          <div className={styles.titleBlock}>
+          <div className={styles.titleRow}>
             <input
               type="text"
               className={styles.titleInput}
@@ -256,33 +333,49 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
               placeholder="Name Your Lineup"
               aria-label="Lineup name"
             />
-            <div className={styles.meterRow}>
-              <div
-                className={styles.meter}
-                role="progressbar"
-                aria-label="Players picked"
-                aria-valuemin={0}
-                aria-valuemax={11}
-                aria-valuenow={filledCount}
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className={styles.iconBtn}
+                onClick={handleCopyLink}
+                aria-label="Copy Link"
+                data-tip={copied ? 'Copied' : 'Copy Link'}
               >
-                {Array.from({ length: 11 }, (_, i) => (
-                  <i key={i} className={i < filledCount ? styles.meterOn : undefined} />
-                ))}
-              </div>
-              <span className={styles.caption} role="status" aria-live="polite">
-                {caption}
-              </span>
+                <Icon name={copied ? 'check' : 'copy'} size={18} strokeWidth={1.75} />
+              </button>
+              <button
+                type="button"
+                className={`${styles.iconBtn} ${styles.iconBtnPrimary}`}
+                onClick={handleShare}
+                disabled={isExporting}
+                aria-busy={isExporting}
+                aria-label="Share XI"
+                data-tip={isExporting ? 'Generating' : 'Share XI'}
+              >
+                {isExporting ? (
+                  <span className={styles.spinner} aria-hidden="true" />
+                ) : (
+                  <Icon name="share-out" size={18} strokeWidth={1.75} />
+                )}
+              </button>
             </div>
           </div>
-          <div className={styles.actions}>
-            <button type="button" className={styles.secondaryBtn} onClick={handleCopyLink}>
-              <Icon name="copy" size={16} strokeWidth={1.75} />
-              Copy Link
-            </button>
-            <button type="button" className={styles.primaryBtn} onClick={handleShare} disabled={isExporting}>
-              <Icon name="share" size={16} strokeWidth={1.75} />
-              {isExporting ? 'Generating…' : 'Share XI'}
-            </button>
+          <div className={styles.meterRow}>
+            <div
+              className={styles.meter}
+              role="progressbar"
+              aria-label="Players picked"
+              aria-valuemin={0}
+              aria-valuemax={11}
+              aria-valuenow={filledCount}
+            >
+              {Array.from({ length: 11 }, (_, i) => (
+                <i key={i} className={i < filledCount ? styles.meterOn : undefined} />
+              ))}
+            </div>
+            <span className={styles.caption} role="status" aria-live="polite">
+              {caption}
+            </span>
           </div>
         </div>
 
@@ -332,6 +425,27 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
                   Clear XI
                 </button>
               </div>
+              {fixtureOptions.length > 0 && (
+                <label className={styles.pickFrom}>
+                  <span className="g-label">Match</span>
+                  <select
+                    className={styles.select}
+                    value={fixture ? fixtureKey(fixture) : ''}
+                    onChange={(e) => handleSelectFixture(e.target.value)}
+                  >
+                    <option value="">Any Match</option>
+                    {fixturesByWeek.map(([week, list]) => (
+                      <optgroup key={week} label={week}>
+                        {list.map((f) => (
+                          <option key={fixtureKey(f)} value={fixtureKey(f)}>
+                            {fixtureTitle(f)} · {fixtureDay(f)}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </label>
+              )}
               <label className={styles.pickFrom}>
                 <span className="g-label">Pick From</span>
                 <select
@@ -339,8 +453,8 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
                   value={clubFilter || ''}
                   onChange={(e) => setClubFilter(e.target.value || null)}
                 >
-                  <option value="">All Clubs</option>
-                  {clubsData.map((c) => (
+                  <option value="">{fixture ? 'Both Clubs' : 'All Clubs'}</option>
+                  {clubOptions.map((c) => (
                     <option key={c.slug} value={c.slug}>
                       {c.name}
                     </option>
@@ -399,6 +513,8 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
           onRemovePlayer={handleRemovePlayer}
           onClose={() => setActiveSlot(null)}
           initialClubFilter={clubFilter}
+          clubOptions={clubOptions}
+          matchOnly={fixture !== null}
         />
       )}
     </div>
