@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { dealToast } from '@/components/transfers/dealToast';
 import { describeDeal } from '@/lib/transfers/describeDeal';
 import styles from './NegotiationCard.module.css';
 import { formatNegotiationStatus } from './negotiationStatus';
@@ -103,6 +104,7 @@ export default function TradeOfferCard({
       if (!res.ok) {
         setError(data.error ?? 'That could not be completed.');
       } else {
+        dealToast('trade', action, them);
         onActionComplete?.();
       }
     } catch {

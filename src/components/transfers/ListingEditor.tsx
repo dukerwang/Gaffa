@@ -8,6 +8,7 @@ import Modal from './Modal';
 import styles from './ListingEditor.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { listingStance } from '@/lib/transfers/listingStance';
+import { toast } from '@/components/ui/toast';
 
 /**
  * List a player, or edit a listing that has not been bid on yet.
@@ -190,17 +191,23 @@ export default function ListingEditor({
       }
 
       // A seller who just raised their ask should know somebody is mid-negotiation.
+      // It's a note on a success, so it rides on the toast rather than in the
+      // dialog's error line, and stays up longer so it gets read.
       const stranded =
         (data.outstandingOffers?.length ?? 0) + (data.outstandingLoans?.length ?? 0);
-      if (stranded > 0) {
-        setError(
-          `Saved. Note ${stranded} approach${stranded === 1 ? '' : 'es'} already in flight ` +
-            'still stand on the old terms — they are not withdrawn by this edit.',
-        );
-      }
+      const name = selected ? getPlayerDisplayName(selected, 'full') : 'Player';
+      toast.success(editing ? 'Listing updated' : `${name} listed`, {
+        description:
+          stranded > 0
+            ? `${stranded} approach${stranded === 1 ? '' : 'es'} already in flight still stand${stranded === 1 ? 's' : ''} on the old terms.`
+            : editing
+              ? name
+              : undefined,
+        duration: stranded > 0 ? 8000 : undefined,
+      });
 
       onDone();
-      if (stranded === 0) onClose();
+      onClose();
     } catch {
       setError('Could not reach the server. Try again.');
     } finally {
@@ -219,6 +226,7 @@ export default function ListingEditor({
         setError(data.error ?? 'That listing could not be withdrawn.');
         return;
       }
+      toast('Listing withdrawn', { description: selected ? getPlayerDisplayName(selected, 'full') : undefined });
       onDone();
       onClose();
     } finally {

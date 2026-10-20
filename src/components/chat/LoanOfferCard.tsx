@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { dealToast } from '@/components/transfers/dealToast';
 import styles from './NegotiationCard.module.css';
 import { formatNegotiationStatus } from './negotiationStatus';
 
@@ -70,6 +71,7 @@ export default function LoanOfferCard({
       if (!res.ok) {
         setError(data.error ?? 'That could not be completed.');
       } else {
+        dealToast('loan', action, other);
         onActionComplete?.();
       }
     } catch {

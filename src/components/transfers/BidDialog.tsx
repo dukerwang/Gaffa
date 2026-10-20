@@ -16,6 +16,7 @@ import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { isAcademyEligible, type AcademyCapacity } from '@/lib/transfers/academyEligibility';
 import { getPushAvailability, subscribeToPush, type PushAvailability } from '@/lib/push/subscribe';
 import { freeAgentMinimumBid } from '@/lib/leagues/features';
+import { toast } from '@/components/ui/toast';
 
 
 /**
@@ -178,6 +179,16 @@ export default function BidDialog({
         return;
       }
       onDone();
+
+      const name = getPlayerDisplayName(player, 'full');
+      if (data.is_buy_now) {
+        // Unresolved means the sweep will finish it; don't claim the signing yet.
+        toast.success('Release clause paid', {
+          description: data.resolved ? `${name} · €${amount}m` : `${name} · €${amount}m. The transfer is completing.`,
+        });
+      } else {
+        toast.success('Bid placed', { description: `${name} · €${amount}m` });
+      }
 
       if (wouldTakeClause) {
         handleClose();
