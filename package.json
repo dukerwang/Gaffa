@@ -30,6 +30,7 @@
     "react-window": "^2.2.7",
     "remark-gfm": "^4.0.1",
     "resend": "^6.12.3",
+    "satori": "^0.18.3",
     "string-similarity": "^4.0.4",
     "web-push": "^3.6.7"
   },

@@ -5,7 +5,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { resolveSharedXI } from '@/lib/lineups/sharedXI';
-import { CARD_H, CARD_W } from '@/lib/lineups/lineupCard';
+import { CARD_H, CARD_SCALE, CARD_W } from '@/lib/lineups/lineupCard';
 import styles from './xi.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -53,7 +53,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const query = queryOf(await searchParams);
   const xi = await resolve(query);
   const { heading, line } = describe(xi);
-  const image = { url: imageUrl(query), width: CARD_W, height: CARD_H, alt: `${heading}, ${line}` };
+  const image = { url: imageUrl(query), width: CARD_W * CARD_SCALE, height: CARD_H * CARD_SCALE, alt: `${heading}, ${line}` };
   // Absolute on the host that served the page: gaffa.live redirects to www, and a
   // link previewer that won't follow the redirect would show no picture.
   const h = await headers();
