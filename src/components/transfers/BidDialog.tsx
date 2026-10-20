@@ -180,17 +180,22 @@ export default function BidDialog({
       }
       onDone();
 
+      // The toast confirms a bid only when the dialog closes on it. When it
+      // stays open on the push prompt, that screen already says "Bid placed".
       const name = getPlayerDisplayName(player, 'full');
-      if (data.is_buy_now) {
-        // Unresolved means the sweep will finish it; don't claim the signing yet.
-        toast.success('Release clause paid', {
-          description: data.resolved ? `${name} · €${amount}m` : `${name} · €${amount}m. The transfer is completing.`,
-        });
-      } else {
-        toast.success('Bid placed', { description: `${name} · €${amount}m` });
-      }
+      const confirm = () => {
+        if (data.is_buy_now) {
+          // Unresolved means the sweep will finish it; don't claim the signing yet.
+          toast.success('Release clause paid', {
+            description: data.resolved ? `${name} · €${amount}m` : `${name} · €${amount}m. The transfer is completing.`,
+          });
+        } else {
+          toast.success('Bid placed', { description: `${name} · €${amount}m` });
+        }
+      };
 
       if (wouldTakeClause) {
+        confirm();
         handleClose();
         return;
       }
@@ -205,6 +210,7 @@ export default function BidDialog({
         // ignore
       }
 
+      confirm();
       handleClose();
     } catch {
       setMessage('Could not reach the server. Try again.');
