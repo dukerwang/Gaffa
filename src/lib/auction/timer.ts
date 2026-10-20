@@ -16,6 +16,8 @@
  *
  * 3. Smart Overnight & Weekend Matchday Protection:
  *    - Overnight Deadzone: 11:00 PM – 8:00 AM local league time.
+ *    - A close that would land in the deadzone, or a bid placed in it, settles no
+ *      earlier than the next civil settlement time below.
  *    - Contested / High-Value (≥ €20m or 2+ bids) or Weekdays: Pushed to 12:00 PM (Noon) local time.
  *    - Uncontested Weekend Streamers (< €20m and 1 bid on Saturday/Sunday): Pushed to 6:45 AM local time
  *      (45 minutes before the early 7:30 AM EST kickoff).
@@ -123,50 +125,40 @@ function parseHHMM(value: string): number {
     return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
 }
 
-/**
- * Smart Quiet Hours & Overnight Protection:
- * - Deadzone: 11:00 PM (23:00) to 8:00 AM (08:00) local time.
- * - Uncontested weekend streamers (< €20m, 1 bid on Sat/Sun): pushed to 6:45 AM local time.
- * - All other overnight resolutions: pushed to 12:00 PM (Noon) local time.
- */
-export function applyQuietHours(
-    timestampMs: number,
-    quiet: QuietHours | null,
-    options?: AuctionTimerOptions,
-): number {
-    if (!quiet) return timestampMs;
+const NEXT_WEEKDAY: Record<string, string> = {
+    Mon: 'Tue',
+    Tue: 'Wed',
+    Wed: 'Thu',
+    Thu: 'Fri',
+    Fri: 'Sat',
+    Sat: 'Sun',
+    Sun: 'Mon',
+};
 
+/** True when `timestampMs` is in the overnight deadzone (23:00 until the league's quiet window ends). */
+function isOvernightAt(timestampMs: number, quiet: QuietHours): boolean {
     const startMin = parseHHMM(quiet.start);
     const endMin = parseHHMM(quiet.end);
-    if (startMin === endMin) return timestampMs; // zero-length window
+    if (startMin === endMin) return false; // zero-length window
 
     const wraps = startMin > endMin;
     const inQuietWindow = (minutes: number) =>
         wraps ? minutes >= startMin || minutes < endMin : minutes >= startMin && minutes < endMin;
 
-    // Overnight includes 11:00 PM onwards or anytime in the quiet window (e.g. up to 8:00 AM)
-    const isOvernight = (minutes: number) => minutes >= 23 * 60 || inQuietWindow(minutes);
+    const { minutes } = localTimeDetails(timestampMs, quiet.timeZone);
+    return minutes >= 23 * 60 || inQuietWindow(minutes);
+}
 
+/**
+ * The first civil settlement time after an overnight `timestampMs`: 6:45 AM for
+ * an uncontested weekend streamer, noon for everything else. Only meaningful
+ * when `isOvernightAt(timestampMs, quiet)`.
+ */
+function nextCivilSettle(timestampMs: number, quiet: QuietHours, options?: AuctionTimerOptions): number {
     const { weekday, minutes } = localTimeDetails(timestampMs, quiet.timeZone);
-    if (!isOvernight(minutes)) return timestampMs;
 
-    // If an overnight bid happens late at night (>= 23:00), the target morning is the NEXT day.
-    const targetWeekday =
-        minutes >= 23 * 60
-            ? weekday === 'Mon'
-                ? 'Tue'
-                : weekday === 'Tue'
-                  ? 'Wed'
-                  : weekday === 'Wed'
-                    ? 'Thu'
-                    : weekday === 'Thu'
-                      ? 'Fri'
-                      : weekday === 'Fri'
-                        ? 'Sat'
-                        : weekday === 'Sat'
-                          ? 'Sun'
-                          : 'Mon'
-            : weekday;
+    // Late at night (>= 23:00) the target morning is the NEXT day.
+    const targetWeekday = minutes >= 23 * 60 ? (NEXT_WEEKDAY[weekday] ?? 'Mon') : weekday;
 
     const isWeekend = targetWeekday === 'Sat' || targetWeekday === 'Sun';
     const isStreamer = (options?.marketValue ?? 0) < 20 && (options?.bidCount ?? 1) <= 1;
@@ -174,7 +166,8 @@ export function applyQuietHours(
     // Target settlement time: 6:45 AM (405m) for weekend streamers, 12:00 PM Noon (720m) for all others
     const targetMins = isWeekend && isStreamer ? 6 * 60 + 45 : 12 * 60;
 
-    let result = timestampMs;
+    // Land on the dot: a bid's seconds must not leak into the settlement time.
+    let result = Math.floor(timestampMs / 60_000) * 60_000;
     // Minutes forward to the target time
     const delta = (targetMins - minutes + 1440) % 1440;
     result += (delta === 0 ? 1440 : delta) * 60_000;
@@ -189,6 +182,21 @@ export function applyQuietHours(
     }
 
     return result;
+}
+
+/**
+ * Smart Quiet Hours & Overnight Protection:
+ * - Deadzone: 11:00 PM (23:00) to 8:00 AM (08:00) local time.
+ * - Uncontested weekend streamers (< €20m, 1 bid on Sat/Sun): pushed to 6:45 AM local time.
+ * - All other overnight resolutions: pushed to 12:00 PM (Noon) local time.
+ */
+export function applyQuietHours(
+    timestampMs: number,
+    quiet: QuietHours | null,
+    options?: AuctionTimerOptions,
+): number {
+    if (!quiet || !isOvernightAt(timestampMs, quiet)) return timestampMs;
+    return nextCivilSettle(timestampMs, quiet, options);
 }
 
 /**
@@ -208,7 +216,16 @@ export function calculateExpiresAt(
     const age = lastBidTime - firstBidTime;
     const inactivityEnd = lastBidTime + inactivityTimeoutMs(age);
     const minClose = firstBidTime + tierInitialFloorMs(options?.marketValue ?? 0);
-    const naturalExpiry = Math.max(minClose, inactivityEnd);
+    let naturalExpiry = Math.max(minClose, inactivityEnd);
+
+    // A bid placed overnight must not leave the previous leader only sleeping
+    // hours to answer. Without this, a 00:47 bid on an auction already due to
+    // close at 08:33 stood as-is: the close was outside the deadzone, so the
+    // guard above never fired, and the leader had no waking hour to respond.
+    if (quiet && isOvernightAt(lastBidTime, quiet)) {
+        naturalExpiry = Math.max(naturalExpiry, nextCivilSettle(lastBidTime, quiet, options));
+    }
+
     return new Date(applyQuietHours(naturalExpiry, quiet, options)).toISOString();
 }
 

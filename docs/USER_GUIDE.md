@@ -377,7 +377,7 @@ A marquee signing sits there long enough for everyone to plan a bid. A cheap rot
 
 **After the last bid, a lot ends on inactivity**, and that window shortens as the auction ages: **6h** under 48h old, **4h** at 48–72h, **2h** at 72–96h, **1h** beyond that. Every bid resets it, so a contested auction never freezes on a public deadline anyone can snipe.
 
-**Nothing settles overnight.** A lot due to expire between 23:00 and the end of your league's quiet hours (default 08:00 local) moves to **midday** instead. One exception: an uncontested weekend lot — a single bid, under €20m, on a Saturday or Sunday — settles at **06:45**, ahead of the early kickoff, so a last-minute streamer is available to play.
+**Nothing settles overnight.** A lot due to expire between 23:00 and the end of your league's quiet hours (default 08:00 local) moves to **midday** instead. The same goes for a bid placed during those hours: it can't leave the previous leader only sleeping hours to answer, so the lot stays open until at least midday. One exception: an uncontested weekend lot — a single bid, under €20m, on a Saturday or Sunday — settles at **06:45**, ahead of the early kickoff, so a last-minute streamer is available to play.
 
 **Auctions over €50m open at midday**, rather than the moment the overnight sync sweeps the player in. Bidding is blind either way, but the "new auction" notice isn't: released at 4am it only reaches whoever happens to be awake.
 
