@@ -20,6 +20,7 @@ import { getFormationLockStatus, assignStartersForFormation } from '@/lib/lineup
 import { playStatus, scoreCell, type PlayStatus, type ScoreCell } from '@/lib/lineups/scoreCell';
 import { scoreAppearanceAtSlot, type RefStatsMap } from '@/lib/scoring/matchups';
 import type { RosterCapacity } from '@/lib/roster/capacity';
+import { adjustCapacity, applyPendingMoves, pruneSettledMoves, type PendingMoves } from '@/lib/lineups/pendingMoves';
 import NavigationLink from '@/components/ui/NavigationLink';
 import CrestBadge from '@/components/crest/CrestBadge';
 import type { RawStats } from '@/types';
@@ -425,47 +426,25 @@ export default function PitchUI({
 }: Props) {
     const router = useRouter();
 
-    // Academy and IR moves show at once. The routes write the new status, but
-    // router.refresh() re-runs the whole server page, which takes seconds; until
-    // then the player stayed in Reserves and a second try was refused ("already
-    // in the academy"). Each move records the player's new tier here, and the
-    // overrides clear when the refreshed entries arrive.
-    const [movedTo, setMovedTo] = useState<Record<string, 'taxi' | 'ir' | 'bench'>>({});
-    useEffect(() => { setMovedTo({}); }, [serverAllEntries, serverTaxiEntries, serverIrEntries]);
-    const recordMove = useCallback((moves: Record<string, 'taxi' | 'ir' | 'bench'>) => {
+    // Academy and IR moves show at once, without waiting for router.refresh()
+    // to re-run the server page (src/lib/lineups/pendingMoves.ts).
+    const [movedTo, setMovedTo] = useState<PendingMoves>({});
+    const serverLists = useMemo(
+        () => ({ squad: serverAllEntries, taxi: serverTaxiEntries, ir: serverIrEntries }),
+        [serverAllEntries, serverTaxiEntries, serverIrEntries],
+    );
+    useEffect(() => { setMovedTo((prev) => pruneSettledMoves(serverLists, prev)); }, [serverLists]);
+    const recordMove = useCallback((moves: PendingMoves) => {
         setMovedTo((prev) => ({ ...prev, ...moves }));
     }, []);
-    const { allEntries, taxiEntries, irEntries } = useMemo(() => {
-        const everyone = [...serverAllEntries, ...serverTaxiEntries, ...serverIrEntries];
-        const tierOf = (e: RosterEntry & { player: Player }): 'taxi' | 'ir' | 'bench' =>
-            movedTo[e.player.id] ?? (e.status === 'taxi' || e.status === 'ir' ? e.status : 'bench');
-        const inTier = (tier: 'taxi' | 'ir' | 'bench') => everyone.filter((e) => tierOf(e) === tier);
-        const withStatus = (e: RosterEntry & { player: Player }, status: 'taxi' | 'ir' | 'bench') =>
-            e.status === status || (status === 'bench' && e.status === 'active') ? e : { ...e, status };
-        return {
-            allEntries: inTier('bench').map((e) => withStatus(e, 'bench')),
-            taxiEntries: inTier('taxi').map((e) => withStatus(e, 'taxi')),
-            irEntries: inTier('ir').map((e) => withStatus(e, 'ir')),
-        };
-    }, [serverAllEntries, serverTaxiEntries, serverIrEntries, movedTo]);
-    // The counts follow the same moves, since they also decide which tiers
-    // accept a player (a full Academy, an open squad slot).
-    const capacity = useMemo(() => {
-        if (!serverCapacity) return serverCapacity;
-        const academy = serverCapacity.academy + (taxiEntries.length - serverTaxiEntries.length);
-        const ir = serverCapacity.ir + (irEntries.length - serverIrEntries.length);
-        const active = serverCapacity.active + (allEntries.length - serverAllEntries.length);
-        return {
-            ...serverCapacity,
-            academy,
-            ir,
-            active,
-            open: Math.max(0, serverCapacity.limit - active),
-            isFull: active >= serverCapacity.limit,
-            isOver: active > serverCapacity.limit,
-            atFloor: active <= serverCapacity.floor,
-        };
-    }, [serverCapacity, allEntries, taxiEntries, irEntries, serverAllEntries, serverTaxiEntries, serverIrEntries]);
+    // A Club Facilities slot bought from the rail counts at once too.
+    const [boughtSlots, setBoughtSlots] = useState<{ academy?: number; ir?: number }>({});
+    const shownLists = useMemo(() => applyPendingMoves(serverLists, movedTo), [serverLists, movedTo]);
+    const { squad: allEntries, taxi: taxiEntries, ir: irEntries } = shownLists;
+    const capacity = useMemo(
+        () => serverCapacity && adjustCapacity(serverCapacity, serverLists, shownLists, boughtSlots),
+        [serverCapacity, serverLists, shownLists, boughtSlots],
+    );
 
     const scoringStartedTeamIds = scoringLockedTeamIds ?? lockedTeamIds;
     const scoringLineupSet = useMemo(() => new Set(scoringLineupPlayerIds ?? []), [scoringLineupPlayerIds]);
@@ -2762,7 +2741,15 @@ export default function PitchUI({
                             facility={buyingFacility}
                             balance={facilityOffers.balance}
                             onClose={() => setBuyingFacility(null)}
-                            onPurchased={() => { setSidebarError(null); router.refresh(); }}
+                            onPurchased={() => {
+                                const bought = buyingFacility;
+                                if (bought?.next && (bought.key === 'academy' || bought.key === 'ir')) {
+                                    const slotsNow = bought.next.slots;
+                                    setBoughtSlots((prev) => ({ ...prev, [bought.key]: slotsNow }));
+                                }
+                                setSidebarError(null);
+                                router.refresh();
+                            }}
                         />
                     )}
                 </div>
