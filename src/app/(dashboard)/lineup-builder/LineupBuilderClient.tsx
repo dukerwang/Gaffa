@@ -17,8 +17,10 @@ import {
   type BuilderFixture,
   type MatchLineups,
   type MatchSide,
+  type PerformancesByMatch,
   type SideSource,
 } from '@/lib/lineups/builderFixtures';
+import { formatRating, ratingBand } from '@/lib/lineups/matchPerformance';
 import { fitFormation } from '@/lib/lineups/fitFormation';
 import LineupPlayerPickerModal from './LineupPlayerPickerModal';
 import { ClubPicker, MatchPicker } from './BuilderPickers';
@@ -35,6 +37,8 @@ interface Props {
   initialFixture: BuilderFixture | null;
   /** Each listed match's opening XIs: its starters once played, otherwise each club's last XI. */
   lineups: MatchLineups;
+  /** How each player did in every match that has kicked off. */
+  performances: PerformancesByMatch;
 }
 
 const FORMATIONS: readonly Formation[] = VALID_FORMATIONS;
@@ -42,6 +46,15 @@ const FORMATIONS: readonly Formation[] = VALID_FORMATIONS;
 const BACK_LINES = ['3', '4', '5'] as const;
 
 const SIDES: readonly MatchSide[] = ['home', 'away'];
+
+const RATING_CLASS = {
+  elite: styles.ratingElite,
+  good: styles.ratingGood,
+  fair: styles.ratingFair,
+  belowAvg: styles.ratingBelowAvg,
+  weak: styles.ratingWeak,
+  bad: styles.ratingBad,
+} as const;
 
 /** One XI: a shape and who fills each of its eleven slots. */
 interface XI {
@@ -79,7 +92,14 @@ function openingXI(source: SideSource | null, playerById: Map<string, Player>): 
 const idsOf = (xi: XI) => Array.from({ length: 11 }, (_, i) => xi.assignments[i]?.id ?? null);
 const sameXI = (a: XI, b: XI) => a.formation === b.formation && idsOf(a).join() === idsOf(b).join();
 
-export default function LineupBuilderClient({ allPlayers, initialState, fixtures, initialFixture, lineups }: Props) {
+export default function LineupBuilderClient({
+  allPlayers,
+  initialState,
+  fixtures,
+  initialFixture,
+  lineups,
+  performances,
+}: Props) {
   const [title, setTitle] = useState<string>(initialState.title);
   const [fixture, setFixture] = useState<BuilderFixture | null>(initialFixture);
   const [side, setSide] = useState<MatchSide>(initialState.side ?? 'home');
@@ -245,10 +265,14 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
     return set;
   }, [assignments]);
 
+  // How each player did in the selected match, once it has kicked off.
+  const matchPerformances = matchKey ? performances[matchKey] ?? null : null;
+
   const boardSlots = useMemo<FormationBoardSlot[]>(
     () =>
       (FORMATION_SLOTS[formation] as GranularPosition[]).map((slot, index) => {
         const p = assignments[index];
+        const perf = p ? matchPerformances?.byPlayer[p.id] : undefined;
         return {
           slot,
           index,
@@ -262,11 +286,21 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
                 photoVersion: p.photo_version,
                 headTopPct: p.portrait_head_top_pct,
                 headWidthPct: p.portrait_head_width_pct,
+                rating: perf?.rating ?? null,
+                events: perf
+                  ? {
+                      goals: perf.goals,
+                      assists: perf.assists,
+                      ownGoals: perf.ownGoals,
+                      yellowCards: perf.yellowCards,
+                      redCards: perf.redCards,
+                    }
+                  : null,
               }
             : null,
         };
       }),
-    [formation, assignments],
+    [formation, assignments, matchPerformances],
   );
   const filledCount = assignedPlayerIds.size;
 
@@ -412,7 +446,7 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
   const provenance = !fixture
     ? null
     : source?.kind === 'started'
-      ? `Starting XI · ${kickoffDay(source.from.kickoff)}`
+      ? `Starting XI · ${kickoffDay(source.from.kickoff)}${matchPerformances && !matchPerformances.final ? ' · Ratings provisional' : ''}`
       : lastLabel && !canUseLast
         ? lastLabel
         : fixture.finished
@@ -608,6 +642,13 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
                             <span className={styles.railName}>{getPlayerDisplayName(p, 'full')}</span>
                             <span className={styles.railClub}>{resolveClub(p.pl_team)?.name ?? p.pl_team}</span>
                           </span>
+                          {matchPerformances?.byPlayer[p.id]?.rating != null && (
+                            <span
+                              className={`${styles.railRating} ${RATING_CLASS[ratingBand(matchPerformances.byPlayer[p.id].rating!)]}`}
+                            >
+                              {formatRating(matchPerformances.byPlayer[p.id].rating!)}
+                            </span>
+                          )}
                           <span className={styles.railAction}>Change</span>
                         </>
                       ) : (

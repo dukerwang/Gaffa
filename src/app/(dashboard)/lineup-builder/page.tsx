@@ -39,7 +39,7 @@ export default async function LineupBuilderPage({ searchParams }: Props) {
   ]);
 
   const clubById = new Map(allPlayers.map((p) => [p.id, resolveClub(p.pl_team)?.slug ?? null]));
-  const { fixtures, linked, lineups } = await loadBuilderFixtures(
+  const { fixtures, linked, lineups, performances } = await loadBuilderFixtures(
     admin,
     season,
     initialState.fixture ?? null,
@@ -53,6 +53,7 @@ export default async function LineupBuilderPage({ searchParams }: Props) {
       fixtures={fixtures}
       initialFixture={linked}
       lineups={lineups}
+      performances={performances}
     />
   );
 }

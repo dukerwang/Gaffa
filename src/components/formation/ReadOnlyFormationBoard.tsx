@@ -3,6 +3,8 @@ import type { Formation, GranularPosition } from '@/types';
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { formatRating, ratingBand } from '@/lib/lineups/matchPerformance';
+import MatchEvents, { type MatchEventCounts } from './MatchEvents';
 import styles from './ReadOnlyFormationBoard.module.css';
 
 type PitchZone = 'ATT' | 'AMZ' | 'CMZ' | 'DMZ' | 'WBZ' | 'DEF' | 'GK';
@@ -34,6 +36,10 @@ export interface FormationBoardPlayer {
   detail?: string | null;
   /** Compact marker badge on the portrait (e.g. points scored). */
   marker?: string | null;
+  /** A played match's rating, worn like the points marker but banded on the rating scale. */
+  rating?: number | null;
+  /** Goals, assists and cards in a played match, drawn as marks on the portrait. */
+  events?: MatchEventCounts | null;
 }
 
 export interface FormationBoardSlot {
@@ -71,6 +77,30 @@ function ptsBand(marker: string | null | undefined): string {
   if (num >= 2.0) return styles.nodePtsBelowAvg;
   if (num > 0) return styles.nodePtsWeak;
   return styles.nodePtsBad;
+}
+
+const RATING_BAND_CLASS = {
+  elite: styles.nodePtsElite,
+  good: styles.nodePtsGood,
+  fair: styles.nodePtsFair,
+  belowAvg: styles.nodePtsBelowAvg,
+  weak: styles.nodePtsWeak,
+  bad: styles.nodePtsBad,
+} as const;
+
+/** A portrait's points marker, match rating and match events. */
+function PortraitMarks({ player }: { player: FormationBoardPlayer }) {
+  return (
+    <>
+      {player.marker && <span className={`${styles.nodePtsBadge} ${ptsBand(player.marker)}`}>{player.marker}</span>}
+      {player.rating != null && (
+        <span className={`${styles.nodePtsBadge} ${RATING_BAND_CLASS[ratingBand(player.rating)]}`}>
+          {formatRating(player.rating)}
+        </span>
+      )}
+      {player.events && <MatchEvents events={player.events} />}
+    </>
+  );
 }
 
 function Node({
@@ -158,11 +188,7 @@ function Node({
               headWidthPct={player.headWidthPct}
               photoVersion={player.photoVersion}
             />
-            {player.marker && (
-              <span className={`${styles.nodePtsBadge} ${ptsBand(player.marker)}`}>
-                {player.marker}
-              </span>
-            )}
+            <PortraitMarks player={player} />
           </span>
         </button>
 
@@ -212,11 +238,7 @@ function Node({
             headWidthPct={player.headWidthPct}
             photoVersion={player.photoVersion}
           />
-          {player.marker && (
-            <span className={`${styles.nodePtsBadge} ${ptsBand(player.marker)}`}>
-              {player.marker}
-            </span>
-          )}
+          <PortraitMarks player={player} />
         </span>
 
         <span className={styles.nodeChip}>

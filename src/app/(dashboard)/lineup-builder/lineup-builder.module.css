@@ -376,6 +376,26 @@
   letter-spacing: 0.04em;
   color: var(--color-accent-ink);
 }
+/* A played match's rating, banded like the pitch's rating badge. */
+.railRating {
+  flex: none;
+  min-width: 34px;
+  padding: 2px var(--s1);
+  border-radius: var(--r-control);
+  font-family: var(--font-serif);
+  font-size: var(--t-13);
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  color: #fff;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.ratingElite { background: #2D6A4F; }
+.ratingGood { background: #387D53; }
+.ratingFair { background: #8C6C00; }
+.ratingBelowAvg { background: #9D6407; }
+.ratingWeak { background: #AC5B0E; }
+.ratingBad { background: #9B2335; }
 .railEmptyDot {
   width: 44px;
   height: 44px;

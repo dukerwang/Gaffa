@@ -1,7 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { CLUB_BY_SLUG } from '@/lib/clubs/registry';
 import { fetchAllPages } from '@/lib/supabase/pagination';
+import { getFinalisedGameweeks } from '@/lib/scoring/gameweekState';
 import type { MatchLayout } from './fitFormation';
+import { performanceFromRow, type MatchPerformance } from './matchPerformance';
 
 /** A Premier League match the Lineup Builder can build an XI for. */
 export interface BuilderFixture {
@@ -36,6 +38,16 @@ export interface SideSource {
 
 /** fixtureKey -> each side's opening XI, or null when there is none to show. */
 export type MatchLineups = Record<string, Record<MatchSide, SideSource | null>>;
+
+/** How a played match went for each player who took the pitch. */
+export interface MatchPerformances {
+  /** False until we hold FPL's reviewed stats, so the ratings are still estimates. */
+  final: boolean;
+  byPlayer: Record<string, MatchPerformance>;
+}
+
+/** fixtureKey -> performances, for every match that has kicked off. */
+export type PerformancesByMatch = Record<string, MatchPerformances>;
 
 /** The picker offers the matchweek in progress, the two after it and the two before it. */
 const WEEKS_AHEAD = 3;
@@ -91,7 +103,12 @@ export async function loadBuilderFixtures(
   season: string,
   linked: { season: string; id: number } | null,
   clubOf: (playerId: string) => string | null,
-): Promise<{ fixtures: BuilderFixture[]; linked: BuilderFixture | null; lineups: MatchLineups }> {
+): Promise<{
+  fixtures: BuilderFixture[];
+  linked: BuilderFixture | null;
+  lineups: MatchLineups;
+  performances: PerformancesByMatch;
+}> {
   const { data: next } = await admin
     .from('pl_fixtures')
     .select('gameweek')
@@ -163,6 +180,31 @@ export async function loadBuilderFixtures(
     }
   }
 
+  // How everyone who played did, for the ratings and goal and assist icons on a played match.
+  const performances: PerformancesByMatch = {};
+  for (const [s, list] of bySeason) {
+    const byId = new Map(list.map((f) => [f.id, f]));
+    const finalised = await getFinalisedGameweeks(admin, s, [...new Set(list.map((f) => f.gameweek))]);
+    // A row exists for every player in every match; only those with minutes took the pitch.
+    const rows = await fetchAllPages<{ player_id: string; match_id: number; match_rating: number | null; stats: Record<string, unknown> }>(
+      (from, to) =>
+        admin
+          .from('player_stats')
+          .select('player_id, match_id, match_rating, stats')
+          .eq('season', s)
+          .in('match_id', [...byId.keys()])
+          .neq('stats->>minutes_played', '0')
+          .order('id', { ascending: true })
+          .range(from, to),
+    );
+    for (const f of list) performances[fixtureKey(f)] = { final: finalised.has(f.gameweek), byPlayer: {} };
+    for (const r of rows) {
+      const f = byId.get(r.match_id);
+      const perf = f ? performanceFromRow(r) : null;
+      if (f && perf) performances[fixtureKey(f)].byPlayer[r.player_id] = perf;
+    }
+  }
+
   // Where each side's starters stood, for every played match above.
   const layouts = new Map<string, MatchLayout>();
   for (const [s, list] of bySeason) {
@@ -215,7 +257,7 @@ export async function loadBuilderFixtures(
     lineups[fixtureKey(f)] = { home: sideFor('home'), away: sideFor('away') };
   }
 
-  return { fixtures, linked: linkedFixture, lineups };
+  return { fixtures, linked: linkedFixture, lineups, performances };
 }
 
 /** "Chelsea vs. Tottenham", the title a match gives a lineup by default. */
