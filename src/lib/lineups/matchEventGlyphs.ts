@@ -29,15 +29,18 @@ const ball = (patch: string) =>
   `<path d="${BALL_SEAMS}" stroke="${patch}" stroke-width="1" stroke-linecap="round" fill="none"/>` +
   `<circle cx="12" cy="12" r="10.6" fill="none" stroke="${INK}" stroke-opacity=".22" stroke-width=".8"/>`;
 
-/** An assist: a ball played along a curved pass, on a Gaffa-green disc in the same cream ring. */
+/** An assist: a cream football boot on a Gaffa-green disc, in the same cream ring as the ball. */
 const ASSIST =
   '<defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14854F"/><stop offset="1" stop-color="#0A5B33"/></linearGradient></defs>' +
   `<circle cx="12" cy="12" r="11.6" fill="${CREAM}"/>` +
   '<circle cx="12" cy="12" r="10.4" fill="url(#a)"/>' +
-  `<circle cx="7.6" cy="16.2" r="2.5" fill="${CREAM}"/>` +
-  `<circle cx="7.6" cy="16.2" r="1" fill="${GREEN}"/>` +
-  `<path d="M10.4 14C11.4 10.8 13.4 9 16.2 8.4" stroke="${CREAM}" stroke-width="1.7" stroke-linecap="round" fill="none"/>` +
-  `<path d="M15.2 5.6L19.8 8L15.6 11z" fill="${CREAM}" stroke="${CREAM}" stroke-width="1" stroke-linejoin="round"/>`;
+  '<g transform="translate(12 12) scale(.9) translate(-12.8 -14)">' +
+  `<path d="M4.2 9.6c0-.9.7-1.4 1.5-1.2l3.5 1c.8.2 1.4.8 2.2 1.4l7.6 2.4c1.6.5 2.6 1.6 2.6 2.9v.9H4.2z" fill="${CREAM}"/>` +
+  `<path d="M3.8 16.9h18c.4 0 .7.3.7.7v.1c0 .4-.3.7-.7.7h-18c-.4 0-.7-.3-.7-.7v-.1c0-.4.3-.7.7-.7z" fill="${CREAM}"/>` +
+  `<path d="M5.2 18.6h2.2l-.35 1.8H5.55zM9.4 18.6h2.2l-.35 1.8H9.75zM14.2 18.6h2.2l-.35 1.8h-1.5zM18.4 18.6h2.2l-.35 1.8h-1.5z" fill="${CREAM}"/>` +
+  `<path d="M11.9 12.3l1.6-1.1M14.2 13l1.6-1.1M16.5 13.7l1.5-1" stroke="${GREEN}" stroke-width="1.1" stroke-linecap="round"/>` +
+  `<path d="M5 14.6c2.6.1 5.8.6 8.8 1.5" stroke="${GREEN}" stroke-width="1.1" stroke-linecap="round" fill="none"/>` +
+  '</g>';
 
 /** A card: a shaded slip, slightly tilted, on a cream plate. */
 const card = (top: string, bottom: string) =>
