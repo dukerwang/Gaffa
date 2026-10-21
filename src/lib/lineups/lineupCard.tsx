@@ -4,6 +4,7 @@ import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { portraitInitials, portraitSources } from '@/lib/players/photo';
 import { customPortraitCrop } from '@/lib/players/portraitCrop';
 import { formatRating, ratingBand, type MatchPerformance, type RatingBand } from './matchPerformance';
+import { eventGlyphUrl, type EventKind } from './matchEventGlyphs';
 import { resolveClub } from '@/lib/clubs/registry';
 import type { SharedXI } from './sharedXI';
 import { getZone, ZONE_ORDER, type PitchZone } from './pitchZones';
@@ -164,8 +165,6 @@ const RATING_COLOR: Record<RatingBand, string> = {
   bad: '#9B2335',
 };
 
-type EventKind = 'goal' | 'assist' | 'ownGoal' | 'yellow' | 'red';
-
 /** The marks a player earned, one per kind with its count, in the order the site draws them. */
 function eventsOf(perf: MatchPerformance): { kind: EventKind; n: number }[] {
   const all: { kind: EventKind; n: number }[] = [
@@ -176,28 +175,6 @@ function eventsOf(perf: MatchPerformance): { kind: EventKind; n: number }[] {
     { kind: 'red', n: perf.redCards },
   ];
   return all.filter((e) => e.n > 0);
-}
-
-const ballSvg = (ring: string) =>
-  `<circle cx="8" cy="8" r="7" fill="#FFFFFF" stroke="${ring}" stroke-width="1.2"/><path d="M8 4.6 10.7 6.5 9.7 9.7H6.3L5.3 6.5Z" fill="${ring}"/>`;
-
-/** Each event's shapes on a 16-unit canvas: the same ones as MatchEvents.tsx. */
-const GLYPH_SHAPES: Record<EventKind, string> = {
-  goal: ballSvg(INK),
-  ownGoal: ballSvg('#9B2335'),
-  assist: `<path d="M2 3h4.2v4.1c0 .7.4 1.1 1 1.4l5.3 2.3c.9.4 1.5 1.2 1.5 2.1V14H2Z" fill="${INK}"/><path d="M4.2 11.8h1.2M6.9 11.8h1.2M9.6 11.8h1.2" stroke="${CARD}" stroke-width="1" fill="none"/>`,
-  yellow: '<rect x="3.5" y="1.5" width="9" height="13" rx="1.5" fill="#F2C200"/>',
-  red: '<rect x="3.5" y="1.5" width="9" height="13" rx="1.5" fill="#C8102E"/>',
-};
-
-/**
- * One event's glyph, drawn as an image with an SVG data URL: Satori can't
- * serialise the child elements of an inline <svg> unless they are plain, and
- * a data URL keeps the shapes out of its way.
- */
-function EventGlyph({ kind, size }: { kind: EventKind; size: number }) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">${GLYPH_SHAPES[kind]}</svg>`;
-  return <img alt="" src={`data:image/svg+xml,${encodeURIComponent(svg)}`} width={size} height={size} />;
 }
 
 /**
@@ -414,27 +391,22 @@ function PlayerNode({
                 style={{
                   display: 'flex',
                   position: 'relative',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: u(16 * P),
-                  height: u(16 * P),
-                  borderRadius: u(8 * P),
-                  background: CARD,
-                  border: `${u(1 * P)}px solid #D9D5CF`,
-                  marginTop: i === 0 ? 0 : u(2 * P),
+                  width: u(18 * P),
+                  height: u(18 * P),
+                  marginTop: i === 0 ? 0 : u(3 * P),
                 }}
               >
-                <EventGlyph kind={e.kind} size={u(12 * P)} />
+                <img alt="" src={eventGlyphUrl(e.kind)} width={u(18 * P)} height={u(18 * P)} />
                 {e.n > 1 ? (
                   <div
                     style={{
                       position: 'absolute',
                       top: u(-5 * P),
-                      right: u(-5 * P),
+                      right: u(-6 * P),
                       display: 'flex',
                       justifyContent: 'center',
-                      minWidth: u(11 * P),
-                      padding: `0 ${u(2 * P)}px`,
+                      minWidth: u(12 * P),
+                      padding: `0 ${u(3 * P)}px`,
                       borderRadius: u(6 * P),
                       background: INK,
                       color: CARD,
