@@ -48,6 +48,9 @@ const BACK_LINES = ['3', '4', '5'] as const;
 const SIDES: readonly MatchSide[] = ['home', 'away'];
 
 const RATING_CLASS = {
+  rarest: styles.ratingRarest,
+  rarer: styles.ratingRarer,
+  rare: styles.ratingRare,
   elite: styles.ratingElite,
   good: styles.ratingGood,
   fair: styles.ratingFair,

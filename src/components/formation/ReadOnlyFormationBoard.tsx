@@ -83,6 +83,9 @@ function ptsBand(marker: string | null | undefined): string {
 }
 
 const RATING_BAND_CLASS = {
+  rarest: styles.nodePtsRarest,
+  rarer: styles.nodePtsRarer,
+  rare: styles.nodePtsRare,
   elite: styles.nodePtsElite,
   good: styles.nodePtsGood,
   fair: styles.nodePtsFair,

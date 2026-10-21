@@ -22,7 +22,10 @@ describe('performanceFromRow', () => {
 
 describe('ratingBand', () => {
   it('bands on the display-rating cut-offs', () => {
-    expect(ratingBand(9.1)).toBe('elite');
+    expect(ratingBand(9.4)).toBe('rarest');
+    expect(ratingBand(9.2)).toBe('rarer');
+    expect(ratingBand(9.0)).toBe('rare');
+    expect(ratingBand(8.99)).toBe('elite');
     expect(ratingBand(8.5)).toBe('elite');
     expect(ratingBand(7.5)).toBe('good');
     expect(ratingBand(6.99)).toBe('fair');

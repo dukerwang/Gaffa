@@ -157,6 +157,9 @@ const BADGE_SIDE: Partial<Record<GranularPosition, 'l' | 'r'>> = {
 
 /** The pitch badge's rating colours (ReadOnlyFormationBoard.module.css), fixed for the poster. */
 const RATING_COLOR: Record<RatingBand, string> = {
+  rarest: '#143577',
+  rarer: '#1F4FA8',
+  rare: '#3F72CE',
   elite: '#2D6A4F',
   good: '#387D53',
   fair: '#8C6C00',

@@ -35,14 +35,18 @@ export function performanceFromRow(row: PerformanceRow): MatchPerformance | null
   };
 }
 
-export type RatingBand = 'elite' | 'good' | 'fair' | 'belowAvg' | 'weak' | 'bad';
+export type RatingBand = 'rarest' | 'rarer' | 'rare' | 'elite' | 'good' | 'fair' | 'belowAvg' | 'weak' | 'bad';
 
 /**
  * The colour a rating wears. The cut-offs are the display ratings that the
  * pitch's points badges already band on (ReadOnlyFormationBoard.module.css),
- * so a 7.5 reads the same green here as a 15.8-point score does there.
+ * so a 7.5 reads the same green here as a 15.8-point score does there. The
+ * three blues at the top are that file's feat ramp: 9.0, 9.2 and 9.4.
  */
 export function ratingBand(rating: number): RatingBand {
+  if (rating >= 9.4) return 'rarest';
+  if (rating >= 9.2) return 'rarer';
+  if (rating >= 9.0) return 'rare';
   if (rating >= 8.5) return 'elite';
   if (rating >= 7.5) return 'good';
   if (rating >= 6.5) return 'fair';

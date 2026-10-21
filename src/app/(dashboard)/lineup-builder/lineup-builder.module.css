@@ -390,6 +390,9 @@
   color: #fff;
   font-variant-numeric: tabular-nums lining-nums;
 }
+.ratingRarest { background: #143577; }
+.ratingRarer { background: #1F4FA8; }
+.ratingRare { background: #3F72CE; }
 .ratingElite { background: #2D6A4F; }
 .ratingGood { background: #387D53; }
 .ratingFair { background: #8C6C00; }
