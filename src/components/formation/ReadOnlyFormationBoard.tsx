@@ -65,6 +65,8 @@ function ptsBand(marker: string | null | undefined): string {
     if (marker === 'DNP') return styles.nodePtsDnp;
     return styles.nodePtsBadgeDefault;
   }
+  if (num >= 43.02) return styles.nodePtsRarest;
+  if (num >= 39.76) return styles.nodePtsRarer;
   if (num >= 36.58) return styles.nodePtsRare;
   if (num >= 29) return styles.nodePtsElite;
   if (num >= 15.8) return styles.nodePtsGood;
