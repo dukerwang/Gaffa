@@ -3,6 +3,7 @@ import type { GranularPosition, Player } from '@/types';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { portraitInitials, portraitSources } from '@/lib/players/photo';
 import { customPortraitCrop } from '@/lib/players/portraitCrop';
+import { formatRating, ratingBand, type MatchPerformance, type RatingBand } from './matchPerformance';
 import { resolveClub } from '@/lib/clubs/registry';
 import type { SharedXI } from './sharedXI';
 import { getZone, ZONE_ORDER, type PitchZone } from './pitchZones';
@@ -153,6 +154,52 @@ const BADGE_SIDE: Partial<Record<GranularPosition, 'l' | 'r'>> = {
   RW: 'r',
 };
 
+/** The pitch badge's rating colours (ReadOnlyFormationBoard.module.css), fixed for the poster. */
+const RATING_COLOR: Record<RatingBand, string> = {
+  elite: '#2D6A4F',
+  good: '#387D53',
+  fair: '#8C6C00',
+  belowAvg: '#9D6407',
+  weak: '#AC5B0E',
+  bad: '#9B2335',
+};
+
+type EventKind = 'goal' | 'assist' | 'ownGoal' | 'yellow' | 'red';
+
+/** The marks a player earned, one per kind with its count, in the order the site draws them. */
+function eventsOf(perf: MatchPerformance): { kind: EventKind; n: number }[] {
+  const all: { kind: EventKind; n: number }[] = [
+    { kind: 'goal', n: perf.goals },
+    { kind: 'assist', n: perf.assists },
+    { kind: 'ownGoal', n: perf.ownGoals },
+    { kind: 'yellow', n: perf.yellowCards },
+    { kind: 'red', n: perf.redCards },
+  ];
+  return all.filter((e) => e.n > 0);
+}
+
+const ballSvg = (ring: string) =>
+  `<circle cx="8" cy="8" r="7" fill="#FFFFFF" stroke="${ring}" stroke-width="1.2"/><path d="M8 4.6 10.7 6.5 9.7 9.7H6.3L5.3 6.5Z" fill="${ring}"/>`;
+
+/** Each event's shapes on a 16-unit canvas: the same ones as MatchEvents.tsx. */
+const GLYPH_SHAPES: Record<EventKind, string> = {
+  goal: ballSvg(INK),
+  ownGoal: ballSvg('#9B2335'),
+  assist: `<path d="M2 3h4.2v4.1c0 .7.4 1.1 1 1.4l5.3 2.3c.9.4 1.5 1.2 1.5 2.1V14H2Z" fill="${INK}"/><path d="M4.2 11.8h1.2M6.9 11.8h1.2M9.6 11.8h1.2" stroke="${CARD}" stroke-width="1" fill="none"/>`,
+  yellow: '<rect x="3.5" y="1.5" width="9" height="13" rx="1.5" fill="#F2C200"/>',
+  red: '<rect x="3.5" y="1.5" width="9" height="13" rx="1.5" fill="#C8102E"/>',
+};
+
+/**
+ * One event's glyph, drawn as an image with an SVG data URL: Satori can't
+ * serialise the child elements of an inline <svg> unless they are plain, and
+ * a data URL keeps the shapes out of its way.
+ */
+function EventGlyph({ kind, size }: { kind: EventKind; size: number }) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">${GLYPH_SHAPES[kind]}</svg>`;
+  return <img alt="" src={`data:image/svg+xml,${encodeURIComponent(svg)}`} width={size} height={size} />;
+}
+
 /**
  * One player: the position badge above his head, the lot-size portrait at the
  * board's 0.88 scale (the site's crop, lit ground, cut-out shadow and corner
@@ -178,6 +225,7 @@ function nodeBox(S: number) {
 function PlayerNode({
   pos,
   player,
+  perf,
   assets,
   x,
   y,
@@ -186,6 +234,7 @@ function PlayerNode({
 }: {
   pos: GranularPosition;
   player: Player | null;
+  perf: MatchPerformance | null;
   assets: CardAssets;
   x: number;
   y: number;
@@ -327,6 +376,80 @@ function PlayerNode({
             <img alt="" src={crest.src} {...contain(crest.w, crest.h, u(22 * P * 0.64))} />
           </div>
         )}
+        {perf?.rating != null ? (
+          // .nodePtsBadge: the rating, off the portrait's upper-right corner.
+          <div
+            style={{
+              position: 'absolute',
+              top: u(-8 * P),
+              right: u(-14 * P),
+              display: 'flex',
+              padding: `${u(1 * P)}px ${u(5 * P)}px`,
+              borderRadius: u(4 * P),
+              background: RATING_COLOR[ratingBand(perf.rating)],
+              color: '#FFFFFF',
+              fontFamily: 'Newsreader',
+              fontSize: u(11 * P),
+              lineHeight: 1.25,
+            }}
+          >
+            {formatRating(perf.rating)}
+          </div>
+        ) : null}
+        {perf && eventsOf(perf).length > 0 ? (
+          // MatchEvents: one round mark per kind, stacked up from the lower right.
+          <div
+            style={{
+              position: 'absolute',
+              right: u(-10 * P),
+              bottom: u(2 * P),
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+            }}
+          >
+            {eventsOf(perf).map((e, i) => (
+              <div
+                key={e.kind}
+                style={{
+                  display: 'flex',
+                  position: 'relative',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: u(16 * P),
+                  height: u(16 * P),
+                  borderRadius: u(8 * P),
+                  background: CARD,
+                  border: `${u(1 * P)}px solid #D9D5CF`,
+                  marginTop: i === 0 ? 0 : u(2 * P),
+                }}
+              >
+                <EventGlyph kind={e.kind} size={u(12 * P)} />
+                {e.n > 1 ? (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: u(-5 * P),
+                      right: u(-5 * P),
+                      display: 'flex',
+                      justifyContent: 'center',
+                      minWidth: u(11 * P),
+                      padding: `0 ${u(2 * P)}px`,
+                      borderRadius: u(6 * P),
+                      background: INK,
+                      color: CARD,
+                      fontFamily: 'Newsreader',
+                      fontSize: u(9 * P),
+                      lineHeight: `${u(11 * P)}px`,
+                    }}
+                  >
+                    {e.n}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -423,6 +546,8 @@ function PlayerNode({
 export interface CardNode {
   pos: GranularPosition;
   player: Player | null;
+  /** How he did in the match, when the card is of one that has been played. */
+  perf: MatchPerformance | null;
   x: number;
   y: number;
 }
@@ -445,6 +570,7 @@ export function cardNodes(xi: SharedXI): { S: number; nodes: CardNode[] } {
     return inRow.map((slot, c) => ({
       pos: slot.pos,
       player: slot.player,
+      perf: slot.player ? xi.performances[slot.player.id] ?? null : null,
       // Rows of four or more split the width into equal cells so their chips never
       // meet; shorter rows sit at thirds, as the site's pitch spaces them.
       x: fX + fW * (inRow.length >= 4 ? (c + 0.5) / inRow.length : (c + 1) / (inRow.length + 1)),
@@ -497,6 +623,7 @@ export function NodeTile({
       <PlayerNode
         pos={node.pos}
         player={node.player}
+        perf={node.perf}
         assets={assets}
         x={margin + nodeW / 2}
         y={margin + total / 2}
@@ -746,6 +873,7 @@ export function LineupCard({
             key={i}
             pos={n.pos}
             player={n.player}
+            perf={n.perf}
             assets={assets}
             x={n.x}
             y={n.y}

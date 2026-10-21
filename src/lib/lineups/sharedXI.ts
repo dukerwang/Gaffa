@@ -5,6 +5,7 @@ import { CLUB_BY_SLUG, resolveClub } from '@/lib/clubs/registry';
 import { deserializeLineup } from './lineupSerializer';
 import { fitFormation, type MatchLayout } from './fitFormation';
 import { fixtureTitle, type BuilderFixture, type MatchSide } from './builderFixtures';
+import { performanceFromRow, type MatchPerformance } from './matchPerformance';
 
 /** One XI as a shared link describes it, resolved to real players. */
 export interface SharedXI {
@@ -14,6 +15,8 @@ export interface SharedXI {
   /** The side, when the XI is one side of a match. */
   club: { slug: string; name: string } | null;
   matchweek: number | null;
+  /** How each player did, once the match has kicked off. Empty for a free-form XI or an upcoming match. */
+  performances: Record<string, MatchPerformance>;
 }
 
 /**
@@ -109,6 +112,24 @@ export async function resolveSharedXI(
     for (const p of (data ?? []) as Player[]) players.set(p.id, p);
   }
 
+  // Ratings and events for whoever is on the card, once the match is under way.
+  const performances: Record<string, MatchPerformance> = {};
+  if (fixture && fixture.kickoff && Date.parse(fixture.kickoff) <= Date.now()) {
+    const onCard = [...new Set([...ids.filter((x): x is string => !!x), ...starterIds])];
+    if (onCard.length) {
+      const { data } = await admin
+        .from('player_stats')
+        .select('player_id, match_rating, stats')
+        .eq('season', fixture.season)
+        .eq('match_id', fixture.id)
+        .in('player_id', onCard);
+      for (const r of (data ?? []) as { player_id: string; match_rating: number | null; stats: Record<string, unknown> }[]) {
+        const perf = performanceFromRow(r);
+        if (perf) performances[r.player_id] = perf;
+      }
+    }
+  }
+
   if (fromMatch) {
     const fit = fitFormation(
       starterIds.map((id) => players.get(id)).filter((p): p is Player => !!p),
@@ -129,5 +150,6 @@ export async function resolveSharedXI(
     slots,
     club: fixture ? { slug: fixture[side], name: side === 'home' ? fixture.homeName : fixture.awayName } : null,
     matchweek: fixture?.gameweek ?? null,
+    performances,
   };
 }

@@ -24,7 +24,7 @@ const DENSITY = 72 * CARD_SCALE; // sharp reads SVG at 72 dpi; 144 doubles every
 export const CARD_BASE_FILE = 'src/assets/card-base@2x.png';
 
 /** An XI with nobody in it, for drawing the parts of the card that don't depend on one. */
-const EMPTY_XI: SharedXI = { title: '', formation: '4-3-3', slots: [], club: null, matchweek: null };
+const EMPTY_XI: SharedXI = { title: '', formation: '4-3-3', slots: [], club: null, matchweek: null, performances: {} };
 const NO_ASSETS: CardAssets = { photos: new Map(), crests: new Map() };
 
 /** Renders the shared base (shelf stripes, pitch, markings, wordmark) at 2x. Slow: about 6s on one core. */
