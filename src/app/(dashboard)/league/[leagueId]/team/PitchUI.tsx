@@ -75,6 +75,7 @@ const DEFAULT_TAXI_AGE_LIMIT = 21;
  * pitch.module.css's .nodePtsBadge comment for why this exists twice.
  */
 function ptsBand(points: number): string {
+    if (points >= 36.58) return styles.nodePtsRare;
     if (points >= 29) return styles.nodePtsElite;
     if (points >= 15.8) return styles.nodePtsGood;
     if (points >= 5.6) return styles.nodePtsFair;
