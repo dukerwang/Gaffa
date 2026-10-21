@@ -641,6 +641,8 @@
     z-index: 5;
 }
 
+.nodePtsRarest,
+.nodePtsRarer,
 .nodePtsRare,
 .nodePtsElite,
 .nodePtsGood,
@@ -650,7 +652,9 @@
     color: #fff;
     border-color: transparent;
 }
-.nodePtsRare     { background: #1F4FA8; }   /* >= 36.58 — display >= 9.0, the feat blue */
+.nodePtsRarest   { background: #143577; }   /* >= 43.02 — display >= 9.4 */
+.nodePtsRarer    { background: #1F4FA8; }   /* >= 39.76 — display >= 9.2 */
+.nodePtsRare     { background: #3F72CE; }   /* >= 36.58 — display >= 9.0, the lightest of the feat blues */
 .nodePtsElite    { background: #2D6A4F; }   /* >= 29   — display >= 8.5 */
 .nodePtsGood     { background: #387D53; }   /* >= 15.8 — display >= 7.5 */
 .nodePtsFair     { background: #8C6C00; }   /* >= 5.6  — display >= 6.5 */
