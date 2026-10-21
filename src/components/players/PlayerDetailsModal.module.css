@@ -339,8 +339,9 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .ghost:hover { background: var(--color-bg-elevated); }
-  .primary:hover { background: var(--color-accent-hover); }
+  /* Both render as links too, and the global a:hover would turn the label blue. */
+  .ghost:hover { background: var(--color-bg-elevated); color: var(--color-text-primary); }
+  .primary:hover { background: var(--color-accent-hover); color: var(--color-on-accent); }
 }
 
 /* ── Phone sheet ────────────────────────────────────────────── */
