@@ -4,7 +4,7 @@ import PositionBadge from '@/components/players/PositionBadge';
 import type { DashboardModel, RatedPlayer } from '@/lib/dashboard/buildDashboardModel';
 import RatedPortrait from './RatedPortrait';
 import { ordinal } from './LeagueCard';
-import { Matchweek } from './Sections';
+import { Matchweek } from './Matchweek';
 import styles from './dashboard.module.css';
 
 /* eslint-disable @next/next/no-img-element */
@@ -114,7 +114,12 @@ export default function FirstRun({ model }: { model: DashboardModel }) {
       </div>
 
       <div className={styles.section}>
-        <Matchweek model={model} fixturesHref={null} />
+        <Matchweek
+          currentWeek={model.gameweek}
+          weeks={model.fixtures.rows.length ? { [model.gameweek]: model.fixtures.rows } : {}}
+          nextDeadline={model.nextDeadline}
+          fixturesHref={null}
+        />
       </div>
     </>
   );
