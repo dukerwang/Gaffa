@@ -166,6 +166,7 @@ function playStatus(detail: Detail | undefined, hasStarted: boolean): PlayStatus
  * again (matchRating.ts has the exact table).
  */
 function ptsBand(points: number): string {
+    if (points >= 36.58) return styles.ptsRare;
     if (points >= 29) return styles.ptsElite;
     if (points >= 15.8) return styles.ptsGood;
     if (points >= 5.6) return styles.ptsFair;

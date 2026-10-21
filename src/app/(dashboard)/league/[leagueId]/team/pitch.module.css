@@ -641,6 +641,7 @@
     z-index: 5;
 }
 
+.nodePtsRare,
 .nodePtsElite,
 .nodePtsGood,
 .nodePtsFair,
@@ -649,6 +650,7 @@
     color: #fff;
     border-color: transparent;
 }
+.nodePtsRare     { background: #1F4FA8; }   /* >= 36.58 — display >= 9.0, the feat blue */
 .nodePtsElite    { background: #2D6A4F; }   /* >= 29   — display >= 8.5 */
 .nodePtsGood     { background: #387D53; }   /* >= 15.8 — display >= 7.5 */
 .nodePtsFair     { background: #8C6C00; }   /* >= 5.6  — display >= 6.5 */
