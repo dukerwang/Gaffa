@@ -534,6 +534,8 @@
   }
   .playerRow { min-height: 60px; }
   .closeBtn { width: 44px; height: 44px; }
+  /* iOS Safari zooms the whole page when a field under 16px takes focus, and leaves it zoomed. */
+  .input { min-height: 44px; font-size: 16px; }
 }
 
 /* ---------- mobile: composed for the thumb ---------- */
