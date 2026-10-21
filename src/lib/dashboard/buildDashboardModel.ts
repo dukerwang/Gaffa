@@ -17,6 +17,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { unstable_cache } from 'next/cache';
 import type { FplStatus } from '@/lib/fpl/api';
 import type { GwFixture } from '@/lib/fpl/fixtures';
+import { toFixtureRow } from './fixtureRows';
 import type { GranularPosition } from '@/types';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { resolveClub } from '@/lib/clubs/registry';
@@ -220,18 +221,7 @@ export async function buildDashboardModel(
 
   // ── Fixtures ──────────────────────────────────────────────
   const resolvedFixtures = await fixtures;
-  const rows: FixtureRow[] = resolvedFixtures.map((f) => ({
-    id: f.id,
-    homeName: f.homeName,
-    awayName: f.awayName,
-    homeBadge: f.homeBadge,
-    awayBadge: f.awayBadge,
-    homeScore: f.homeScore,
-    awayScore: f.awayScore,
-    kickoff: f.kickoff,
-    state: f.finished ? 'finished' : f.started ? 'live' : 'upcoming',
-    minutes: f.minutes,
-  }));
+  const rows: FixtureRow[] = resolvedFixtures.map(toFixtureRow);
   const order = { live: 0, finished: 1, upcoming: 2 } as const;
   rows.sort((a, b) => order[a.state] - order[b.state]);
   const dated = resolvedFixtures.map((f) => f.kickoff).filter((k): k is string => !!k).sort();

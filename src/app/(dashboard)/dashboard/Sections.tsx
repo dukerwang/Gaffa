@@ -1,7 +1,6 @@
-import type { CSSProperties } from 'react';
 import NavigationLink from '@/components/ui/NavigationLink';
 import { Icon } from '@/components/ui/Icon';
-import type { DashboardModel, FixtureRow } from '@/lib/dashboard/buildDashboardModel';
+import type { DashboardModel } from '@/lib/dashboard/buildDashboardModel';
 import LocalTime from './LocalTime';
 import styles from './dashboard.module.css';
 
@@ -114,90 +113,6 @@ export function Doors({ className }: { className?: string }) {
         </span>
       </NavigationLink>
     </>
-  );
-}
-
-function FixtureLine({ f }: { f: FixtureRow }) {
-  const scored = f.state !== 'upcoming' && f.homeScore !== null && f.awayScore !== null;
-  const homeLost = f.state === 'finished' && scored && f.homeScore! < f.awayScore!;
-  const awayLost = f.state === 'finished' && scored && f.awayScore! < f.homeScore!;
-
-  return (
-    <div className={f.state === 'upcoming' ? styles.fxUpcoming : styles.fx}>
-      {f.homeBadge ? <img src={f.homeBadge} alt="" className={styles.fxBadge} /> : <span className={styles.fxBadge} />}
-      <span className={`${styles.fxName} ${homeLost ? styles.fxNameLost : ''}`}>{f.homeName}</span>
-      {scored ? (
-        <span className={styles.fxScore}>
-          {f.homeScore}&ndash;{f.awayScore}
-        </span>
-      ) : (
-        <span className={styles.fxTime}>
-          <LocalTime iso={f.kickoff} variant="dayTime" />
-        </span>
-      )}
-      <span className={`${styles.fxNameAway} ${awayLost ? styles.fxNameLost : ''}`}>{f.awayName}</span>
-      {f.awayBadge ? <img src={f.awayBadge} alt="" className={styles.fxBadge} /> : <span className={styles.fxBadge} />}
-      {f.state === 'live' ? (
-        <span className={styles.fxMin}>{f.minutes}&prime;</span>
-      ) : (
-        <span className={styles.fxState}>{f.state === 'finished' ? 'FT' : ''}</span>
-      )}
-    </div>
-  );
-}
-
-export function Matchweek({ model, fixturesHref }: { model: DashboardModel; fixturesHref: string | null }) {
-  const fx = model.fixtures;
-  if (fx.rows.length === 0) return null;
-  const segments = [
-    ...Array.from({ length: fx.finished }, () => styles.segDone),
-    ...Array.from({ length: fx.live }, () => styles.segLive),
-    ...Array.from({ length: fx.toCome }, () => styles.seg1),
-  ];
-  const kickedOff = fx.finished + fx.live > 0;
-
-  return (
-    <section aria-labelledby="matchweek" className={styles.fxWrap}>
-      <div className={`${styles.lock} ${styles.fxLock}`}>
-        <span className={styles.mwTile} aria-hidden="true">
-          <span className={styles.mwTileK}>MW</span>
-          <span className={styles.mwTileV}>{model.gameweek}</span>
-        </span>
-        <div style={{ minWidth: 0 }}>
-          <h2 id="matchweek" className={styles.lockTSm}>Premier League</h2>
-          <div className={styles.lockSub}>
-            {kickedOff || !model.nextDeadline ? (
-              <LocalTime iso={fx.firstKickoff} endIso={fx.lastKickoff} variant="range" />
-            ) : (
-              <LocalTime iso={model.nextDeadline} variant="dayTime" prefix="Deadline " />
-            )}
-          </div>
-        </div>
-        <div className={styles.progress}>
-          <div className={styles.progressBar} style={{ '--n': segments.length } as CSSProperties} aria-hidden="true">
-            {segments.map((cls, i) => (
-              <span key={i} className={cls} />
-            ))}
-          </div>
-          <div className={styles.progressKey}>
-            <span>{fx.finished} Finished</span>
-            <span className={styles.keyLive}>{fx.live} Live</span>
-            <span className={styles.keyCome}>{fx.toCome} To Come</span>
-          </div>
-        </div>
-        {fixturesHref && (
-          <NavigationLink href={fixturesHref} className={styles.lockLink}>
-            All Fixtures &rarr;
-          </NavigationLink>
-        )}
-      </div>
-
-      <div className={styles.fixtures}>
-        {fx.rows.map((f) => (
-          <FixtureLine key={f.id} f={f} />
-        ))}
-      </div>
-    </section>
   );
 }
 
