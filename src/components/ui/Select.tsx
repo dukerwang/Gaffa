@@ -12,6 +12,8 @@ export interface SelectItem<T extends string = string> {
   description?: string;
   /** A crest, position badge or portrait before the label. Shown in the trigger too. */
   leading?: React.ReactNode;
+  /** A short figure at the right of the option, in the list only, e.g. "172 pts". */
+  trailing?: React.ReactNode;
   disabled?: boolean;
 }
 
@@ -213,6 +215,7 @@ export function Select<T extends string = string>({
                 <span className={styles.optionLabel}>{item.label}</span>
                 {item.description && <span className={styles.optionDesc}>{item.description}</span>}
               </span>
+              {item.trailing && <span className={styles.trailing}>{item.trailing}</span>}
               <span className={styles.check} aria-hidden="true">
                 {isSelected && <Icon name="check" size={16} strokeWidth={2.25} />}
               </span>

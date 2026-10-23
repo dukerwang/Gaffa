@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import NavigationLink from './NavigationLink';
 import { useSlidingIndicator } from './internal/useSlidingIndicator';
 import styles from './Tabs.module.css';
 
@@ -9,13 +10,18 @@ export interface TabItem<T extends string = string> {
   label: string;
   /** A small figure after the label, e.g. the number of open bids. */
   count?: number;
+  /** Something new behind this tab that has no figure, e.g. an unread lobby. */
+  unread?: boolean;
   disabled?: boolean;
+  /** Link mode: every item has one, and the tabs become a nav of links. */
+  href?: string;
 }
 
 export interface TabsProps<T extends string = string> {
   items: TabItem<T>[];
   value: T;
-  onChange: (value: T) => void;
+  /** Required for button tabs; unused when the items are links. */
+  onChange?: (value: T) => void;
   ariaLabel: string;
   /** Prefix for tab and panel ids, so a panel can point back with aria-labelledby. */
   idBase?: string;
@@ -32,6 +38,12 @@ export interface TabsProps<T extends string = string> {
  *
  * Keyboard: ArrowLeft / ArrowRight / Home / End move and select (automatic
  * activation), matching SegmentedControl.
+ *
+ * Link mode: when every item has an `href`, the tabs render as a <nav> of
+ * links with aria-current on the active one, for sections that are routes
+ * (Heritage, Cups). Links keep the browser's own Tab order and middle-click.
+ * The underline travels only while the nav stays mounted across the route
+ * change, i.e. when it lives in a layout or the route changes a search param.
  */
 export function Tabs<T extends string = string>({
   items,
@@ -42,6 +54,7 @@ export function Tabs<T extends string = string>({
   className,
 }: TabsProps<T>) {
   const { containerRef, indicator } = useSlidingIndicator<HTMLDivElement>(value);
+  const links = items.length > 0 && items.every((i) => i.href !== undefined);
 
   const move = (e: React.KeyboardEvent, from: T) => {
     const enabled = items.filter((i) => !i.disabled);
@@ -53,19 +66,60 @@ export function Tabs<T extends string = string>({
     else if (e.key === 'End') next = enabled[enabled.length - 1];
     if (!next) return;
     e.preventDefault();
-    onChange(next.value);
+    onChange?.(next.value);
     containerRef.current
       ?.querySelector<HTMLButtonElement>(`[data-indicator-key="${CSS.escape(next.value)}"]`)
       ?.focus();
   };
 
+  const inner = (item: TabItem<T>) => (
+    <>
+      <span>{item.label}</span>
+      {item.count !== undefined && <span className={styles.count}>{item.count}</span>}
+      {item.unread && (
+        <>
+          <span className={styles.unread} aria-hidden="true" />
+          <span className="sr-only">, new</span>
+        </>
+      )}
+    </>
+  );
+
+  const indicatorEl = (
+    <span
+      aria-hidden="true"
+      className={styles.indicator}
+      data-ready={indicator.ready || undefined}
+      style={{ width: indicator.width, transform: `translateX(${indicator.x}px)` }}
+    />
+  );
+
+  const listClass = [styles.list, className].filter(Boolean).join(' ');
+
+  if (links) {
+    return (
+      <nav ref={containerRef} aria-label={ariaLabel} className={listClass}>
+        {items.map((item) => {
+          const selected = item.value === value;
+          return (
+            <NavigationLink
+              key={item.value}
+              href={item.href!}
+              aria-current={selected ? 'page' : undefined}
+              data-indicator-key={item.value}
+              className={styles.tab}
+            >
+              {inner(item)}
+            </NavigationLink>
+          );
+        })}
+        {indicatorEl}
+      </nav>
+    );
+  }
+
   return (
-    <div
-      ref={containerRef}
-      role="tablist"
-      aria-label={ariaLabel}
-      className={[styles.list, className].filter(Boolean).join(' ')}
-    >
+    <div ref={containerRef} role="tablist" aria-label={ariaLabel} className={listClass}>
       {items.map((item) => {
         const selected = item.value === value;
         return (
@@ -80,20 +134,14 @@ export function Tabs<T extends string = string>({
             disabled={item.disabled}
             data-indicator-key={item.value}
             className={styles.tab}
-            onClick={() => onChange(item.value)}
+            onClick={() => onChange?.(item.value)}
             onKeyDown={(e) => move(e, item.value)}
           >
-            <span>{item.label}</span>
-            {item.count !== undefined && <span className={styles.count}>{item.count}</span>}
+            {inner(item)}
           </button>
         );
       })}
-      <span
-        aria-hidden="true"
-        className={styles.indicator}
-        data-ready={indicator.ready || undefined}
-        style={{ width: indicator.width, transform: `translateX(${indicator.x}px)` }}
-      />
+      {indicatorEl}
     </div>
   );
 }
