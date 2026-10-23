@@ -17,6 +17,8 @@ export interface MoneyStepperProps {
   /** One line under the figure, e.g. "Minimum €20m · Club Balance €48m". */
   hint?: React.ReactNode;
   disabled?: boolean;
+  /** Span the container, the figure taking the room between − and +. For a phone sheet. */
+  fullWidth?: boolean;
   className?: string;
 }
 
@@ -46,6 +48,7 @@ export function MoneyStepper({
   label,
   hint,
   disabled = false,
+  fullWidth = false,
   className,
 }: MoneyStepperProps) {
   const id = useId();
@@ -124,12 +127,19 @@ export function MoneyStepper({
     onPointerUp: stopRepeat,
     onPointerLeave: stopRepeat,
     onPointerCancel: stopRepeat,
+    // A long press on Android opens a context menu, which cancels the pointer
+    // and would stop the run mid-hold.
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
     // Keyboard and assistive tech arrive as click with no pointerdown.
     onClick: (e: React.MouseEvent) => e.detail === 0 && nudge(delta),
   });
 
   return (
-    <div className={[styles.root, disabled ? styles.disabled : '', className].filter(Boolean).join(' ')}>
+    <div
+      className={[styles.root, fullWidth ? styles.fullWidth : '', disabled ? styles.disabled : '', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <span id={`${id}-label`} className={styles.label}>
         {label}
       </span>
@@ -148,7 +158,10 @@ export function MoneyStepper({
           <input
             autoFocus
             className={styles.input}
-            inputMode="decimal"
+            // Whole millions get the number pad; a fractional step needs the point.
+            inputMode={Number.isInteger(step) ? 'numeric' : 'decimal'}
+            pattern={Number.isInteger(step) ? '[0-9]*' : undefined}
+            enterKeyHint="done"
             aria-labelledby={`${id}-label`}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
