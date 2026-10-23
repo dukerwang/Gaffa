@@ -21,6 +21,13 @@ interface Props {
   club?: string | null;
   /** hero 104x120 · lot 66x78 · row 44x44. */
   size?: PortraitSize;
+  /**
+   * Phone-only size, applied below 600px. Pitch nodes and bench cards drop the
+   * lot portrait to row size there. Resizing the frame in CSS alone left the
+   * per-player crop solved for the 66x78 box, so the head sat low in a 44x44
+   * frame; this solves the crop for the size that actually shows.
+   */
+  phoneSize?: 'sm';
   className?: string;
   /**
    * `players.portrait_head_top_pct` / `portrait_head_width_pct` (migration
@@ -56,7 +63,7 @@ interface Props {
  * <img>'s error event — 27% of the pool misses the square source, so this
  * cascade is load-bearing rather than defensive.
  */
-export default function Portrait({ photoUrl, name, club, size = 'sm', className, headTopPct, headWidthPct, photoVersion }: Props) {
+export default function Portrait({ photoUrl, name, club, size = 'sm', phoneSize, className, headTopPct, headWidthPct, photoVersion }: Props) {
   const sources = portraitSources(photoUrl, photoVersion);
   const key = sources[0] ?? '';
 
@@ -99,8 +106,20 @@ export default function Portrait({ photoUrl, name, club, size = 'sm', className,
     ? ({ '--g-portrait-zoom': `${crop.zoomPct}%`, '--g-portrait-inset': `${crop.insetPx}px` } as React.CSSProperties)
     : undefined;
 
+  const phoneCrop = phoneSize && n === 0 ? customPortraitCrop(phoneSize, headTopPct, headWidthPct) : null;
+  const style = phoneCrop
+    ? ({
+        ...cropStyle,
+        '--g-portrait-zoom-phone': `${phoneCrop.zoomPct}%`,
+        '--g-portrait-inset-phone': `${phoneCrop.insetPx}px`,
+      } as React.CSSProperties)
+    : cropStyle;
+
   return (
-    <span className={`g-portrait g-portrait-${size}${className ? ` ${className}` : ''}`} style={cropStyle}>
+    <span
+      className={`g-portrait g-portrait-${size}${phoneSize ? ` g-portrait-phone-${phoneSize}` : ''}${className ? ` ${className}` : ''}`}
+      style={style}
+    >
       <span className="g-portrait-frame">
         {src ? (
           <img

@@ -237,6 +237,9 @@
   font-size: var(--t-13);
 }
 
+/* Widths ride on the header cells, not a colgroup: WebKit ignores display:none
+   on a <col>, so a hidden column kept its width and pushed Rtg and Pts into
+   32px on a phone. */
 .cMw { width: 40px; }
 .cRes { width: 72px; }
 .cMin { width: 48px; }
@@ -411,7 +414,7 @@
   .cRes { width: 70px; }
   .cMin { width: 34px; }
   .cRtg { width: 52px; }
-  .cPts { width: 52px; }
+  .cPts { width: 64px; }
   .rtg { min-width: 38px; }
   .opp em { display: none; }
   .proj { font-style: italic; }
