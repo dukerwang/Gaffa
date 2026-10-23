@@ -85,6 +85,21 @@
   color: var(--color-text-muted);
 }
 
+.valueStack {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.valueDesc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-12);
+  color: var(--color-text-muted);
+}
+
 .chevron {
   display: inline-flex;
   color: var(--color-text-muted);
@@ -103,7 +118,8 @@
   flex-shrink: 0;
 }
 
-.leading img {
+/* A bare crest or badge image. A composed leading (a portrait) sizes itself. */
+.leading > img {
   width: 20px;
   height: 20px;
   object-fit: contain;

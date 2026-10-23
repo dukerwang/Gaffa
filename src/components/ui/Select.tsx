@@ -155,9 +155,18 @@ export function Select<T extends string = string>({
       >
         <span id={`${id}-value`} className={styles.value}>
           {selected?.leading && <span className={styles.leading}>{selected.leading}</span>}
-          <span className={selected ? styles.valueText : styles.placeholder}>
-            {selected?.label ?? placeholder}
-          </span>
+          {selected?.description ? (
+            // The chosen option keeps its second line, so a picked player still
+            // reads with his position and value.
+            <span className={styles.valueStack}>
+              <span className={styles.valueText}>{selected.label}</span>
+              <span className={styles.valueDesc}>{selected.description}</span>
+            </span>
+          ) : (
+            <span className={selected ? styles.valueText : styles.placeholder}>
+              {selected?.label ?? placeholder}
+            </span>
+          )}
         </span>
         <span className={styles.chevron} aria-hidden="true">
           <Icon name="chevron-down" size={16} strokeWidth={2} />
