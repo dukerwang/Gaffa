@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { QUALITY_LABEL } from '@/lib/outlook/labels';
+import { useRouter } from 'next/navigation';
 import NavigationLink from '@/components/ui/NavigationLink';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import dynamic from 'next/dynamic';
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
@@ -170,6 +172,13 @@ export default function PlayersIndex({
 
   const view = currentView;
 
+  const router = useRouter();
+  /** The switchers were links; they still navigate, and still start the top bar's loading bar. */
+  function go(href: string) {
+    window.dispatchEvent(new Event('navigation-start'));
+    router.push(href);
+  }
+
   function handleViewSelect(nextView: 'cards' | 'table' | 'explorer') {
     setCurrentView(nextView);
     try {
@@ -259,35 +268,29 @@ export default function PlayersIndex({
           </div>
 
           {seasons.length > 1 && (
-            <nav className={styles.seasons} aria-label="Season">
-              {seasons.map((s) => (
-                <NavigationLink
-                  key={s}
-                  href={`/league/${leagueId}/players?view=${view}&season=${s}`}
-                  className={`${styles.seasonTab} ${s === season ? styles.seasonTabOn : ''}`}
-                  aria-current={s === season ? 'page' : undefined}
-                >
-                  {s.replace('-', '/')}
-                </NavigationLink>
-              ))}
-            </nav>
+            <SegmentedControl
+              variant="ink"
+              ariaLabel="Season"
+              value={season}
+              onChange={(s) => go(`/league/${leagueId}/players?view=${view}&season=${s}`)}
+              options={seasons.map((s) => ({ value: s, label: s.replace('-', '/') }))}
+            />
           )}
 
-          <nav className={styles.seg} aria-label="View">
-            {(['cards', 'table', 'explorer'] as const).map((v) => (
-              <NavigationLink
-                key={v}
-                href={`/league/${leagueId}/players?view=${v}&season=${season}${
-                  v === 'table' && gameweek ? `&gw=${gameweek}` : ''
-                }`}
-                className={`${styles.segBtn} ${v === view ? styles.segOn : ''}`}
-                aria-current={v === view ? 'page' : undefined}
-                onClick={() => handleViewSelect(v)}
-              >
-                {v === 'cards' ? 'Cards' : v === 'table' ? 'Table' : 'Explorer'}
-              </NavigationLink>
-            ))}
-          </nav>
+          <SegmentedControl<'cards' | 'table' | 'explorer'>
+            variant="ink"
+            ariaLabel="View"
+            value={view}
+            onChange={(v) => {
+              handleViewSelect(v);
+              go(`/league/${leagueId}/players?view=${v}&season=${season}${v === 'table' && gameweek ? `&gw=${gameweek}` : ''}`);
+            }}
+            options={[
+              { value: 'cards', label: 'Cards' },
+              { value: 'table', label: 'Table' },
+              { value: 'explorer', label: 'Explorer' },
+            ]}
+          />
         </div>
       </header>
     </>
@@ -412,19 +415,17 @@ export default function PlayersIndex({
           <span className={styles.sliderValue}>{minGames}</span>
         </div>
 
-        <div className={styles.segmented} role="group" aria-label="Which positions count">
-          {(['primary', 'secondary', 'both'] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={`${styles.segment} ${posType === t ? styles.segmentOn : ''}`}
-              aria-pressed={posType === t}
-              onClick={() => handleSetPosType(t)}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl<'primary' | 'secondary' | 'both'>
+          variant="ink"
+          ariaLabel="Which positions count"
+          value={posType}
+          onChange={handleSetPosType}
+          options={[
+            { value: 'primary', label: 'Primary' },
+            { value: 'secondary', label: 'Secondary' },
+            { value: 'both', label: 'Both' },
+          ]}
+        />
 
         {activeFilters > 0 && (
           <button

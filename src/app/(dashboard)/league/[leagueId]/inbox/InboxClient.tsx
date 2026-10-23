@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { HoldButton } from '@/components/ui/HoldButton';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import FormattedText from '@/components/ui/FormattedText';
 import styles from './Inbox.module.css';
 import EmptyState from '@/components/ui/EmptyState';
@@ -184,20 +185,16 @@ export default function InboxClient({ leagueId, leagueName }: InboxClientProps) 
 
       {/* Filter and Count Row */}
       <div className={styles.controls}>
-        <div className={styles.tabs}>
-          <button
-            className={`${styles.tab} ${filter === 'all' ? styles.tabActive : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            All Alerts ({notifications.length})
-          </button>
-          <button
-            className={`${styles.tab} ${filter === 'unread' ? styles.tabActive : ''}`}
-            onClick={() => setFilter('unread')}
-          >
-            Unread ({unreadCount})
-          </button>
-        </div>
+        <SegmentedControl<'all' | 'unread'>
+          variant="ink"
+          ariaLabel="Inbox filter"
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: 'all', label: `All Alerts (${notifications.length})` },
+            { value: 'unread', label: `Unread (${unreadCount})` },
+          ]}
+        />
         <span style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontFamily: 'var(--font-sans)' }}>
           Showing {filteredNotifications.length} of {notifications.length} alerts
         </span>

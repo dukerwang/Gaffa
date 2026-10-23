@@ -5,6 +5,7 @@ import { ALL_FORMATIONS, type Formation, type GranularPosition, type MatchupLine
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import Portrait from '@/components/players/Portrait';
 import { Switch } from '@/components/ui/Switch';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import PositionBadge from '@/components/players/PositionBadge';
 import ReadOnlyFormationBoard, { type FormationBoardPlayer, type FormationBoardSlot } from '@/components/formation/ReadOnlyFormationBoard';
 import type { ClubProps, SquadEntry } from './ClubClient';
@@ -349,24 +350,17 @@ export function ClubPitch({
           <h2 className={styles.panelTitle}>Squad Pitch</h2>
           <p className={styles.pitchCaption}>{modeLabel}{activeFormation ? ` · ${activeFormation}` : ''}</p>
         </div>
-        <div className={styles.pitchMode} role="group" aria-label="Pitch mode">
-          <button
-            type="button"
-            className={mode === 'projected' ? styles.pitchModeOn : undefined}
-            aria-pressed={mode === 'projected'}
-            onClick={() => setMode('projected')}
-          >
-            Projected XI
-          </button>
-          <button
-            type="button"
-            className={mode === 'saved' ? styles.pitchModeOn : undefined}
-            aria-pressed={mode === 'saved'}
-            onClick={() => setMode('saved')}
-          >
-            Saved Lineup
-          </button>
-        </div>
+        <SegmentedControl<'projected' | 'saved'>
+          variant="ink"
+          className={styles.pitchModeSwitch}
+          ariaLabel="Pitch mode"
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'projected', label: 'Projected XI' },
+            { value: 'saved', label: 'Saved Lineup' },
+          ]}
+        />
       </div>
 
       {mode === 'projected' && (

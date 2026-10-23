@@ -193,51 +193,6 @@
 
 .ledgerHeader .sectionHead { margin-bottom: 0; }
 
-/* Segmented control — same grammar as the stats pool's position filter
-   (stats.module.css .segmented/.segment/.segmentOn): filled in ink on
-   selection, not the accent, because this is a view toggle rather than
-   "yours". */
-.segmented {
-  display: inline-flex;
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-control);
-  overflow: hidden;
-  background: var(--color-bg-card);
-}
-
-.segment {
-  background: transparent;
-  border: none;
-  border-right: 1px solid var(--color-border);
-  padding: var(--s2) var(--s3);
-  font-family: var(--font-label);
-  font-size: var(--t-12);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-}
-
-.segment:last-child { border-right: none; }
-@media (hover: hover) and (pointer: fine) {
-  .segment:hover { background: var(--color-bg-card-hover); }
-}
-
-.segmentOn {
-  background: var(--color-text-primary);
-  border-color: var(--color-text-primary);
-  color: var(--color-bg-primary);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .segmentOn:hover {
-    background: var(--color-text-primary);
-    border-color: var(--color-text-primary);
-    color: var(--color-bg-primary);
-  }
-}
-
 /* ── Ledger table ───────────────────────────────────────── */
 
 /* Without this, the table had no way to grow past the section's own clip
