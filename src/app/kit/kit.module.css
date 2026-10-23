@@ -752,9 +752,9 @@
   color: var(--color-text-muted);
 }
 
-/* Three 375px phones abreast need more than the usual 1080px. */
+/* Two 375px phones abreast, so the options pair up: Today with A, C with D. */
 .protosWide {
-  max-width: 1220px;
+  max-width: 830px;
 }
 
 /* Phone-width sheets: side by side on a desktop, full width on a phone. */
@@ -863,41 +863,197 @@
   padding-top: var(--s4);
 }
 
-/* B: a ladder figure that sets the bid. Pressed, it takes the green tint. */
-.rungPress {
-  appearance: none;
-  border-top: none;
-  border-bottom: none;
-  border-left: none;
-  background: none;
-  font: inherit;
-  text-align: inherit;
-  cursor: pointer;
-  min-height: 56px;
-  transition: background-color var(--dur-fast) var(--ease-standard);
+
+/* C and D: the ladder holds only facts (Standing bid, Closes). */
+.sheetFrame .ladderFacts {
+  grid-template-columns: repeat(2, 1fr);
 }
 
-.rungPress > :last-child {
-  text-decoration: underline dotted;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
+.sheetFrame .ladderFacts > :nth-child(2) {
+  border-right: none;
+}
+
+/* C: two real buttons under the stepper, worded as what they do. */
+.quickBids {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s2);
+  margin-top: var(--s3);
+}
+
+.quickBid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  min-height: 48px;
+  padding: 0 var(--s3);
+  border: var(--line-strong);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  box-shadow: 0 1px 2px rgba(28, 28, 28, 0.06);
+  font-family: var(--font-label);
+  font-size: var(--t-13);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background-color var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .rungPress:hover {
+  .quickBid:hover {
     background: var(--color-bg-card-hover);
   }
 }
 
-.rungOn,
-.rungOn:hover {
+.quickFig {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: 600;
+}
+
+.quickClause .quickFig {
+  color: var(--color-gold);
+}
+
+/* The bid is this amount now. */
+.quickBid[aria-pressed='true'] {
+  border-color: var(--color-accent);
   background: var(--color-green-50);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
 }
 
-.rungOn > :last-child {
-  text-decoration: none;
+:global([data-theme='dark']) .quickBid[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
 }
 
-:global([data-theme='dark']) .rungOn {
-  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+/* D: a range from the minimum to the Club Balance, the clause marked on it. */
+.range {
+  margin-top: var(--s2);
+}
+
+.rangeTrack {
+  position: relative;
+  padding-top: 40px;
+}
+
+.rangeInput {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: pan-y;
+  --track: linear-gradient(
+    to right,
+    var(--color-accent) 0 var(--fill),
+    var(--color-border) var(--fill) 100%
+  );
+}
+
+.rangeInput::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--track);
+}
+
+.rangeInput::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--track);
+}
+
+.rangeInput::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -11px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-bg-card);
+  box-shadow: 0 0 0 1px var(--color-border-strong), 0 2px 6px rgba(28, 28, 28, 0.18);
+}
+
+.rangeInput::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-bg-card);
+  box-shadow: 0 0 0 1px var(--color-border-strong), 0 2px 6px rgba(28, 28, 28, 0.18);
+}
+
+.rangeInput:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--r-control);
+}
+
+/* The notch: a gold tick across the track, its button above it. The thumb
+   travels 14px in from each end, so the marks are placed on that span. */
+.clauseTick,
+.clauseMark {
+  position: absolute;
+  transform: translateX(-50%);
+  margin-left: calc(14px - 28px * var(--frac, 0));
+}
+
+.clauseTick {
+  top: 40px;
+  height: 44px;
+  width: 0;
+  pointer-events: none;
+}
+
+.clauseTick::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: -1px;
+  width: 2px;
+  height: 20px;
+  border-radius: 1px;
+  background: var(--color-gold);
+}
+
+.clauseMark {
+  top: 0;
+  min-height: 32px;
+  padding: 0 var(--s2);
+  border: 1px solid var(--color-gold);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  font-family: var(--font-label);
+  font-size: var(--t-12);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-gold);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* 32px drawn, 44px under a finger. */
+.clauseMark::before {
+  content: '';
+  position: absolute;
+  inset: -6px -4px;
+}
+
+.clauseMark[aria-pressed='true'] {
+  background: var(--color-gold);
+  color: var(--color-bg-card);
+}
+
+.rangeEnds {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--t-12);
+  color: var(--color-text-muted);
 }
