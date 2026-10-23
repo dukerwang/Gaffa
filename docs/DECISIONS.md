@@ -629,3 +629,18 @@ Not decided, and left as they were: the Transactions filters, the League Home
 fixture tabs, the Player Explorer legend and the player card's chart switch.
 The Players season switch was moved to ink with the view switch beside it,
 because the two shared one style; that was an agent's call, not his.
+
+Later the same day, from the dropdown prototype:
+
+> "Port batch 4 with option B (whole filter bar) for the club filters, plus the
+> commissioner and player-to-drop dropdowns."
+
+and, while it was being built:
+
+> "can you just make sure it's still compatible with and optimized on mobile?
+> in fact, make sure everything we're doing is"
+
+How the second was met is an agent's reading, not his: on a phone (640px and
+under) the kit Select docks as a bottom sheet with 48px rows instead of
+floating at the field, and under a finger every kit control reaches 44px
+(HoldButton, Button md, Select, the Switch hit area).

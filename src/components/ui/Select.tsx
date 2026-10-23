@@ -178,6 +178,8 @@ export function Select<T extends string = string>({
         onClose={() => setOpen(false)}
         anchor={triggerRef.current}
         matchAnchorWidth
+        sheet
+        sheetTitle={label ?? ariaLabel}
         onMount={(el) => {
           listRef.current = el;
           el.focus({ preventScroll: true });

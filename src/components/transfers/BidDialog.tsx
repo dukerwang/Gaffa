@@ -18,6 +18,8 @@ import { getPushAvailability, subscribeToPush, type PushAvailability } from '@/l
 import { freeAgentMinimumBid } from '@/lib/leagues/features';
 import { toast } from '@/components/ui/toast';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { Select } from '@/components/ui/Select';
+import { PORTRAIT_WIDTH, plainItem, playerItem } from '@/components/select/domainItems';
 
 
 /**
@@ -402,22 +404,25 @@ export default function BidDialog({
       )}
 
       {rosterFull && (
-        <label className={styles.field}>
+        <div className={styles.field}>
           <span className={styles.fieldLabel}>Player to drop</span>
-          <select className={styles.select} value={dropId} onChange={(e) => setDropId(e.target.value)}>
-            <option value="">{redraft ? 'Choose a player to drop' : 'Send him to the academy if there is room'}</option>
-            {droppable.map((r) => (
-              <option key={r.id} value={r.id}>
-                {getPlayerDisplayName(r, 'full')} · {r.primary_position} · {money(Number(r.market_value) || 0)}
-              </option>
-            ))}
-          </select>
+          <Select
+            fullWidth
+            className={styles.playerSelect}
+            ariaLabel="Player to drop"
+            value={dropId}
+            onChange={setDropId}
+            items={[
+              plainItem('', redraft ? 'Choose a player to drop' : 'Send him to the academy if there is room', PORTRAIT_WIDTH),
+              ...droppable.map((r) => playerItem(r)),
+            ]}
+          />
           <div className={styles.hint}>
             {redraft
               ? 'Your squad is full. Name the player to drop if you win him. Dropping is free.'
               : 'Your squad is full. Nominate a player to release upon winning, or send him to the academy. You cannot bid if neither has open slots.'}
           </div>
-        </label>
+        </div>
       )}
 
       {belowFloor && <p className={styles.error}>The minimum bid is {money(floor)}.</p>}

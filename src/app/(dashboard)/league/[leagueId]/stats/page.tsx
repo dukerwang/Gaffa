@@ -7,6 +7,7 @@ import { getCurrentFplSeason, isFplSeasonKickedOff } from '@/lib/season/currentS
 import { loadSeasonLeaderboard } from '@/lib/stats/seasonStats';
 import { isSiteAdminEmail } from '@/lib/auth/siteAdmin';
 import { isPlayerMapped } from '@/lib/players/playerMapping';
+import type { CrestConfig } from '@/components/crest/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +43,7 @@ export default async function StatsPage({ params }: Props) {
     isFplSeasonKickedOff(),
     admin
       .from('teams')
-      .select('id')
+      .select('id, crest_config')
       .eq('league_id', leagueId),
   ]);
   if (!league) notFound();
@@ -53,6 +54,9 @@ export default async function StatsPage({ params }: Props) {
   }
 
   const teamIds = (allTeams ?? []).map((t: { id: string }) => t.id);
+  const teamCrests = Object.fromEntries(
+    (allTeams ?? []).map((t: { id: string; crest_config: CrestConfig | null }) => [t.id, t.crest_config]),
+  );
 
   // The leaderboard is the slow read (every stats row of the season); the
   // owner lookup beside it no longer waits for it to finish.
@@ -97,6 +101,7 @@ export default async function StatsPage({ params }: Props) {
       season={season}
       shadowMaps={shadowMaps}
       isSiteAdmin={isSiteAdmin}
+      teamCrests={teamCrests}
     />
   );
 }

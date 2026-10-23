@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { HoldButton } from '@/components/ui/HoldButton';
+import { Select } from '@/components/ui/Select';
+import { gaffaClubItem } from '@/components/select/domainItems';
+import type { CrestConfig } from '@/components/crest/types';
 import styles from './settings.module.css';
 
 export interface CommissionerClub {
@@ -13,6 +16,7 @@ export interface CommissionerClub {
   managerName: string | null;
   /** When the manager last opened the league (migration 171). */
   lastActiveAt?: string | null;
+  crest?: CrestConfig | null;
 }
 
 function lastActiveLabel(iso: string | null | undefined): string | null {
@@ -84,21 +88,16 @@ export default function CommissionerTools({ leagueId, myUserId, clubs }: Props) 
     <div className={styles.panel}>
       {others.length > 0 && (
         <div className={styles.form}>
-          <label className={styles.fieldLabel} htmlFor="next-commissioner">
-            Transfer Commissioner
-          </label>
-          <select
-            id="next-commissioner"
-            className={styles.select}
+          <span className={styles.fieldLabel}>Transfer Commissioner</span>
+          <Select
+            fullWidth
+            ariaLabel="Transfer Commissioner"
             value={nextCommissioner}
-            onChange={(e) => setNextCommissioner(e.target.value)}
-          >
-            {others.map((c) => (
-              <option key={c.teamId} value={c.userId ?? ''}>
-                {c.managerName ? `${c.managerName} (${c.teamName})` : c.teamName}
-              </option>
-            ))}
-          </select>
+            onChange={setNextCommissioner}
+            items={others.map((c) =>
+              gaffaClubItem(c.userId ?? '', c.managerName ? `${c.managerName} · ${c.teamName}` : c.teamName, c.crest),
+            )}
+          />
           <div className={styles.formActions}>
             <HoldButton size="sm" variant="primary" disabled={pending !== null} confirmedLabel="Transferring…" onConfirm={transfer}>
               Transfer Role

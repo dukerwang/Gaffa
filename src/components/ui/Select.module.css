@@ -118,6 +118,12 @@
   flex-shrink: 0;
 }
 
+/* An option with no crest keeps an empty spacer to line up with its crested
+   siblings in the list; in the closed field that spacer is only lost width. */
+.value > .leading:has(> span:empty) {
+  display: none;
+}
+
 /* A bare crest or badge image. A composed leading (a portrait) sizes itself. */
 .leading > img {
   width: 20px;
@@ -162,6 +168,9 @@
   .option {
     min-height: 44px;
   }
+  .size_md {
+    min-height: 44px;
+  }
 }
 
 .optionText {
@@ -195,4 +204,13 @@
   .chevron {
     transition: none;
   }
+}
+
+/* On a phone the list docks as a sheet (Popover's sheet mode): rows grow to a
+   thumb's height and the type to the field's. */
+[data-sheet] .option {
+  min-height: 48px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  font-size: var(--t-17);
 }
