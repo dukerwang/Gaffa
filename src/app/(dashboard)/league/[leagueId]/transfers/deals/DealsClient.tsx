@@ -19,6 +19,7 @@ import ListingCard from '@/components/transfers/ListingCard';
 import type { LoanDirection, ProposeMode } from '@/components/transfers/ProposeBuilder';
 import { setServerClock } from '@/components/transfers/useTick';
 import { toast } from '@/components/ui/toast';
+import { HoldButton } from '@/components/ui/HoldButton';
 import { dealToast } from '@/components/transfers/dealToast';
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import styles from './deals.module.css';
@@ -396,21 +397,15 @@ export default function DealsClient({
                 <span className={styles.dealStatus}>Slot bought back</span>
               )}
               {l.has_recall && (
-                <button
-                  type="button"
-                  className={styles.dealBtn}
+                <HoldButton
+                  size="sm"
+                  className={styles.dealHold}
                   disabled={busyId === l.id || iHold}
                   title={iHold ? 'Activate or drop your held player first.' : undefined}
-                  onClick={() => {
-                    if (window.confirm(
-                      `Recall ${l.player ? getPlayerDisplayName(l.player, 'full') : 'this player'} early? You will pay a €25m penalty to the borrower.`,
-                    )) {
-                      loanSideAction(l.id, 'recall', l.player ? getPlayerDisplayName(l.player, 'full') : undefined);
-                    }
-                  }}
+                  onConfirm={() => loanSideAction(l.id, 'recall', l.player ? getPlayerDisplayName(l.player, 'full') : undefined)}
                 >
-                  Recall
-                </button>
+                  Recall · €25m
+                </HoldButton>
               )}
             </>
           ) : (

@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import { getPlayerDisplayName, playerInitial } from '@/lib/players/displayName';
-import { ResponsiveModal, Button } from '@/components/ui';
+import { ResponsiveModal, Button, HoldButton } from '@/components/ui';
 import styles from './DepartureDecisionModal.module.css';
 import { toast } from '@/components/ui/toast';
 
@@ -113,9 +113,9 @@ export default function DepartureDecisionModal({ req, leagueId, slots, rosterCou
         <Button variant="secondary" disabled={busy} onClick={onClose}>
           Keep Him
         </Button>
-        <Button variant="danger" fullWidth disabled={busy} loading={busy} onClick={() => act('decline')}>
+        <HoldButton size="sm" fullWidth disabled={busy} onConfirm={() => act('decline')}>
           Decline for Nothing
-        </Button>
+        </HoldButton>
       </>
     );
   } else if (mode === 'relinquish') {
@@ -124,15 +124,9 @@ export default function DepartureDecisionModal({ req, leagueId, slots, rosterCou
         <Button variant="secondary" disabled={busy} onClick={onClose}>
           {onLoan ? 'Keep Him' : 'Keep Rights'}
         </Button>
-        <Button
-          variant="danger"
-          fullWidth
-          disabled={busy}
-          loading={busy}
-          onClick={() => act('relinquish')}
-        >
+        <HoldButton size="sm" fullWidth disabled={busy} onConfirm={() => act('relinquish')}>
           {onLoan ? 'Drop for Nothing' : 'Relinquish for Nothing'}
-        </Button>
+        </HoldButton>
       </>
     );
   }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { HoldButton } from '@/components/ui/HoldButton';
 import styles from './settings.module.css';
 
 export interface CommissionerClub {
@@ -54,7 +55,6 @@ export default function CommissionerTools({ leagueId, myUserId, clubs }: Props) 
   async function transfer() {
     const club = others.find((c) => c.userId === nextCommissioner);
     if (!club) return;
-    if (!window.confirm(`Make ${club.managerName ?? club.teamName} the commissioner? You'll lose the commissioner controls.`)) return;
     setPending('transfer');
     setStatus(null);
     try {
@@ -68,12 +68,6 @@ export default function CommissionerTools({ leagueId, myUserId, clubs }: Props) 
 
   async function remove(club: CommissionerClub) {
     const who = club.managerName ?? 'this manager';
-    if (
-      !window.confirm(
-        `Remove ${who} from the league? ${club.teamName} keeps its squad, Club Balance and record, and the Caretaker runs it until a new manager joins. You can't undo this.`,
-      )
-    )
-      return;
     setPending(club.teamId);
     setStatus(null);
     try {
@@ -106,10 +100,12 @@ export default function CommissionerTools({ leagueId, myUserId, clubs }: Props) 
             ))}
           </select>
           <div className={styles.formActions}>
-            <button type="button" className={styles.submit} disabled={pending !== null} onClick={transfer}>
-              {pending === 'transfer' ? 'Transferring…' : 'Transfer Role'}
-            </button>
-            <span className={styles.formStatus}>Hand the role on before you leave the league.</span>
+            <HoldButton size="sm" variant="primary" disabled={pending !== null} confirmedLabel="Transferring…" onConfirm={transfer}>
+              Transfer Role
+            </HoldButton>
+            <span className={styles.formStatus}>
+              Hand the role on before you leave the league. You&apos;ll lose the commissioner controls.
+            </span>
           </div>
         </div>
       )}
@@ -127,17 +123,18 @@ export default function CommissionerTools({ leagueId, myUserId, clubs }: Props) 
               </span>
             </div>
             {club.userId && (
-              <button
-                type="button"
-                className={styles.removeButton}
-                disabled={pending !== null}
-                onClick={() => remove(club)}
-              >
-                {pending === club.teamId ? 'Removing…' : 'Remove Manager'}
-              </button>
+              <HoldButton size="sm" disabled={pending !== null} confirmedLabel="Removing…" onConfirm={() => remove(club)}>
+                Remove Manager
+              </HoldButton>
             )}
           </div>
         ))}
+
+      {clubs.some((c) => c.userId && c.userId !== myUserId) && (
+        <p className={`${styles.dangerNote} ${styles.statusLine}`}>
+          A removed manager&apos;s club keeps its squad, Club Balance and record. You can&apos;t undo this.
+        </p>
+      )}
 
       {status && (
         <p className={`${styles.formStatus} ${styles.statusLine} ${status.ok ? styles.formOk : styles.formError}`}>

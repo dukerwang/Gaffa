@@ -11,6 +11,7 @@ import { calculateAgeInYears } from '@/lib/transfers/academyEligibility';
 import type { LeagueFeatures } from '@/lib/leagues/features';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { toast } from '@/components/ui/toast';
+import { HoldButton } from '@/components/ui/HoldButton';
 import styles from './club.module.css';
 
 interface Props {
@@ -38,7 +39,6 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
   const { openPlayer } = usePlayerCard();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [confirmDrop, setConfirmDrop] = useState(false);
   const [listingOpen, setListingOpen] = useState(false);
 
   if (!entry) {
@@ -105,7 +105,7 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
     done: string,
     description?: string,
   ) {
-    setBusy(true); setErr(null); setConfirmDrop(false);
+    setBusy(true); setErr(null);
     try {
       const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const d = await res.json().catch(() => ({}));
@@ -212,15 +212,16 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
 
           {entry.isPendingDrop ? (
             <span className={`${styles.act} ${styles.actDanger}`} aria-disabled="true">Drop queued</span>
-          ) : confirmDrop ? (
-            <button type="button" className={`${styles.act} ${styles.actDanger}`} disabled={busy}
-              onClick={() => call(`/api/teams/${teamId}/drop`, { playerId: entry.playerId, actionType: 'drop' }, `${name} released`, `Severance ${money(severance)}`)}>
-              Confirm — {money(severance)}
-            </button>
           ) : (
-            <button type="button" className={`${styles.act} ${styles.actDanger}`} disabled={busy} onClick={() => setConfirmDrop(true)}>
-              Drop
-            </button>
+            <HoldButton
+              size="sm"
+              fullWidth
+              className={styles.actHold}
+              disabled={busy}
+              onConfirm={() => call(`/api/teams/${teamId}/drop`, { playerId: entry.playerId, actionType: 'drop' }, `${name} released`, `Severance ${money(severance)}`)}
+            >
+              Drop · {money(severance)}
+            </HoldButton>
           )}
         </div>
         )}

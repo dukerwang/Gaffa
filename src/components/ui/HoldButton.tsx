@@ -17,6 +17,8 @@ export interface HoldButtonProps {
   size?: 'sm' | 'md';
   fullWidth?: boolean;
   disabled?: boolean;
+  /** Why it is disabled, for a mouse user. */
+  title?: string;
   className?: string;
 }
 
@@ -42,6 +44,7 @@ export function HoldButton({
   size = 'md',
   fullWidth = false,
   disabled = false,
+  title,
   className,
 }: HoldButtonProps) {
   const id = useId();
@@ -108,6 +111,7 @@ export function HoldButton({
       data-confirmed={confirmed || undefined}
       data-hint={hint || undefined}
       disabled={disabled}
+      title={title}
       aria-describedby={`${id}-hint`}
       style={{ ['--hold-ms' as string]: `${duration}ms` }}
       onPointerDown={(e) => e.button === 0 && start()}
