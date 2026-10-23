@@ -117,3 +117,11 @@
     transition: none;
   }
 }
+
+/* A press-and-hold needs a full finger's target; the fill clips its overflow,
+   so the button itself grows rather than a hit area around it. */
+@media (pointer: coarse) {
+  .size_sm {
+    min-height: 44px;
+  }
+}

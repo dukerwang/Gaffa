@@ -675,3 +675,8 @@
 
 /* The hold-to-drop takes the Inspector's tighter action type. */
 .acts .actHold { font-size: var(--t-12); font-weight: 700; letter-spacing: 0.04em; }
+
+/* Under a finger the Inspector's actions reach 44px, level with the hold-to-drop. */
+@media (pointer: coarse) {
+  .act { min-height: 44px; }
+}

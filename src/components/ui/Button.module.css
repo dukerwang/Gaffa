@@ -202,3 +202,10 @@
     transform: rotate(360deg);
   }
 }
+
+/* Under a finger, md reaches the 44px floor, level with a HoldButton beside it. */
+@media (pointer: coarse) {
+  .size_md {
+    min-height: 44px;
+  }
+}

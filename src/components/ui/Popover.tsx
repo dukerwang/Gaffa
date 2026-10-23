@@ -19,10 +19,21 @@ export interface PopoverProps extends Omit<React.HTMLAttributes<HTMLDivElement>,
   children: React.ReactNode;
   /** Receives the floating element once it mounts, e.g. to focus a list inside it. */
   onMount?: (el: HTMLDivElement) => void;
+  /**
+   * On a phone (640px and under), dock as a bottom sheet over a scrim instead
+   * of floating at the anchor: a long list then sits under the thumb, as the
+   * system picker it replaces would.
+   */
+  sheet?: boolean;
+  /** Named at the top of the sheet. Ignored when floating. */
+  sheetTitle?: string;
 }
+
+const SHEET_QUERY = '(max-width: 640px)';
 
 /** Exit is shorter than entry: the system is responding, not presenting. */
 const EXIT_MS = 120;
+const SHEET_EXIT_MS = 200;
 
 /**
  * Gaffa UI Primitive: Popover
@@ -34,7 +45,8 @@ const EXIT_MS = 120;
  *
  * Escape is caught on the window in the capture phase and stopped there, so
  * a popover open inside a ResponsiveModal closes itself without also closing
- * the modal beneath it.
+ * the modal beneath it. The same holds in sheet mode, which is why a Select
+ * on a phone docks here rather than opening a second ResponsiveModal.
  */
 export function Popover({
   open,
@@ -47,11 +59,30 @@ export function Popover({
   className,
   style,
   onMount,
+  sheet = false,
+  sheetTitle,
   ...rest
 }: PopoverProps) {
-  const { mounted, state } = usePresence(open, EXIT_MS);
+  const [docked, setDocked] = useState(false);
+  const { mounted, state } = usePresence(open, docked ? SHEET_EXIT_MS : EXIT_MS);
   const [floating, setFloating] = useState<HTMLDivElement | null>(null);
-  const position = useAnchoredPosition(anchor, floating, mounted, placement);
+  const position = useAnchoredPosition(anchor, docked ? null : floating, mounted, placement);
+
+  // Decided as it opens, so rotating a phone mid-pick doesn't swap the surface under the thumb.
+  useEffect(() => {
+    if (open) setDocked(sheet && window.matchMedia(SHEET_QUERY).matches);
+  }, [open, sheet]);
+
+  // The page behind a sheet stays put. Restores whatever was there, so a
+  // sheet opened inside a ResponsiveModal leaves the modal's lock in place.
+  useEffect(() => {
+    if (!open || !docked) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open, docked]);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   const onMountRef = useRef(onMount);
@@ -84,6 +115,26 @@ export function Popover({
   }, [open, anchor, floating, restoreFocus]);
 
   if (!mounted || typeof document === 'undefined') return null;
+
+  if (docked) {
+    return createPortal(
+      <>
+        <div className={styles.scrim} data-state={state} aria-hidden="true" />
+        <div
+          ref={setFloating}
+          data-state={state}
+          data-sheet=""
+          data-sheet-title={sheetTitle || undefined}
+          className={[styles.popover, styles.sheet, className].filter(Boolean).join(' ')}
+          style={style}
+          {...rest}
+        >
+          {children}
+        </div>
+      </>,
+      document.body,
+    );
+  }
 
   return createPortal(
     <div

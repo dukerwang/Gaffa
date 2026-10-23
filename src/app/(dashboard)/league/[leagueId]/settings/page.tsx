@@ -67,7 +67,7 @@ export default async function LeagueSettingsPage({ params }: Props) {
     const [{ data: clubs }, { data: members }] = await Promise.all([
       admin
         .from('teams')
-        .select('id, team_name, user_id, user:users(username)')
+        .select('id, team_name, user_id, crest_config, user:users(username)')
         .eq('league_id', leagueId)
         .order('team_name'),
       admin.from('league_members').select('user_id, last_active_at').eq('league_id', leagueId),
@@ -81,6 +81,7 @@ export default async function LeagueSettingsPage({ params }: Props) {
         userId: c.user_id,
         managerName: u?.username ?? null,
         lastActiveAt: c.user_id ? lastActive.get(c.user_id) ?? null : null,
+        crest: (c.crest_config as CommissionerClub['crest']) ?? null,
       };
     });
   }

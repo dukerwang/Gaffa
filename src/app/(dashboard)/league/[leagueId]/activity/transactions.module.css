@@ -154,38 +154,18 @@
 /* WebKit's own clear button is a second, unstyled affordance beside ours. */
 .searchInput::-webkit-search-cancel-button { appearance: none; }
 
-/* A native select keeps the OS picker on a phone; the caret is drawn over it. */
-.selWrap {
-  position: relative;
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-}
-
-.sel {
-  appearance: none;
-  box-sizing: border-box;
-  height: 34px;
-  padding: 0 26px 0 var(--s3);
-  max-width: 150px;
+/* Kit Select in the bar: the bar's 34px height, keyline and 12px type, so it
+   sits level with the search and the filters. */
+.selField { flex: none; width: 150px; }
+.selField button[aria-haspopup] {
+  min-height: 34px;
+  padding-left: var(--s3);
   border: var(--line-strong);
-  border-radius: var(--r-control);
-  background: var(--color-bg-card);
-  font-family: var(--font-sans);
   font-size: var(--t-12);
   font-weight: var(--font-medium);
   color: var(--color-text-secondary);
-  cursor: pointer;
 }
-.selStrong { color: var(--color-text-primary); font-weight: var(--font-semibold); }
-.sel:focus-visible { outline: 2px solid var(--color-accent-ink); outline-offset: 1px; }
-
-.caret {
-  position: absolute;
-  right: 9px;
-  pointer-events: none;
-  color: var(--color-text-muted);
-}
+.selStrong button[aria-haspopup] { color: var(--color-text-primary); font-weight: var(--font-semibold); }
 
 /* One season and no menu: a label, not a dead control. */
 .seasonLabel {
@@ -381,7 +361,7 @@
 /* ── Narrower ─────────────────────────────────────────── */
 @media (max-width: 1000px) {
   .search { width: 150px; }
-  .sel { max-width: 118px; }
+  .selField { width: 128px; }
 }
 
 /* The bar stacks into tiers rather than wrapping into a ragged block: name and
@@ -430,8 +410,8 @@
   /* Search below the filters, full width — it is the widest target here. */
   .search { order: 4; width: 100%; height: 44px; }
 
-  .selWrap { order: 2; flex: 1; }
-  .sel { width: 100%; max-width: none; height: 44px; font-size: var(--t-13); }
+  .selField { order: 2; flex: 1; width: auto; }
+  .selField button[aria-haspopup] { min-height: 44px; font-size: var(--t-13); }
   .seasonLabel { order: 2; min-height: 44px; display: inline-flex; align-items: center; }
 
   .row { grid-template-columns: minmax(0, 1fr) 84px; gap: var(--s3); padding: var(--s4) 0; }

@@ -146,15 +146,11 @@
 
 .amount { -moz-appearance: textfield; appearance: textfield; }
 
-.select {
-  width: 100%;
-  padding: var(--s2) var(--s3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--r-control);
-  background: var(--color-bg-card);
-  font-family: var(--font-sans);
-  font-size: var(--t-13);
-  color: var(--color-text-primary);
+/* Kit Select for a player: the field is as tall as a portrait row. */
+.playerSelect button[aria-haspopup] {
+  min-height: 62px;
+  padding-left: 10px;
+  border-color: var(--color-border-strong);
 }
 
 .hint {

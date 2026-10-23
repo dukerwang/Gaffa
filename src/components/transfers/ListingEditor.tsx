@@ -9,6 +9,8 @@ import styles from './ListingEditor.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { listingStance } from '@/lib/transfers/listingStance';
 import { toast } from '@/components/ui/toast';
+import { Select } from '@/components/ui/Select';
+import { PORTRAIT_WIDTH, plainItem, playerItem } from '@/components/select/domainItems';
 
 /**
  * List a player, or edit a listing that has not been bid on yet.
@@ -259,22 +261,17 @@ export default function ListingEditor({
       {!editing && !initialPlayerId && (
         <div className={styles.section}>
           <span className={styles.label}>Who</span>
-          <select
-            className={styles.select}
+          <Select
+            fullWidth
+            className={styles.playerSelect}
+            ariaLabel="Player to list"
             value={playerId}
-            onChange={(e) => {
-              const pid = e.target.value;
+            onChange={(pid) => {
               setPlayerId(pid);
               setMinBid(floorFor(myRoster, pid));
             }}
-          >
-            <option value="">Choose a player…</option>
-            {listable.map((p) => (
-              <option key={p.id} value={p.id}>
-                {getPlayerDisplayName(p, 'full')} · {p.primary_position} · {money(Number(p.market_value) || 0)}
-              </option>
-            ))}
-          </select>
+            items={[plainItem('', 'Choose a player…', PORTRAIT_WIDTH), ...listable.map((p) => playerItem(p))]}
+          />
         </div>
       )}
 
