@@ -31,18 +31,20 @@
   color: var(--color-text-muted);
   cursor: pointer;
   white-space: nowrap;
+  text-decoration: none;
   transition: color var(--dur-fast) ease;
   /* Tabs are pressed tens of times a day; the underline is the feedback. */
   --press-scale: 1;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .tab:not([aria-selected='true']):not(:disabled):hover {
+  .tab:not([aria-selected='true']):not([aria-current='page']):not(:disabled):hover {
     color: var(--color-text-primary);
   }
 }
 
-.tab[aria-selected='true'] {
+.tab[aria-selected='true'],
+.tab[aria-current='page'] {
   color: var(--color-text-primary);
 }
 
@@ -74,9 +76,18 @@
   transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 
-.tab[aria-selected='true'] .count {
+.tab[aria-selected='true'] .count,
+.tab[aria-current='page'] .count {
   background: var(--color-accent);
   color: var(--color-text-inverse);
+}
+
+/* New behind a tab with no figure to show: a small mark after the label. */
+.unread {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-danger);
 }
 
 .indicator {
