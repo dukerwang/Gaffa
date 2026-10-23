@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CrestBadge from '@/components/crest/CrestBadge';
 import NavigationLink from '@/components/ui/NavigationLink';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { useLeagueChat } from '@/components/chat/LeagueChatContext';
 import type { ClubProps, SquadEntry } from '@/lib/teams/loadClubView';
 import ClubSwitcher from './ClubSwitcher';
@@ -37,7 +38,7 @@ export type {
 
 const VIEWS = [
   { k: 'pitch', label: 'Pitch' },
-  { k: 'depth', label: 'Depth chart' },
+  { k: 'depth', label: 'Depth Chart' },
   { k: 'table', label: 'Table' },
 ];
 const FILTERS: { k: string; label: string }[] = [
@@ -441,18 +442,14 @@ export default function ClubClient({
 
       {/* ── Toolbar ── */}
       <div className={styles.toolbar}>
-        <div className={styles.seg}>
-          {VIEWS.map((v) => (
-            <button
-              key={v.k}
-              type="button"
-              className={`${styles.segBtn} ${view === v.k ? styles.segBtnOn : ''}`}
-              onClick={() => chooseView(v.k)}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          variant="ink"
+          className={styles.viewSwitch}
+          ariaLabel="Squad view"
+          value={view}
+          onChange={chooseView}
+          options={VIEWS.map((v) => ({ value: v.k, label: v.label }))}
+        />
         <div className={styles.tbSpacer} />
 
         <ToDo items={todos} onAct={handleTodo} />

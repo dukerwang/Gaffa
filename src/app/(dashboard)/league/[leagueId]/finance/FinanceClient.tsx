@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import styles from './finance.module.css';
 import EmptyState from '@/components/ui/EmptyState';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -316,23 +317,17 @@ export default function FinanceClient({
         <section className={styles.section}>
           <div className={styles.ledgerHeader}>
             <h2 className={styles.sectionHead}>Club Ledger</h2>
-            {/* Filter tabs — same segmented-control grammar as the stats
-                pool's position filter: filled in ink, not the accent, since
-                this is a view toggle rather than "yours". */}
-            <div className={styles.segmented} role="tablist">
-              {(['all', 'out', 'in'] as FilterKey[]).map(f => (
-                <button
-                  key={f}
-                  role="tab"
-                  aria-selected={filter === f}
-                  className={`${styles.segment} ${filter === f ? styles.segmentOn : ''}`}
-                  onClick={() => { setFilter(f); setPage(0); }}
-                  type="button"
-                >
-                  {f === 'all' ? 'All' : f === 'out' ? 'Spending' : 'Earnings'}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl<FilterKey>
+              variant="ink"
+              ariaLabel="Club Ledger filter"
+              value={filter}
+              onChange={(f) => { setFilter(f); setPage(0); }}
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'out', label: 'Spending' },
+                { value: 'in', label: 'Earnings' },
+              ]}
+            />
           </div>
 
           {filtered.length === 0 ? (

@@ -610,3 +610,22 @@ import are gone.
 > day, said new work should use Hanken Grotesk in Archivo's place. That was an
 > agent's assumption, not Duke's choice: "who told you it swaps with hanken
 > grotesk? i literally picked a font".
+
+---
+## 2026-10-23 — Kit adoption: hold to confirm, ink switchers
+
+Chosen from prototypes on `/kit`, after the Top Rated head took the ink
+switcher (option A of three).
+
+> "Port hold-to-confirm to all four cases plus the other browser dialogs, and
+> switch all six section switchers to A (ink)."
+
+The four cases were the roster Inspector's Drop, the departure sheet's "for
+Nothing" buttons, the loan recall and Leave League. The six switchers were the
+Players view, which positions count (Players and Stats), the Club Ledger, the
+squad view, Projected XI / Saved Lineup and the inbox filter.
+
+Not decided, and left as they were: the Transactions filters, the League Home
+fixture tabs, the Player Explorer legend and the player card's chart switch.
+The Players season switch was moved to ink with the view switch beside it,
+because the two shared one style; that was an agent's call, not his.

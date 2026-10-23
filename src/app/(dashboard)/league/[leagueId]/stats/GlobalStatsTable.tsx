@@ -10,6 +10,7 @@ import FormArrow from '@/components/players/FormArrow';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { SPINE, POS_COLOR } from '@/lib/positions/spine';
 import { Icon } from '@/components/ui/Icon';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { isPlayerMapped } from '@/lib/players/playerMapping';
 import { POS_FILTER_OPTIONS, resolveActivePosition, type PosFilter } from '@/lib/players/positionFilter';
 import styles from './stats.module.css';
@@ -369,19 +370,17 @@ export default function GlobalStatsTable({ leagueId, leagueName, players, season
           <span className={styles.sliderValue}>{minGames}</span>
         </div>
 
-        <div className={styles.segmented} role="group" aria-label="Which positions count">
-          {(['primary', 'secondary', 'both'] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={`${styles.segment} ${posType === t ? styles.segmentOn : ''}`}
-              aria-pressed={posType === t}
-              onClick={() => handleSetPosType(t)}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl<'primary' | 'secondary' | 'both'>
+          variant="ink"
+          ariaLabel="Which positions count"
+          value={posType}
+          onChange={handleSetPosType}
+          options={[
+            { value: 'primary', label: 'Primary' },
+            { value: 'secondary', label: 'Secondary' },
+            { value: 'both', label: 'Both' },
+          ]}
+        />
       </div>
 
       <div className={styles.tableWrap}>
