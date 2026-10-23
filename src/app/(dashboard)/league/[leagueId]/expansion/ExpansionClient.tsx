@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { HoldButton } from '@/components/ui/HoldButton';
 import styles from './expansion.module.css';
 
 export interface ExpansionPlayer {
@@ -163,18 +164,13 @@ export default function ExpansionClient({ model }: { model: ExpansionModel }) {
                     >
                       {busy === 'start' ? 'Starting…' : 'Start Picks'}
                     </button>
-                    <button
-                      type="button"
-                      className={styles.secondary}
+                    <HoldButton
+                      size="sm"
                       disabled={busy !== null}
-                      onClick={() => {
-                        if (window.confirm('Cancel the expansion draft? Any new club that joined is removed.')) {
-                          call('cancel', base, { method: 'DELETE' }, 'Expansion draft cancelled.');
-                        }
-                      }}
+                      onConfirm={() => call('cancel', base, { method: 'DELETE' }, 'Expansion draft cancelled.')}
                     >
                       Cancel Expansion
-                    </button>
+                    </HoldButton>
                   </>
                 )}
                 {exp.status === 'drafting' && exp.onClock && (

@@ -240,30 +240,8 @@
   justify-content: flex-start;
 }
 
-.removeButton {
-  flex-shrink: 0;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-control);
-  background: transparent;
-  color: var(--color-accent-red);
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
 
-@media (hover: hover) and (pointer: fine) {
-  .removeButton:hover:not(:disabled) {
-    background: var(--color-bg-elevated);
-  }
-}
 
-.removeButton:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
 
 .statusLine {
   margin: 0;
@@ -283,4 +261,12 @@
   .gridRow {
     grid-template-columns: 1fr 52px 52px;
   }
+}
+
+/* The consequence the browser dialog used to state sits above the hold. */
+.dangerStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
 }

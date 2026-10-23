@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
+import { HoldButton } from '@/components/ui/HoldButton';
 import FormattedText from '@/components/ui/FormattedText';
 import styles from './Inbox.module.css';
 import EmptyState from '@/components/ui/EmptyState';
@@ -64,9 +65,6 @@ export default function InboxClient({ leagueId, leagueName }: InboxClientProps) 
   };
 
   const handleClearInbox = async () => {
-    if (!confirm("Clear your entire inbox for this league? This can't be undone.")) {
-      return;
-    }
     try {
       const res = await fetch('/api/notifications', {
         method: 'DELETE',
@@ -173,9 +171,9 @@ export default function InboxClient({ leagueId, leagueName }: InboxClientProps) 
               </button>
             )}
             {notifications.length > 0 && (
-              <button className={`${styles.btn} ${styles.btnDanger}`} onClick={handleClearInbox}>
-                <Icon name="x" size={16} /> Clear Inbox
-              </button>
+              <HoldButton size="sm" confirmedLabel="Cleared" onConfirm={handleClearInbox}>
+                Clear Inbox
+              </HoldButton>
             )}
           </div>
         </div>

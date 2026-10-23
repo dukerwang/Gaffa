@@ -67,18 +67,7 @@
   }
 }
 
-.btnDanger {
-  color: #d9383a;
-  border-color: rgba(217, 56, 58, 0.2);
-}
 
-@media (hover: hover) and (pointer: fine) {
-  .btnDanger:hover {
-    background: rgba(217, 56, 58, 0.05);
-    border-color: #d9383a;
-    color: #d9383a;
-  }
-}
 
 .btnPrimary {
   background: var(--color-accent-green);

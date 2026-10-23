@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/components/ui/toast';
+import { HoldButton } from '@/components/ui/HoldButton';
+import styles from './settings.module.css';
 
 interface Props {
   leagueId: string;
@@ -20,26 +22,24 @@ export default function LeaveLeagueButton({ leagueId, isCommissioner, started = 
   const [loading, setLoading] = useState(false);
   const deletes = isCommissioner && !started;
 
+  // What the browser dialog used to ask, said beside the button instead; the
+  // hold is the confirmation.
+  const consequence = deletes
+    ? "Deletes the league and every team in it. You can't undo this."
+    : started
+      ? "Your club stays in the league, and the Caretaker runs it until a new manager joins. You can't undo this."
+      : "You can't undo this.";
+
   const handleAction = async () => {
-    const confirmMessage = deletes
-      ? 'Delete this league? This permanently deletes the league and every team in it.'
-      : started
-        ? "Leave this league? Your club stays in the league, and the Caretaker runs it until a new manager joins. You can't undo this."
-        : "Leave this league? You can't undo this.";
-
-    if (!window.confirm(confirmMessage)) return;
-
     setLoading(true);
     try {
       const res = await fetch(`/api/leagues/${leagueId}/leave`, {
         method: 'POST',
       });
-
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || (deletes ? 'Failed to delete the league.' : 'Failed to leave the league.'));
       }
-
       window.dispatchEvent(new Event('navigation-start'));
       router.push('/dashboard');
       router.refresh();
@@ -52,22 +52,11 @@ export default function LeaveLeagueButton({ leagueId, isCommissioner, started = 
   };
 
   return (
-    <button
-      onClick={handleAction}
-      disabled={loading}
-      type="button"
-      style={{
-        backgroundColor: 'var(--color-accent-red)',
-        color: 'white',
-        border: 'none',
-        padding: '0.5rem 1rem',
-        borderRadius: '6px',
-        fontWeight: '600',
-        cursor: loading ? 'not-allowed' : 'pointer',
-        opacity: loading ? 0.7 : 1,
-      }}
-    >
-      {loading ? (deletes ? 'Deleting…' : 'Leaving…') : deletes ? 'Delete League' : 'Leave League'}
-    </button>
+    <div className={styles.dangerStack}>
+      <p className={styles.dangerNote}>{consequence}</p>
+      <HoldButton disabled={loading} confirmedLabel={deletes ? 'Deleting…' : 'Leaving…'} onConfirm={handleAction}>
+        {deletes ? 'Delete League' : 'Leave League'}
+      </HoldButton>
+    </div>
   );
 }

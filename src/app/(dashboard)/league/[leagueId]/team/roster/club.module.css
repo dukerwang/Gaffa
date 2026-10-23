@@ -698,3 +698,6 @@
   .acts { grid-template-columns: 1fr; }
 }
 
+
+/* The hold-to-drop takes the Inspector's tighter action type. */
+.acts .actHold { font-size: var(--t-12); font-weight: 700; letter-spacing: 0.04em; }

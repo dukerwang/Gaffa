@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import NavigationLink from '@/components/ui/NavigationLink';
+import { HoldButton } from '@/components/ui/HoldButton';
 import { motion, type PanInfo } from 'framer-motion';
 import { List } from 'react-window';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
@@ -607,7 +608,6 @@ export default function MockDraftRoom({ leagueId, league, players, shadowMaps, m
   }
 
   function restartDraft() {
-    if (!window.confirm('Restart this mock draft from scratch? Progress will be lost.')) return;
     setSession(null);
     setPaused(false);
     pausedMsRef.current = 0;
@@ -968,9 +968,9 @@ export default function MockDraftRoom({ leagueId, league, players, shadowMaps, m
                 <button type="button" className={styles.controlBtn} onClick={togglePause}>
                   {paused ? 'Resume' : 'Pause'}
                 </button>
-                <button type="button" className={styles.controlBtn} onClick={restartDraft}>
+                <HoldButton size="sm" className={styles.controlHold} onConfirm={restartDraft}>
                   Restart
-                </button>
+                </HoldButton>
                 <NavigationLink href={`/league/${leagueId}`} className={styles.controlBtn}>
                   Exit
                 </NavigationLink>

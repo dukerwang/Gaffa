@@ -6,6 +6,8 @@
 .button {
   position: relative;
   display: inline-grid;
+  /* The hint shares the label's cell; squeezing the button would wrap it. */
+  flex-shrink: 0;
   min-height: 44px;
   padding: 0 var(--s5);
   border-radius: var(--r-control);

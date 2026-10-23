@@ -509,3 +509,18 @@
   .dealSideRight { text-align: left; border-top: 1px solid var(--color-border-subtle); }
   .assetsRight { align-items: flex-start; }
 }
+
+/* Hold to recall: a cell of the strip, so no frame of its own. The €25m in
+   the label is the penalty the browser dialog used to state. */
+.dealActions .dealHold {
+  flex: 1;
+  min-height: 0;
+  padding: var(--s2);
+  border: none;
+  border-radius: 0;
+  font-size: var(--t-11);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.dealActions .dealStatus + .dealHold { border-left: 1px solid var(--color-border-subtle); }
