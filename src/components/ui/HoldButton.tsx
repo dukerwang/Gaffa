@@ -13,6 +13,8 @@ export interface HoldButtonProps {
   /** How long the hold takes. Long enough to be deliberate, short enough not to annoy. */
   duration?: number;
   variant?: 'danger' | 'primary';
+  /** 'sm' is Button's md height, for a footer or a row of compact actions. */
+  size?: 'sm' | 'md';
   fullWidth?: boolean;
   disabled?: boolean;
   className?: string;
@@ -27,7 +29,9 @@ export interface HoldButtonProps {
  * performed by accident and needs no second screen.
  *
  * Holding fills the button left to right on a linear clock; letting go early
- * drains it back in 200ms. Space and Enter hold it from the keyboard.
+ * drains it back in 200ms. Space and Enter hold it from the keyboard. A tap
+ * that lets go in the first half of the clock swaps the label for "Hold to
+ * Confirm" for a moment, so a manager who expected a click learns the gesture.
  */
 export function HoldButton({
   children,
@@ -35,6 +39,7 @@ export function HoldButton({
   confirmedLabel,
   duration = 1200,
   variant = 'danger',
+  size = 'md',
   fullWidth = false,
   disabled = false,
   className,
@@ -42,6 +47,8 @@ export function HoldButton({
   const id = useId();
   const [holding, setHolding] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [hint, setHint] = useState(false);
+  const startedAt = useRef(0);
   const onConfirmRef = useRef(onConfirm);
   onConfirmRef.current = onConfirm;
 
@@ -64,8 +71,24 @@ export function HoldButton({
     return () => window.clearTimeout(t);
   }, [confirmed]);
 
-  const start = () => !disabled && !confirmed && setHolding(true);
+  useEffect(() => {
+    if (!hint) return;
+    const t = window.setTimeout(() => setHint(false), 1400);
+    return () => window.clearTimeout(t);
+  }, [hint]);
+
+  const start = () => {
+    if (disabled || confirmed) return;
+    startedAt.current = Date.now();
+    setHint(false);
+    setHolding(true);
+  };
   const cancel = () => setHolding(false);
+  /** Letting go on purpose, as opposed to sliding off or losing focus. */
+  const release = () => {
+    if (holding && Date.now() - startedAt.current < duration / 2) setHint(true);
+    setHolding(false);
+  };
 
   const label = confirmed && confirmedLabel ? confirmedLabel : children;
 
@@ -75,6 +98,7 @@ export function HoldButton({
       className={[
         styles.button,
         styles[`variant_${variant}`],
+        styles[`size_${size}`],
         fullWidth ? styles.fullWidth : '',
         className,
       ]
@@ -82,11 +106,12 @@ export function HoldButton({
         .join(' ')}
       data-holding={holding || undefined}
       data-confirmed={confirmed || undefined}
+      data-hint={hint || undefined}
       disabled={disabled}
       aria-describedby={`${id}-hint`}
       style={{ ['--hold-ms' as string]: `${duration}ms` }}
       onPointerDown={(e) => e.button === 0 && start()}
-      onPointerUp={cancel}
+      onPointerUp={release}
       onPointerLeave={cancel}
       onPointerCancel={cancel}
       onContextMenu={(e) => e.preventDefault()}
@@ -96,10 +121,13 @@ export function HoldButton({
           start();
         }
       }}
-      onKeyUp={(e) => (e.key === ' ' || e.key === 'Enter') && cancel()}
+      onKeyUp={(e) => (e.key === ' ' || e.key === 'Enter') && release()}
       onBlur={cancel}
     >
       <span className={styles.base}>{label}</span>
+      <span className={styles.hint} aria-hidden="true">
+        Hold to Confirm
+      </span>
       <span className={styles.fill} aria-hidden="true">
         {confirmed && <Icon name="check" size={15} strokeWidth={2.5} />}
         {label}
