@@ -19,6 +19,8 @@ export interface MoneyStepperProps {
   disabled?: boolean;
   /** Span the container, the figure taking the room between − and +. For a phone sheet. */
   fullWidth?: boolean;
+  /** 'sm' sits inside a row (the offer builder's cash line); 'md' is a field of its own. */
+  size?: 'sm' | 'md';
   /** Replaces the label's look, so the field matches the form it sits in. */
   labelClassName?: string;
   className?: string;
@@ -51,6 +53,7 @@ export function MoneyStepper({
   hint,
   disabled = false,
   fullWidth = false,
+  size = 'md',
   labelClassName,
   className,
 }: MoneyStepperProps) {
@@ -139,7 +142,13 @@ export function MoneyStepper({
 
   return (
     <div
-      className={[styles.root, fullWidth ? styles.fullWidth : '', disabled ? styles.disabled : '', className]
+      className={[
+        styles.root,
+        size === 'sm' ? styles.sm : '',
+        fullWidth ? styles.fullWidth : '',
+        disabled ? styles.disabled : '',
+        className,
+      ]
         .filter(Boolean)
         .join(' ')}
     >
