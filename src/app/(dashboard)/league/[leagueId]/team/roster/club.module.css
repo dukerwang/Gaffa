@@ -303,19 +303,9 @@
 .pitchFoot { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s1) var(--s3); padding: var(--s3) var(--s4); border-top: 1px solid var(--color-border-subtle); }
 .sidelinedToggle {
   display: inline-flex; align-items: center; gap: var(--s2); flex: none;
-  border: 0; background: none; padding: 0; cursor: pointer;
   font-size: var(--t-12); font-weight: var(--font-semibold); color: var(--color-text-primary);
+  cursor: pointer; user-select: none;
 }
-.sidelinedToggleTrack {
-  position: relative; flex: none; width: 30px; height: 18px; border-radius: var(--r-pill);
-  background: var(--color-border-strong); transition: background var(--dur-fast) var(--ease-standard);
-}
-.sidelinedToggleTrack::after {
-  content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: var(--r-round);
-  background: var(--color-bg-card); transition: transform var(--dur-fast) var(--ease-standard);
-}
-.sidelinedToggle[aria-checked="true"] .sidelinedToggleTrack { background: var(--color-accent); }
-.sidelinedToggle[aria-checked="true"] .sidelinedToggleTrack::after { transform: translateX(12px); }
 .pitchFootNote { font-size: var(--t-12); color: var(--color-text-muted); }
 
 .formationBar {

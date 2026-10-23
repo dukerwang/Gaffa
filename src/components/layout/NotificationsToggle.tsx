@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getPushAvailability, subscribeToPush, unsubscribeFromPush, type PushAvailability } from '@/lib/push/subscribe';
+import { Switch } from '@/components/ui/Switch';
 import styles from './NotificationsToggle.module.css';
 
 export default function NotificationsToggle() {
@@ -40,17 +41,13 @@ export default function NotificationsToggle() {
   return (
     <div className={styles.row}>
       <span className={styles.label}>Push notifications</span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={isOn}
-        aria-label="Toggle push notifications"
+      <Switch
+        size="sm"
+        checked={isOn}
+        ariaLabel="Push notifications"
         disabled={state === 'loading'}
-        onClick={handleToggle}
-        className={`${styles.switch} ${isOn ? styles.switchOn : ''}`}
-      >
-        <span className={styles.switchThumb} />
-      </button>
+        onChange={() => void handleToggle()}
+      />
     </div>
   );
 }

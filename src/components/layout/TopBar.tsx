@@ -8,6 +8,8 @@ import ThemeToggle from './ThemeToggle';
 import NotificationBell from './NotificationBell';
 import ChatNavIcon from './ChatNavIcon';
 import { Icon } from '@/components/ui/Icon';
+import { NumberRoll } from '@/components/ui/NumberRoll';
+import { Skeleton } from '@/components/ui/Skeleton';
 import CrestBadge from '@/components/crest/CrestBadge';
 import { clubHref } from '@/lib/teams/clubHref';
 import { isAwaitingDraft } from '@/lib/leagues/status';
@@ -523,7 +525,9 @@ export default function TopBar() {
                 aria-expanded={balanceDropdownOpen}
               >
                 <span className={styles.balancePillLabel}>Club Balance</span>
-                <span className={styles.balancePillAmount}>€{currentTeam.faab_budget ?? 0}m</span>
+                <span className={styles.balancePillAmount}>
+                  <NumberRoll value={currentTeam.faab_budget ?? 0} format={(n) => `€${n}m`} />
+                </span>
                 <span className={`${styles.chevron} ${balanceDropdownOpen ? styles.chevronOpen : ''}`}>▾</span>
               </button>
 
@@ -531,7 +535,15 @@ export default function TopBar() {
                 <div className={styles.balanceDropdown}>
                   <div className={styles.dropdownSectionLabel}>Club Balances</div>
                   {leagueBalancesLoading && leagueBalances.length === 0 ? (
-                    <div className={styles.balanceDropdownEmpty}>Loading…</div>
+                    <div className={styles.balanceList} aria-busy="true" aria-label="Loading Club Balances">
+                      {Array.from({ length: 4 }, (_, i) => (
+                        <div key={i} className={styles.balanceRow}>
+                          <Skeleton shape="circle" width={20} height={20} />
+                          <Skeleton shape="text" width={`${52 + (i % 3) * 12}%`} />
+                          <Skeleton shape="text" width={34} className={styles.balanceRowSkeletonAmount} />
+                        </div>
+                      ))}
+                    </div>
                   ) : (
                     <div className={styles.balanceList}>
                       {leagueBalances.map((team) => {

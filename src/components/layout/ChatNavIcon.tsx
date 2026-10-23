@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Icon } from '@/components/ui/Icon';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { useLeagueChat } from '@/components/chat/LeagueChatContext';
 import { isClubChatContext } from '@/lib/chat/isClubChatContext';
 import topBarStyles from './TopBar.module.css';
@@ -157,16 +158,17 @@ export default function ChatNavIcon({ leagueId, onNavigate }: ChatNavIconProps) 
 
   return (
     <div className={styles.container}>
-      <Link
-        href={chatHref}
-        className={`${topBarStyles.iconBtn} ${isChatPage || isWidgetOpen ? topBarStyles.iconBtnActive : ''}`}
-        title={isChatPage ? 'League chat' : isWidgetOpen ? 'Close chat' : 'Open chat'}
-        aria-label="League chat"
-        onClick={handleClick}
-      >
-        <Icon name="message-square" size={18} strokeWidth={1.5} />
-        {hasUnread && <span className={styles.dot} />}
-      </Link>
+      <Tooltip content={isChatPage ? 'League Chat' : isWidgetOpen ? 'Close Chat' : 'Open Chat'} placement="bottom">
+        <Link
+          href={chatHref}
+          className={`${topBarStyles.iconBtn} ${isChatPage || isWidgetOpen ? topBarStyles.iconBtnActive : ''}`}
+          aria-label="League chat"
+          onClick={handleClick}
+        >
+          <Icon name="message-square" size={18} strokeWidth={1.5} />
+          {hasUnread && <span className={styles.dot} />}
+        </Link>
+      </Tooltip>
     </div>
   );
 }
