@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Icon } from '@/components/ui/Icon';
+import { Tooltip } from '@/components/ui/Tooltip';
 import FormattedText from '@/components/ui/FormattedText';
 import CrestBadge from '@/components/crest/CrestBadge';
 import TradeOfferCard, { type TradeSummary } from '@/components/chat/TradeOfferCard';
@@ -524,26 +525,28 @@ function LeagueChatWidgetContent({
             </Link>
 
             {/* Minimize button */}
-            <button
-              className={styles.headerActionBtn}
-              type="button"
-              title="Minimize chat"
-              aria-label="Minimize chat"
-              onClick={minimizeChat}
-            >
-              <Icon name="minus" size={16} strokeWidth={2.5} />
-            </button>
+            <Tooltip content="Minimize">
+              <button
+                className={styles.headerActionBtn}
+                type="button"
+                aria-label="Minimize chat"
+                onClick={minimizeChat}
+              >
+                <Icon name="minus" size={16} strokeWidth={2.5} />
+              </button>
+            </Tooltip>
 
             {/* Close / Dismiss button */}
-            <button
-              className={styles.headerActionBtn}
-              type="button"
-              title="Close chat"
-              aria-label="Close chat"
-              onClick={closeChat}
-            >
-              <Icon name="x" size={16} strokeWidth={2.5} />
-            </button>
+            <Tooltip content="Close">
+              <button
+                className={styles.headerActionBtn}
+                type="button"
+                aria-label="Close chat"
+                onClick={closeChat}
+              >
+                <Icon name="x" size={16} strokeWidth={2.5} />
+              </button>
+            </Tooltip>
           </div>
         </header>
 

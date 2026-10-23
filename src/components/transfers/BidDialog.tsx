@@ -17,6 +17,7 @@ import { isAcademyEligible, type AcademyCapacity } from '@/lib/transfers/academy
 import { getPushAvailability, subscribeToPush, type PushAvailability } from '@/lib/push/subscribe';
 import { freeAgentMinimumBid } from '@/lib/leagues/features';
 import { toast } from '@/components/ui/toast';
+import { Checkbox } from '@/components/ui/Checkbox';
 
 
 /**
@@ -390,19 +391,14 @@ export default function BidDialog({
           eligible and there's room, independent of roster fullness — the
           full-roster fallback below already covers that case on its own. */}
       {!rosterFull && academyEligible && (
-        <label className={styles.field}>
-          <span className={styles.checkboxRow}>
-            <input
-              type="checkbox"
-              checked={sendToAcademy}
-              onChange={(e) => setSendToAcademy(e.target.checked)}
-            />
-            Send to academy if I win
-          </span>
-          <div className={styles.hint}>
-            Academy: {academy.current}/{academy.max} slots · U{academy.age_limit} only.
-          </div>
-        </label>
+        <div className={styles.field}>
+          <Checkbox
+            checked={sendToAcademy}
+            onChange={setSendToAcademy}
+            label="Send to academy if I win"
+            description={`Academy: ${academy.current}/${academy.max} slots · U${academy.age_limit} only.`}
+          />
+        </div>
       )}
 
       {rosterFull && (

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Icon } from '@/components/ui/Icon';
+import { Tooltip } from '@/components/ui/Tooltip';
 import FormattedText from '@/components/ui/FormattedText';
 import styles from './NotificationBell.module.css';
 
@@ -156,6 +157,7 @@ export default function NotificationBell({ leagueId, onNavigate }: NotificationB
 
   return (
     <div className={styles.bellContainer} ref={dropdownRef}>
+      <Tooltip content="Notifications" placement="bottom" disabled={isOpen}>
       <button
         className={`${styles.bellBtn} ${isOpen ? styles.bellBtnActive : ''}`}
         onClick={() => {
@@ -174,6 +176,7 @@ export default function NotificationBell({ leagueId, onNavigate }: NotificationB
           </span>
         )}
       </button>
+      </Tooltip>
 
       {isOpen && (
         <div className={styles.dropdown}>

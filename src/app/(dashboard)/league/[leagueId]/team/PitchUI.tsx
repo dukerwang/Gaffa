@@ -31,6 +31,7 @@ import facilityStyles from '@/components/facilities/facilities.module.css';
 import type { FacilityView } from '@/lib/facilities/facilities';
 import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/academyEligibility';
 import { serializeLineup } from '@/lib/lineups/lineupSerializer';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -2066,15 +2067,16 @@ export default function PitchUI({
                             <span className={styles.selectionLabel} title={selectionHint ?? undefined}>
                                 {selectionLabel}
                             </span>
-                            <button
-                                type="button"
-                                className={styles.selectionCancelBtn}
-                                onClick={clearAll}
-                                aria-label="Cancel selection"
-                                title="Cancel"
-                            >
-                                ×
-                            </button>
+                            <Tooltip content="Cancel">
+                                <button
+                                    type="button"
+                                    className={styles.selectionCancelBtn}
+                                    onClick={clearAll}
+                                    aria-label="Cancel selection"
+                                >
+                                    ×
+                                </button>
+                            </Tooltip>
                         </span>
                     )}
                 </div>

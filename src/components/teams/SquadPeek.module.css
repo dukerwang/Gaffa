@@ -353,13 +353,8 @@
 }
 
 /* ── Skeleton ── */
-.skeleton { display: flex; flex-direction: column; gap: 8px; }
-.skelRow {
-  height: 34px;
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-elevated);
-  opacity: 0.6;
-}
+.skeleton { display: flex; flex-direction: column; gap: 12px; }
+.headMeta .metaSkeleton { display: inline-block; vertical-align: middle; }
 
 /* ── Footer ── */
 .footer {

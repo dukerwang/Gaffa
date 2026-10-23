@@ -476,17 +476,8 @@
 /* ── Recall clause ──────────────────────────────────────── */
 
 .recall {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--s2);
-  margin-top: var(--s3);
-  font-size: var(--t-12);
-  color: var(--color-text-secondary);
-  line-height: 1.45;
-  cursor: pointer;
+  margin-top: var(--s2);
 }
-
-.recall input { margin-top: 2px; }
 
 /* ── Message + errors ───────────────────────────────────── */
 
@@ -788,13 +779,6 @@
   border: 2px solid var(--color-text-primary);
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
   cursor: pointer;
-}
-
-.recallNote {
-  margin: 3px 0 0;
-  font-size: var(--t-10);
-  color: var(--color-text-muted);
-  line-height: 1.4;
 }
 
 /* ── Loan contract sheet ────────────────────────────────── */
