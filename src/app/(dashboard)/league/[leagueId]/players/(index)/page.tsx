@@ -7,7 +7,7 @@ import { loadSeasonLeaderboard } from '@/lib/stats/seasonStats';
 import { loadExplorerRows, loadScoutIndexRecord } from '@/lib/players/indexData';
 import { isSiteAdminEmail } from '@/lib/auth/siteAdmin';
 import { isPlayerMapped } from '@/lib/players/playerMapping';
-import PlayersIndex from './PlayersIndex';
+import PlayersIndex from '../PlayersIndex';
 import type { CrestConfig } from '@/components/crest/types';
 
 export const dynamic = 'force-dynamic';

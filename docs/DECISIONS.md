@@ -659,3 +659,14 @@ Then, of the two replacements:
 The lesson worth keeping from his first quote: don't make some boxes in a row
 of look-alike boxes secretly pressable. Separate what you read from what you
 press.
+
+**Loading pages.** From the /kit prototype (A: real labels with shapes for the
+data; B: shapes only):
+
+> "Port option A (labels and shapes) as loading.tsx for League Home, Roster,
+> Transfers and Players, with desktop layouts too."
+
+How it was built is an agent's reading: each skeleton lays out in its page's
+own CSS module, and Home, the Transfer Market and the Players index moved into
+route groups ((home), (market), (index)) so a skeleton covers only its page.
+Every other route keeps the 3px bar.

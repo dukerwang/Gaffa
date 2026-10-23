@@ -1,0 +1,89 @@
+/* Shared pieces for route loading.tsx skeletons. Each skeleton lays out in its
+   page's own CSS module (so widths and breakpoints match the page exactly);
+   these are only the generic insides. */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+/* A bounded object still on its way: a card, a fixture, a table. */
+.box {
+  border: var(--line-strong);
+  border-radius: var(--r-shell);
+  background: var(--color-bg-card);
+  overflow: hidden;
+}
+
+.boxHead {
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  font-size: var(--t-13);
+  color: var(--color-text-secondary);
+}
+
+.boxRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+}
+
+.boxRow + .boxRow {
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.pad {
+  padding: var(--s3) var(--s4);
+}
+
+.pill {
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+
+/* A section head drawn as the pages draw theirs: a title over a 2px rule. */
+.sect {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  padding-bottom: var(--s2);
+  margin-bottom: var(--s4);
+  border-bottom: 2px solid var(--color-text-primary);
+}
+
+.sectTitle {
+  font-family: var(--font-serif);
+  font-size: var(--t-20);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--color-text-primary);
+}
+
+/* A switch whose choice isn't known while loading (the Players view): its
+   options as text, nothing chosen, at the switch's size. */
+.switchLabels {
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+  min-height: 30px;
+  padding: 0 var(--s2);
+  font-family: var(--font-label);
+  font-size: var(--t-13);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
