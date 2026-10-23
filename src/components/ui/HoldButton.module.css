@@ -36,6 +36,13 @@
   --hold-ink: var(--color-text-inverse);
 }
 
+/* Matches Button's md, so it can stand beside one in a footer. */
+.size_sm {
+  min-height: 36px;
+  padding: 0 var(--s4);
+  font-size: var(--t-13);
+}
+
 .fullWidth {
   width: 100%;
 }
@@ -46,6 +53,7 @@
 }
 
 .base,
+.hint,
 .fill {
   grid-area: 1 / 1;
   display: inline-flex;
@@ -74,6 +82,25 @@
 .button[data-confirmed] .fill {
   clip-path: inset(0 0 0 0);
   transition: none;
+}
+
+/* The hint shares the label's cell, so the button keeps its width when the
+   words change. */
+.hint {
+  opacity: 0;
+  transition: opacity var(--dur-fast) ease;
+}
+
+.base {
+  transition: opacity var(--dur-fast) ease;
+}
+
+.button[data-hint] .hint {
+  opacity: 1;
+}
+
+.button[data-hint] .base {
+  opacity: 0;
 }
 
 @media (hover: hover) and (pointer: fine) {
