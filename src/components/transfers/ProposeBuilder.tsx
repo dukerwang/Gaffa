@@ -21,6 +21,7 @@ import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { toast } from '@/components/ui/toast';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { MoneyStepper } from '@/components/ui/MoneyStepper';
 import { describeDeal } from '@/lib/transfers/describeDeal';
 import { listingStance } from '@/lib/transfers/listingStance';
 import { fold } from '@/lib/text/fold';
@@ -625,21 +626,24 @@ export default function ProposeBuilder({
     onRemove: () => void;
     hint: string;
     label: string;
+    /** That side's Club Balance: they can't put up more. */
+    max: number;
   }) => (
-    <div className={`${styles.pick} ${styles.chosen} ${opts.value > 0 ? styles.pickOn : ''}`}>
+    <div className={`${styles.pick} ${styles.chosen} ${styles.cashPick} ${opts.value > 0 ? styles.pickOn : ''}`}>
       <span className={styles.cashGlyph} aria-hidden="true">€</span>
       <span className={styles.pickBody}>
         <span className={styles.pickName}>Cash</span>
         <span className={styles.pickMeta}>{opts.hint}</span>
       </span>
-      <input
-        className={styles.cashInline}
-        type="number"
+      <MoneyStepper
+        size="sm"
+        className={styles.cashStepper}
+        label={opts.label}
+        labelClassName="sr-only"
+        value={opts.value}
+        onChange={opts.onChange}
         min={0}
-        value={opts.value || ''}
-        placeholder="0"
-        aria-label={opts.label}
-        onChange={(e) => opts.onChange(Math.max(0, parseInt(e.target.value, 10) || 0))}
+        max={Math.max(0, opts.max)}
       />
       <Tooltip content="Remove">
         <button type="button" className={styles.remove} onClick={opts.onRemove} aria-label="Remove cash">
@@ -1212,6 +1216,7 @@ export default function ProposeBuilder({
                 ? `Leaves you ${money(Math.max(0, budget - myCash))} for the rest of the window`
                 : `${money(budget)} available`,
               label: 'Cash you put up',
+              max: budget,
             })}
 
             {picking === 'mine' ? pickerPanel('mine') : (
@@ -1252,6 +1257,7 @@ export default function ProposeBuilder({
                 ? 'They must be able to cover it when they accept'
                 : `${money(target?.faab_budget ?? 0)} available`,
               label: 'Cash they put up',
+              max: target?.faab_budget ?? 0,
             })}
 
             {picking === 'theirs' ? pickerPanel('theirs') : (

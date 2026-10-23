@@ -106,62 +106,25 @@
 /* ── Prices ─────────────────────────────────────────────── */
 
 .prices {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--s2);
-}
-
-.priceField {
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--r-control);
-  padding: var(--s2) var(--s3);
   background: var(--color-bg-card);
-  display: block;
 }
 
-.priceField:focus-within {
-  border-color: var(--color-accent);
-  outline: 2px solid var(--color-border-accent);
-  outline-offset: -1px;
+/* One route per row: the tick that opens it, then its figure when it's on. */
+.priceRow {
+  padding: 0 var(--s3);
 }
 
-.priceLabel {
-  display: block;
-  font-family: var(--font-label);
-  font-size: var(--t-10);
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
+.priceRow + .priceRow {
+  border-top: 1px solid var(--color-border-subtle);
 }
 
-/* Settled money — the same face the card's ladder gives these three. */
-.priceInput {
-  width: 100%;
-  border: none;
-  background: none;
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: var(--t-17);
-  font-variant-numeric: tabular-nums lining-nums;
-  color: var(--color-text-primary);
-  padding: var(--s1) 0 0;
+.priceRow > :last-child:not(:first-child) {
+  margin-bottom: var(--s3);
 }
-
-.priceInput:focus { outline: none; }
-
-.priceInput:disabled {
-  color: var(--color-text-muted);
-  cursor: not-allowed;
-}
-
-.priceInput::-webkit-outer-spin-button,
-.priceInput::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.priceInput { -moz-appearance: textfield; appearance: textfield; }
 
 .hint {
   font-size: var(--t-11);
@@ -213,6 +176,13 @@
 .go { composes: g-dialog-go from global; }
 .danger { composes: g-dialog-danger from global; }
 
-@media (max-width: 480px) {
-  .prices { grid-template-columns: 1fr; }
+
+
+/* Phone footer, as the bid dialog's: 48px buttons, the primary taking the row. */
+@media (max-width: 640px) {
+  .ghost,
+  .go,
+  .danger { min-height: 48px; }
+  .spacer { display: none; }
+  .go { flex: 1; font-size: var(--t-15); }
 }

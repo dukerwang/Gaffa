@@ -130,6 +130,35 @@
   text-align: center;
 }
 
+/* Compact, for a figure inside a row. Under a finger the buttons keep 44px. */
+.sm .control {
+  gap: var(--s1);
+  padding: 3px;
+}
+
+.sm .step {
+  width: 36px;
+  height: 36px;
+}
+
+.sm .figure,
+.sm .input {
+  min-width: 4.6ch;
+  height: 36px;
+  font-size: var(--t-20);
+}
+
+.sm .input {
+  width: 4.6ch;
+}
+
+@media (pointer: coarse) {
+  .sm .step {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bump {
     animation: none;
