@@ -1,12 +1,12 @@
 /* The bid dialog — Gaffa 2.0.
 
-   The ladder mirrors the listing card's, so the number you clicked is the number
-   you see — including its FACE. The standing bid and the countdown tick, so they
-   are mono; the minimum and the clause are settled figures you compare against
-   the board, so they take the serif the card now uses for them.
+   The ladder states facts: the standing bid and the countdown, both mono
+   because both tick. The minimum and the clause, which used to sit beside
+   them, are on the range under the stepper now, where pressing one sets the
+   bid (Duke chose this on 2026-10-23, option D on /kit).
 
-   The amount you are typing stays mono throughout: it is the live figure, and it
-   is what the countdown is counting down to. */
+   The bid figure is the kit MoneyStepper's, mono throughout: it is the live
+   figure, and it is what the countdown is counting down to. */
 
 .identity {
   display: flex;
@@ -29,10 +29,11 @@
   color: var(--color-text-muted);
 }
 
-/* The same ladder as the card, so the number you clicked is the number you see. */
+/* Facts only: the standing bid and the clock. Minimum and Clause are on the
+   range under the stepper, where pressing them sets the bid. */
 .ladder {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   border-top: 1px solid var(--color-border-subtle);
   border-bottom: 1px solid var(--color-border-subtle);
   background: var(--color-bg-card);
@@ -95,56 +96,15 @@
   margin-bottom: var(--s1);
 }
 
-.amountRow {
-  display: flex;
-  align-items: center;
-  gap: var(--s1);
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-control);
-  background: var(--color-bg-card);
-  padding: var(--s2) var(--s3);
-}
 
-.amountRow:focus-within {
-  border-color: var(--color-accent);
-  outline: 2px solid var(--color-border-accent);
-  outline-offset: -1px;
-}
 
 /* accent-ink, not accent: this is text on a card, where the fill token measured
    4.33 in dark — and here it is the largest figure in the dialog. */
-.currency,
-.suffix {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: var(--t-20);
-  font-variant-numeric: tabular-nums lining-nums;
-  color: var(--color-accent-ink);
-}
 
-.amount {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: none;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: var(--t-25);
-  font-variant-numeric: tabular-nums lining-nums;
-  color: var(--color-accent-ink);
-  padding: 0;
-}
 
-.amount:focus { outline: none; }
 
 /* Spinners on a price field are a mis-click waiting to happen at €1m a tap. */
-.amount::-webkit-outer-spin-button,
-.amount::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
 
-.amount { -moz-appearance: textfield; appearance: textfield; }
 
 /* Kit Select for a player: the field is as tall as a portrait row. */
 .playerSelect button[aria-haspopup] {
@@ -209,12 +169,19 @@
   line-height: 1.4;
 }
 
+/* Phone footer: the summary on its own line, then Cancel and a Bid button
+   that takes the rest of the row, both at a thumb's 48px. Sign Now shares it. */
+@media (max-width: 640px) {
+  .summary { flex-basis: 100%; }
+  .ghost,
+  .go { min-height: 48px; }
+  .go { flex: 1; font-size: var(--t-15); }
+}
+
 @media (max-width: 480px) {
   .identity { padding: var(--s3) var(--s4) var(--s2); }
-  .ladder { grid-template-columns: repeat(2, 1fr); }
-  .rung:nth-child(2) { border-right: none; }
-  .rung:nth-child(3) { border-top: 1px solid var(--color-border-subtle); }
-  .rung:nth-child(4) { border-top: 1px solid var(--color-border-subtle); border-right: none; }
+  /* The ladder's figures line up with the name above and the field below. */
+  .rung { padding: var(--s2) var(--s4); }
   .field { padding: var(--s3) var(--s4) 0; }
   .error { margin: var(--s3) var(--s4) 0; }
   .postBidCard { padding: var(--s4) var(--s4); }

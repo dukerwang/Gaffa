@@ -1,0 +1,148 @@
+.range {
+  margin-top: var(--s2);
+}
+
+.track {
+  position: relative;
+}
+
+/* Room above the bar for the clause's button. */
+.trackWithMark {
+  padding-top: 40px;
+}
+
+.input {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  background: none;
+  cursor: pointer;
+  /* The page still scrolls under a vertical swipe that starts on the bar. */
+  touch-action: pan-y;
+  --track: linear-gradient(
+    to right,
+    var(--color-accent) 0 var(--fill),
+    var(--color-border) var(--fill) 100%
+  );
+}
+
+.input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.input::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--track);
+}
+
+.input::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--track);
+}
+
+.input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -11px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-bg-card);
+  box-shadow: 0 0 0 1px var(--color-border-strong), 0 2px 6px rgba(28, 28, 28, 0.18);
+}
+
+.input::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-bg-card);
+  box-shadow: 0 0 0 1px var(--color-border-strong), 0 2px 6px rgba(28, 28, 28, 0.18);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--r-control);
+}
+
+/* The clause: a gold tick across the bar and its button above it, both placed
+   where the thumb lands for that amount (left and margin set inline). */
+.tick,
+.mark {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.tick {
+  top: 40px;
+  width: 0;
+  height: 44px;
+  pointer-events: none;
+}
+
+.tick::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: -1px;
+  width: 2px;
+  height: 20px;
+  border-radius: 1px;
+  background: var(--color-gold);
+}
+
+.mark {
+  top: 0;
+  min-height: 32px;
+  padding: 0 var(--s2);
+  border: 1px solid var(--color-gold);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  font-family: var(--font-label);
+  font-size: var(--t-12);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-gold);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 32px drawn, 44px under a finger. */
+.mark::before {
+  content: '';
+  position: absolute;
+  inset: -6px -4px;
+}
+
+.mark[aria-pressed='true'] {
+  background: var(--color-gold);
+  color: var(--color-bg-card);
+}
+
+.mark:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ends {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s3);
+  font-size: var(--t-12);
+  color: var(--color-text-muted);
+}
+
+.clauseOff {
+  margin: var(--s1) 0 0;
+  font-size: var(--t-12);
+  color: var(--color-text-muted);
+}

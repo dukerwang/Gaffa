@@ -644,3 +644,18 @@ How the second was met is an agent's reading, not his: on a phone (640px and
 under) the kit Select docks as a bottom sheet with 48px rows instead of
 floating at the field, and under a finger every kit control reaches 44px
 (HoldButton, Button md, Select, the Switch hit area).
+
+**Bid amount.** Of the first pressable-ladder prototype (B):
+
+> "i like the idea of B. but it's not intuitive enough, you have 4 boxes and
+> only 2 are clickable and they aren't even directly next to each other out of
+> the 4. the boxes themselves also don't "imply" clickability enough"
+
+Then, of the two replacements:
+
+> "Port option D to the bid dialog: stepper, range bar with the clause notch,
+> facts-only ladder, and the 48px phone footer."
+
+The lesson worth keeping from his first quote: don't make some boxes in a row
+of look-alike boxes secretly pressable. Separate what you read from what you
+press.
