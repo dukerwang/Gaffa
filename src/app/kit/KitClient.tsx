@@ -25,7 +25,6 @@ import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
 import { useTheme } from '@/context/ThemeContext';
 import TopRatedPrototypes from './TopRatedPrototypes';
-import { StepperPrototypes } from './StepperPrototypes';
 import styles from './kit.module.css';
 
 const photo = (code: number) =>
@@ -106,7 +105,6 @@ export default function KitClient() {
         <Switch size="sm" checked={slowMo} onChange={setSlowMo} label="Slow Motion" />
       </div>
 
-      <StepperPrototypes />
       <TopRatedPrototypes />
 
       <main className={styles.grid}>

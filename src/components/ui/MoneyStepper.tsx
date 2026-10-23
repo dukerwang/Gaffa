@@ -19,6 +19,8 @@ export interface MoneyStepperProps {
   disabled?: boolean;
   /** Span the container, the figure taking the room between − and +. For a phone sheet. */
   fullWidth?: boolean;
+  /** Replaces the label's look, so the field matches the form it sits in. */
+  labelClassName?: string;
   className?: string;
 }
 
@@ -49,6 +51,7 @@ export function MoneyStepper({
   hint,
   disabled = false,
   fullWidth = false,
+  labelClassName,
   className,
 }: MoneyStepperProps) {
   const id = useId();
@@ -140,7 +143,7 @@ export function MoneyStepper({
         .filter(Boolean)
         .join(' ')}
     >
-      <span id={`${id}-label`} className={styles.label}>
+      <span id={`${id}-label`} className={labelClassName ?? styles.label}>
         {label}
       </span>
       <div className={styles.control}>
