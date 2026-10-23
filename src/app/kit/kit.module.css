@@ -718,3 +718,117 @@
   }
 }
 
+
+/* --- Dropdown prototypes (crests and portraits) --- */
+
+.caseTitle {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-20);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+.caseWhere {
+  margin: var(--s1) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--color-text-muted);
+}
+
+.caseFoot {
+  margin: var(--s8) 0 0;
+  max-width: 64ch;
+  font-size: var(--t-13);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.compare,
+.compareStack {
+  display: grid;
+  gap: var(--s5);
+  margin-top: var(--s4);
+}
+
+.compare {
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+}
+
+.compareStack {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.compareCol {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.compareLabel {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  margin-bottom: var(--s2);
+  font-family: var(--font-label);
+  font-size: var(--t-11);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.compareNote {
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text-muted);
+}
+
+/* One bounded object per column. Not clipped, so an open list can leave it. */
+.compareStage {
+  flex: 1;
+  border: var(--line-strong);
+  border-radius: var(--r-shell);
+  background: var(--color-bg-card);
+}
+
+.compareStage .filterFrame {
+  border-top: none;
+  padding: var(--s3) var(--s4);
+}
+
+.selectSpacer {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+}
+
+/* In the Players bar the kit field matches its native neighbours: 44px, 13px
+   type, the strong keyline, the same 220px cap. */
+.filterFrame .filterSelect {
+  display: inline-flex;
+  flex: none;
+}
+
+.filterFrame .filterSelect button[aria-haspopup] {
+  min-height: 44px;
+  border-color: var(--color-border-strong);
+  font-size: var(--t-13);
+}
+
+/* A player is picked by face: the field is as tall as a portrait row. */
+.playerSelect button[aria-haspopup] {
+  min-height: 62px;
+  padding-left: 10px;
+}
+
+@media (max-width: 760px) {
+  .compare {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s4);
+  }
+}
