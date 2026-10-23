@@ -2,23 +2,41 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "gaffa-preview",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": [
+        "scripts/preview.sh"
+      ],
+      "port": 3020,
+      "autoPort": true
+    },
+    {
       "name": "gaffa-dev",
       "runtimeExecutable": "/opt/homebrew/bin/node",
-      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
+      "runtimeArgs": [
+        "node_modules/next/dist/bin/next",
+        "dev"
+      ],
       "port": 3000,
       "autoPort": true
     },
     {
       "name": "gaffa-dev-3010",
       "runtimeExecutable": "/opt/homebrew/bin/node",
-      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
+      "runtimeArgs": [
+        "node_modules/next/dist/bin/next",
+        "dev"
+      ],
       "port": 3010,
       "autoPort": true
     },
     {
       "name": "gaffa-start-3005",
       "runtimeExecutable": "/opt/homebrew/bin/node",
-      "runtimeArgs": ["node_modules/next/dist/bin/next", "start"],
+      "runtimeArgs": [
+        "node_modules/next/dist/bin/next",
+        "start"
+      ],
       "port": 3005,
       "autoPort": true
     },

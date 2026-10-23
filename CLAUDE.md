@@ -36,6 +36,25 @@ Tests run under **vitest** (`npm test` → `vitest run`). `vitest.config.ts` inc
 
 `.claude/launch.json` defines dev servers on ports 3000 / 3010 (`next dev`) and 3005 (`next start`). Another session may already own one — check before starting or killing a server.
 
+### Showing Duke a branch: the Vercel branch preview
+
+Vercel builds every branch pushed to GitHub and keeps it at a fixed address: `https://fantasy-futbol-git-<branch>-dukerwangs-projects.vercel.app`, with `/` in the branch name written as `-` (`feat/public-home` → `fantasy-futbol-git-feat-public-home-dukerwangs-projects.vercel.app`). Vercel shortens long names, so for a long branch read the real address from the deployment instead: `gh api repos/dukerwang/Gaffa/deployments/<id>/statuses -q '.[0].environment_url'`. This address stays up whether or not any session or local server is running, so it's what Duke opens when he comes back later (2026-10-13). When you change something visible, push the branch and give him that link.
+
+A branch preview shows the last push, uses the same production Supabase database as local dev (anything you do there is real), runs no crons, and is public to anyone with the link. Each address is its own site, so signing in there is separate from gaffa.live.
+
+### Previewing your own work in the Browser pane
+
+For live reloading while you work, use a local server. The desktop app launches every `.claude/launch.json` config from the main checkout, so `gaffa-dev` shows `main`, not your worktree. Use the `gaffa-preview` config instead. It runs `scripts/preview.sh`, which serves the folder named in `.claude/preview-target`:
+
+1. Write your worktree's path into the main checkout's target file: `echo "$PWD" > "/Users/dukewang/Fantasy Futbol/.claude/preview-target"`.
+2. Call `preview_start` with `gaffa-preview`. If the result says `reused` and `.claude/preview-serving` names a different folder, call `preview_stop` and start it again.
+
+The script clones `node_modules` and links `.env.local` into the worktree when they're missing, and stops an earlier server for the same folder, because Next.js allows only one dev server per folder.
+
+Don't edit `launch.json` to point at a worktree.
+
+A dev server whose parent dies leaves `next-server` running on its own, holding gigabytes of memory. `scripts/preview.sh` stops its whole process tree when the app stops it, and `scripts/reap-dev-servers.sh` stops orphans: it runs at every session start (the `SessionStart` hook in `.claude/settings.json`), and `--list` shows every dev server with its memory and folder.
+
 ## Architecture
 
 ### Stack
