@@ -187,7 +187,7 @@ export default function MarketClient({
           {/* ── Closing now ─────────────────────────────── */}
           <div className={styles.sect}>
             <h2 className={styles.sectTitle}>
-              Closing now <AuctionTimingHelp />
+              Closing Now <AuctionTimingHelp />
             </h2>
             <span className={styles.sectHint}>
               free agents and listed players together

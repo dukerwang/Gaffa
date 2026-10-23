@@ -21,7 +21,7 @@ import type { GranularPosition } from '@/types';
 import { STYLE_LABEL } from '@futbolpedia/engine';
 import type { OutlookStyle } from '@futbolpedia/engine';
 import type { ExplorerRow, IndexScout } from '@/lib/players/indexData';
-import type { IndexRowPlayer } from './page';
+import type { IndexRowPlayer } from './(index)/page';
 import { isPlayerMapped } from '@/lib/players/playerMapping';
 import { POS_FILTER_OPTIONS, resolveActivePosition, type PosFilter, type PosType } from '@/lib/players/positionFilter';
 import styles from './playersIndex.module.css';
