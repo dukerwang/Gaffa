@@ -720,3 +720,288 @@
 
 
 
+
+/* --- Loading skeleton prototypes (phone-first) --- */
+
+.skelWide {
+  max-width: 830px;
+}
+
+.skelCaseTitle {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-20);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.skelCaseWhere {
+  margin: var(--s1) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--color-text-muted);
+}
+
+.skelPhones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 375px));
+  gap: var(--s5);
+  margin-top: var(--s4);
+}
+
+.skelPhoneCol {
+  min-width: 0;
+}
+
+.skelLabel {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  margin-bottom: var(--s2);
+  font-family: var(--font-label);
+  font-size: var(--t-11);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.skelNote {
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text-muted);
+}
+
+/* A phone's first screen: the top bar (it stays during a load) and the page. */
+.skelPhone {
+  position: relative;
+  height: 640px;
+  overflow: hidden;
+  border: var(--line-strong);
+  border-radius: var(--r-shell);
+  background: var(--color-bg-primary);
+}
+
+.skelTopbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  padding: 0 12px;
+  background: var(--color-topbar);
+}
+
+.skelTopDot,
+.skelTopPill {
+  display: block;
+  height: 32px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.skelTopDot {
+  width: 32px;
+}
+
+.skelTopPill {
+  width: 96px;
+  margin-right: auto;
+}
+
+.skelScreen {
+  position: relative;
+  height: calc(100% - 56px);
+  overflow: hidden;
+}
+
+/* Today's bar, drawn inside the frame rather than fixed to the window. */
+.skelScreen .skelBar {
+  position: absolute;
+  z-index: 1;
+}
+
+.skelPad {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s5) var(--s6);
+}
+
+.skelPadTight {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s4) var(--s5);
+}
+
+.skelRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+}
+
+.skelCol {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.skelFigs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s4) var(--s5);
+}
+
+.skelRule {
+  height: 2px;
+  background: var(--color-text-primary);
+  opacity: 0.85;
+}
+
+.skelBox {
+  border: var(--line-strong);
+  border-radius: var(--r-shell);
+  background: var(--color-bg-card);
+  overflow: hidden;
+}
+
+.skelBoxHead {
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.skelTeam {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+}
+
+.skelLadder {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.skelCard {
+  margin: var(--s3) var(--s3) 0;
+  border: var(--line-strong);
+  border-radius: var(--r-shell);
+  background: var(--color-bg-card);
+  overflow: hidden;
+}
+
+.skelStrip {
+  display: flex;
+  gap: var(--s2);
+  padding: var(--s3) var(--s5);
+  border-top: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid var(--color-border-subtle);
+  overflow: hidden;
+}
+
+.skelRound {
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.skelFigRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--s5);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.skelTabs {
+  display: flex;
+  gap: var(--s4);
+  padding-bottom: var(--s2);
+  border-bottom: 1px solid var(--color-border-subtle);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.skelTab,
+.skelTabOn {
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  color: var(--color-text-secondary);
+}
+
+.skelTabOn {
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.skelTitle {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--color-text-primary);
+}
+
+.skelSection {
+  font-family: var(--font-serif);
+  font-size: var(--t-20);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.skelSmall {
+  font-size: var(--t-13);
+  color: var(--color-text-secondary);
+}
+
+.skelCaps {
+  font-family: var(--font-label);
+  font-size: var(--t-10);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.skelSwitch {
+  display: flex;
+  gap: var(--s5);
+  padding: 4px 0;
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  color: var(--color-text-secondary);
+}
+
+.skelTools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3) var(--s5);
+  border-top: 1px solid var(--color-border);
+}
+
+.skelSearch {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--s3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  color: var(--color-text-muted);
+  font-size: var(--t-15);
+}
+
+.skelSelects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s2);
+}
