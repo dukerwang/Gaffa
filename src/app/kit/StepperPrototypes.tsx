@@ -25,7 +25,7 @@ const LOT = {
 
 const money = (n: number) => `€${n}m`;
 
-type Variant = 'today' | 'stepper' | 'pressable';
+type Variant = 'today' | 'stepper' | 'quick' | 'range';
 
 function Sheet({ variant }: { variant: Variant }) {
   const [amount, setAmount] = useState<number>(LOT.floor);
@@ -33,38 +33,22 @@ function Sheet({ variant }: { variant: Variant }) {
   const belowFloor = !valid || amount < LOT.floor;
   const tooExpensive = valid && amount > LOT.budget;
   const takesClause = valid && amount >= LOT.clause;
-  const pressable = variant === 'pressable';
+  /* C and D move Minimum and Clause out of the ladder into the control,
+     so every box left in the ladder is read-only. */
+  const factsOnly = variant === 'quick' || variant === 'range';
+  const pct = (n: number) => ((n - LOT.floor) / (LOT.budget - LOT.floor)) * 100;
 
   const place = () =>
     toast.success(takesClause ? 'Release clause triggered' : 'Bid placed', {
       description: `${LOT.name} · ${money(amount)} · Prototype: nothing was sent.`,
     });
 
-  /** A ladder figure that sets the bid when pressed (option B). */
-  const rung = (label: string, value: number, tone?: string) => {
-    const on = pressable && amount === value;
-    const figure = <div className={`${bid.rungValue} ${tone ?? ''}`}>{money(value)}</div>;
-    if (!pressable) {
-      return (
-        <div className={bid.rung}>
-          <div className={bid.rungLabel}>{label}</div>
-          {figure}
-        </div>
-      );
-    }
-    return (
-      <button
-        type="button"
-        className={`${bid.rung} ${styles.rungPress} ${on ? styles.rungOn : ''}`}
-        aria-pressed={on}
-        aria-label={`Bid the ${label.toLowerCase()}, ${money(value)}`}
-        onClick={() => setAmount(value)}
-      >
-        <div className={bid.rungLabel}>{label}</div>
-        {figure}
-      </button>
-    );
-  };
+  const rung = (label: string, value: number, tone?: string) => (
+    <div className={bid.rung}>
+      <div className={bid.rungLabel}>{label}</div>
+      <div className={`${bid.rungValue} ${tone ?? ''}`}>{money(value)}</div>
+    </div>
+  );
 
   let field: ReactNode;
   if (variant === 'today') {
@@ -102,8 +86,64 @@ function Sheet({ variant }: { variant: Variant }) {
           onChange={setAmount}
           min={LOT.floor}
           max={LOT.budget}
-          hint={`Minimum ${money(LOT.floor)} · Club Balance ${money(LOT.budget)}`}
+          hint={variant === 'stepper' ? `Minimum ${money(LOT.floor)} · Club Balance ${money(LOT.budget)}` : undefined}
         />
+
+        {variant === 'quick' && (
+          <div className={styles.quickBids}>
+            <button
+              type="button"
+              className={styles.quickBid}
+              aria-pressed={amount === LOT.floor}
+              onClick={() => setAmount(LOT.floor)}
+            >
+              <span>Bid Minimum</span>
+              <span className={styles.quickFig}>{money(LOT.floor)}</span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.quickBid} ${styles.quickClause}`}
+              aria-pressed={amount === LOT.clause}
+              onClick={() => setAmount(LOT.clause)}
+            >
+              <span>Pay Clause</span>
+              <span className={styles.quickFig}>{money(LOT.clause)}</span>
+            </button>
+          </div>
+        )}
+
+        {variant === 'range' && (
+          <div className={styles.range}>
+            <div className={styles.rangeTrack}>
+              <button
+                type="button"
+                className={styles.clauseMark}
+                style={{ left: `${pct(LOT.clause)}%`, ['--frac' as string]: pct(LOT.clause) / 100 }}
+                aria-pressed={amount === LOT.clause}
+                onClick={() => setAmount(LOT.clause)}
+              >
+                Clause {money(LOT.clause)}
+              </button>
+              <span className={styles.clauseTick} style={{ left: `${pct(LOT.clause)}%`, ['--frac' as string]: pct(LOT.clause) / 100 }} aria-hidden="true" />
+              <input
+                type="range"
+                className={styles.rangeInput}
+                min={LOT.floor}
+                max={LOT.budget}
+                step={1}
+                value={valid ? amount : LOT.floor}
+                aria-label="Your bid"
+                aria-valuetext={money(valid ? amount : LOT.floor)}
+                onChange={(e) => setAmount(Number(e.target.value))}
+                style={{ ['--fill' as string]: `${pct(valid ? amount : LOT.floor)}%` }}
+              />
+            </div>
+            <div className={styles.rangeEnds}>
+              <span>Minimum {money(LOT.floor)}</span>
+              <span>Club Balance {money(LOT.budget)}</span>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -125,13 +165,13 @@ function Sheet({ variant }: { variant: Variant }) {
           </span>
         </div>
 
-        <div className={`${bid.ladder} ${styles.ladderPhone}`}>
+        <div className={factsOnly ? `${bid.ladder} ${styles.ladderFacts}` : `${bid.ladder} ${styles.ladderPhone}`}>
           <div className={bid.rung}>
             <div className={bid.rungLabel}>Standing bid</div>
             <div className={`${bid.rungValue} ${bid.rungLive} ${bid.warn}`}>{money(LOT.standing)}</div>
           </div>
-          {rung('Minimum', LOT.floor)}
-          {rung('Clause', LOT.clause, bid.gold)}
+          {!factsOnly && rung('Minimum', LOT.floor)}
+          {!factsOnly && rung('Clause', LOT.clause, bid.gold)}
           <div className={bid.rung}>
             <div className={bid.rungLabel}>Closes</div>
             <div className={`${bid.rungValue} ${bid.rungLive}`}>{LOT.closes}</div>
@@ -173,8 +213,10 @@ export function StepperPrototypes() {
     <div className={`${styles.protos} ${styles.protosWide}`}>
       <h2 className={styles.protoGroupTitle}>Bid Amount</h2>
       <p className={styles.protoIntro}>
-        The bid sheet as a phone shows it, with today&apos;s typed field and two stepper versions. Tap − or + to move
-        €1m, hold to run, tap the figure to type. B also makes Minimum and Clause pressable: one tap sets the bid.
+        The bid sheet as a phone shows it. Tap − or + to move €1m, hold to run, tap the figure to type. C and D take
+        Minimum and Clause out of the ladder, so every box there is something to read, and put them in the control
+        as things to press: C as two buttons under the stepper, D as the ends and a marked notch on a range you can
+        drag.
       </p>
 
       <div className={styles.phoneRow}>
@@ -182,7 +224,8 @@ export function StepperPrototypes() {
           [
             ['today', 'Today', undefined],
             ['stepper', 'A · Stepper', undefined],
-            ['pressable', 'B · Stepper and Pressable Ladder', 'recommended'],
+            ['quick', 'C · Quick Bids', 'recommended'],
+            ['range', 'D · Range Bar', undefined],
           ] as const
         ).map(([variant, label, note]) => (
           <div key={variant} className={styles.phoneCol}>
