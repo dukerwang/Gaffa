@@ -71,7 +71,6 @@ export default async function TournamentsPage({ params, searchParams }: Props) {
                 <header className={styles.header}>
                     <div className={styles.headerContent}>
                         <div className={styles.headerLeft}>
-                            <span className={styles.pageSupertitle}>CUPS</span>
                             <h2 className={styles.title}>Cup Competitions</h2>
                         </div>
                     </div>
@@ -169,7 +168,6 @@ export default async function TournamentsPage({ params, searchParams }: Props) {
                 <header className={styles.header}>
                     <div className={styles.headerContent}>
                         <div className={styles.headerLeft}>
-                            <span className={styles.pageSupertitle}>CUPS</span>
                             <h2 className={styles.title}>Cup Competitions</h2>
                         </div>
                     </div>
@@ -194,23 +192,23 @@ export default async function TournamentsPage({ params, searchParams }: Props) {
                             <span className={styles.divider}>·</span>
                             {league.name}
                             <span className={styles.divider}>·</span>
-                            FINAL: MATCHWEEK {rounds[rounds.length - 1]?.end_gameweek || 'TBD'}
+                            Final: Matchweek {rounds[rounds.length - 1]?.end_gameweek || 'TBD'}
                         </span>
                     </div>
                     {displayStatus === 'active' && isLive && (
                         <div className={styles.infoRight}>
                             <span className={styles.livePulseIndicator}></span>
-                            <span className={styles.infoLiveText}>IN PROGRESS</span>
+                            <span className={styles.infoLiveText}>In Progress</span>
                         </div>
                     )}
                     {displayStatus === 'completed' && (
                         <div className={styles.infoRight}>
-                            <span className={styles.infoLiveText} style={{ color: 'var(--color-text-muted)' }}>FINISHED</span>
+                            <span className={styles.infoLiveText} style={{ color: 'var(--color-text-muted)' }}>Finished</span>
                         </div>
                     )}
                     {displayStatus === 'active' && !isLive && !isPastFinal && (
                         <div className={styles.infoRight}>
-                            <span className={styles.infoLiveText} style={{ color: 'var(--color-text-muted)' }}>SCHEDULED</span>
+                            <span className={styles.infoLiveText} style={{ color: 'var(--color-text-muted)' }}>Scheduled</span>
                         </div>
                     )}
                 </div>
