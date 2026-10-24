@@ -44,7 +44,7 @@ export default function Scoreboard(props: ScoreboardProps) {
 
   const meta = (teamId: string, manager: string | null, side: SideView | undefined) => {
     const m = metas[teamId];
-    if (live && side) return <span className={s.hxMeta}><Ticks played={side.played} of={side.starters.length || 11} /> {side.toPlay} to play</span>;
+    if (live && side) return <span className={`${s.hxMeta} ${s.hxPlay}`}><Ticks played={side.played} of={side.starters.length || 11} /><span>{side.toPlay} to play</span></span>;
     const who = manager ?? 'Caretaker';
     if (up) return <span className={s.hxMeta}>{who}{m ? <> · {ordinal(m.rank)} · <FormDots form={m.form} /></> : null}</span>;
     return <span className={s.hxMeta}><FitText text={`${who}${m ? ` · ${ordinal(m.rank)} · ${m.line}` : ''}`} className={s.fitIn} min={10} /></span>;
@@ -119,7 +119,6 @@ export default function Scoreboard(props: ScoreboardProps) {
         <span className={s.hxVerdict}>{verdict(a, b, mine, done)}</span>
         <div className={s.hxVerdictRow}>
           <span className={s.hxVerdict}>{verdict(a, b, mine, done)}</span>
-          {big && vA && vB && <span className={s.hxEq}>Bench <b>+{fmt(vA.bench)}</b> · <b>+{fmt(vB.bench)}</b></span>}
         </div>
       </div>
     );

@@ -499,13 +499,15 @@
   .hxAway .hxTx { align-items: flex-start; }
   .hxName, .sbBig .hxName { font-size: 20px; }
   .hxMeta { font-size: 12px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; display: block; }
-  .hxEq { display: none; }
+  /* The played pips and the count beside them: a flex row, so the gap holds and both sit on one centre line. */
+  .hxMeta.hxPlay { display: flex; align-items: center; gap: 10px; }
+  /* Each club's own XI and bench under its name, as on desktop, instead of one unlabelled pair of figures below. */
+  .hxEq { display: block; }
   .hxRowV { display: block; margin-left: auto; font-family: var(--font-serif); font-weight: 700; font-size: 36px; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
   .hxMid { align-items: stretch; gap: 8px; padding-top: 4px; }
   .hxFigs, .hxMid > .hxVerdict, .hxDl { display: none; }
   .hxAxis, .sbBig .hxAxis { width: 100%; }
   .hxVerdictRow { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-  .hxVerdictRow .hxEq { display: inline; }
   .hxFoot { grid-template-columns: minmax(0, 1fr); }
   .hxMidWrap { order: 3; }
   .hxFootS { padding: 10px 16px; gap: 12px; }
