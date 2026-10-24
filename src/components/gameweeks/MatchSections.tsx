@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
 import PerformanceBlock, { PerformanceSignature } from '@/components/players/PerformanceBlock';
@@ -301,6 +301,29 @@ function SheetRow({ p, open, onToggle, onOpen }: { p: PitchPlayer; open: boolean
 }
 
 
+/** A bench row opens its scoring detail the way a starter's does, when he played. The right-hand figure is what the bench bonus paid. */
+function BenchRow({ b, sub, open, onToggle, onOpen }: { b: BenchPlayer; sub: ReactNode; open: boolean; onToggle: () => void; onOpen: Open }) {
+  const canOpen = !!b.perf?.length && b.status === 'played';
+  const paid = b.status === 'played' && b.credit;
+  return (
+    <div className={`${s.shE}${open ? ` ${s.shOpen}` : ''}`}>
+      <div className={`${s.shRow}${canOpen ? ` ${s.shRowBtn}` : ''}`} role={canOpen ? 'button' : undefined} tabIndex={canOpen ? 0 : undefined}
+        aria-expanded={canOpen ? open : undefined} onClick={canOpen ? onToggle : undefined}
+        onKeyDown={canOpen ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } } : undefined}>
+        <PositionBadge position={b.slot} size="sm" />
+        <Portrait photoUrl={b.photoUrl} name={b.name} club={null} size="xxs" headTopPct={b.headTopPct} headWidthPct={b.headWidthPct} photoVersion={b.photoVersion} />
+        <span className={s.shTx}>
+          <b><button type="button" className={s.shNameBtn} onClick={(e) => { e.stopPropagation(); onOpen(b); }}>{b.name}</button></b>
+          <span>{sub}</span>
+        </span>
+        {canOpen ? <PerformanceSignature groups={b.perf!} /> : <span />}
+        <span className={`${s.shP}${paid ? '' : ` ${s.shP0}`}`}>{paid ? `+${fmt(b.credit)}` : '–'}</span>
+      </div>
+      {open && canOpen && <div className={s.shPerf}><PerformanceBlock groups={b.perf!} note={`Centre line is the median for ${/^[AEIOU]/.test(b.slot) ? 'an' : 'a'} ${b.slot}`} /></div>}
+    </div>
+  );
+}
+
 function TeamSheet({ side, team, state, onOpen }: { side: SideView; team: TeamLite; state: MatchState; onOpen: Open }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const up = state === 'upcoming';
@@ -329,15 +352,7 @@ function TeamSheet({ side, team, state, onOpen }: { side: SideView; team: TeamLi
       <div className={s.shLine}>
         <div className={s.shLH}><span>Bench</span>{!up && <b>+{fmt(side.bench)}</b>}</div>
         {side.benchPlayers.map((b) => (
-          <div key={b.id} className={s.shE}>
-            <div className={s.shRow}>
-              <PositionBadge position={b.slot} size="sm" />
-              <Portrait photoUrl={b.photoUrl} name={b.name} club={null} size="xxs" headTopPct={b.headTopPct} headWidthPct={b.headWidthPct} photoVersion={b.photoVersion} />
-              <span className={s.shTx}><b><button type="button" className={s.shNameBtn} onClick={() => onOpen(b)}>{b.name}</button></b><span>{b.benchSlot} · {benchTxt(b)}</span></span>
-              <span />
-              <span className={`${s.shP}${b.status === 'played' && b.credit ? '' : ` ${s.shP0}`}`}>{b.status === 'played' && b.credit ? `+${fmt(b.credit)}` : '–'}</span>
-            </div>
-          </div>
+          <BenchRow key={b.id} b={b} sub={<>{b.benchSlot} · {benchTxt(b)}</>} open={openId === b.id} onToggle={() => setOpenId((v) => (v === b.id ? null : b.id))} onOpen={onOpen} />
         ))}
       </div>
       {!up && (

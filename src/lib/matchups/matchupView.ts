@@ -248,7 +248,15 @@ export async function loadMatchupView(
   const completed = matchup.status === 'completed';
   const reproduces = (c: number, published: number | null | undefined) => !completed || Math.abs(c - Number(published)) < 0.005;
   applyCountedPoints(detailMap, [reproduces(computedA, matchup.score_a) ? dA : undefined, reproduces(computedB, matchup.score_b) ? dB : undefined], ctx.refStats);
-  const perfMap = buildLineupPerformance(detailMap, [effA, effB], ctx.refStats);
+  // A bench player who played earned his club's bench bonus at his own position, so he gets the same
+  // explanation a starter does. Starters and auto-subs keep theirs: they are scored at the slot they fill.
+  const benchAsStarters = (l: MatchupLineup | null) => ({
+    starters: (l?.bench ?? []).map((b) => ({ player_id: b.player_id, slot: String(playerMap[b.player_id]?.primary_position ?? '') })),
+  });
+  const perfMap = {
+    ...buildLineupPerformance(detailMap, [benchAsStarters(lineupA), benchAsStarters(lineupB)], ctx.refStats),
+    ...buildLineupPerformance(detailMap, [effA, effB], ctx.refStats),
+  };
 
   const state = matchState(matchup, ctx);
   const started = (pid: string) => {
