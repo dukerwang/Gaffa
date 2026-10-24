@@ -729,6 +729,14 @@
   min-width: 280px;
 }
 
+/* The Popover caps itself at 420px and scrolls past that. The account menu
+   runs about 430px, so it grew a scrollbar for the last few pixels. Doubling
+   the class beats .popover whichever stylesheet loads last; the phone sheet's
+   `.sheet.popover` rule is two classes too and still wins there. */
+.menuPanel.menuPanel {
+  max-height: min(560px, calc(100dvh - 32px));
+}
+
 .menuRow {
   display: flex;
   align-items: center;
