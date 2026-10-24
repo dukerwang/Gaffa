@@ -108,7 +108,7 @@
 .hxAway .hxTx { align-items: flex-end; }
 .hxName { font-family: var(--font-serif); font-weight: 700; font-size: 28px; line-height: 1.05; letter-spacing: -0.025em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .hxName a { position: relative; z-index: 2; }
-.hxMeta { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: rgba(255,255,255,.72); white-space: nowrap; }
+.hxMeta { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; color: rgba(255,255,255,.72); white-space: nowrap; }
 .hxEq { font-size: 12.5px; color: rgba(255,255,255,.66); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .hxEq b { font-family: var(--font-serif); font-size: 14px; color: #fff; font-weight: 700; }
 .hxMid { display: flex; flex-direction: column; align-items: center; gap: 12px; }
@@ -118,7 +118,7 @@
 .hxLose { color: rgba(255,255,255,.52); }
 .hxSep { width: 14px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.4); }
 .hxAxis { position: relative; width: 300px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.13); }
-.hxBand { position: absolute; inset-block: 0; left: 40%; right: 40%; border-left: 1px solid rgba(255,255,255,.6); border-right: 1px solid rgba(255,255,255,.6); background: rgba(255,255,255,.08); }
+.hxBand { position: absolute; inset-block: 0; left: 40%; right: 40%; background: rgba(255,255,255,.2); }
 .hxInk { position: absolute; inset-block: 0; background: rgba(255,255,255,.9); }
 .hxTick { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: #fff; }
 .hxVerdict { font-size: 15px; font-weight: 600; white-space: nowrap; }
@@ -416,6 +416,8 @@
 .swp { position: relative; min-width: 0; }
 .swpTrack { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 .swpCard { min-width: 0; }
+/* Two columns: keep the scoreboard's order (A left, B right), as Lineups does. Stacked and swiped, your own club still comes first. */
+@media (min-width: 901px) { .swpFlip .swpCard:first-child { order: 2; } }
 .swpPager { display: none; gap: 4px; padding: 3px; border-radius: 999px; background: var(--color-bg-secondary); }
 .swpDot { display: grid; place-items: center; width: 34px; height: 30px; border: 0; border-radius: 999px; background: transparent; opacity: .55; transition: opacity 200ms var(--ease-standard), background-color 200ms var(--ease-standard), box-shadow 200ms var(--ease-standard); }
 .swpOn { background: var(--color-bg-card); box-shadow: var(--shadow-sm); opacity: 1; }

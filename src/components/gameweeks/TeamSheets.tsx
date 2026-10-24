@@ -62,7 +62,7 @@ export function TeamSheets({ view, teams, mine, onOpen }: {
         </span>
       </div>
       <div ref={scroller} className={s.swp}>
-        <div className={s.swpTrack}>
+        <div className={`${s.swpTrack}${mine === 'b' ? ` ${s.swpFlip}` : ''}`}>
           {order.map((k, i) => (
             <div key={k} ref={(el) => { cards.current[i] = el; }} className={s.swpCard}>
               <TeamSheet side={view[k]} team={teams[k]} state={view.state} onOpen={onOpen} />
