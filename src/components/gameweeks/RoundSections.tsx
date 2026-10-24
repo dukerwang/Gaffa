@@ -69,7 +69,7 @@ export function Fixtures({ ties, clock, state, metas, myTeamId, leagueId }: {
   const started = state === 'live' ? new Set(ties.flatMap((t) => t.view?.slots.filter((x) => x.started).map((x) => x.t) ?? [])) : null;
   const key = state === 'upcoming'
     ? <span className={s.fsKey}><span><i className={s.fsKeyDot} />Starters in each kickoff</span></span>
-    : <span className={s.fsKey}><span>Above the line, home leads</span><span><i className={s.fsKeyBand} />Draw band</span><span>Below, away leads</span></span>;
+    : <span className={s.fsKey}><span><i className={s.fsKeyBand} />Draw band</span></span>;
   return (
     <section className={s.blk}>
       <div className={s.sh}><h2 className={s.shT}>Fixtures</h2><span className={`${s.shTools} ${s.dOnly}`}>{key}</span></div>
@@ -174,7 +174,7 @@ export function Spread({ all, teams, myTeamId, live, onOpen }: { all: SpreadPlay
               <Portrait photoUrl={t.p.photoUrl} name={t.p.name} club={t.p.club} size="sm" headTopPct={t.p.headTopPct} headWidthPct={t.p.headWidthPct} photoVersion={t.p.photoVersion} />
               <span className={s.spTx}>
                 <span className="g-namerow"><FitText className={s.spName} text={t.p.name} min={12} /><PositionBadge position={t.p.slot} size="sm" /></span>
-                <span className={s.spCtx}><Crest crest={teams[t.owner]?.crest ?? null} name={teams[t.owner]?.name ?? ''} size={13} />{teams[t.owner]?.name}{t.opp && <span className={s.muted}>&nbsp;v {teams[t.opp]?.name}</span>}</span>
+                <span className={s.spCtx}><Crest crest={teams[t.owner]?.crest ?? null} name={teams[t.owner]?.name ?? ''} size={13} />{teams[t.owner]?.name}{t.opp && <><span className={s.muted}>v</span><span className={s.muted}>{teams[t.opp]?.name}</span></>}</span>
               </span>
               <span className={s.spPts}>{fmt(t.p.points)}</span>
             </button>

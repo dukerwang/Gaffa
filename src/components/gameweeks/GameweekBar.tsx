@@ -3,11 +3,26 @@
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import NavigationLink from '@/components/ui/NavigationLink';
+import { Picker, type PickerGroup, type PickerOption } from '@/components/ui/Picker';
 import { DRAW_THRESHOLD } from '@/lib/scoring/drawBand';
 import type { MatchState } from '@/lib/matchups/matchupView';
 import { fmt, ordinal, type RibbonCell, type TeamMeta } from '@/lib/matchups/roundView';
 import { Crest, Glyph, Local, deadlineText, s, weekendRange } from './parts';
 import type { TieLite } from './types';
+
+interface GwOption extends PickerOption { cell?: RibbonCell }
+
+/** One gameweek in the list: its name, and how it went (or that it is live). */
+function GwRow({ o }: { o: GwOption }) {
+  const c = o.cell;
+  const how = c?.live ? 'Live' : c?.r ? (c.r === 'D' ? 'Drew' : `${c.r === 'W' ? 'Won' : 'Lost'} by ${fmt(c.margin)}`) : '';
+  return (
+    <span className={s.gwOpt}>
+      <span>{o.label}</span>
+      {how && <span className={`${s.gwOptS}${c?.live ? ` ${s.gwOptLive}` : ''}`}>{how}</span>}
+    </span>
+  );
+}
 
 function Ribbon({ cells, sel, record, onPick }: { cells: RibbonCell[]; sel: number; record: TeamMeta | null; onPick: (gw: number) => void }) {
   return (
@@ -51,10 +66,22 @@ export function GameweekBar({ leagueId, gw, gameweeks, ribbon, record, state, wi
   const i = gameweeks.indexOf(gw);
   const prev = i > 0 ? gameweeks[i - 1] : null;
   const next = i >= 0 && i < gameweeks.length - 1 ? gameweeks[i + 1] : null;
-  const select = (
-    <select className={s.gwSelNative} value={gw} onChange={(e) => go(Number(e.target.value))} aria-label="Choose a gameweek">
-      {gameweeks.map((g) => <option key={g} value={g}>Gameweek {g}</option>)}
-    </select>
+  const groups: PickerGroup<GwOption>[] = [{
+    options: gameweeks.map((g) => ({ value: String(g), label: `Gameweek ${g}`, cell: ribbon.find((c) => c.gw === g) })),
+  }];
+  // The kit Picker: a list under the title on a wide screen, a bottom sheet on a phone.
+  const picker = (className: string, renderValue: (o: GwOption) => React.ReactNode) => (
+    <Picker<GwOption>
+      groups={groups}
+      value={String(gw)}
+      onChange={(v) => go(Number(v))}
+      ariaLabel="Choose a gameweek"
+      renderValue={renderValue}
+      renderOption={(o) => <GwRow o={o} />}
+      popoverWidth={260}
+      align="start"
+      className={className}
+    />
   );
   const sub = state === 'upcoming'
     ? <Local>{() => deadline ? deadlineText(deadline) : weekendRange(win.first, win.last)}</Local>
@@ -65,15 +92,18 @@ export function GameweekBar({ leagueId, gw, gameweeks, ribbon, record, state, wi
       <span className={`${s.gwbName} ${s.dOnly}`}>Gameweeks</span>
       <span className={`${s.gwbStep} ${s.dOnly}`}>
         <button type="button" className={s.arw} disabled={prev == null} onClick={() => prev != null && go(prev)} aria-label="Previous gameweek"><Glyph k="left" size={18} /></button>
-        <span className={s.gwSel} style={{ position: 'relative' }}>Gameweek {gw}<Glyph k="chev" />{select}</span>
+        {picker(s.gwPick, (o) => <span className={s.gwPickT}>{o.label}</span>)}
         <button type="button" className={s.arw} disabled={next == null} onClick={() => next != null && go(next)} aria-label="Next gameweek"><Glyph k="right" size={18} /></button>
       </span>
       <span className={`${s.gwbStepM} ${s.mOnly}`}>
         <button type="button" className={s.arwM} disabled={prev == null} onClick={() => prev != null && go(prev)} aria-label="Previous gameweek"><Glyph k="left" size={20} /></button>
         <span className={s.gwSelM}>
-          <span className={s.gwSelT}>Gameweek {gw}<Glyph k="chev" /></span>
-          <span className={`${s.gwSelS}${state === 'live' ? ` ${s.gwSelLive}` : ''}`}>{sub}</span>
-          {select}
+          {picker(s.gwPickM, (o) => (
+            <span className={s.gwPickMv}>
+              <span className={s.gwSelT}>{o.label}</span>
+              <span className={`${s.gwSelS}${state === 'live' ? ` ${s.gwSelLive}` : ''}`}>{sub}</span>
+            </span>
+          ))}
         </span>
         <button type="button" className={s.arwM} disabled={next == null} onClick={() => next != null && go(next)} aria-label="Next gameweek"><Glyph k="right" size={20} /></button>
       </span>
