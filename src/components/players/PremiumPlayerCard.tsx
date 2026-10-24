@@ -3,8 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { Player, PlayerOwnership } from '@/types';
 import type { CrestConfig } from '@/components/crest/types';
-import { getPlayerDisplayName, playerInitial } from '@/lib/players/displayName';
-import { portraitUrl, withVersion } from '@/lib/players/photo';
+import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { portraitInitials, portraitUrl, withVersion } from '@/lib/players/photo';
 import { useParams } from 'next/navigation';
 import CrestBadge from '@/components/crest/CrestBadge';
 import SquadPeekButton from '@/components/teams/SquadPeekButton';
@@ -585,14 +585,16 @@ export default function PremiumPlayerCard({
                     onError={advancePhoto}
                   />
                 )}
-                {/* Stays mounted and fades out as the photo fades in, so the
-                    window never flashes through a transparent cut-out. */}
-                <div
-                  className={`${styles.photoPlaceholder} ${showPlaceholder ? '' : styles.photoPlaceholderHidden}`}
-                  aria-hidden="true"
-                >
-                  {playerInitial(resolvedPlayer)}
-                </div>
+              </div>
+
+              {/* Stays mounted and fades out as the photo fades in, so the
+                  window never flashes through a transparent cut-out. Sits in
+                  the window, not the photo slot, so the initials centre on it. */}
+              <div
+                className={`${styles.photoPlaceholder} ${showPlaceholder ? '' : styles.photoPlaceholderHidden}`}
+                aria-hidden="true"
+              >
+                {portraitInitials(fullName)}
               </div>
 
               {figures && (
