@@ -189,77 +189,21 @@
 .headerRightActions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0;
   flex-shrink: 0;
 }
 
-.headerActionBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm, 4px);
-  background: transparent;
-  border: none;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  text-decoration: none;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .headerActionBtn:hover {
-    background: var(--color-bg-card-hover);
-    color: var(--color-text-primary);
-  }
-}
-
-/* --- Channel Switcher Tabs Bar (Desktop) --- */
+/* --- Channel tabs (in a chat) --- */
 .channelTabBar {
-  display: flex;
-  align-items: center;
-  background: var(--color-bg-primary);
+  padding: 0 var(--space-3, 12px);
+  background: var(--color-bg-card);
   border-bottom: 1px solid var(--color-border-subtle);
-  padding: 4px 8px;
-  gap: 4px;
   flex-shrink: 0;
 }
 
-.tabBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border-radius: var(--radius-sm, 4px);
-  font-size: 12px;
-  font-weight: var(--font-medium, 500);
-  color: var(--color-text-secondary);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  position: relative;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .tabBtn:hover {
-    background: var(--color-bg-card-hover);
-    color: var(--color-text-primary);
-  }
-}
-
-.tabBtnActive {
-  background: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-  font-weight: var(--font-semibold, 600);
-}
-
-.tabBadge {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-danger, #ef4444);
+/* The bar draws the hairline; the tabs' underline sits on it. */
+.channelTabs {
+  border-bottom: none;
 }
 
 /* --- Channels & DMs List View --- */

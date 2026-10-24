@@ -1,29 +1,44 @@
 'use client';
 
+import { useState } from 'react';
+import { Icon, IconButton, Popover } from '@/components/ui';
 import styles from './AuctionTimingHelp.module.css';
 
 /**
- * One "?" per page explaining auction timing — not one per card.
+ * One "?" per page explaining auction timing, not one per card.
  *
- * SVG, not a text glyph: a "?" or "i" character's ink sits in a different
- * spot relative to its line box depending on the font, so flexbox centering
- * a text glyph inside a circle reads as "off center" more often than not.
- * An SVG's coordinates are exact, so centering it is centering it.
+ * A Popover opened by a press, not a hover tooltip: the old tip opened only on
+ * hover or keyboard focus, and iPhone Safari never focuses a tapped button, so
+ * on a phone it never opened at all.
  */
 export default function AuctionTimingHelp() {
+  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   return (
-    <span className={styles.help}>
-      <button type="button" className={styles.toggle} aria-describedby="auction-timing-help" aria-label="How auction timing works">
-        <svg width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-          <circle cx="5" cy="2.25" r="1" fill="currentColor" />
-          <rect x="4.25" y="4.5" width="1.5" height="4.25" rx="0.75" fill="currentColor" />
-        </svg>
-      </button>
-      <span role="tooltip" id="auction-timing-help" className={styles.tip}>
-        <span>Bigger fees get longer minimums.</span>
-        <span>Each bid extends the clock.</span>
-        <span>Nothing closes overnight.</span>
-      </span>
-    </span>
+    <>
+      <IconButton
+        ref={setAnchor}
+        size="sm"
+        label="Auction Timing"
+        tooltip={false}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        className={styles.toggle}
+        onClick={() => setOpen((o) => !o)}
+        icon={<Icon name="help-circle" size={16} strokeWidth={2} />}
+      />
+      <Popover
+        open={open}
+        onClose={() => setOpen(false)}
+        anchor={anchor}
+        placement="bottom-start"
+        aria-label="Auction timing"
+        className={styles.tip}
+      >
+        <p>Bigger fees get longer minimums.</p>
+        <p>Each bid extends the clock.</p>
+        <p>Nothing closes overnight.</p>
+      </Popover>
+    </>
   );
 }

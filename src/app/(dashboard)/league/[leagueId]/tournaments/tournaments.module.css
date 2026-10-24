@@ -39,51 +39,10 @@
     line-height: 1.1;
 }
 
-/* Tabs */
+/* Tabs: kit Tabs in link mode, one per cup. */
 .tabContainer {
-    display: flex;
-    gap: 1rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     margin-top: 2rem;
     margin-bottom: 1.5rem;
-}
-
-.tab {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 12px 20px;
-    font-family: var(--font-sans);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    transition: color 0.15s, border-color 0.15s;
-    margin-bottom: -1px;
-}
-@media (hover: hover) and (pointer: fine) {
-  .tab:hover {
-      color: var(--color-text-secondary);
-  }
-}
-
-.tabActive {
-    color: var(--color-accent-green);
-    border-bottom-color: var(--color-accent-green);
-}
-
-/* Deprecated, remove or keep empty */
-.tabInactive {
-}
-@media (hover: hover) and (pointer: fine) {
-  .tabInactive:hover {
-  }
 }
 
 /* Info Bar */

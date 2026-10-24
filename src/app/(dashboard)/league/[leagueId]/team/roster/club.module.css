@@ -626,13 +626,7 @@
     background: rgba(28, 28, 28, 0.28);
   }
   :global([data-theme='dark']) .railScrim { background: rgba(10, 13, 20, 0.6); }
-  .railClose {
-    display: flex; align-items: center; justify-content: center;
-    width: 32px; height: 32px; margin: var(--s2) 0 var(--s1) auto;
-    border-radius: var(--r-round); border: 1px solid var(--color-border-subtle);
-    background: var(--color-bg-elevated); color: var(--color-text-secondary);
-    font-size: var(--t-13); cursor: pointer;
-  }
+  .railClose { display: flex; margin: var(--s2) 0 var(--s1) auto; }
   .figs { grid-template-columns: repeat(2, 1fr); }
   .fig:nth-child(3) { border-left: 0; }
   .fig:nth-child(n+3) { border-top: 1px solid var(--color-border-subtle); }

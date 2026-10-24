@@ -32,6 +32,7 @@ import type { FacilityView } from '@/lib/facilities/facilities';
 import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/academyEligibility';
 import { serializeLineup } from '@/lib/lineups/lineupSerializer';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { IconButton } from '@/components/ui/IconButton';
 
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -2528,7 +2529,7 @@ export default function PitchUI({
                                     Expand · €{irOffer.next!.price}m
                                 </button>
                             )}
-                            <button type="button" onClick={() => setSidebarError(null)} className={styles.sidebarErrorDismiss} aria-label="Dismiss">✕</button>
+                            <IconButton size="sm" label="Dismiss" tooltip={false} onClick={() => setSidebarError(null)} icon={<Icon name="x" size={16} strokeWidth={2} />} />
                         </div>
                     )}
 

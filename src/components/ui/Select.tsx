@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useId, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { Icon } from './Icon';
 import { Popover } from './Popover';
 import styles from './Select.module.css';
@@ -30,6 +30,8 @@ export interface SelectProps<T extends string = string> {
   fullWidth?: boolean;
   disabled?: boolean;
   className?: string;
+  /** The option under the pointer or keyboard while the list is open, e.g. to preload it. */
+  onActiveChange?: (value: T) => void;
 }
 
 const TYPEAHEAD_RESET_MS = 500;
@@ -56,6 +58,7 @@ export function Select<T extends string = string>({
   fullWidth = false,
   disabled = false,
   className,
+  onActiveChange,
 }: SelectProps<T>) {
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -65,6 +68,12 @@ export function Select<T extends string = string>({
   const typeahead = useRef({ text: '', at: 0 });
 
   const selected = items.find((i) => i.value === value) ?? null;
+
+  const activeValue = open ? items[active]?.value : undefined;
+  useEffect(() => {
+    if (activeValue !== undefined) onActiveChange?.(activeValue);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeValue]);
   const enabledIndexes = items.map((item, i) => (item.disabled ? -1 : i)).filter((i) => i >= 0);
 
   const openAt = (index?: number) => {

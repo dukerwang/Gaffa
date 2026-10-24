@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import CrestBadge from '@/components/crest/CrestBadge';
 import NavigationLink from '@/components/ui/NavigationLink';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { Icon, IconButton } from '@/components/ui';
 import { useLeagueChat } from '@/components/chat/LeagueChatContext';
 import type { ClubProps, SquadEntry } from '@/lib/teams/loadClubView';
 import ClubSwitcher from './ClubSwitcher';
@@ -508,14 +509,14 @@ export default function ClubClient({
         )}
         <div className={`${styles.rail} ${narrow && inspectorOpen ? styles.railOpen : ''}`}>
           {narrow && (
-            <button
-              type="button"
+            <IconButton
+              label="Close"
+              tooltip={false}
+              variant="secondary"
               className={styles.railClose}
               onClick={() => setInspectorOpen(false)}
-              aria-label="Close player details"
-            >
-              ✕
-            </button>
+              icon={<Icon name="x" size={18} strokeWidth={2} />}
+            />
           )}
           <Inspector
             entry={selected}

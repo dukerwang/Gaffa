@@ -83,18 +83,6 @@
 .close {
   margin-left: auto;
   align-self: flex-start;
-  background: none;
-  border: none;
-  font-size: 1rem;
-  line-height: 1;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  padding: 0.25rem 0.35rem;
-  border-radius: var(--radius-sm);
-  flex-shrink: 0;
-}
-@media (hover: hover) and (pointer: fine) {
-  .close:hover { color: var(--color-text-primary); background: var(--color-bg-card-hover); }
 }
 
 /* ── Body ── */

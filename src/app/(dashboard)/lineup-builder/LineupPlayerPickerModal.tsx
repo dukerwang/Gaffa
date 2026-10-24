@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GranularPosition, Player } from '@/types';
 import PositionBadge from '@/components/players/PositionBadge';
+import { Icon, IconButton } from '@/components/ui';
 import Portrait from '@/components/players/Portrait';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { resolveClub } from '@/lib/clubs/registry';
@@ -134,9 +135,7 @@ export default function LineupPlayerPickerModal({
                 Clear Slot
               </button>
             )}
-            <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Close">
-              ✕
-            </button>
+            <IconButton label="Close" onClick={onClose} icon={<Icon name="x" size={18} strokeWidth={2} />} />
           </div>
         </div>
 

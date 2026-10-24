@@ -452,19 +452,6 @@
   color: var(--color-text-primary);
 }
 .modalHeaderActions { display: flex; align-items: center; gap: var(--s2); }
-.closeBtn {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  font-size: var(--t-17);
-  line-height: 1;
-  color: var(--color-text-muted);
-  background: transparent;
-  border: none;
-  border-radius: var(--r-control);
-  cursor: pointer;
-}
 .searchSection { display: flex; flex-direction: column; gap: var(--s3); padding: 0 var(--s4) var(--s3); }
 .searchRow { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
 .searchRow .input { flex: 1 1 180px; width: auto; }
@@ -533,7 +520,6 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .playerRow { min-height: 60px; }
-  .closeBtn { width: 44px; height: 44px; }
   /* iOS Safari zooms the whole page when a field under 16px takes focus, and leaves it zoomed. */
   .input { min-height: 44px; font-size: 16px; }
 }

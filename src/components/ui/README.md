@@ -18,7 +18,7 @@ is a decision of Duke's; change them freely, and say why.
 | `IconButton` | An icon-only action. `label` is required and doubles as the tooltip. | Press scale 0.92. |
 | `HoldButton` | A costly, hard-to-undo action (release, withdraw) in place of an "Are you sure?" dialog. | Fills on a linear 1.2s clock; drains in 200ms on early release. |
 | `SegmentedControl` | A compact filter or view switch in a section head. | One thumb slides between segments. |
-| `Tabs` | Page-level views of one thing, with optional counts. | One underline travels between tabs. |
+| `Tabs` | Page-level views of one thing, with optional counts or an unread mark. Give every item an `href` for route tabs (a `<nav>` of links). | One underline travels between tabs. |
 | `Switch` | A setting that applies at once. | Thumb stretches toward its destination while pressed. |
 | `Checkbox` | A choice that waits on Save; supports indeterminate. | Tick draws in 180ms; unchecking erases instantly. |
 | `Select` | One choice from a short list, with a crest or badge per option. | Listbox scales in from the trigger, flips above it near the screen bottom. |
@@ -42,8 +42,8 @@ is a decision of Duke's; change them freely, and say why.
   keyframes so a quick open-close reverses from where it is.
 - **Reduced motion** keeps opacity and colour, and drops movement.
 - **Hover styles** sit behind `@media (hover: hover) and (pointer: fine)`.
-- **Layers.** Popover 1100, Tooltip 1200, Toaster 1300: all above
-  `ResponsiveModal`'s literal 1000, because each can open inside a modal. Move
+- **Layers.** Popover 1150, Tooltip 1200, Toaster 1300: all above
+  `ResponsiveModal`'s literal 1000 and the player card's 1100, because each can open inside a modal. Move
   them onto the `--z-*` scale when the modal moves.
 - **Escape** in a Popover is caught in the window's capture phase and stopped,
   so closing a Select inside a modal leaves the modal open.
