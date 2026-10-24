@@ -1,6 +1,6 @@
 'use client';
 
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import NavigationLink from '@/components/ui/NavigationLink';
 import { DRAW_THRESHOLD } from '@/lib/scoring/drawBand';
 import type { MatchState, PitchPlayer, SideView } from '@/lib/matchups/matchupView';
@@ -147,11 +147,10 @@ export default function Scoreboard(props: ScoreboardProps) {
     : state === 'provisional' ? <span className={s.hxState}>Provisional</span>
     : <span className={s.hxState}>Gameweek {gw}</span>;
   const when = <Local>{() => weekendRange(win.first, win.last)}</Local>;
-  const style = { '--ca': A.color, '--cb': B?.color ?? A.color } as CSSProperties;
   const footHas = !up || mine || (vA?.starters.length ?? 0) > 0;
 
   return (
-    <article className={`${s.hx}${big ? ` ${s.sbBig}` : ''}`} style={style}>
+    <article className={`${s.hx}${big ? ` ${s.sbBig}` : ''}`}>
       {href && <NavigationLink href={href} className={s.hxStretch} aria-label="Open matchup">{null}</NavigationLink>}
       <div className={s.hxTop}>
         {big ? <span>{when}</span> : <span>{mine ? 'Your Fixture' : 'Fixture'}<span className={s.dOnly}> · {when}</span></span>}

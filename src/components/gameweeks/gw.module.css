@@ -84,10 +84,9 @@
 .gwSelS { font-size: 12px; color: var(--color-text-muted); white-space: nowrap; min-height: 17px; }
 .gwSelLive { color: var(--color-live); font-weight: 600; }
 
-/* ══ The scoreboard: two clubs' colours meeting in the middle ══ */
+/* ══ The scoreboard: one fixed ink. The crests carry the clubs' colours; a blend of two arbitrary club colours turned warm ones to mustard and maroon. ══ */
 .hx { position: relative; display: block; border-radius: 16px; overflow: hidden; color: #fff;
-  --ga: color-mix(in oklab, var(--ca) 40%, #0b0e13); --gb: color-mix(in oklab, var(--cb) 40%, #0b0e13);
-  background: linear-gradient(90deg, var(--ga) 0%, var(--ga) 32%, var(--gb) 68%, var(--gb) 100%);
+  background: #151a21;
   box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.07); }
 :global([data-theme="dark"]) .hx { box-shadow: 0 0 0 1px rgba(255,255,255,.07), var(--shadow-lg); }
 .hxWide { margin-bottom: 36px; }

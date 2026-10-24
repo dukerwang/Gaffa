@@ -53,7 +53,7 @@ Do next: review the preview signed in, settle the follow-ups below, then open th
 Follow-ups for this release:
 
 - **Login carousel.** `AuthShowcase` still draws the old matchup pitch: it imports `MatchupPitch.module.css`, and the component it copied is gone. Update it to the redesigned matchups and the new front page. Until then the carousel shows the previous design.
-- **Matchup scoreboard gradient.** The header blends the two clubs' colours (`.hx` in `gw.module.css`). With some pairings the blend looks muddy. This is an open design decision.
+- **Matchup scoreboard background.** Settled on 2026-10-24: one fixed ink (`.hx` in `gw.module.css`), with the crests carrying the clubs' colours. The earlier blend of both clubs' colours turned warm ones to mustard and maroon. `clubColour()` in `matchupView.ts` is still computed but no longer used by the scoreboard.
 
 ## Home page
 
