@@ -235,7 +235,7 @@ export async function executeDrop(
             console.error('Failed to send drop notifications:', err);
         }
 
-        // Targets (153). The league-wide release notice above is addressed to
+        // Targets (179). The league-wide release notice above is addressed to
         // everybody; this one goes to the clubs who had already said they
         // wanted him. Best-effort — the drop has already applied by here and
         // must not be undone by a notification failure.

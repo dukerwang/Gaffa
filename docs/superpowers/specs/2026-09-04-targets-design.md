@@ -1,5 +1,38 @@
 # Targets
 
+> **Where this spec has been overtaken by the code — read this first.**
+>
+> Written 2026-09-04, built out 2026-09-06 and 2026-09-10. Three things below
+> no longer match what shipped, and the migrations are the source of truth:
+>
+> 1. **A role profile also names a LEVEL.** Migration `155` added
+>    `player_targets.role` — `star | starter | bench | prospect`, required on a
+>    profile and absent on a named target, folded into the kind-shape CHECK. A
+>    position on its own turned out to be too thin a statement for a seller to
+>    act on: "an LB" could be a €60m first-choice or a body for the bench. It is
+>    descriptive only — matching never filters on it. The UI calls the kind **a
+>    position** and titles a row "Starting Left-Back"; the stored
+>    `target_kind` value is still `'profile'`, and "profile" remains the word
+>    for it in code.
+> 2. **Visibility has three values, not two.** Migration `158` added `direct`:
+>    the club that rosters the named player is told and can see it, and nobody
+>    else can. Only valid on a named target — a role has no owner to approach —
+>    which the kind-shape CHECK enforces. It counts against the 10 live targets
+>    per club but **not** against the 5 public ones, since it never reaches the
+>    board. This is the "third visibility" §"Out of scope" anticipated, though
+>    it is a private approach rather than the anonymous mode described there;
+>    anonymous is still unbuilt.
+> 3. **The board is rows in three sections, not a card grid.** `TargetCard.tsx`
+>    below is `TargetRow.tsx` in the code. A card frames its subject as a thing
+>    you can take, which is a lie on another manager's player; a target is a
+>    sentence somebody said. The three sections are *Wanted From You* (targets
+>    you can answer from your own squad — the only rows with buttons), *The
+>    Board*, and *Your Targets*. Section membership and the buttons come from a
+>    single call to `canAnswerTarget`, so they cannot disagree. Duke chose this
+>    layout on 2026-09-10; see `docs/DECISIONS.md`.
+>
+> Everything else below still describes the build.
+
 ## Problem
 
 The transfer market only has a supply side. `player_sale_listings` (059, extended by 077 and 114) lets a manager say six different things about a player he owns — auction floor, release clause, offers-only, wants cash, wants bodies, would loan him out — and `listingStance()` turns each into a headline. The Listings board is the trade block, and it works.
@@ -128,6 +161,7 @@ create table public.player_targets (
   player_id     uuid references public.players(id) on delete cascade,
   position      text check (position in
                   ('GK','CB','LB','RB','LWB','RWB','DM','CM','AM','LW','RW','ST')),
+  -- Widened by 158 to ('public','direct','private'). See the note at the top.
   visibility    text not null default 'public' check (visibility in ('public','private')),
   open_to_sale  boolean not null default true,
   open_to_trade boolean not null default false,
@@ -342,7 +376,7 @@ Sentence case throughout. Money as `€{n}m`. Club Balance vocabulary, never FAA
 ## Out of scope
 
 - **Auto-generated targets from squad holes.** Reading a roster for missing positions and posting targets unprompted is a separate feature with its own failure modes.
-- **Anonymous targets.** Public means attributed. An "N clubs are watching him" mode was considered and set aside; it can be added later as a third visibility without reshaping anything here.
+- **Anonymous targets.** Public means attributed. An "N clubs are watching him" mode was considered and set aside; it can be added later without reshaping anything here. (Still unbuilt. The third visibility that *did* ship — `direct`, in 158 — is a private approach to one club, not an anonymous public one.)
 - **Targets on retained rights or academy players.** Rostered and free-agent players only.
 - **Any transactable behaviour on a target.** No bidding, no accepting, no auto-generated offers. The listing stays the only object that settles.
 - **Any change to listings mechanics** — auction timing, the €50m auto-auction threshold, `seedHighValueAuctions` eligibility, or `resolve_single_player_auction_rpc`. This feature only reads alongside them.

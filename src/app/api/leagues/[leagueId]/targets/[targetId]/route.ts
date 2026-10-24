@@ -98,10 +98,21 @@ export async function PATCH(req: NextRequest, { params }: Props) {
   }
 
   if (visibility !== undefined) {
-    const goingPublic = visibility !== 'private';
+    const audience: 'public' | 'direct' | 'private' =
+      visibility === 'private' ? 'private' : visibility === 'direct' ? 'direct' : 'public';
 
-    // Going public consumes a public slot, so it is capped like a fresh one.
-    if (goingPublic && target.visibility === 'private') {
+    // A role profile has no owner, so there is nobody for 'direct' to reach.
+    if (audience === 'direct' && target.target_kind !== 'player') {
+      return NextResponse.json(
+        { error: 'A position has no owner to approach. Name a player to send a target directly.' },
+        { status: 400 },
+      );
+    }
+
+    // Going public consumes a board slot, so it is capped like a fresh one.
+    // Moving to 'direct' is not — it never reaches the board. Coming FROM
+    // public frees a slot and needs no check at all.
+    if (audience === 'public' && target.visibility !== 'public') {
       const { data: live } = await admin
         .from('player_targets')
         .select('id')
@@ -119,7 +130,7 @@ export async function PATCH(req: NextRequest, { params }: Props) {
       }
     }
 
-    patch.visibility = goingPublic ? 'public' : 'private';
+    patch.visibility = audience;
   }
 
   if (openToSale !== undefined) patch.open_to_sale = !!openToSale;

@@ -155,7 +155,7 @@ export interface TransfersListing {
 }
 
 /**
- * A target as the hub reads it — the demand side (153).
+ * A target as the hub reads it — the demand side (179).
  *
  * Carries the club because a target is always somebody's statement; an
  * unattributed one is just a position with a budget. `player` is null on a
@@ -166,6 +166,8 @@ export interface TransfersTarget {
   team_id: string;
   team_name: string | null;
   team_abbreviation: string | null;
+  /** Shape consumed by <CrestBadge>; `unknown` because that component validates it. */
+  team_crest: unknown | null;
   target_kind: TargetKind;
   player_id: string | null;
   player: EnrichedPlayer | null;
@@ -221,8 +223,16 @@ export interface TransfersTeam {
 export interface TransfersCounts {
   auctions: number;
   listings: number;
-  /** PUBLIC targets in the league. A badge counting my own private notes
-   *  would be a different number wearing the same label. */
+  /**
+   * What's on the board for me: every public target in the league, plus any
+   * direct one (182) aimed at a player I roster.
+   *
+   * Excludes my own private notes and my own outgoing direct approaches — a
+   * badge counting those would be a different number wearing the same label.
+   * The direct half is not optional: a direct target notifies its recipient,
+   * and a notification with no badge behind it sends you to a page that
+   * appears not to have changed.
+   */
   targets: number;
   freeAgents: number;
   deals: number;
@@ -314,7 +324,10 @@ export interface TransfersModel {
   /** Settled in the last 7 days, newest first. Feeds "Gone this week". */
   recentlyResolved: ResolvedAuction[];
   listings: TransfersListing[];
-  /** Every public target in the league, plus my own private ones. */
+  /**
+   * Every public target in the league, plus my own, plus any direct one aimed
+   * at a player I roster. Nobody else's private or direct rows are fetched.
+   */
   targets: TransfersTarget[];
   myOffers: TradeProposalRow[];
   leagueFeed: TradeProposalRow[];
@@ -352,7 +365,7 @@ export async function buildTransfersModel(
   userId: string,
 ): Promise<TransfersModel | null> {
   // 1. League + membership. None of these reads depends on another.
-  const [{ data: league }, { data: myTeam }, { data: allTeams }] = await Promise.all([
+  const [{ data: league }, { data: myTeam }, { data: allTeams }, { data: myRosterIdRows }] = await Promise.all([
     admin
       .from('leagues')
       .select(`id, name, roster_size, taxi_size, taxi_age_limit, status, roster_locked,
@@ -370,6 +383,14 @@ export async function buildTransfersModel(
       .from('teams')
       .select('id, team_name, faab_budget, abbreviation, crest_config')
       .eq('league_id', leagueId),
+    // The viewer's own player ids scope which direct targets (182) they may see
+    // at all. Independent of the reads above, so it rides in the same round trip.
+    // Filtered on the viewer's user rather than a team id the other reads resolve.
+    admin
+      .from('roster_entries')
+      .select('player_id, teams!inner(user_id)')
+      .eq('league_id', leagueId)
+      .eq('teams.user_id', userId),
   ]);
   if (!league || !myTeam) return null;
 
@@ -378,9 +399,12 @@ export async function buildTransfersModel(
   // "my limit", so the league row carries the viewer's effective values.
   const mySlots = effectiveSlots(myTeam, league);
 
+  const myPlayerIds = (myRosterIdRows ?? []).map((r) => r.player_id as string);
+
   const teamIds = (allTeams ?? []).map((t) => t.id);
   const teamNameById = new Map((allTeams ?? []).map((t) => [t.id, t.team_name]));
   const teamAbbrById = new Map((allTeams ?? []).map((t) => [t.id, t.abbreviation]));
+  const teamCrestById = new Map((allTeams ?? []).map((t) => [t.id, t.crest_config]));
 
   // 2. The board, straight from the projection. Maps and deal flow start concurrently.
   const [
@@ -480,17 +504,29 @@ export async function buildTransfersModel(
             .range(from, to),
         ).then((data) => ({ data }))
       : Promise.resolve({ data: [] as { player_id: string }[] }),
-    // Targets (153) — the demand side. Public ones belong to the league; the
-    // caller's own private ones come along because the board's "mine" facet is
-    // where a manager manages them. Everyone else's private targets are never
-    // fetched at all, so they cannot leak through a client-side filter bug.
+    // Targets (179) — the demand side. Three audiences (182): public ones
+    // belong to the league; the caller's own come along because the board is
+    // where a manager manages them; and a direct one arrives only if it names
+    // a player the caller actually rosters.
+    //
+    // Everyone else's private and direct targets are never fetched at all, so
+    // they cannot leak through a client-side filter bug. That is the reason
+    // myPlayerIds is resolved above rather than filtered out down here.
     admin
       .from('player_targets')
       .select('*')
       .eq('league_id', leagueId)
       .eq('status', 'active')
       .gt('expires_at', new Date().toISOString())
-      .or(`visibility.eq.public,team_id.eq.${myTeam.id}`)
+      .or(
+        [
+          'visibility.eq.public',
+          `team_id.eq.${myTeam.id}`,
+          ...(myPlayerIds.length
+            ? [`and(visibility.eq.direct,player_id.in.(${myPlayerIds.join(',')}))`]
+            : []),
+        ].join(','),
+      )
       .order('created_at', { ascending: false }),
   ]);
 
@@ -728,6 +764,7 @@ export async function buildTransfersModel(
       team_id: t.team_id,
       team_name: teamNameById.get(t.team_id) ?? null,
       team_abbreviation: teamAbbrById.get(t.team_id) ?? null,
+      team_crest: teamCrestById.get(t.team_id) ?? null,
       target_kind: t.target_kind,
       player_id: t.player_id,
       player: t.player_id ? playerMap[t.player_id] ?? null : null,
@@ -758,7 +795,11 @@ export async function buildTransfersModel(
       // the same way), so the nav badge shouldn't count it either.
       auctions: auctions.filter((a) => a.kind !== 'listing' || a.minimum_bid != null).length,
       listings: (listings ?? []).length,
-      targets: (targetRows ?? []).filter((t) => t.visibility === 'public').length,
+      targets: (targetRows ?? []).filter(
+        (t) =>
+          t.visibility === 'public' ||
+          (t.visibility === 'direct' && t.player_id && myPlayerIds.includes(t.player_id)),
+      ).length,
       freeAgents,
       deals,
       newTransfers: newTransfersAll.length,

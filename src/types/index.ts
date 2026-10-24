@@ -606,8 +606,14 @@ export interface PlayerOwnership {
  */
 export type TargetKind = 'player' | 'profile';
 
-/** `private` is invisible league-wide, RLS included — not just filtered in UI. */
-export type TargetVisibility = 'public' | 'private';
+/**
+ * Who can read a target. All three are enforced by RLS (179, widened by 182),
+ * not by the reading code — Realtime honours RLS and the board subscribes.
+ *
+ * `direct` is only valid on a NAMED target: a role profile has no owner to
+ * send it to. The kind-shape CHECK carries that rule.
+ */
+export type TargetVisibility = 'public' | 'direct' | 'private';
 
 export type TargetStatus = 'active' | 'filled' | 'withdrawn' | 'expired';
 

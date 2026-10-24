@@ -362,7 +362,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     console.error('[listings] Failed to send new-listing notifications:', err);
   }
 
-  // Targets (153): the league-wide notice above tells everybody a player is
+  // Targets (179): the league-wide notice above tells everybody a player is
   // available; this tells the clubs who had already SAID they wanted him,
   // which is a different reader and a better sentence. Best-effort — the
   // listing is created either way.

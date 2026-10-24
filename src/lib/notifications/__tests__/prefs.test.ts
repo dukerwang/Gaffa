@@ -28,7 +28,7 @@ describe('resolvePrefs', () => {
     expect(resolved).toEqual(DEFAULT_NOTIFICATION_PREFS);
   });
 
-  // Targets (153) shipped after managers already had a stored prefs blob.
+  // Targets (179) shipped after managers already had a stored prefs blob.
   // Nothing backfilled those rows, so the merge is what gives an existing
   // user the new kind — if this breaks, everyone silently loses target push.
   it('gives a prefs blob written before targets existed the new default', () => {

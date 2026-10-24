@@ -296,7 +296,7 @@ export function loanFinalWeekNotice(
 }
 
 
-// ── Targets (153) ─────────────────────────────────────────────
+// ── Targets (179) ─────────────────────────────────────────────
 //
 // The demand side. `listedNotice` above tells the whole league a player is
 // available; these tell the specific clubs who said they wanted him, which is
@@ -355,25 +355,35 @@ export function targetProfileMatchNotice(
 }
 
 /**
- * Somebody has publicly named YOUR player as a target.
+ * Somebody has named YOUR player as a target.
  *
  * The demand-side counterpart of `listedNotice`, and the message most likely
- * to start a deal. Only public, named targets reach here — a private target
- * tells nobody, and a positional profile would spam every club that owns one.
+ * to start a deal. Only named targets reach here, and only ones with an
+ * audience: a private target tells nobody, and a positional profile would
+ * spam every club that owns one.
+ *
+ * `direct` says the approach came to you alone (182). Worth stating, because
+ * it changes how the message reads — a public target is a club shopping in
+ * front of the league, and a direct one is a club talking to you. Only the
+ * body carries it; the title is the same news either way.
  */
 export function targetDeclaredNotice(
   suitor: ClubRef,
   playerName: string,
   stanceLine: string,
+  direct = false,
 ): Notice {
   const name = clubName(suitor);
   const abbr = clubAbbr(suitor);
   const stance = stanceLine ? ` ${stanceLine}.` : '';
+  const privacy = direct ? ' Sent to you only — nobody else can see it.' : '';
   return {
     title: `${abbr} want ${playerName}`,
     pushTitle: `${abbr} want ${playerName}`,
-    content: `**${name}** have made **${playerName}** a target.${stance}`,
-    pushBody: `${name} want your player ${playerName}.`,
+    content: `**${name}** have made **${playerName}** a target.${stance}${privacy}`,
+    pushBody: direct
+      ? `${name} have approached you about ${playerName}.`
+      : `${name} want your player ${playerName}.`,
   };
 }
 

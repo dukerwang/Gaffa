@@ -133,7 +133,7 @@ export async function seedHighValueAuctions(admin: SupabaseClient): Promise<Seed
           quietHours,
         );
 
-        // Targets (153). The arrival notice above goes to the whole league;
+        // Targets (179). The arrival notice above goes to the whole league;
         // this goes to the clubs who had already named the player or his
         // position. Positions are fetched here rather than widened into
         // findPromotedClubsAndArrivals, which the kickoff path also calls.

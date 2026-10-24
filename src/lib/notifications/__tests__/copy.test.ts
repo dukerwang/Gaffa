@@ -232,7 +232,7 @@ describe('bid and market notices', () => {
   });
 });
 
-// ── Targets (153) ─────────────────────────────────────────────
+// ── Targets (179) ─────────────────────────────────────────────
 
 describe('target notices', () => {
     const chelsea = { team_name: 'Chelsea', abbreviation: 'CHE' };

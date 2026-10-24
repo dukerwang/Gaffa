@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
-import { POSITION_FLEX_MAP, type GranularPosition } from '@/types';
+import { POSITION_FLEX_MAP } from '@/types';
 import { targetStance } from '@/lib/transfers/targetStance';
 import { isTargetRole } from '@/lib/transfers/targetRole';
 import {
@@ -39,11 +39,12 @@ function liveTargets(admin: ReturnType<typeof createAdminClient>, leagueId: stri
 }
 
 /**
- * Every public target in the league, plus the caller's own private ones.
+ * Every public target in the league, plus the caller's own, plus any direct
+ * ones aimed at a player the caller rosters.
  *
- * The visibility split is enforced here AND by RLS (153). This route uses the
- * service-role client, which bypasses RLS, so the filter below is the only
- * thing separating the two — it is not a convenience.
+ * The visibility split is enforced here AND by RLS (179, widened by 182).
+ * This route uses the service-role client, which bypasses RLS, so the filter
+ * below is the only thing separating the three — it is not a convenience.
  */
 export async function GET(req: NextRequest, { params }: Props) {
   const { leagueId } = await params;
@@ -63,8 +64,24 @@ export async function GET(req: NextRequest, { params }: Props) {
 
   if (!myTeam) return NextResponse.json({ error: 'No team in this league' }, { status: 403 });
 
+  // A direct target (182) is readable by whoever rosters the player, which
+  // PostgREST cannot express as an `.or` against another table — fetch my
+  // roster first and match on the ids.
+  const { data: mine } = await admin
+    .from('roster_entries')
+    .select('player_id')
+    .eq('league_id', leagueId)
+    .eq('team_id', myTeam.id);
+
+  const myPlayerIds = (mine ?? []).map((r) => r.player_id);
+
+  const clauses = [`visibility.eq.public`, `team_id.eq.${myTeam.id}`];
+  if (myPlayerIds.length) {
+    clauses.push(`and(visibility.eq.direct,player_id.in.(${myPlayerIds.join(',')}))`);
+  }
+
   const { data, error } = await liveTargets(admin, leagueId)
-    .or(`visibility.eq.public,team_id.eq.${myTeam.id}`)
+    .or(clauses.join(','))
     .order('created_at', { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -135,7 +152,23 @@ export async function POST(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: 'Pick a squad role' }, { status: 400 });
   }
 
-  const isPrivate = visibility === 'private';
+  // ── Audience. Three rungs (182), not the two 179 shipped with.
+  //
+  // Anything unrecognised falls back to 'public' rather than 400ing, matching
+  // how the boolean stances below treat a missing field: the editor always
+  // sends one, and a body that doesn't is an old client, not an attack.
+  const audience: 'public' | 'direct' | 'private' =
+    visibility === 'private' ? 'private' : visibility === 'direct' ? 'direct' : 'public';
+
+  // A role profile has no owner, so there is nobody for 'direct' to reach.
+  // The kind-shape CHECK enforces this too; catching it here turns a
+  // constraint violation into a sentence.
+  if (audience === 'direct' && targetKind !== 'player') {
+    return NextResponse.json(
+      { error: 'A position has no owner to approach. Name a player to send a target directly.' },
+      { status: 400 },
+    );
+  }
 
   if (budget != null && (!Number.isInteger(budget) || budget < 0)) {
     return NextResponse.json({ error: 'budget must be a non-negative whole number' }, { status: 400 });
@@ -173,10 +206,14 @@ export async function POST(req: NextRequest, { params }: Props) {
     );
   }
 
-  if (!isPrivate && live.filter((t) => t.visibility === 'public').length >= MAX_PUBLIC_TARGETS) {
+  // Only the board is rationed. A direct target never reaches the board, so it
+  // spends a slot from the 10 above and none of the 5 here — the public cap
+  // exists to stop one manager's notepad filling everybody's screen, and a
+  // target only its recipient can see does not do that.
+  if (audience === 'public' && live.filter((t) => t.visibility === 'public').length >= MAX_PUBLIC_TARGETS) {
     return NextResponse.json(
       {
-        error: `You can show ${MAX_PUBLIC_TARGETS} targets to the league at once. Withdraw one, or add this as "Only you".`,
+        error: `You can show ${MAX_PUBLIC_TARGETS} targets to the league at once. Withdraw one, or send this to the club that owns him instead.`,
       },
       { status: 409 },
     );
@@ -203,7 +240,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       player_id: targetKind === 'player' ? playerId : null,
       position: targetKind === 'profile' ? position : null,
       role: targetKind === 'profile' ? role : null,
-      visibility: isPrivate ? 'private' : 'public',
+      visibility: audience,
       open_to_sale: openToSale !== false,
       open_to_trade: !!openToTrade,
       open_to_loan: !!openToLoan,
@@ -219,12 +256,16 @@ export async function POST(req: NextRequest, { params }: Props) {
 
   // ── Tell the owner, if there is one to tell.
   //
-  // Only a PUBLIC NAMED target notifies. A private one tells nobody by
-  // definition, and a profile would ping every club that owns a left-back —
-  // spam on a scale nothing else in the app produces. This is also the only
-  // event that notifies: PATCH deliberately does not, or a manager could bump
-  // a budget repeatedly into somebody's notifications.
-  if (!isPrivate && targetKind === 'player') {
+  // A NAMED target with an audience notifies — public or direct, the owner
+  // hears about it either way, and a direct one is an approach made
+  // specifically to him. A private one tells nobody by definition, and a
+  // profile would ping every club that owns a left-back, which is spam on a
+  // scale nothing else in the app produces.
+  //
+  // This is also the only event that notifies: PATCH deliberately does not,
+  // or a manager could bump a budget repeatedly into somebody's
+  // notifications.
+  if (audience !== 'private' && targetKind === 'player') {
     try {
       // roster_entries carries league_id itself, so the owner lookup is
       // scoped without leaning on the embed to report which league it is in.
@@ -260,7 +301,12 @@ export async function POST(req: NextRequest, { params }: Props) {
           kind: 'targets',
           leagueId,
           userId: ownerTeam.user_id,
-          ...targetDeclaredNotice(myTeam, playerRow?.name ?? 'a player', stance.headline),
+          ...targetDeclaredNotice(
+            myTeam,
+            playerRow?.name ?? 'a player',
+            stance.headline,
+            audience === 'direct',
+          ),
           url: `/league/${leagueId}/transfers/targets`,
           tag: `target-declared-${target.id}`,
         });
