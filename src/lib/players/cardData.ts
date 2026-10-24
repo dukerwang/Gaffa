@@ -248,10 +248,23 @@ export async function resolveCardSeason(
   leagueId?: string | null,
   explicitSeason?: string | null,
 ): Promise<ResolvedSeason> {
-  const [currentFplSeason, kickedOff] = await Promise.all([
+  const [currentFplSeason, fplKickedOff] = await Promise.all([
     getCurrentFplSeason(),
     isFplSeasonKickedOff(),
   ]);
+
+  // FPL's bootstrap answers "not kicked off" on any failed fetch, which would
+  // pin every card to last season mid-season. Our own stats table settles it:
+  // a row for the current season means matches have been played.
+  let kickedOff = fplKickedOff;
+  if (!kickedOff) {
+    const { data: played } = await admin
+      .from('player_stats')
+      .select('player_id')
+      .eq('season', currentFplSeason)
+      .limit(1);
+    kickedOff = (played?.length ?? 0) > 0;
+  }
 
   let targetSeason = explicitSeason ?? null;
 
