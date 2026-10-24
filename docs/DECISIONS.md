@@ -670,3 +670,17 @@ How it was built is an agent's reading: each skeleton lays out in its page's
 own CSS module, and Home, the Transfer Market and the Players index moved into
 route groups ((home), (market), (index)) so a skeleton covers only its page.
 Every other route keeps the 3px bar.
+
+**Tabs, menus and close buttons.** From the /kit prototype (six cases, each
+today beside the kit version on a phone):
+
+> "Port the recommended set: 1A, 2A, 3A, 4A, 5A and 6."
+
+That is: kit Tabs and a season Select on the player card, kit Tabs and
+IconButtons in the league chat, kit Tabs (link mode) for Heritage and Cups,
+kit Popovers for the Club Balance and account menus (a sheet on a phone),
+a tap-to-open Popover for auction timing with a folding bid history, and
+IconButton for the plain close buttons. How it was built is an agent's
+reading: the account menu keeps Create and Join as two rows rather than the
+prototype's one, because no single page offers both; the lineup error notice
+takes the small IconButton so the notice keeps its height.

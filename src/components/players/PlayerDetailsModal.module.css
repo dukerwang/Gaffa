@@ -95,7 +95,8 @@
   display: flex;
   align-items: center;
   gap: var(--s3);
-  padding: 14px 14px 14px 24px;
+  min-height: 60px;
+  padding: 0 14px 0 24px;
   border-bottom: 1px solid var(--color-border-subtle);
 }
 
@@ -116,144 +117,17 @@
   to { opacity: 1; transform: none; }
 }
 
-/* ── Tabs ───────────────────────────────────────────────────── */
+/* ── Tabs and season ───────────────────────────────────────── */
 
+/* Kit Tabs, stretched to the bar's height so the underline sits on the
+   bar's own hairline rather than drawing a second one above it. */
 .tabs {
-  position: relative;
-  display: inline-flex;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 6px;
-  background: var(--pc-track);
+  align-self: stretch;
+  border-bottom: none;
 }
 
-.tab {
-  position: relative;
-  z-index: 1;
-  height: 30px;
-  padding: 0 18px;
-  border: none;
-  border-radius: var(--r-control);
-  background: transparent;
-  font-family: var(--font-label);
-  font-size: var(--t-15);
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  line-height: 30px;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color var(--dur-fast) ease;
-}
-
-.tab[aria-selected='true'] { color: var(--color-text-primary); }
-
-.ink {
-  position: absolute;
-  z-index: 0;
-  top: 3px;
-  left: 0;
-  height: 30px;
-  border-radius: var(--r-control);
-  background: var(--pc-ink);
-  box-shadow: var(--shadow-sm);
-  transition: transform 200ms var(--ease-standard), width 200ms var(--ease-standard);
-}
-
-/* ── Season menu ────────────────────────────────────────────── */
-
-.seasonWrap {
-  position: relative;
+.season {
   margin-left: auto;
-}
-
-.seasonBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 9px 0 12px;
-  border: none;
-  border-radius: 6px;
-  background: var(--pc-track);
-  font-family: var(--font-label);
-  font-size: var(--t-15);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  cursor: pointer;
-}
-
-.seasonBtn svg {
-  color: var(--color-text-muted);
-  transition: transform var(--dur-fast) ease;
-}
-
-.seasonWrap[data-open='true'] .seasonBtn svg { transform: rotate(180deg); }
-
-.menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 6px);
-  z-index: 20;
-  min-width: 220px;
-  padding: 4px;
-  border-radius: 8px;
-  background: var(--color-bg-card);
-  box-shadow: 0 0 0 1px var(--color-border-subtle), 0 14px 32px -10px rgba(0, 0, 0, 0.35);
-  transform-origin: top right;
-  opacity: 0;
-  transform: scale(0.96);
-  pointer-events: none;
-  transition: opacity 150ms ease, transform 150ms var(--ease-standard);
-}
-
-.seasonWrap[data-open='true'] .menu {
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
-}
-
-.menuItem {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  height: 40px;
-  padding: 0 10px;
-  border: none;
-  border-radius: 5px;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .menuItem:hover { background: var(--color-bg-elevated); }
-}
-
-.menuItem i {
-  width: 16px;
-  flex: 0 0 auto;
-  font-style: normal;
-  font-size: var(--t-13);
-  color: var(--color-accent);
-}
-
-.menuItem b {
-  font-family: var(--font-label);
-  font-size: var(--t-15);
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.menuItem em {
-  margin-left: auto;
-  font-style: normal;
-  font-family: var(--font-label);
-  font-size: var(--t-12);
-  font-weight: 600;
-  color: var(--color-text-muted);
 }
 
 /* ── Close ──────────────────────────────────────────────────── */
@@ -494,16 +368,11 @@
   display: flex;
   align-items: center;
   gap: var(--s2);
-  padding: 10px 16px;
+  min-height: 52px;
+  padding: 0 16px;
   background: var(--color-bg-card);
   border-bottom: 1px solid var(--color-border-subtle);
 }
-
-.tabbar .tabs { flex: 1; display: flex; }
-.tabbar .tab { flex: 1; }
-.tabbar .seasonWrap { margin-left: 0; }
-.tabbar .seasonBtn { height: 36px; }
-.tabbar .menu { min-width: 200px; }
 
 .sheetBody { padding: 0 16px 24px; }
 
@@ -511,9 +380,6 @@
 
 /* Touch targets, keyed on the pointer rather than the width. */
 @media (pointer: coarse) {
-  .tab { height: 40px; line-height: 40px; }
-  .ink { height: 40px; }
-  .seasonBtn { height: 40px; }
   .close { width: 44px; height: 44px; }
   .ghost,
   .primary { height: 44px; }
@@ -524,9 +390,7 @@
   .dialog,
   .sheet,
   .view { animation: none; }
-  .ink,
   .mini,
-  .chrome,
-  .menu { transition: none; }
+  .chrome { transition: none; }
   .sheet { transition: opacity 200ms ease; }
 }

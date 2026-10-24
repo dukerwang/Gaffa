@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
-import NavigationLink from '@/components/ui/NavigationLink';
+import { Tabs } from '@/components/ui';
 import type { Tournament, TournamentRound, TournamentMatchup } from '@/types';
 import { getSeeding } from '@/lib/tournaments/engine';
 import { BracketMatchup } from '@/components/tournaments/BracketMatchup';
@@ -176,18 +176,15 @@ export default async function TournamentsPage({ params, searchParams }: Props) {
                 </header>
 
                 <div className={styles.tabContainer}>
-                    {tournaments.map(t => {
-                        const isActive = t.id === activeTournament?.id;
-                        return (
-                            <NavigationLink 
-                                key={t.id} 
-                                href={`/league/${leagueId}/tournaments?cup=${t.id}`}
-                                className={`${styles.tab} ${isActive ? styles.tabActive : styles.tabInactive}`}
-                            >
-                                {t.name}
-                            </NavigationLink>
-                        );
-                    })}
+                    <Tabs
+                        ariaLabel="Cups"
+                        value={activeTournament?.id ?? ''}
+                        items={tournaments.map(t => ({
+                            value: t.id,
+                            label: t.name,
+                            href: `/league/${leagueId}/tournaments?cup=${t.id}`,
+                        }))}
+                    />
                 </div>
 
                 <div className={styles.infoBar}>

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import NavigationLink from '@/components/ui/NavigationLink';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Icon, IconButton } from '@/components/ui';
 import CrestBadge from '@/components/crest/CrestBadge';
 import type { CrestConfig } from '@/components/crest/types';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
@@ -126,7 +127,7 @@ export default function SquadPeekDrawer({
               )}
             </p>
           </div>
-          <button type="button" className={styles.close} onClick={onClose} aria-label="Close">✕</button>
+          <IconButton label="Close" tooltip={false} className={styles.close} onClick={onClose} icon={<Icon name="x" size={18} strokeWidth={2} />} />
         </header>
 
         <div className={styles.body}>

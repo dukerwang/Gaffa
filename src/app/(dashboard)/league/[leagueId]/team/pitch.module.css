@@ -1075,16 +1075,6 @@
     gap: 10px;
 }
 
-.sidebarErrorDismiss {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--color-text-secondary);
-    font-size: var(--t-11);
-    padding: 0;
-    flex-shrink: 0;
-    line-height: 1;
-}
 
 /* ── Mobile ────────────────────────────────────────────────
    The node shrinks; the portrait steps down to its row size, which is the

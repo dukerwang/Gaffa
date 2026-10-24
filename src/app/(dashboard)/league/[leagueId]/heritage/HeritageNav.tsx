@@ -1,14 +1,11 @@
 /**
- * Heritage's own nav, shown on every surface of the hub.
- *
- * The tab device is League Home's (`_home/home.module.css` .heroTab /
- * .heroTabActive): 12px bold, a 2px underline in accent ink, sitting ON the
- * masthead's ink rule rather than under its own. It scrolls horizontally on a
- * phone rather than wrapping, so the five destinations stay one row.
+ * Heritage's own nav, shown on every surface of the hub: kit Tabs in link
+ * mode. It scrolls horizontally on a phone rather than wrapping, so the five
+ * destinations stay one row. Each page renders its own nav, so the underline
+ * lands on the new tab rather than travelling to it.
  */
 
-import NavigationLink from '@/components/ui/NavigationLink';
-import styles from './heritage.module.css';
+import { Tabs } from '@/components/ui';
 
 export type HeritageTab =
   | 'Overview'
@@ -33,17 +30,14 @@ export default function HeritageNav({
   active: HeritageTab;
 }) {
   return (
-    <nav className={styles.nav} aria-label="Heritage sections">
-      {TABS.map((t) => (
-        <NavigationLink
-          key={t.label}
-          href={`/league/${leagueId}/heritage${t.href}`}
-          className={t.label === active ? styles.tabActive : styles.tab}
-          aria-current={t.label === active ? 'page' : undefined}
-        >
-          {t.label}
-        </NavigationLink>
-      ))}
-    </nav>
+    <Tabs
+      ariaLabel="Heritage sections"
+      value={active}
+      items={TABS.map((t) => ({
+        value: t.label,
+        label: t.label,
+        href: `/league/${leagueId}/heritage${t.href}`,
+      }))}
+    />
   );
 }

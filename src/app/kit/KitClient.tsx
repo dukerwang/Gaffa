@@ -24,7 +24,6 @@ import {
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
 import { useTheme } from '@/context/ThemeContext';
-import ChromePrototypes from './ChromePrototypes';
 import TopRatedPrototypes from './TopRatedPrototypes';
 import styles from './kit.module.css';
 
@@ -105,8 +104,6 @@ export default function KitClient() {
         <span className={styles.plateRule} aria-hidden="true" />
         <Switch size="sm" checked={slowMo} onChange={setSlowMo} label="Slow Motion" />
       </div>
-
-      <ChromePrototypes />
 
       <TopRatedPrototypes />
 

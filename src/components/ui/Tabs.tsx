@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import NavigationLink from './NavigationLink';
 import { useSlidingIndicator } from './internal/useSlidingIndicator';
 import styles from './Tabs.module.css';
@@ -55,6 +55,16 @@ export function Tabs<T extends string = string>({
 }: TabsProps<T>) {
   const { containerRef, indicator } = useSlidingIndicator<HTMLDivElement>(value);
   const links = items.length > 0 && items.every((i) => i.href !== undefined);
+
+  // A row of links that scrolls on a phone opens with the current page in view,
+  // so Trophy Cabinets isn't chosen but off the right edge. Scrolls the row only.
+  useEffect(() => {
+    const row = containerRef.current;
+    const current = row?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!links || !row || !current) return;
+    const right = current.offsetLeft + current.offsetWidth;
+    if (right > row.scrollLeft + row.clientWidth) row.scrollLeft = right - row.clientWidth + 16;
+  }, [links, value, containerRef]);
 
   const move = (e: React.KeyboardEvent, from: T) => {
     const enabled = items.filter((i) => !i.disabled);

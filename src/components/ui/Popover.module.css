@@ -2,12 +2,13 @@
    Lifted off the page, so a shadow and no border (UI_RULES 7).
 
    z-index sits above ResponsiveModal's scrim (a literal 1000, older than the
-   --z-* scale) because a Select can open inside a modal. When the modal moves
+   --z-* scale) and the player card's overlay (1100), because a Select can
+   open inside either. When the modal moves
    onto --z-modal, this can move onto --z-dropdown. */
 
 .popover {
   position: fixed;
-  z-index: 1100;
+  z-index: 1150;
   background: var(--color-bg-card);
   border-radius: var(--r-shell);
   box-shadow: 0 0 0 1px rgba(27, 25, 21, 0.06), var(--shadow-lg);
@@ -49,7 +50,7 @@
 .scrim {
   position: fixed;
   inset: 0;
-  z-index: 1099;
+  z-index: 1149;
   background: rgba(17, 16, 14, 0.4);
   transition: opacity 240ms var(--ease-drawer);
 }
