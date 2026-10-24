@@ -306,8 +306,9 @@
 .lnKey { display: flex; align-items: center; gap: 4px; }
 .lnKey .pts { font-size: 11px; }
 .board { border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--color-border); background: var(--color-bg-card); }
-.lsGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--color-border); background: var(--color-bg-card); }
-.lsCol { display: flex; flex-direction: column; min-width: 0; }
+.lsGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr auto; border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--color-border); background: var(--color-bg-card); }
+/* Head, pitch and bench share the grid's rows, so both halves line up whatever their formation or bench. */
+.lsCol { display: grid; grid-template-rows: subgrid; grid-row: span 3; min-width: 0; }
 .lsCol + .lsCol { border-left: 1px solid var(--color-border); }
 .lsHead { display: flex; align-items: center; gap: 9px; height: 52px; padding: 0 16px; border-bottom: 1px solid var(--color-border); min-width: 0; }
 .lsHead b { font-family: var(--font-serif); font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
@@ -554,9 +555,8 @@
   /* The two halves swipe, as the team sheets do: native scroll-snap, the next half peeking in. */
   .lsSwp { margin: 0 calc(-1 * var(--space-3, 12px)); overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scroll-padding-inline: var(--space-3, 12px); }
   .lsSwp::-webkit-scrollbar { display: none; }
-  .lsGrid { display: flex; gap: 10px; width: max-content; padding: 0 var(--space-3, 12px); align-items: flex-start; border-radius: 0; overflow: visible; box-shadow: none; background: transparent; }
-  .lsGrid::after { content: ''; flex: 0 0 2px; }
-  .lsGrid .lsCol { flex: 0 0 auto; width: calc(100vw - 2 * var(--space-3, 12px) - 34px); border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--color-border); background: var(--color-bg-card); border-left: 0; scroll-snap-align: start; scroll-snap-stop: always; }
+  .lsGrid { display: grid; grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: calc(100vw - 2 * var(--space-3, 12px) - 34px); column-gap: 10px; width: max-content; padding: 0 calc(var(--space-3, 12px) + 2px) 0 var(--space-3, 12px); border-radius: 0; overflow: visible; box-shadow: none; background: transparent; }
+  .lsGrid .lsCol { border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--color-border); background: var(--color-bg-card); border-left: 0; scroll-snap-align: start; scroll-snap-stop: always; }
   .lnKeyWrap { display: none; }
   .bnSide { padding: 12px 12px 14px; }
   .bnChips { gap: 6px; }
@@ -589,13 +589,10 @@
 
 /* A phone turned sideways: both halves side by side again. */
 @media (max-width: 960px) and (orientation: landscape) and (max-height: 520px) {
-  .lsGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--color-border); background: var(--color-bg-card); }
+  .lsGrid { display: grid; grid-auto-flow: row; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-auto-columns: auto; column-gap: 0; width: auto; padding: 0; border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--color-border); background: var(--color-bg-card); }
   .lsGrid .lsCol { border-radius: 0; box-shadow: none; }
   .lsGrid .lsCol + .lsCol { border-left: 1px solid var(--color-border); }
   .lsSwp { margin: 0; overflow: visible; }
-  .lsGrid { width: auto; padding: 0; align-items: stretch; }
-  .lsGrid .lsCol { width: auto; }
-  .lsGrid::after { display: none; }
   .lsPg { display: none !important; }
 }
 
