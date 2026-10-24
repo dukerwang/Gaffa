@@ -6,7 +6,7 @@ import { DRAW_THRESHOLD } from '@/lib/scoring/drawBand';
 import type { MatchState, PitchPlayer, SideView } from '@/lib/matchups/matchupView';
 import { fmt, ordinal } from '@/lib/matchups/roundView';
 import {
-  Countdown, Crest, DarkAxis, FitText, Face, FormDots, Glyph, Local, Ticks, deadlineText, kickoffShort, s, verdict, weekendRange,
+  Countdown, Crest, DarkAxis, FitText, Face, FormDots, Local, Ticks, deadlineText, kickoffShort, s, verdict, weekendRange,
 } from './parts';
 import type { Metas, TieLite } from './types';
 
@@ -153,7 +153,7 @@ export default function Scoreboard(props: ScoreboardProps) {
       {href && <NavigationLink href={href} className={s.hxStretch} aria-label="Open matchup">{null}</NavigationLink>}
       <div className={s.hxTop}>
         {big ? <span>{when}</span> : <span>{mine ? 'Your Fixture' : 'Fixture'}<span className={s.dOnly}> · {when}</span></span>}
-        <span className={s.hxTopR}>{stateNode}{href && <span className={s.hxOpen}>Matchup<Glyph k="right" /></span>}</span>
+        <span className={s.hxTopR}>{stateNode}</span>
       </div>
       <div className={s.hxMain}>
         {side(A, vA, a, aLose, mine === 'A', false)}

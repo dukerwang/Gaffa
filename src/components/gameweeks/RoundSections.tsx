@@ -1,11 +1,14 @@
 'use client';
 
+import { useMemo } from 'react';
+
 import NavigationLink from '@/components/ui/NavigationLink';
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
 import { DRAW_THRESHOLD } from '@/lib/scoring/drawBand';
 import type { MatchState, PitchPlayer } from '@/lib/matchups/matchupView';
 import { fmt, ordinal, type ResultLetter, type TableRow } from '@/lib/matchups/roundView';
+import { clubCodes } from '@/lib/matchups/clubCodes';
 import { Crest, FitText, Glyph, Local, Res, Ticks, kickoffShort, s, useWidth } from './parts';
 import Worm, { WeekendDots, onClock } from './Worm';
 import type { Metas, TeamLite, TieLite } from './types';
@@ -132,6 +135,7 @@ export function RoundRecords({ data, teams, myTeamId }: { data: RecordsData; tea
 export interface SpreadPlayer { p: PitchPlayer; owner: string; opp: string | null }
 export function Spread({ all, teams, myTeamId, live, onOpen }: { all: SpreadPlayer[]; teams: Record<string, TeamLite>; myTeamId?: string; live: boolean; onOpen: (p: PitchPlayer) => void }) {
   const [ref, W] = useWidth<HTMLDivElement>(740);
+  const codes = useMemo(() => clubCodes(Object.values(teams)), [teams]);
   const H = 118, r = 4.5, maxV = 45;
   const x = (v: number) => 14 + (Math.min(v, maxV) / maxV) * (W - 28);
   const top = all.slice().sort((a, b) => b.p.points - a.p.points).slice(0, 6);
@@ -174,7 +178,7 @@ export function Spread({ all, teams, myTeamId, live, onOpen }: { all: SpreadPlay
               <Portrait photoUrl={t.p.photoUrl} name={t.p.name} club={t.p.club} size="sm" headTopPct={t.p.headTopPct} headWidthPct={t.p.headWidthPct} photoVersion={t.p.photoVersion} />
               <span className={s.spTx}>
                 <span className="g-namerow"><FitText className={s.spName} text={t.p.name} min={12} /><PositionBadge position={t.p.slot} size="sm" /></span>
-                <span className={s.spCtx}><Crest crest={teams[t.owner]?.crest ?? null} name={teams[t.owner]?.name ?? ''} size={13} />{teams[t.owner]?.name}{t.opp && <><span className={s.muted}>v</span><span className={s.muted}>{teams[t.opp]?.name}</span></>}</span>
+                <span className={s.spCtx}><Crest crest={teams[t.owner]?.crest ?? null} name={teams[t.owner]?.name ?? ''} size={13} /><span title={teams[t.owner]?.name}>{codes[t.owner]}</span>{t.opp && <><span className={s.muted}>v</span><span className={s.muted} title={teams[t.opp]?.name}>{codes[t.opp]}</span></>}</span>
               </span>
               <span className={s.spPts}>{fmt(t.p.points)}</span>
             </button>

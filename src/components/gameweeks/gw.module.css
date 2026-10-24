@@ -105,14 +105,12 @@
 .hxStretch { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
 .hx:has(.hxStretch:hover) { filter: brightness(1.04); }
 .hxTop, .hxMain, .hxFoot { position: relative; }
-.hx .btn, .hxOpen { position: relative; z-index: 2; }
+.hx .btn { position: relative; z-index: 2; }
 .hxTop { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 22px; font-family: var(--font-label); font-weight: 600; font-size: 14px; color: rgba(255,255,255,.88); border-bottom: 1px solid rgba(255,255,255,.18); }
 .hxTopR { margin-left: auto; display: flex; align-items: center; gap: 14px; }
 .hxState { display: inline-flex; align-items: center; gap: 6px; color: #fff; font-weight: 700; letter-spacing: .02em; }
 .hxLive { color: #FFD2CC; }
 .ldot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px color-mix(in oklab, currentColor 28%, transparent); flex-shrink: 0; }
-.hxOpen { display: inline-flex; align-items: center; gap: 2px; color: #fff; }
-.hxOpen .gl { opacity: .9; }
 .hxMain { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 28px; padding: 22px 26px; }
 .hxSide { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .hxAway { flex-direction: row-reverse; text-align: right; }
