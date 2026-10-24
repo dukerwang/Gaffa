@@ -559,11 +559,12 @@ export default function TopBar() {
                 onPointerEnter={handleBalanceEnter}
                 onPointerLeave={handleBalanceLeave}
               >
+                <div className={styles.menuLabel}>Club Balances</div>
                 {leagueBalancesLoading && leagueBalances.length === 0 ? (
                   <div aria-busy="true" aria-label="Loading Club Balances">
                     {Array.from({ length: 4 }, (_, i) => (
-                      <div key={i} className={styles.menuRow}>
-                        <Skeleton shape="circle" width={24} height={24} />
+                      <div key={i} className={`${styles.menuRow} ${styles.menuRowCrest}`}>
+                        <Skeleton shape="circle" width={20} height={20} />
                         <Skeleton shape="text" width={`${52 + (i % 3) * 12}%`} />
                         <Skeleton shape="text" width={40} className={styles.balanceRowSkeletonAmount} />
                       </div>
@@ -576,7 +577,7 @@ export default function TopBar() {
                       <Link
                         key={team.id}
                         href={clubHref(currentLeagueId, team.id, isCurrent)}
-                        className={styles.menuRow}
+                        className={`${styles.menuRow} ${styles.menuRowCrest}`}
                         aria-current={isCurrent ? 'true' : undefined}
                         onClick={() => {
                           setBalanceDropdownOpen(false);
@@ -586,7 +587,7 @@ export default function TopBar() {
                         <CrestBadge
                           config={team.crest_config}
                           teamName={team.team_name}
-                          size={24}
+                          size={20}
                           interactive={false}
                         />
                         <span className={styles.menuRowName}>{team.team_name}</span>
@@ -598,7 +599,7 @@ export default function TopBar() {
                 <div className={styles.menuSep} />
                 <Link
                   href={`/league/${currentLeagueId}/finance`}
-                  className={styles.menuRow}
+                  className={`${styles.menuRow} ${styles.menuRowQuiet}`}
                   onClick={() => {
                     setBalanceDropdownOpen(false);
                     setIsNavigating(true);
@@ -610,7 +611,7 @@ export default function TopBar() {
                 {currentLeague?.is_dynasty !== false && (
                   <Link
                     href={`/league/${currentLeagueId}/team/roster#facilities`}
-                    className={styles.menuRow}
+                    className={`${styles.menuRow} ${styles.menuRowQuiet}`}
                     onClick={() => {
                       setBalanceDropdownOpen(false);
                       setIsNavigating(true);
@@ -686,7 +687,7 @@ export default function TopBar() {
                   sheet
                   sheetTitle="Account"
                   aria-label="Account"
-                  className={styles.menuPanel}
+                  className={`${styles.menuPanel} ${styles.menuPanelAccount}`}
                 >
                   <Link
                     href={currentLeagueId ? `/league/${currentLeagueId}/crest` : '/settings'}
@@ -696,12 +697,12 @@ export default function TopBar() {
                     {currentLeagueId && currentCrestConfig ? (
                       <CrestBadge
                         config={currentCrestConfig}
-                        size={44}
+                        size={40}
                         teamName={currentTeam?.team_name || username}
                         interactive={false}
                       />
                     ) : (
-                      <div className={styles.userInitialsAvatar} style={{ width: '44px', height: '44px', fontSize: '14px' }}>
+                      <div className={styles.userInitialsAvatar} style={{ width: '40px', height: '40px', fontSize: '13px' }}>
                         {initials}
                       </div>
                     )}
