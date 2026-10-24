@@ -10,6 +10,7 @@ import type { BenchPlayer, Line, MatchState, MatchupView, PitchPlayer, SideView 
 import { fmt } from '@/lib/matchups/roundView';
 import { Crest, Face, FitText, Glyph, Local, Pts, kickoffShort, s, useWidth } from './parts';
 import RowPitch, { rowCount } from './RowPitch';
+import { useSwipePager } from './useSwipePager';
 import Worm, { onClock, turnIndex } from './Worm';
 import type { TeamLite } from './types';
 
@@ -56,8 +57,12 @@ function BenchOne({ side, state, onOpen }: { side: SideView; state: MatchState; 
 export function Lineups({ view, teams, onOpen, mineFirst }: { view: MatchupView; teams: { a: TeamLite; b: TeamLite }; onOpen: Open; mineFirst: 'a' | 'b' }) {
   const minRows = Math.max(rowCount(view.a.starters), rowCount(view.b.starters));
   const up = view.state === 'upcoming';
-  const col = (side: SideView, t: TeamLite, mine: boolean) => (
-    <div className={`${s.lsCol}${mine ? ` ${s.lsColMine}` : ''}`} key={t.id}>
+  const { scroller, cards, active, go } = useSwipePager();
+  // Your own club first, so a phone opens on your half; wide screens flip it back to the scoreboard's order in CSS.
+  const order: ('a' | 'b')[] = mineFirst === 'b' ? ['b', 'a'] : ['a', 'b'];
+  const other = teams[order[active === 0 ? 1 : 0]];
+  const col = (side: SideView, t: TeamLite, i: number) => (
+    <div className={s.lsCol} key={t.id} ref={(el) => { cards.current[i] = el; }}>
       <div className={s.lsHead}>
         <Crest crest={t.crest} name={t.name} size={22} />
         <b>{t.name}</b>
@@ -72,11 +77,25 @@ export function Lineups({ view, teams, onOpen, mineFirst }: { view: MatchupView;
     <section className={s.blk}>
       <div className={s.sh}>
         <h2 className={s.shT}>Lineups</h2>
-        <span className={`${s.shTools} ${s.lnKeyWrap}`}><span className={s.lnKey}>{[0, 2, 5.6, 15.8, 29].map((v) => <Pts key={v} v={v} />)}</span></span>
+        <span className={s.shTools}>
+          <span className={s.lnKeyWrap}><span className={s.lnKey}>{[0, 2, 5.6, 15.8, 29].map((v) => <Pts key={v} v={v} />)}</span></span>
+          <span className={`${s.swpPager} ${s.lsPg}`} role="tablist" aria-label="Lineups">
+            {order.map((k, i) => (
+              <button key={k} type="button" role="tab" aria-selected={active === i} aria-label={teams[k].name}
+                className={`${s.swpDot}${active === i ? ` ${s.swpOn}` : ''}`} onClick={() => go(i)}>
+                <Crest crest={teams[k].crest} name={teams[k].name} size={14} />
+              </button>
+            ))}
+          </span>
+        </span>
       </div>
-      {/* On a phone your own half comes first; desktop keeps home on the left. */}
-      <div className={s.lsGrid}>{col(view.a, teams.a, mineFirst === 'a')}{col(view.b, teams.b, mineFirst === 'b')}</div>
-      <p className={s.lsHint}>Turn your phone sideways for the two halves side by side</p>
+      <div ref={scroller} className={s.lsSwp}>
+        <div className={`${s.lsGrid}${mineFirst === 'b' ? ` ${s.lsFlip}` : ''}`}>{order.map((k, i) => col(view[k], teams[k], i))}</div>
+      </div>
+      <div className={`${s.swpFoot} ${s.lsPg}`} aria-hidden="true">
+        <span className={s.swpBar}>{order.map((k, i) => <i key={k} className={active === i ? s.swpBarOn : undefined} />)}</span>
+        <span>Swipe for {other.name}</span>
+      </div>
     </section>
   );
 }

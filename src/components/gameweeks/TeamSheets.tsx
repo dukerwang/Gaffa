@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import type { MatchupView, PitchPlayer } from '@/lib/matchups/matchupView';
 import { fmt, type ResultLetter } from '@/lib/matchups/roundView';
-import { Crest, FormDots, Res, s, useReducedMotion } from './parts';
+import { Crest, FormDots, Res, s } from './parts';
 import { TeamSheet } from './MatchSections';
+import { useSwipePager } from './useSwipePager';
 import type { TeamLite } from './types';
 
 /**
@@ -17,33 +17,7 @@ export function TeamSheets({ view, teams, mine, onOpen }: {
   view: MatchupView; teams: { a: TeamLite; b: TeamLite }; mine: 'a' | 'b'; onOpen: (p: PitchPlayer) => void;
 }) {
   const order: ('a' | 'b')[] = mine === 'b' ? ['b', 'a'] : ['a', 'b'];
-  const scroller = useRef<HTMLDivElement>(null);
-  const cards = useRef<(HTMLDivElement | null)[]>([]);
-  const [active, setActive] = useState(0);
-  const reduced = useReducedMotion();
-
-  useEffect(() => {
-    const root = scroller.current;
-    if (!root) return;
-    const ratios = [0, 0];
-    const io = new IntersectionObserver((entries) => {
-      for (const e of entries) {
-        const i = cards.current.indexOf(e.target as HTMLDivElement);
-        if (i >= 0) ratios[i] = e.intersectionRatio;
-      }
-      setActive(ratios[1] > ratios[0] ? 1 : 0);
-    }, { root, threshold: [0, 0.25, 0.5, 0.75, 1] });
-    cards.current.forEach((c) => c && io.observe(c));
-    return () => io.disconnect();
-  }, []);
-
-  const go = (i: number) => {
-    const root = scroller.current, card = cards.current[i];
-    if (!root || !card) return;
-    const pad = parseFloat(getComputedStyle(root).scrollPaddingInlineStart || '0') || 0;
-    root.scrollTo({ left: card.offsetLeft - pad, behavior: reduced ? 'auto' : 'smooth' });
-    setActive(i);
-  };
+  const { scroller, cards, active, go } = useSwipePager();
   const other = teams[order[active === 0 ? 1 : 0]];
 
   return (
