@@ -64,7 +64,7 @@
   border-image: repeating-linear-gradient(90deg, var(--shelf-a) 0 36px, var(--shelf-b) 36px 72px) fill 0 / 0 / 0 100vmax;
 }
 .hero { display: grid; grid-template-columns: minmax(0, 1fr) 560px; gap: 48px; align-items: end; }
-.heroText { padding-bottom: 72px; min-width: 0; }
+.heroText { padding-bottom: 72px; min-width: 0; container-type: inline-size; }
 /* The wordmark leads: the top bar's crest-and-name lockup, at hero scale. */
 .mark {
   display: flex;
@@ -73,7 +73,9 @@
   margin: 0;
   font-family: var(--font-serif);
   font-weight: 700;
-  font-size: 96px;
+  /* The lockup is 4.9em wide, so 20cqi is the largest size that fits the column; it never wraps. */
+  font-size: min(96px, 20cqi);
+  white-space: nowrap;
   line-height: 1;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -316,7 +318,7 @@
 /* ---------- tablet ---------- */
 @media (max-width: 1100px) {
   .hero { grid-template-columns: minmax(0, 1fr) 480px; gap: 32px; }
-  .mark { font-size: 80px; }
+  .mark { font-size: min(80px, 20cqi); }
   .bottomRow { grid-template-columns: minmax(0, 1fr) 320px; }
 }
 
@@ -334,7 +336,7 @@
   .shelf { margin-top: calc(var(--space-4) * -1); padding-top: 26px; }
   .hero { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .heroText { padding-bottom: var(--s6); }
-  .mark { font-size: 56px; }
+  .mark { font-size: min(56px, 20cqi); }
   .heroLine { margin-top: 14px; font-size: 21px; }
   .heroP { font-size: var(--t-15); margin-top: var(--s3); }
   .heroActions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }

@@ -251,7 +251,8 @@ export default function TopBar() {
     setIsNavigating(true);
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push('/login');
+    // The public front page, not the sign-in form: it's where a signed-out visitor starts.
+    router.push('/');
     router.refresh();
   }
 
