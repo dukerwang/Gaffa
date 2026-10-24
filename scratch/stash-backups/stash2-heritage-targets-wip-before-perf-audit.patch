@@ -1,0 +1,611 @@
+diff --git a/scripts/recompute_reference_stats.mjs b/scripts/recompute_reference_stats.mjs
+index f65da6ed..24d624a8 100644
+--- a/scripts/recompute_reference_stats.mjs
++++ b/scripts/recompute_reference_stats.mjs
+@@ -88,7 +88,7 @@ function positionGroup(pos) {
+ // Keep in step with src/lib/scoring/matchRating.ts. Duplicated rather than
+ // imported because this script runs as plain .mjs outside the Next build.
+ const GK_CLEAN_SHEET = 20;
+-const GK_CLEAN_SHEET_SAVE_CAP = 10;
++const GK_CLEAN_SHEET_SAVE_CAP = 16;
+ const GK_GOAL_CONCEDED = 3.4;
+ const GK_XGC_DIFF = 2.5;
+ 
+diff --git a/src/app/(dashboard)/league/[leagueId]/matchups/[matchupId]/matchup-detail.module.css b/src/app/(dashboard)/league/[leagueId]/matchups/[matchupId]/matchup-detail.module.css
+index 9d25ea2d..55f552e7 100644
+--- a/src/app/(dashboard)/league/[leagueId]/matchups/[matchupId]/matchup-detail.module.css
++++ b/src/app/(dashboard)/league/[leagueId]/matchups/[matchupId]/matchup-detail.module.css
+@@ -242,10 +242,40 @@
+     .reportGrid { grid-template-columns: 1fr; gap: var(--s4); }
+ }
+ 
++/* `.g-score` stacks its two sides below 640px (globals.css § 4), because side
++   by side neither half can hold a crest, a club name and a 40px figure at phone
++   width — the away half overflowed the panel and overlapped the home club's
++   name. The club identity is the half of the cell this page owns, so it
++   unmirrors here: the away crest leads its name the way the home crest does. */
++@media (max-width: 640px) {
++    .scoreClub {
++        flex: 1;
++        margin-bottom: 0;
++    }
++
++    .scoreClubAway { flex-direction: row; }
++
++    /* A club name wraps rather than truncates. Stacked, the figure and the
++       crest take a fixed 145px of the 311px measure, which leaves the longest
++       club names a character or two short — and an ellipsis that eats the last
++       word is worse than a second line. Clamped at two so a pathological name
++       cannot push the axis off the card. */
++    .clubLink {
++        flex: 1;
++        min-width: 0;
++        font-size: var(--t-17);
++        white-space: normal;
++        overflow-wrap: anywhere;
++        display: -webkit-box;
++        -webkit-box-orient: vertical;
++        -webkit-line-clamp: 2;
++        line-clamp: 2;
++    }
++}
++
+ @media (max-width: 600px) {
+     .backLink { margin: var(--s4) var(--s4) 0; }
+     .headPanel, .report { margin: 0 var(--s4); }
+     .report { padding: var(--s4); }
+-    .clubLink { font-size: var(--t-15); }
+     .reportHeadline { font-size: var(--t-20); }
+ }
+diff --git a/src/app/(dashboard)/league/[leagueId]/matchups/matchups.module.css b/src/app/(dashboard)/league/[leagueId]/matchups/matchups.module.css
+index dc665949..cb581a23 100644
+--- a/src/app/(dashboard)/league/[leagueId]/matchups/matchups.module.css
++++ b/src/app/(dashboard)/league/[leagueId]/matchups/matchups.module.css
+@@ -483,13 +483,101 @@
+     }
+ }
+ 
++@media (max-width: 640px) {
++    /* `.g-score` stacks its two sides below 640px (globals.css § 4). The club
++       identity is the half of the cell this page owns, so it unmirrors here:
++       the away crest leads its name the way the home crest does, and the record
++       sits under the name on the same edge. */
++    .scoreClub {
++        flex: 1;
++        margin-bottom: 0;
++    }
++
++    .scoreClubAway { flex-direction: row; }
++
++    /* `stretch`, not `flex-start`. In a column flex box a `flex-start` child is
++       sized to its content, so `.scoreName`'s ellipsis had no width to work
++       against and the club name ran straight through its own figure. Stretch
++       binds the name to the column, `text-align` does the unmirroring. */
++    .scoreClubAway .scoreId {
++        align-items: stretch;
++        text-align: left;
++    }
++
++    .scoreName { font-size: var(--t-17); }
++
++    /* A club name wraps rather than truncates. Stacked, the figure and the
++       crest take a fixed 145px of the 311px measure, which leaves the longest
++       club names a character or two short — and an ellipsis that eats the last
++       word is worse than a second line. Clamped at two so a pathological name
++       cannot push the axis off the card. */
++    .scoreName {
++        white-space: normal;
++        overflow-wrap: anywhere;
++        display: -webkit-box;
++        -webkit-box-orient: vertical;
++        -webkit-line-clamp: 2;
++        line-clamp: 2;
++    }
++}
++
++/* THE FIXTURE ROW STOPS BEING A ROW.
++
++   Three columns need a crest, a name and a figure in each outer track plus an
++   88px axis between them. Measured at 375px that left the club name 20.9px —
++   "W…", "St…", every fixture in the round reduced to a first letter. A name
++   truncated past two characters is not a shortened name, it is a missing one.
++
++   So each club takes its own line at full measure, and the axis moves under
++   both with the state beside it. Same three things, same order, stacked: the
++   figures still align on a common right edge, and the axis still reads as the
++   state of the tie under the pair it describes.
++
++   600px rather than the ~520px where the three columns actually break: between
++   the two the name survives only as an ellipsis, and a fixture list whose clubs
++   all end in "…" is the same failure one size smaller. */
++@media (max-width: 600px) {
++    .fixture {
++        display: flex;
++        flex-direction: column;
++        gap: var(--s2);
++        padding: var(--s3);
++    }
++
++    .fixtureSide { width: 100%; }
++
++    .fixtureSideAway { flex-direction: row; }
++    .fixtureSideAway .fixtureName { text-align: left; }
++
++    /* Last, not between. Stacked, the two clubs read as the pair they are only
++       while they are adjacent; the axis describes the pair, so it goes under
++       both rather than splitting them. */
++    .fixtureCentre {
++        order: 3;
++        flex-direction: row;
++        align-items: center;
++        gap: var(--s3);
++        width: 100%;
++        padding-top: var(--s1);
++    }
++
++    .fixtureCentre :global(.g-axis) {
++        flex: 1;
++        min-width: 0;
++    }
++
++    .fixtureState { flex-shrink: 0; }
++}
++
+ @media (max-width: 600px) {
+-    .masthead { padding: var(--s5) var(--s4) var(--s3); }
++    .masthead {
++        padding: var(--s5) var(--s4) var(--s3);
++        gap: var(--s3);
++    }
+     .lead { padding: 0 var(--s4) var(--s4); }
+     .round, .emptyPanel { margin: 0 var(--s4) var(--s6); }
+     .title { font-size: var(--t-25); }
+     .fixturesHead, .fixture { padding-left: var(--s3); padding-right: var(--s3); }
+-    .fixtureName { font-size: var(--t-12); }
+-    .fixtureScore { font-size: var(--t-15); min-width: 4.5ch; }
++    .fixtureName { font-size: var(--t-13); }
+     .fixtureScore { font-size: var(--t-15); min-width: 4.5ch; }
+ }
+diff --git a/src/app/globals.css b/src/app/globals.css
+index 197d2ec9..334d8889 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -957,7 +957,7 @@ svg {
+    the accent, because accent means "yours". */
+ .g-score {
+   display: grid;
+-  grid-template-columns: 1fr 1fr;
++  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+   row-gap: var(--s3);
+   align-items: end;
+   padding: var(--s5) var(--s4) var(--s4);
+@@ -978,6 +978,44 @@ svg {
+ .g-score-away { text-align: right; }
+ .g-score-axis { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 5px; }
+ 
++/* NARROW: the two sides stack into rows.
++
++   Side by side, each half has to hold a crest, a club name and a 40px figure.
++   At 375px a half is ~150px, which is not enough for any one of them — and
++   `1fr` floors at max-content, so the figure set a width the column could not
++   go below. The away half was pushed 199px past the panel, clipped by its
++   radius, and what remained of it overlapped the home club's name. Capping the
++   tracks at `minmax(0, 1fr)` above stops the overflow; below 640px the halves
++   stop competing for the measure at all.
++
++   Stacked, the club takes the full width and the figure sits at the end of its
++   own row, so the two numbers still align on a common right edge — which is the
++   only reason a scoreline puts them near each other. */
++@media (max-width: 640px) {
++  .g-score {
++    grid-template-columns: minmax(0, 1fr);
++    row-gap: var(--s4);
++    padding: var(--s4);
++  }
++
++  /* Each side becomes club-then-figure. The axis keeps its own row. */
++  .g-score > :not(.g-score-axis) {
++    display: flex;
++    align-items: center;
++    justify-content: space-between;
++    gap: var(--s3);
++    min-width: 0;
++  }
++
++  /* The away side no longer mirrors: at one column there is no centre to face
++     across, and a right-aligned name under a left-aligned one reads as two
++     different lists. */
++  .g-score-away { text-align: left; }
++
++  .g-score-v { font-size: var(--t-32); flex-shrink: 0; }
++  .g-score-mine .g-score-v { padding-bottom: 4px; }
++}
++
+ /* --- 4a. The margin axis ---
+    Added 2026-08-12, by port 5, which is the scoreline's first consumer. The
+    locked spec said "margin axis full width beneath" and left what the axis
+diff --git a/src/components/auth/AuthShowcase.module.css b/src/components/auth/AuthShowcase.module.css
+index d7eab883..6f387e60 100644
+--- a/src/components/auth/AuthShowcase.module.css
++++ b/src/components/auth/AuthShowcase.module.css
+@@ -131,14 +131,12 @@
+   overflow: hidden;
+   display: flex;
+   flex-direction: column;
+-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+-  box-shadow: var(--shadow-sm);
++  transition: border-color var(--transition-fast);
+ }
+ 
+ @media (hover: hover) and (pointer: fine) {
+   .auctionCard:hover {
+     border-color: var(--color-border);
+-    box-shadow: var(--shadow-md);
+   }
+ }
+ 
+@@ -147,10 +145,7 @@
+ }
+ 
+ .ab-leading {
+-  border-top: 2px solid var(--color-accent) !important;
+-  border-left: 1px solid var(--color-border-subtle) !important;
+-  border-right: 1px solid var(--color-border-subtle) !important;
+-  border-bottom: 1px solid var(--color-border-subtle) !important;
++  border: 1px solid var(--color-accent) !important;
+   background-color: var(--color-bg-elevated) !important;
+ }
+ 
+diff --git a/src/components/layout/ChatNavIcon.module.css b/src/components/layout/ChatNavIcon.module.css
+index 12566a24..1ef568d9 100644
+--- a/src/components/layout/ChatNavIcon.module.css
++++ b/src/components/layout/ChatNavIcon.module.css
+@@ -12,5 +12,4 @@
+   border-radius: var(--radius-full);
+   background: #d9383a; /* editorial vibrant dark red, matches NotificationBell badge */
+   border: 2px solid var(--color-topbar);
+-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+ }
+diff --git a/src/components/layout/NotificationBell.module.css b/src/components/layout/NotificationBell.module.css
+index ffcb61ae..3149ff09 100644
+--- a/src/components/layout/NotificationBell.module.css
++++ b/src/components/layout/NotificationBell.module.css
+@@ -49,7 +49,6 @@
+   align-items: center;
+   justify-content: center;
+   border: 2px solid var(--color-topbar);
+-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+ }
+ 
+ .dropdown {
+@@ -58,7 +57,6 @@
+   right: 0;
+   width: 360px;
+   background: var(--color-bg-card);
+-  border: 1px solid var(--color-border-subtle);
+   border-radius: var(--radius-sm);
+   box-shadow: 0 16px 36px rgba(112, 84, 44, 0.12);
+   display: flex;
+diff --git a/src/components/layout/PushBanner.module.css b/src/components/layout/PushBanner.module.css
+index cd73febf..4e7f990a 100644
+--- a/src/components/layout/PushBanner.module.css
++++ b/src/components/layout/PushBanner.module.css
+@@ -10,7 +10,6 @@
+   margin: 12px auto;
+   max-width: 960px;
+   width: calc(100% - 24px);
+-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+ }
+ 
+ .content {
+diff --git a/src/components/layout/TopBar.module.css b/src/components/layout/TopBar.module.css
+index 4775c007..2bffe285 100644
+--- a/src/components/layout/TopBar.module.css
++++ b/src/components/layout/TopBar.module.css
+@@ -172,7 +172,6 @@
+   transform: translateX(-50%);
+   min-width: 180px;
+   background: var(--color-bg-card);
+-  border: 1px solid var(--color-border-subtle);
+   border-radius: var(--radius-sm);
+   box-shadow: 0 8px 24px rgba(28, 28, 28, 0.10);
+   padding: 0;
+@@ -282,7 +281,6 @@
+   right: 0;
+   min-width: 260px;
+   background: var(--color-bg-card);
+-  border: 1px solid var(--color-border-subtle);
+   border-radius: var(--radius-sm);
+   box-shadow: 0 12px 32px rgba(112, 84, 44, 0.08);
+   padding: var(--space-2) 0;
+@@ -539,7 +537,6 @@
+   width: 240px;
+   max-width: calc(100vw - var(--space-6));
+   background: var(--color-bg-card);
+-  border: 1px solid var(--color-border-subtle);
+   border-radius: var(--radius-md);
+   box-shadow: var(--shadow-md);
+   padding: var(--space-2) 0;
+@@ -750,7 +747,6 @@
+   right: 0;
+   width: 280px;
+   background: var(--color-bg-card);
+-  border: 1px solid var(--color-border-subtle);
+   border-radius: var(--radius-md);
+   box-shadow: var(--shadow-md);
+   padding: var(--space-2) 0;
+diff --git a/src/lib/tournaments/__tests__/engine.test.ts b/src/lib/tournaments/__tests__/engine.test.ts
+new file mode 100644
+index 00000000..b4541242
+--- /dev/null
++++ b/src/lib/tournaments/__tests__/engine.test.ts
+@@ -0,0 +1,143 @@
++import { describe, expect, it } from 'vitest';
++import {
++  nextPow2,
++  roundName,
++  getSeeding,
++  seedBracket,
++  buildRoundSpecs,
++  resolveTiebreaker,
++  type SeedEntry,
++} from '../engine';
++
++describe('Tournament Engine', () => {
++  describe('nextPow2 & roundName', () => {
++    it('calculates the next power of 2 correctly', () => {
++      expect(nextPow2(1)).toBe(1);
++      expect(nextPow2(2)).toBe(2);
++      expect(nextPow2(3)).toBe(4);
++      expect(nextPow2(7)).toBe(8);
++      expect(nextPow2(10)).toBe(16);
++    });
++
++    it('assigns correct round names', () => {
++      // 8 slots, 3 total rounds
++      expect(roundName(8, 0, 3)).toBe('Quarter-Final');
++      expect(roundName(8, 1, 3)).toBe('Semi-Final');
++      expect(roundName(8, 2, 3)).toBe('Final');
++
++      // 16 slots, 4 total rounds
++      expect(roundName(16, 0, 4)).toBe('Round of 16');
++      expect(roundName(16, 1, 4)).toBe('Quarter-Final');
++      expect(roundName(16, 2, 4)).toBe('Semi-Final');
++      expect(roundName(16, 3, 4)).toBe('Final');
++    });
++  });
++
++  describe('seeding & bracket generation', () => {
++    it('produces standard 4-team and 8-team seed orders', () => {
++      expect(getSeeding(4)).toEqual([1, 4, 2, 3]);
++      expect(getSeeding(8)).toEqual([1, 8, 4, 5, 2, 7, 3, 6]);
++    });
++
++    it('places teams into bracket slots with byes for missing seeds', () => {
++      const teams: SeedEntry[] = [
++        { teamId: 'team-1', seed: 1 },
++        { teamId: 'team-2', seed: 2 },
++        { teamId: 'team-3', seed: 3 },
++      ];
++      // Bracket size 4: seeds [1, 4, 2, 3]
++      // seed 1 -> slot 0 ('team-1')
++      // seed 4 -> slot 1 (null - bye for seed 1)
++      // seed 2 -> slot 2 ('team-2')
++      // seed 3 -> slot 3 ('team-3')
++      const slots = seedBracket(teams, 4);
++      expect(slots).toEqual(['team-1', null, 'team-2', 'team-3']);
++    });
++  });
++
++  describe('buildRoundSpecs', () => {
++    it('builds specs for secondary_cup (League Cup)', () => {
++      const specs = buildRoundSpecs(8, 'secondary_cup', 10);
++      expect(specs.length).toBe(3);
++      // QF, SF, Final
++      expect(specs[0].name).toBe('Quarter-Final');
++      expect(specs[0].startGameweek).toBe(16);
++      expect(specs[0].isTwoLeg).toBe(false);
++
++      expect(specs[1].name).toBe('Semi-Final');
++      expect(specs[1].startGameweek).toBe(21);
++      expect(specs[1].endGameweek).toBe(24);
++      expect(specs[1].isTwoLeg).toBe(true);
++
++      expect(specs[2].name).toBe('Final');
++      expect(specs[2].startGameweek).toBe(31);
++      expect(specs[2].endGameweek).toBe(31);
++      expect(specs[2].isTwoLeg).toBe(false);
++    });
++
++    it('builds specs for primary_cup (Champions Cup)', () => {
++      const specs = buildRoundSpecs(8, 'primary_cup', 10);
++      expect(specs.length).toBe(3);
++      // QF (two-leg), SF (two-leg), Final (one-leg)
++      expect(specs[0].name).toBe('Quarter-Final');
++      expect(specs[0].isTwoLeg).toBe(true);
++      expect(specs[0].startGameweek).toBe(32);
++      expect(specs[0].endGameweek).toBe(33);
++
++      expect(specs[1].name).toBe('Semi-Final');
++      expect(specs[1].isTwoLeg).toBe(true);
++      expect(specs[1].startGameweek).toBe(34);
++      expect(specs[1].endGameweek).toBe(35);
++
++      expect(specs[2].name).toBe('Final');
++      expect(specs[2].isTwoLeg).toBe(false);
++      expect(specs[2].startGameweek).toBe(38);
++      expect(specs[2].endGameweek).toBe(38);
++    });
++  });
++
++  describe('resolveTiebreaker', () => {
++    it('awards the win to the team with the highest individual scorer', () => {
++      const teamA = [
++        { playerId: 'p1', points: 12 },
++        { playerId: 'p2', points: 8 },
++      ];
++      const teamB = [
++        { playerId: 'p3', points: 15 }, // highest
++        { playerId: 'p4', points: 5 },
++      ];
++
++      expect(resolveTiebreaker(teamA, teamB, 'team-a', 'team-b')).toBe('team-b');
++    });
++
++    it('returns team A if team A has the highest individual scorer', () => {
++      const teamA = [
++        { playerId: 'p1', points: 22 }, // highest
++        { playerId: 'p2', points: 4 },
++      ];
++      const teamB = [
++        { playerId: 'p3', points: 18 },
++        { playerId: 'p4', points: 8 },
++      ];
++
++      expect(resolveTiebreaker(teamA, teamB, 'team-a', 'team-b')).toBe('team-a');
++    });
++
++    it('returns null if both teams have the same top individual score', () => {
++      const teamA = [
++        { playerId: 'p1', points: 14 },
++        { playerId: 'p2', points: 10 },
++      ];
++      const teamB = [
++        { playerId: 'p3', points: 14 },
++        { playerId: 'p4', points: 10 },
++      ];
++
++      expect(resolveTiebreaker(teamA, teamB, 'team-a', 'team-b')).toBeNull();
++    });
++
++    it('handles empty player arrays gracefully', () => {
++      expect(resolveTiebreaker([], [], 'team-a', 'team-b')).toBeNull();
++    });
++  });
++});
+diff --git a/src/lib/transfers/__tests__/effectivePpg.test.ts b/src/lib/transfers/__tests__/effectivePpg.test.ts
+new file mode 100644
+index 00000000..8f020301
+--- /dev/null
++++ b/src/lib/transfers/__tests__/effectivePpg.test.ts
+@@ -0,0 +1,74 @@
++import { describe, expect, it } from 'vitest';
++import { calculateEffectivePpg, type PpgSample } from '../effectivePpg';
++
++describe('calculateEffectivePpg', () => {
++  it('enforces a minimum floor of 3.0 across all paths', () => {
++    // Zero appearances, low market value -> proxy would be 3.0
++    expect(calculateEffectivePpg([], [], 0)).toBe(3.0);
++
++    // Negative or very low points
++    const poorStats: PpgSample[] = [
++      { points: 0.5, minutes: 90 },
++      { points: 1.0, minutes: 90 },
++    ];
++    expect(calculateEffectivePpg(poorStats, [], 5)).toBe(3.0);
++  });
++
++  it('uses market-value proxy when player has 0 appearances and no history', () => {
++    expect(calculateEffectivePpg([], [], 85)).toBe(10.0);
++    expect(calculateEffectivePpg([], [], 50)).toBe(8.0);
++    expect(calculateEffectivePpg([], [], 25)).toBe(6.0);
++    expect(calculateEffectivePpg([], [], 15)).toBe(4.5);
++    expect(calculateEffectivePpg([], [], 5)).toBe(3.0);
++  });
++
++  it('uses prior-season history with reliability adjustment when player has 0 current appearances', () => {
++    // 1500+ minutes -> reliability = 1.0, pure prior PPG
++    const fullPrior: PpgSample[] = Array.from({ length: 20 }, () => ({ points: 8.0, minutes: 90 }));
++    expect(calculateEffectivePpg([], fullPrior, 10)).toBe(8.0);
++
++    // Thin minutes -> pulled toward 4.0
++    // 300 minutes -> reliability = 300/1500 = 0.2
++    // ppg = 10.0 -> 0.2 * 10.0 + 0.8 * 4.0 = 2.0 + 3.2 = 5.2
++    const thinPrior: PpgSample[] = [
++      { points: 10.0, minutes: 150 },
++      { points: 10.0, minutes: 150 },
++    ];
++    expect(calculateEffectivePpg([], thinPrior, 10)).toBe(5.2);
++  });
++
++  it('weights 60% last-10 and 40% season average when appearances >= 10', () => {
++    // 15 appearances: last 10 at 10.0, first 5 at 5.0
++    // Season avg: (10*10 + 5*5) / 15 = 125 / 15 = 8.3333...
++    // Recent avg: 10.0
++    // Blend: 0.6 * 10.0 + 0.4 * 8.3333... = 6.0 + 3.3333... = 9.3333...
++    const currStats: PpgSample[] = [
++      ...Array.from({ length: 10 }, () => ({ points: 10.0, minutes: 90 })),
++      ...Array.from({ length: 5 }, () => ({ points: 5.0, minutes: 90 })),
++    ];
++    const result = calculateEffectivePpg(currStats, [], 50);
++    expect(result).toBeCloseTo(9.333, 2);
++  });
++
++  it('blends current season against prior season when appearances are between 1 and 9', () => {
++    // N = 5 appearances -> weightThis = 5/10 = 0.5
++    // thisSeason: 8.0 avg
++    // priorSeason: 20 appearances of 6.0 (reliability = 1.0)
++    // Blend: 0.5 * 8.0 + 0.5 * 6.0 = 7.0
++    const currStats: PpgSample[] = Array.from({ length: 5 }, () => ({ points: 8.0, minutes: 90 }));
++    const prevStats: PpgSample[] = Array.from({ length: 20 }, () => ({ points: 6.0, minutes: 90 }));
++    expect(calculateEffectivePpg(currStats, prevStats, 30)).toBe(7.0);
++  });
++
++  it('blends current season against market value proxy when no prior season exists and N < 10', () => {
++    // N = 2 appearances -> weightActual = min(1.0, 2/5) = 0.4
++    // thisSeason: 10.0 avg
++    // MV = 50 -> proxy = 8.0
++    // Blend: 0.4 * 10.0 + 0.6 * 8.0 = 4.0 + 4.8 = 8.8
++    const currStats: PpgSample[] = [
++      { points: 10.0, minutes: 90 },
++      { points: 10.0, minutes: 90 },
++    ];
++    expect(calculateEffectivePpg(currStats, [], 50)).toBe(8.8);
++  });
++});
+diff --git a/src/lib/transfers/effectivePpg.ts b/src/lib/transfers/effectivePpg.ts
+index 29758606..2b5194a8 100644
+--- a/src/lib/transfers/effectivePpg.ts
++++ b/src/lib/transfers/effectivePpg.ts
+@@ -21,6 +21,7 @@
+  */
+ 
+ import type { createAdminClient } from '@/lib/supabase/admin';
++import { fetchAllPages } from '@/lib/supabase/pagination';
+ 
+ type AdminClient = ReturnType<typeof createAdminClient>;
+ 
+@@ -105,15 +106,24 @@ export async function buildEffectivePpgMap(
+   const CHUNK = 200;
+   for (let i = 0; i < playerIds.length; i += CHUNK) {
+     const chunk = playerIds.slice(i, i + CHUNK);
+-    const { data: stats } = await admin
+-      .from('player_stats')
+-      .select('player_id, fantasy_points, gameweek, stats, season')
+-      .in('player_id', chunk)
+-      .in('season', [currentSeason, prevSeason])
+-      .order('season', { ascending: false })
+-      .order('gameweek', { ascending: false });
+-
+-    for (const s of stats ?? []) {
++    const stats = await fetchAllPages<{
++      player_id: string;
++      fantasy_points: number | null;
++      gameweek: number;
++      stats: unknown;
++      season: string;
++    }>((from, to) =>
++      admin
++        .from('player_stats')
++        .select('player_id, fantasy_points, gameweek, stats, season')
++        .in('player_id', chunk)
++        .in('season', [currentSeason, prevSeason])
++        .order('season', { ascending: false })
++        .order('gameweek', { ascending: false })
++        .range(from, to),
++    );
++
++    for (const s of stats) {
+       const raw = (s.stats as Record<string, unknown> | null) ?? {};
+       const minutes = Number(raw.minutes_played ?? 0);
+       if (minutes <= 0) continue;

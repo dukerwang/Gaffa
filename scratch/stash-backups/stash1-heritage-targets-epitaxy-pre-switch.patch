@@ -1,0 +1,674 @@
+diff --git a/src/app/(auth)/login/login.module.css b/src/app/(auth)/login/login.module.css
+index fea57f39..a6a6bb9f 100644
+--- a/src/app/(auth)/login/login.module.css
++++ b/src/app/(auth)/login/login.module.css
+@@ -96,6 +96,7 @@
+   font-size: var(--text-lg);
+   color: var(--color-text-primary);
+   letter-spacing: 0.04em;
++  text-transform: uppercase;
+ }
+ 
+ @media (max-width: 980px) {
+diff --git a/src/app/(dashboard)/league/[leagueId]/team/roster/ClubClient.tsx b/src/app/(dashboard)/league/[leagueId]/team/roster/ClubClient.tsx
+index a9a21a7c..e0c5b096 100644
+--- a/src/app/(dashboard)/league/[leagueId]/team/roster/ClubClient.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/team/roster/ClubClient.tsx
+@@ -18,6 +18,7 @@ import {
+   avgForm, seasonPts, ppgOf, valueOf, countdown,
+ } from './clubDerive';
+ import { futbolpediaConnectHref } from '@/lib/integrations/futbolpediaConnectUrl';
++import styles from './club.module.css';
+ 
+ // ── Shared prop types ────────────────────────────────────────────────────────
+ // Declared alongside the loader that produces them (`@/lib/teams/loadClubView`)
+@@ -229,6 +230,37 @@ export default function ClubClient({
+   const [decision, setDecision] = useState<DecisionRequest | null>(null);
+   const futbolpediaHref = viewerIsOwner ? futbolpediaConnectHref(leagueId, teamId) : null;
+ 
++  // Below the layout's single-column breakpoint, the Inspector rail isn't a
++  // sidebar any more — it's a sheet, so picking a card has to open it instead
++  // of leaving it wherever it landed at the bottom of a long stacked page.
++  const [narrow, setNarrow] = useState(false);
++  const [inspectorOpen, setInspectorOpen] = useState(false);
++
++  useEffect(() => {
++    const mq = window.matchMedia('(max-width: 1080px)');
++    const sync = () => setNarrow(mq.matches);
++    sync();
++    mq.addEventListener('change', sync);
++    return () => mq.removeEventListener('change', sync);
++  }, []);
++
++  useEffect(() => {
++    if (!narrow || !inspectorOpen) return;
++    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setInspectorOpen(false); };
++    document.addEventListener('keydown', onKey);
++    const previousOverflow = document.body.style.overflow;
++    document.body.style.overflow = 'hidden';
++    return () => {
++      document.removeEventListener('keydown', onKey);
++      document.body.style.overflow = previousOverflow;
++    };
++  }, [narrow, inspectorOpen]);
++
++  function selectEntry(id: string) {
++    setSelectedId(id);
++    setInspectorOpen(true);
++  }
++
+   useEffect(() => {
+     try {
+       const v = localStorage.getItem('gaffa:club-view') ?? localStorage.getItem('club-view');
+@@ -305,7 +337,7 @@ export default function ClubClient({
+ 
+   function handleTodo(n: TodoItem) {
+     if (n.decision) setDecision(n.decision);
+-    else if (n.entryId) setSelectedId(n.entryId);
++    else if (n.entryId) selectEntry(n.entryId);
+   }
+ 
+   return (
+@@ -468,9 +500,9 @@ export default function ClubClient({
+       {/* ── Layout ── */}
+       <div className={styles.layout}>
+         <main>
+-          {view === 'pitch' && <ClubPitch entries={entries} savedLineup={savedLineup} selId={selectedId} onSelect={setSelectedId} />}
+-          {view === 'depth' && <DepthChart entries={shown} allEntries={entries} selId={selectedId} onSelect={setSelectedId} />}
+-          {view === 'table' && <SquadTable entries={shown} selId={selectedId} onSelect={setSelectedId} />}
++          {view === 'pitch' && <ClubPitch entries={entries} savedLineup={savedLineup} selId={selectedId} onSelect={selectEntry} />}
++          {view === 'depth' && <DepthChart entries={shown} allEntries={entries} selId={selectedId} onSelect={selectEntry} />}
++          {view === 'table' && <SquadTable entries={shown} selId={selectedId} onSelect={selectEntry} />}
+           <RetainedList
+             leagueId={leagueId}
+             teamId={teamId}
+@@ -482,7 +514,24 @@ export default function ClubClient({
+           <Intel entries={entries} totals={totals} />
+         </main>
+ 
+-        <div className={styles.rail}>
++        {/* Below 1080px this is a bottom sheet, not a sidebar — see the
++            `narrow`/`inspectorOpen` state above. Tapping a card opens it right
++            there instead of leaving the detail wherever the rail happens to
++            fall in a stacked single-column page. */}
++        {narrow && inspectorOpen && (
++          <div className={styles.railScrim} onClick={() => setInspectorOpen(false)} />
++        )}
++        <div className={`${styles.rail} ${narrow && inspectorOpen ? styles.railOpen : ''}`}>
++          {narrow && (
++            <button
++              type="button"
++              className={styles.railClose}
++              onClick={() => setInspectorOpen(false)}
++              aria-label="Close player details"
++            >
++              ✕
++            </button>
++          )}
+           <Inspector
+             entry={selected}
+             teamId={teamId}
+diff --git a/src/app/(dashboard)/league/[leagueId]/team/roster/SquadViews.tsx b/src/app/(dashboard)/league/[leagueId]/team/roster/SquadViews.tsx
+index cd6c2945..c4295049 100644
+--- a/src/app/(dashboard)/league/[leagueId]/team/roster/SquadViews.tsx
++++ b/src/app/(dashboard)/league/[leagueId]/team/roster/SquadViews.tsx
+@@ -215,6 +215,7 @@ function boardPlayer(entry: SquadEntry): FormationBoardPlayer {
+     headTopPct: player.portrait_head_top_pct,
+     headWidthPct: player.portrait_head_width_pct,
+     detail: player.market_value ? `£${player.market_value}M` : null,
++    sideHint: player.side_hint,
+   };
+ }
+ 
+@@ -222,15 +223,20 @@ function matchesSlot(entry: SquadEntry, slot: GranularPosition): boolean {
+   return entry.player.primary_position === slot || (entry.player.secondary_positions ?? []).includes(slot);
+ }
+ 
++const DEPTH_STATUSES = ['active', 'bench', 'loan_in'];
++const SIDELINED_DEPTH_STATUSES = [...DEPTH_STATUSES, 'ir', 'taxi'];
++
+ function pitchDepth(
+   starters: { playerId: string; slot: GranularPosition }[],
+   entries: SquadEntry[],
+   byPlayerId: Map<string, SquadEntry>,
+   scores: Record<string, number>,
++  includeSidelined: boolean,
+ ): FormationBoardSlot[] {
++  const eligibleStatuses = includeSidelined ? SIDELINED_DEPTH_STATUSES : DEPTH_STATUSES;
+   const starterIds = new Set(starters.map((starter) => starter.playerId));
+   const available = entries
+-    .filter((entry) => ['active', 'bench', 'loan_in'].includes(entry.status) && !starterIds.has(entry.player.id))
++    .filter((entry) => eligibleStatuses.includes(entry.status) && !starterIds.has(entry.player.id))
+     .sort((a, b) => (scores[b.id] ?? 0) - (scores[a.id] ?? 0));
+ 
+   // 1. Calculate candidate scarcity per unique position in formation
+@@ -297,15 +303,20 @@ export function ClubPitch({
+ }) {
+   const [mode, setMode] = useState<'projected' | 'saved'>('projected');
+   const [selectedFormation, setSelectedFormation] = useState<Formation | null>(null);
++  // The whole point of this tab is squad strength, not this week's paperwork
++  // — so IR and Academy default INTO the projected XI and bench cover, as if
++  // everyone were fit and eligible. Off strips it back to the same "actually
++  // fieldable" pool the Depth Chart and the real `/team` pitch use.
++  const [includeSidelined, setIncludeSidelined] = useState(true);
+ 
+   const availableFormations = useMemo(() => {
+-    const list = formationReport(entries);
++    const list = formationReport(entries, includeSidelined);
+     return new Map<Formation, boolean>(list.map((f: { name: Formation; ok: boolean }) => [f.name, f.ok]));
+-  }, [entries]);
++  }, [entries, includeSidelined]);
+ 
+   const projected = useMemo(
+-    () => projectedLineup(entries, selectedFormation),
+-    [entries, selectedFormation],
++    () => projectedLineup(entries, selectedFormation, includeSidelined),
++    [entries, selectedFormation, includeSidelined],
+   );
+   const scores = useMemo(() => projectedScores(entries), [entries]);
+   const byPlayerId = useMemo(() => new Map(entries.map((entry) => [entry.player.id, entry])), [entries]);
+@@ -322,8 +333,8 @@ export function ClubPitch({
+   );
+ 
+   const boardSlots = useMemo(
+-    () => pitchDepth(starters, entries, byPlayerId, scores),
+-    [starters, entries, byPlayerId, scores],
++    () => pitchDepth(starters, entries, byPlayerId, scores, includeSidelined),
++    [starters, entries, byPlayerId, scores, includeSidelined],
+   );
+ 
+   const activeFormation = mode === 'saved' ? saved?.formation : (selectedFormation ?? projected?.formation);
+@@ -403,6 +414,24 @@ export function ClubPitch({
+           variant="deck"
+         />
+       </div>
++
++      <div className={styles.pitchFoot}>
++        <button
++          type="button"
++          className={styles.sidelinedToggle}
++          role="switch"
++          aria-checked={includeSidelined}
++          onClick={() => setIncludeSidelined((v) => !v)}
++        >
++          <span className={styles.sidelinedToggleTrack} aria-hidden />
++          Include Academy &amp; IR
++        </button>
++        <span className={styles.pitchFootNote}>
++          {includeSidelined
++            ? 'Showing squad strength as if everyone were fit and eligible.'
++            : 'Showing only players who can actually be fielded this week.'}
++        </span>
++      </div>
+     </section>
+   );
+ }
+diff --git a/src/app/(dashboard)/league/[leagueId]/team/roster/club.module.css b/src/app/(dashboard)/league/[leagueId]/team/roster/club.module.css
+index 40d74e3d..4ad40551 100644
+--- a/src/app/(dashboard)/league/[leagueId]/team/roster/club.module.css
++++ b/src/app/(dashboard)/league/[leagueId]/team/roster/club.module.css
+@@ -295,6 +295,28 @@
+ 
+ .clubPitchField { padding: var(--s4); background: var(--color-bg-card-alt); }
+ 
++/* This tab's job is squad strength, not this week's paperwork, so the toggle
++   defaults on: IR and Academy count as available and can occupy the XI or
++   bench cover. Off matches the real, fieldable-only pool the Depth Chart and
++   the editable `/team` pitch use. */
++.pitchFoot { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s1) var(--s3); padding: var(--s3) var(--s4); border-top: 1px solid var(--color-border-subtle); }
++.sidelinedToggle {
++  display: inline-flex; align-items: center; gap: var(--s2); flex: none;
++  border: 0; background: none; padding: 0; cursor: pointer;
++  font-size: var(--t-12); font-weight: var(--font-semibold); color: var(--color-text-primary);
++}
++.sidelinedToggleTrack {
++  position: relative; flex: none; width: 30px; height: 18px; border-radius: var(--r-pill);
++  background: var(--color-border-strong); transition: background var(--dur-fast) var(--ease-standard);
++}
++.sidelinedToggleTrack::after {
++  content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: var(--r-round);
++  background: var(--color-bg-card); transition: transform var(--dur-fast) var(--ease-standard);
++}
++.sidelinedToggle[aria-checked="true"] .sidelinedToggleTrack { background: var(--color-accent); }
++.sidelinedToggle[aria-checked="true"] .sidelinedToggleTrack::after { transform: translateX(12px); }
++.pitchFootNote { font-size: var(--t-12); color: var(--color-text-muted); }
++
+ .formationBar {
+   display: flex;
+   align-items: center;
+@@ -607,7 +629,42 @@
+ /* ---- Responsive ------------------------------------------ */
+ @media (max-width: 1080px) {
+   .layout { grid-template-columns: minmax(0, 1fr); }
+-  .rail { position: static; max-height: none; }
++  /* Below this width the Inspector is no longer a sidebar sitting beside the
++     squad — it was still IN FLOW here, though, which put it after the pitch,
++     the Retained List and Intelligence, at the very bottom of a long stacked
++     page. Picking a card scrolled you to a rail you couldn't see. It's a
++     bottom sheet now: fixed to the viewport, off-screen until a card is
++     tapped (`.railOpen`, toggled by `inspectorOpen` in ClubClient), so the
++     detail appears right where you tapped instead of wherever it fell in the
++     page. */
++  .rail {
++    position: fixed;
++    inset: auto 0 0 0;
++    z-index: var(--z-modal);
++    max-height: 85vh;
++    max-height: 85dvh;
++    padding: var(--s2) var(--s4) calc(var(--s4) + env(safe-area-inset-bottom));
++    background: var(--color-bg-card);
++    border-radius: var(--r-shell) var(--r-shell) 0 0;
++    box-shadow: var(--shadow-xl);
++    transform: translateY(100%);
++    transition: transform var(--dur-base) var(--ease-standard);
++  }
++  .railOpen { transform: translateY(0); }
++  .railScrim {
++    position: fixed;
++    inset: 0;
++    z-index: var(--z-modal);
++    background: rgba(28, 28, 28, 0.28);
++  }
++  :global([data-theme='dark']) .railScrim { background: rgba(10, 13, 20, 0.6); }
++  .railClose {
++    display: flex; align-items: center; justify-content: center;
++    width: 32px; height: 32px; margin: var(--s2) 0 var(--s1) auto;
++    border-radius: var(--r-round); border: 1px solid var(--color-border-subtle);
++    background: var(--color-bg-elevated); color: var(--color-text-secondary);
++    font-size: var(--t-13); cursor: pointer;
++  }
+   .figs { grid-template-columns: repeat(2, 1fr); }
+   .fig:nth-child(3) { border-left: 0; }
+   .fig:nth-child(n+3) { border-top: 1px solid var(--color-border-subtle); }
+diff --git a/src/app/(dashboard)/league/[leagueId]/team/roster/clubDerive.ts b/src/app/(dashboard)/league/[leagueId]/team/roster/clubDerive.ts
+index 97d9e443..faa33ca7 100644
+--- a/src/app/(dashboard)/league/[leagueId]/team/roster/clubDerive.ts
++++ b/src/app/(dashboard)/league/[leagueId]/team/roster/clubDerive.ts
+@@ -112,7 +112,15 @@ export const valueOf = (e: SquadEntry): number => Number(e.player.market_value ?
+ 
+ // ── Squad-level derivations ──────────────────────────────────────────────────
+ const LINEUP_STATUSES = new Set(['active', 'bench', 'loan_in']);
+-const lineupPool = (entries: SquadEntry[]) => entries.filter((e) => LINEUP_STATUSES.has(e.status));
++// IR and Academy can't actually be slotted into a real matchday lineup — the
++// editable `/team` pitch enforces that, and the Depth Chart's own "Fieldable
++// formations" note says so. The read-only Pitch tab on Clubs is different: its
++// whole point is a squad-strength view, "if everyone were fit and eligible",
++// so it offers the choice (default on) to fold the sidelined pool back in
++// rather than excluding it outright.
++const SIDELINED_STATUSES = new Set(['ir', 'taxi']);
++const lineupPool = (entries: SquadEntry[], includeSidelined = false) =>
++  entries.filter((e) => LINEUP_STATUSES.has(e.status) || (includeSidelined && SIDELINED_STATUSES.has(e.status)));
+ 
+ export function squadTotals(entries: SquadEntry[]) {
+   const value = entries.reduce((a, e) => a + valueOf(e), 0);
+@@ -214,8 +222,8 @@ export function projectedScores(entries: SquadEntry[]): Record<string, number> {
+   return scores;
+ }
+ 
+-export function projectedLineup(entries: SquadEntry[], preferredFormation?: Formation | null) {
+-  const eligible = lineupPool(entries).filter((entry) => entry.player.primary_position);
++export function projectedLineup(entries: SquadEntry[], preferredFormation?: Formation | null, includeSidelined = false) {
++  const eligible = lineupPool(entries, includeSidelined).filter((entry) => entry.player.primary_position);
+   const scores = projectedScores(eligible);
+   const candidates = eligible.map((entry) => ({
+     id: entry.player.id,
+@@ -257,8 +265,8 @@ function matchFormation(slots: GranularPosition[], players: Player[]): boolean {
+   return Object.keys(slotOf).length >= slots.length;
+ }
+ 
+-export function formationReport(entries: SquadEntry[]) {
+-  const players = lineupPool(entries).map((e) => e.player);
++export function formationReport(entries: SquadEntry[], includeSidelined = false) {
++  const players = lineupPool(entries, includeSidelined).map((e) => e.player);
+   return ALL_FORMATIONS.map((name) => ({ name, ok: matchFormation(FORMATION_SLOTS[name], players) }));
+ }
+ 
+diff --git a/src/app/api/sync/sofifa-players/route.ts b/src/app/api/sync/sofifa-players/route.ts
+index abd1d753..450d576d 100644
+--- a/src/app/api/sync/sofifa-players/route.ts
++++ b/src/app/api/sync/sofifa-players/route.ts
+@@ -57,6 +57,17 @@ const SOFIFA_ID_TO_RAW_STRING: Partial<Record<number, string>> = {
+   // 28=SUB, 29=RES → intentionally omitted (map to undefined → null)
+ };
+ 
++// SoFIFA's own side-tagged variants of a symmetric position, before POS_MAP
++// collapses them to the coarse taxonomy. Used only as a soft left/right hint
++// for ordering same-position pairs on a pitch view — never for eligibility.
++const RAW_SIDE_HINT: Partial<Record<string, 'L' | 'R'>> = {
++  LCB: 'L', RCB: 'R',
++  LDM: 'L', RDM: 'R',
++  LCM: 'L', RCM: 'R',
++  LAM: 'L', RAM: 'R',
++  LS: 'L', RS: 'R',
++};
++
+ const POS_MAP: Record<string, GranularPosition> = {
+   GK: 'GK',
+   SW: 'CB',   // sweeper
+@@ -313,6 +324,7 @@ async function runSync(preloadedTeams: SoFifaTeamDetail[] | null) {
+     primary_position: GranularPosition;
+     secondary_positions: GranularPosition[];
+     sofifa_common_name: string | null;
++    side_hint: 'L' | 'R' | null;
+   }> = [];
+   // Every scraped player, matched to public.players or not -- see migration 099.
+   const referenceUpdates: Array<{
+@@ -350,6 +362,9 @@ async function runSync(preloadedTeams: SoFifaTeamDetail[] | null) {
+ 
+       if (!sofifaPrimaryRaw) continue; // SUB / RES players — skip
+ 
++      // Capture before POS_MAP/applySide below collapse LCB/RCB etc. away.
++      const sideHint = RAW_SIDE_HINT[sofifaPrimaryRaw] ?? null;
++
+       // ── New Hybrid Wide Player Rules ───────────────────────────────────────────
+       const allRaw = new Set(positionsRaw);
+ 
+@@ -578,6 +593,7 @@ async function runSync(preloadedTeams: SoFifaTeamDetail[] | null) {
+           primary_position: primary as GranularPosition,
+           secondary_positions: finalSecondary as GranularPosition[],
+           sofifa_common_name: common || null,
++          side_hint: sideHint,
+         });
+       }
+ 
+@@ -611,6 +627,7 @@ async function runSync(preloadedTeams: SoFifaTeamDetail[] | null) {
+               primary_position: u.primary_position,
+               secondary_positions: u.secondary_positions,
+               sofifa_common_name: u.sofifa_common_name,
++              side_hint: u.side_hint,
+             })
+             .eq('id', u.id)
+         )
+diff --git a/src/components/formation/ReadOnlyFormationBoard.module.css b/src/components/formation/ReadOnlyFormationBoard.module.css
+index 2d59057d..2d3f6635 100644
+--- a/src/components/formation/ReadOnlyFormationBoard.module.css
++++ b/src/components/formation/ReadOnlyFormationBoard.module.css
+@@ -494,28 +494,54 @@
+ @media (max-width: 640px) {
+   .pitchField {
+     height: auto;
+-    min-height: 540px;
++    min-height: 0;
+     max-height: none;
+   }
+   .pitchZones {
+-    min-height: 540px;
++    min-height: 0;
+     height: auto;
+     padding: var(--s4) 2px var(--s4);
+-    gap: 2px;
++    gap: var(--s3);
+   }
+   .pitchZone {
+-    min-height: 76px;
++    /* Equal-share flex growth over a fixed pitch height (the desktop layout)
++       squeezes every zone to the same slice regardless of content — fine when
++       the field has a fixed 850px height to fill, but on mobile the field's
++       height is already content-driven (`height: auto`), so forcing an equal
++       share here let a zone's real content (badge + portrait + name + cover)
++       overflow its slice and bleed into the zone above or below it. Sizing to
++       content instead means the pitch just grows as tall as it needs to. */
++    flex: 0 0 auto;
++    min-height: 0;
++  }
++  .emptyZoneSpacer {
++    flex: 0 0 var(--s5);
+   }
+   .pitchRow {
+     padding: 0 1px;
+     gap: 2px;
+   }
++  /* The formation name is already in the pitch's own caption above the field
++     (`ClubPitch` header); repeating it as a watermark just gives the RW/RWB
++     slot's badge something to collide with in the corner that's left on
++     mobile. */
++  .formationWatermark {
++    display: none;
++  }
+   .nodeWrap {
+     width: clamp(66px, 22vw, 84px);
+   }
+   .portraitWrap :global(.g-portrait-md) {
++    /* `transform: scale()` shrinks the picture without shrinking the 78px box
++       it sits in — `transform-origin: center top` (set on the base rule above,
++       still in force here) keeps the top edge fixed, so every pixel the scale
++       removes piles up as dead air at the BOTTOM of that box. At the desktop
++       scale (0.88) that's a 9px gap nobody tightened; dropping to 0.72 here
++       for the smaller mobile node triples it to ~22px. margin-bottom cancels
++       exactly the height the scale removes (78 * (1 - 0.72) ≈ 22px), so the
++       chip sits right under the visible portrait instead of floating below it. */
+     transform: scale(0.72);
+-    margin-bottom: -6px;
++    margin-bottom: -22px;
+   }
+   .nodeChip {
+     padding: 2px 2px;
+diff --git a/src/components/formation/ReadOnlyFormationBoard.tsx b/src/components/formation/ReadOnlyFormationBoard.tsx
+index b1772159..a183fc2b 100644
+--- a/src/components/formation/ReadOnlyFormationBoard.tsx
++++ b/src/components/formation/ReadOnlyFormationBoard.tsx
+@@ -2,6 +2,7 @@ import { Fragment } from 'react';
+ import type { Formation, GranularPosition } from '@/types';
+ import Portrait from '@/components/players/Portrait';
+ import PositionBadge from '@/components/players/PositionBadge';
++import { orderBySide } from '@/lib/positions/sideOrder';
+ import styles from './ReadOnlyFormationBoard.module.css';
+ 
+ type PitchZone = 'ATT' | 'AMZ' | 'CMZ' | 'DMZ' | 'WBZ' | 'DEF' | 'GK';
+@@ -33,6 +34,8 @@ export interface FormationBoardPlayer {
+   detail?: string | null;
+   /** Compact marker badge on the portrait (e.g. points scored). */
+   marker?: string | null;
++  /** Soft left/right bias (SoFIFA's LCB/RCB etc.) — orders same-slot pairs, never selection. */
++  sideHint?: 'L' | 'R' | null;
+ }
+ 
+ export interface FormationBoardSlot {
+@@ -211,6 +214,12 @@ export default function ReadOnlyFormationBoard({
+   for (const slot of slots) {
+     byZone.get(zoneFor(slot.slot, formation))?.push(slot);
+   }
++  // Within each zone, players tied on the exact same slot (e.g. two CBs)
++  // get ordered left-to-right by side hint; different slots never move
++  // relative to each other (LB still renders before CB before RB).
++  for (const [zone, zoneSlots] of byZone) {
++    byZone.set(zone, orderBySide(zoneSlots, (s) => s.slot, (s) => s.player?.sideHint));
++  }
+ 
+   if (slots.length === 0) {
+     return <div className={styles.emptyBoard}>{emptyLabel}</div>;
+diff --git a/src/components/layout/TopBar.tsx b/src/components/layout/TopBar.tsx
+index 1a9ff8f3..f89dee61 100644
+--- a/src/components/layout/TopBar.tsx
++++ b/src/components/layout/TopBar.tsx
+@@ -773,7 +773,10 @@ export default function TopBar() {
+       {currentLeagueId && mobileMenuOpen && (
+         <div className={styles.mobileDrawer}>
+           <div className={styles.mobileDrawerContent}>
+-            {/* Primary Hub Links */}
++            {/* Primary Hub Link — mirrors the desktop bar, where Home leads
++                alone and Transfers/Activity/Draft trail after Squad, League
++                and Fixtures. They used to sit here instead, right under Home,
++                which put them ahead of every dropdown group on mobile only. */}
+             <div className={styles.mobileDrawerGroup}>
+               <div className={styles.mobileDrawerGroupLabel}>Overview</div>
+               <div className={styles.mobileDrawerGroupItems}>
+@@ -787,38 +790,6 @@ export default function TopBar() {
+                 >
+                   Home
+                 </Link>
+-                <Link
+-                  href={`/league/${currentLeagueId}/transfers`}
+-                  className={`${styles.mobileDrawerSubLink} ${isTransfersActive() ? styles.mobileDrawerSubLinkActive : ''}`}
+-                  onClick={() => {
+-                    setIsNavigating(true);
+-                    setMobileMenuOpen(false);
+-                  }}
+-                >
+-                  Transfers
+-                </Link>
+-                <Link
+-                  href={`/league/${currentLeagueId}/activity`}
+-                  className={`${styles.mobileDrawerSubLink} ${isActivityActive() ? styles.mobileDrawerSubLinkActive : ''}`}
+-                  onClick={() => {
+-                    setIsNavigating(true);
+-                    setMobileMenuOpen(false);
+-                  }}
+-                >
+-                  Activity
+-                </Link>
+-                {isDraftVisible && (
+-                  <Link
+-                    href={`/league/${currentLeagueId}`}
+-                    className={`${styles.mobileDrawerSubLink} ${isDraftActive() ? styles.mobileDrawerSubLinkActive : ''}`}
+-                    onClick={() => {
+-                      setIsNavigating(true);
+-                      setMobileMenuOpen(false);
+-                    }}
+-                  >
+-                    Draft
+-                  </Link>
+-                )}
+               </div>
+             </div>
+ 
+@@ -853,6 +824,45 @@ export default function TopBar() {
+                 </div>
+               </div>
+             ))}
++
++            {/* Trailing standalone links — same order as the desktop bar */}
++            <div className={styles.mobileDrawerGroup}>
++              <div className={styles.mobileDrawerGroupLabel}>More</div>
++              <div className={styles.mobileDrawerGroupItems}>
++                <Link
++                  href={`/league/${currentLeagueId}/transfers`}
++                  className={`${styles.mobileDrawerSubLink} ${isTransfersActive() ? styles.mobileDrawerSubLinkActive : ''}`}
++                  onClick={() => {
++                    setIsNavigating(true);
++                    setMobileMenuOpen(false);
++                  }}
++                >
++                  Transfers
++                </Link>
++                <Link
++                  href={`/league/${currentLeagueId}/activity`}
++                  className={`${styles.mobileDrawerSubLink} ${isActivityActive() ? styles.mobileDrawerSubLinkActive : ''}`}
++                  onClick={() => {
++                    setIsNavigating(true);
++                    setMobileMenuOpen(false);
++                  }}
++                >
++                  Activity
++                </Link>
++                {isDraftVisible && (
++                  <Link
++                    href={`/league/${currentLeagueId}`}
++                    className={`${styles.mobileDrawerSubLink} ${isDraftActive() ? styles.mobileDrawerSubLinkActive : ''}`}
++                    onClick={() => {
++                      setIsNavigating(true);
++                      setMobileMenuOpen(false);
++                    }}
++                  >
++                    Draft
++                  </Link>
++                )}
++              </div>
++            </div>
+           </div>
+         </div>
+       )}
+diff --git a/src/lib/constants/queries.ts b/src/lib/constants/queries.ts
+index 6dd281e6..b7bc332d 100644
+--- a/src/lib/constants/queries.ts
++++ b/src/lib/constants/queries.ts
+@@ -20,6 +20,7 @@ export const FULL_PLAYER_SELECT = `
+   pl_team_changed_at,
+   primary_position,
+   secondary_positions,
++  side_hint,
+   market_value,
+   market_value_updated_at,
+   projected_points,
+diff --git a/src/lib/positions/sideOrder.ts b/src/lib/positions/sideOrder.ts
+new file mode 100644
+index 00000000..82266053
+--- /dev/null
++++ b/src/lib/positions/sideOrder.ts
+@@ -0,0 +1,46 @@
++/**
++ * Orders players who share one exact formation slot (two CBs in a back four,
++ * three CBs in a back three, a double pivot, etc.) left-to-right by their
++ * `side_hint` — SoFIFA's own LCB/RCB/LDM/RDM/LCM/RCM/LAM/RAM/LS/RS tag,
++ * collapsed everywhere else in the app down to the coarse GranularPosition.
++ *
++ * Selection (which players make the XI) has already happened by the time
++ * this runs — it only rearranges players who were tied on the exact same
++ * slot, so a stable sort keeps the original (rating-based) order as the
++ * tiebreak whenever both sides are the same or unknown.
++ */
++const RANK: Record<'L' | 'R', number> = { L: 0, R: 2 };
++
++function sideRank(hint: 'L' | 'R' | null | undefined): number {
++  return hint ? RANK[hint] : 1;
++}
++
++/**
++ * Stably reorders `items` in place among only the index groups that share
++ * the same `keyOf` value, using `hintOf` to rank left/center/right. Indices
++ * belonging to different keys never move relative to each other.
++ */
++export function orderBySide<T>(
++  items: T[],
++  keyOf: (item: T) => string,
++  hintOf: (item: T) => 'L' | 'R' | null | undefined,
++): T[] {
++  const groups = new Map<string, number[]>();
++  items.forEach((item, i) => {
++    const key = keyOf(item);
++    if (!groups.has(key)) groups.set(key, []);
++    groups.get(key)!.push(i);
++  });
++
++  const result = [...items];
++  for (const indices of groups.values()) {
++    if (indices.length < 2) continue;
++    const sorted = indices
++      .map((i) => items[i])
++      .map((item, i) => ({ item, i })) // stable: pair with original position within the group
++      .sort((a, b) => sideRank(hintOf(a.item)) - sideRank(hintOf(b.item)) || a.i - b.i)
++      .map(({ item }) => item);
++    indices.forEach((idx, k) => { result[idx] = sorted[k]; });
++  }
++  return result;
++}
+diff --git a/src/types/index.ts b/src/types/index.ts
+index ab8d7568..0e7eb090 100644
+--- a/src/types/index.ts
++++ b/src/types/index.ts
+@@ -200,6 +200,7 @@ export interface Player {
+   pl_team_changed_at: string | null; // set by syncPlayers when this row is new or its club just changed; null once stale
+   primary_position: GranularPosition | null;
+   secondary_positions: GranularPosition[];
++  side_hint?: 'L' | 'R' | null; // Soft left/right bias from SoFIFA's raw tag (LCB/RCB etc.); see src/lib/positions/sideOrder.ts
+   market_value: number | null; // in millions EUR (from Transfermarkt)
+   market_value_updated_at: string | null;
+   adp: number | null;
+diff --git a/supabase/migrations/157_player_side_hint.sql b/supabase/migrations/157_player_side_hint.sql
+new file mode 100644
+index 00000000..bb3f9e85
+--- /dev/null
++++ b/supabase/migrations/157_player_side_hint.sql
+@@ -0,0 +1,12 @@
++-- SoFIFA already tags symmetric positions with a side (LCB/RCB, LDM/RDM,
++-- LCM/RCM, LAM/RAM, LS/RS) before the sync route collapses them down to our
++-- coarse GranularPosition taxonomy (CB/DM/CM/AM/ST). That side is thrown away
++-- today. Capturing it lets the pitch views place e.g. two center-backs
++-- left-to-right the way they actually line up (a left-footed LCB left of a
++-- right-footed RCB) without inventing a 13th position or scraping anything
++-- new -- the raw tag is already in every payload playwright-sofifa.js sends.
++alter table players
++  add column if not exists side_hint text check (side_hint in ('L', 'R'));
++
++comment on column players.side_hint is
++  'Soft left/right bias derived from SoFIFA''s raw primary position tag (LCB/RCB, LDM/RDM, LCM/RCM, LAM/RAM, LS/RS). Null for centrally-symmetric or unknown players. Used only to order same-position pairs on a pitch view, never for eligibility or scoring.';
