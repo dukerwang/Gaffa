@@ -18,6 +18,10 @@ import Modal from './Modal';
 import GwRangeSlider from './GwRangeSlider';
 import styles from './ProposeBuilder.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { toast } from '@/components/ui/toast';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { Tooltip } from '@/components/ui/Tooltip';
+import { MoneyStepper } from '@/components/ui/MoneyStepper';
 import { describeDeal } from '@/lib/transfers/describeDeal';
 import { listingStance } from '@/lib/transfers/listingStance';
 import { fold } from '@/lib/text/fold';
@@ -448,6 +452,12 @@ export default function ProposeBuilder({
         const data = await res.json();
         if (!res.ok) return setError(data.error ?? 'That proposal was refused.');
       }
+      const to = target?.team_name ?? 'the other club';
+      const isCounter = Boolean(mode === 'loan' ? parentLoanId : parentTradeId);
+      toast.success(
+        isCounter ? `Counter sent to ${to}` : mode === 'loan' ? `Loan proposal sent to ${to}` : `Offer sent to ${to}`,
+        { description: mode === 'loan' && loanPlayer ? getPlayerDisplayName(loanPlayer, 'full') : undefined },
+      );
       onDone();
       onClose();
     } catch {
@@ -568,14 +578,16 @@ export default function ProposeBuilder({
         <span className={styles.pickMeta}>{playerMeta(p)}</span>
       </span>
       <span className={styles.pickValue}>{money(Number(p.market_value) || 0)}</span>
-      <button
-        type="button"
-        className={styles.remove}
-        onClick={onRemove}
-        aria-label={`Remove ${getPlayerDisplayName(p, 'full')}`}
-      >
-        ✕
-      </button>
+      <Tooltip content="Remove">
+        <button
+          type="button"
+          className={styles.remove}
+          onClick={onRemove}
+          aria-label={`Remove ${getPlayerDisplayName(p, 'full')}`}
+        >
+          ✕
+        </button>
+      </Tooltip>
     </div>
   );
 
@@ -600,9 +612,11 @@ export default function ProposeBuilder({
         </span>
       </span>
       <span className={styles.pickValue}>{money(r.marketValueAtDeparture)}</span>
-      <button type="button" className={styles.remove} onClick={onRemove} aria-label="Remove retained right">
-        ✕
-      </button>
+      <Tooltip content="Remove">
+        <button type="button" className={styles.remove} onClick={onRemove} aria-label="Remove retained right">
+          ✕
+        </button>
+      </Tooltip>
     </div>
   );
 
@@ -612,25 +626,30 @@ export default function ProposeBuilder({
     onRemove: () => void;
     hint: string;
     label: string;
+    /** That side's Club Balance: they can't put up more. */
+    max: number;
   }) => (
-    <div className={`${styles.pick} ${styles.chosen} ${opts.value > 0 ? styles.pickOn : ''}`}>
+    <div className={`${styles.pick} ${styles.chosen} ${styles.cashPick} ${opts.value > 0 ? styles.pickOn : ''}`}>
       <span className={styles.cashGlyph} aria-hidden="true">€</span>
       <span className={styles.pickBody}>
         <span className={styles.pickName}>Cash</span>
         <span className={styles.pickMeta}>{opts.hint}</span>
       </span>
-      <input
-        className={styles.cashInline}
-        type="number"
+      <MoneyStepper
+        size="sm"
+        className={styles.cashStepper}
+        label={opts.label}
+        labelClassName="sr-only"
+        value={opts.value}
+        onChange={opts.onChange}
         min={0}
-        value={opts.value || ''}
-        placeholder="0"
-        aria-label={opts.label}
-        onChange={(e) => opts.onChange(Math.max(0, parseInt(e.target.value, 10) || 0))}
+        max={Math.max(0, opts.max)}
       />
-      <button type="button" className={styles.remove} onClick={opts.onRemove} aria-label="Remove cash">
-        ✕
-      </button>
+      <Tooltip content="Remove">
+        <button type="button" className={styles.remove} onClick={opts.onRemove} aria-label="Remove cash">
+          ✕
+        </button>
+      </Tooltip>
     </div>
   );
 
@@ -980,26 +999,22 @@ export default function ProposeBuilder({
                 onChange={(s, e) => { setStartGw(s); setEndGw(e); }}
               />
 
-              <label className={styles.recall} style={{ marginTop: 'var(--s3)' }}>
-                <input
-                  type="checkbox"
-                  checked={hasRecall}
-                  onChange={(e) => setHasRecall(e.target.checked)}
-                />
-                <span>
-                  Early recall clause
-                  {/* Named from the reader's side: as lender the recall is yours to
-                      call and yours to pay for, as borrower it is a thing that can
-                      be done to you. */}
-                  <p className={styles.recallNote}>
-                    {!hasRecall
-                      ? 'No early recall — the player stays at the borrowing club for the full duration.'
-                      : loanDirection === 'lend'
-                        ? `You may cancel early with 1 week's notice, paying ${target?.team_name ?? 'the borrower'} a €25m flat penalty. Bonuses already earned are not refunded.`
-                        : `${target?.team_name ?? 'The lender'} may cancel early with 1 week's notice, paying you a €25m flat penalty. Bonuses already earned are not refunded.`}
-                  </p>
-                </span>
-              </label>
+              {/* Named from the reader's side: as lender the recall is yours to
+                  call and yours to pay for, as borrower it is a thing that can
+                  be done to you. */}
+              <Checkbox
+                className={styles.recall}
+                checked={hasRecall}
+                onChange={setHasRecall}
+                label="Early recall clause"
+                description={
+                  !hasRecall
+                    ? 'No early recall — the player stays at the borrowing club for the full duration.'
+                    : loanDirection === 'lend'
+                      ? `You may cancel early with 1 week's notice, paying ${target?.team_name ?? 'the borrower'} a €25m flat penalty. Bonuses already earned are not refunded.`
+                      : `${target?.team_name ?? 'The lender'} may cancel early with 1 week's notice, paying you a €25m flat penalty. Bonuses already earned are not refunded.`
+                }
+              />
             </section>
           ) : (
             <div className={styles.stageShut}>
@@ -1201,6 +1216,7 @@ export default function ProposeBuilder({
                 ? `Leaves you ${money(Math.max(0, budget - myCash))} for the rest of the window`
                 : `${money(budget)} available`,
               label: 'Cash you put up',
+              max: budget,
             })}
 
             {picking === 'mine' ? pickerPanel('mine') : (
@@ -1241,6 +1257,7 @@ export default function ProposeBuilder({
                 ? 'They must be able to cover it when they accept'
                 : `${money(target?.faab_budget ?? 0)} available`,
               label: 'Cash they put up',
+              max: target?.faab_budget ?? 0,
             })}
 
             {picking === 'theirs' ? pickerPanel('theirs') : (

@@ -47,40 +47,6 @@
 
 .statLabel { text-align: right; margin-top: var(--s1); }
 
-/* --- season + view switchers --- */
-.seasons,
-.seg {
-  display: flex;
-  gap: 2px;
-  background: var(--color-bg-inset);
-  border-radius: var(--radius-md);
-  padding: 3px;
-}
-
-.seasonTab,
-.segBtn {
-  font-family: var(--font-label);
-  font-weight: 700;
-  font-size: var(--t-11);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  padding: 7px 14px;
-  border-radius: var(--radius-sm);
-  white-space: nowrap;
-  /* Comfortably past the 44px touch floor once the row's line-height lands. */
-  min-height: 34px;
-  display: inline-flex;
-  align-items: center;
-}
-
-.seasonTabOn,
-.segOn {
-  background: var(--color-bg-card);
-  color: var(--color-text-primary);
-  box-shadow: var(--shadow-sm);
-}
-
 /* --- tools --- */
 .tools {
   display: flex;
@@ -108,20 +74,25 @@
 .input::placeholder { color: var(--color-text-muted); }
 .input:focus { outline: none; border-color: var(--color-accent); }
 
-.select {
+/* Kit Select in the filter bar, sized like the search field beside it (44px,
+   the strong keyline, 13px type), each at the width of its longest option.
+   On a phone the bar becomes search on top, then two filters a row. */
+.filterSelect { flex: none; }
+.filterSelect button[aria-haspopup] {
   min-height: 44px;
-  padding: var(--s2) var(--s3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--r-control);
-  background: var(--color-bg-card);
-  font-family: var(--font-sans);
+  border-color: var(--color-border-strong);
   font-size: var(--t-13);
   color: var(--color-text-secondary);
-  cursor: pointer;
-  max-width: 220px;
 }
-
-.select:focus { outline: none; border-color: var(--color-accent); }
+.fPos { width: 150px; }
+.fClub { width: 166px; }
+.fTeam { width: 184px; }
+.fMins { width: 188px; }
+.fSync { width: 176px; }
+@media (max-width: 700px) {
+  .tools > .filterSelect { width: calc(50% - var(--s2) / 2); }
+  .tools > input { flex-basis: 100%; max-width: none; }
+}
 
 .clear {
   min-height: 44px;
@@ -195,46 +166,6 @@
   border: 2px solid var(--color-bg-card);
   border-radius: var(--r-round);
   cursor: pointer;
-}
-
-.segmented {
-  display: inline-flex;
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-control);
-  overflow: hidden;
-  background: var(--color-bg-card);
-}
-
-.segment {
-  background: transparent;
-  border: none;
-  border-right: 1px solid var(--color-border);
-  padding: var(--s2) var(--s3);
-  font-family: var(--font-label);
-  font-size: var(--t-12);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-}
-
-.segment:last-child { border-right: none; }
-@media (hover: hover) and (pointer: fine) {
-  .segment:hover { background: var(--color-bg-card-hover); }
-}
-
-.segmentOn {
-  background: var(--color-text-primary);
-  border-color: var(--color-text-primary);
-  color: var(--color-bg-primary);
-}
-@media (hover: hover) and (pointer: fine) {
-  .segmentOn:hover {
-    background: var(--color-text-primary);
-    border-color: var(--color-text-primary);
-    color: var(--color-bg-primary);
-  }
 }
 
 /* --- facets --- */
@@ -517,13 +448,6 @@
   letter-spacing: 0;
   text-transform: none;
   color: var(--color-text-muted);
-}
-
-.empty {
-  padding: var(--s10) var(--s6);
-  text-align: center;
-  color: var(--color-text-muted);
-  font-style: italic;
 }
 
 .more { display: flex; justify-content: center; padding: 0 var(--s6) var(--s6); }

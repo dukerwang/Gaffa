@@ -64,33 +64,6 @@
   .capacityLink:hover { color: var(--color-text-primary); }
 }
 
-/* ── Empty state ──────────────────────────────────────────── */
-
-.empty {
-  text-align: center;
-  padding: var(--s16) var(--s6);
-}
-
-.emptyIcon {
-  font-size: var(--t-40);
-  margin-bottom: var(--s4);
-}
-
-.emptyTitle {
-  font-family: var(--font-serif);
-  font-size: var(--t-25);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--color-text-primary);
-  margin-bottom: var(--s3);
-}
-
-.emptyText {
-  font-size: var(--t-15);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--s6);
-}
-
 .backLink {
   font-size: var(--t-13);
   color: var(--color-accent-ink);

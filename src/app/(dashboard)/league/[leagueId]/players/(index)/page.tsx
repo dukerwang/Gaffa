@@ -7,7 +7,8 @@ import { loadSeasonLeaderboard } from '@/lib/stats/seasonStats';
 import { loadExplorerRows, loadScoutIndexRecord } from '@/lib/players/indexData';
 import { isSiteAdminEmail } from '@/lib/auth/siteAdmin';
 import { isPlayerMapped } from '@/lib/players/playerMapping';
-import PlayersIndex from './PlayersIndex';
+import PlayersIndex from '../PlayersIndex';
+import type { CrestConfig } from '@/components/crest/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +43,7 @@ export default async function PlayersPage({ params, searchParams }: Props) {
       .single(),
     getCurrentFplSeason(),
     isFplSeasonKickedOff(),
-    admin.from('teams').select('id').eq('league_id', leagueId),
+    admin.from('teams').select('id, crest_config').eq('league_id', leagueId),
   ]);
   if (!league) notFound();
 
@@ -58,6 +59,9 @@ export default async function PlayersPage({ params, searchParams }: Props) {
   if (requestedSeason && seasons.includes(requestedSeason)) season = requestedSeason;
 
   const teamIds = (allTeams ?? []).map((t: { id: string }) => t.id);
+  const teamCrests = Object.fromEntries(
+    (allTeams ?? []).map((t: { id: string; crest_config: CrestConfig | null }) => [t.id, t.crest_config]),
+  );
 
   const activeView = view === 'table' ? 'table' : view === 'explorer' ? 'explorer' : view === 'cards' ? 'cards' : undefined;
 
@@ -132,6 +136,7 @@ export default async function PlayersPage({ params, searchParams }: Props) {
       gameweek={gameweek}
       shadowMaps={shadowMaps}
       isSiteAdmin={isSiteAdmin}
+      teamCrests={teamCrests}
     />
   );
 }

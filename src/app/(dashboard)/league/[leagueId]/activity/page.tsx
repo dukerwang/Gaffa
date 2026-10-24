@@ -75,7 +75,7 @@ export default async function TransactionsPage({ params }: Props) {
   const [txResult, teamsResult, tradesResult, loansResult, bidsResult, transitionsResult] =
     await Promise.all([
       allTransactions(),
-      admin.from('teams').select('id, team_name').eq('league_id', leagueId).order('team_name'),
+      admin.from('teams').select('id, team_name, crest_config').eq('league_id', leagueId).order('team_name'),
       admin
         .from('trade_proposals')
         .select(

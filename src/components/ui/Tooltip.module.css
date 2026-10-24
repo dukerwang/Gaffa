@@ -1,0 +1,58 @@
+/* Gaffa UI Primitive: Tooltip
+   Ink on the page, in both themes: the inverse of whatever it sits on. */
+
+.anchor {
+  display: inline-flex;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 1200;
+  pointer-events: none;
+  padding: 5px 8px;
+  border-radius: var(--r-control);
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  font-family: var(--font-label);
+  font-size: var(--t-12);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  transform-origin: var(--tooltip-origin);
+  animation: tooltipIn 125ms var(--ease-out-strong);
+}
+
+.tooltip[data-instant] {
+  animation: none;
+}
+
+@keyframes tooltipIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(2px);
+  }
+}
+
+.tooltip[data-side='bottom'] {
+  animation-name: tooltipInBelow;
+}
+
+.tooltip[data-side='bottom'][data-instant] {
+  animation: none;
+}
+
+@keyframes tooltipInBelow {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip,
+  .tooltip[data-side='bottom'] {
+    animation: none;
+  }
+}

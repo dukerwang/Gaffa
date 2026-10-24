@@ -35,9 +35,18 @@ export async function proxy(request: NextRequest) {
   const isApiRoute = pathname.startsWith('/api/');
   const isGoogleVerification = pathname.startsWith('/google') && pathname.endsWith('.html');
   // `/` is the public home and `/guide` is the rules it links to; both render
-  // for visitors as well as managers.
+  // for visitors as well as managers. The Lineup Builder needs no account:
+  // shared XI links land there, and a friend who opens one should see the
+  // lineup, not a sign-in page. /kit is the component reference; it reads no
+  // data, and a branch preview of it has to open without a sign-in to be
+  // reviewable.
   const isPublicRoute =
-    pathname === '/terms' || pathname === '/privacy' || pathname === '/guide' || pathname.startsWith('/share');
+    pathname === '/terms' ||
+    pathname === '/privacy' ||
+    pathname === '/guide' ||
+    pathname.startsWith('/share') ||
+    pathname === '/lineup-builder' ||
+    pathname === '/kit';
   const isAuthCallback = pathname.startsWith('/auth/callback');
 
   // Redirect unauthenticated users away from protected routes (API routes handle their own auth)

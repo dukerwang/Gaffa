@@ -19,6 +19,8 @@ import { buildPerformanceGroups } from '@/lib/scoring/perfBand';
 import { resolveAllStalledGameweeks, processMatchupsForGameweek } from '@/lib/scoring/matchupProcessor';
 import { getCurrentFplSeason, getLatestReferenceStatsSeason } from '@/lib/season/currentSeason';
 import { snapshotCurrentFplFixtures } from '@/lib/fixtures/upsertFixtures';
+import { startedFixtures } from '@/lib/fixtures/starters';
+import { syncPlLineups } from '@/lib/fixtures/plLineups';
 import { recomputePositionRanks, type RecomputeResult } from '@/lib/stats/seasonStats';
 import type { GranularPosition, FplLivePlayerStats } from '@/types';
 import { createClient } from '@supabase/supabase-js';
@@ -278,6 +280,12 @@ async function syncFplLiveRatings(
               .not('match_id', 'in', `(${realFixtureIds.join(',')})`);
           }
 
+          // Per-match starts, for the Lineup Builder's starting lineups.
+          const started = startedFixtures(
+            el.stats.starts,
+            el.explain.filter((ex: { fixture: number }) => ex.fixture < SYNTHETIC_MATCH_ID_FLOOR),
+          );
+
           for (const ex of el.explain) {
             const fixtureId = ex.fixture;
             const fixtureMinutes = ex.stats.find((s: any) => s.identifier === 'minutes')?.value ?? 0;
@@ -355,7 +363,7 @@ async function syncFplLiveRatings(
                 match_id: fixtureId,
                 gameweek,
                 season: fplSeason,
-                stats: rawStats,
+                stats: { ...rawStats, started: started.has(fixtureId) },
                 fantasy_points: v2.fantasyPoints,
                 match_rating: v2.rating,
                 // The explanation, banded, snapshotted alongside the score it
@@ -399,7 +407,7 @@ async function syncFplLiveRatings(
               match_id: fixtureId,
               gameweek,
               season: fplSeason,
-              stats: rawStats,
+              stats: { ...rawStats, started: false },
               fantasy_points: v2.fantasyPoints,
               match_rating: v2.rating,
               perf: buildPerformanceGroups(
@@ -415,6 +423,25 @@ async function syncFplLiveRatings(
         }
       }),
     );
+  }
+
+  // Where each starter stood, from the Premier League's match feed, for this
+  // gameweek's matches that have kicked off and aren't stored yet. The Lineup
+  // Builder sides its starting XIs from it. Never fails the sync.
+  try {
+    const { data: kickedOff } = await supabase
+      .from('pl_fixtures')
+      .select('fpl_fixture_id, gameweek, home_club, away_club')
+      .eq('season', fplSeason)
+      .eq('gameweek', gameweek)
+      .lte('kickoff_time', new Date().toISOString());
+    await syncPlLineups(
+      supabase,
+      fplSeason,
+      (kickedOff ?? []).map((f) => ({ id: f.fpl_fixture_id, gameweek: f.gameweek, home: f.home_club, away: f.away_club })),
+    );
+  } catch (err) {
+    console.warn('PL match lineups not synced:', err);
   }
 
   // Recalculate total_points and form for all players from player_stats

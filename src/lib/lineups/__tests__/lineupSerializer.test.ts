@@ -46,4 +46,42 @@ describe('lineupSerializer', () => {
     const parsed = deserializeLineup(new URLSearchParams('f=invalid-formation'));
     expect(parsed.formation).toBe('4-3-3');
   });
+
+  it('round-trips the match with its season', () => {
+    const qs = serializeLineup({
+      formation: '4-2-1-3',
+      title: 'Chelsea vs. Tottenham',
+      clubFilter: 'chelsea',
+      fixture: { season: '2026-27', id: 74 },
+      playerIds: Array(11).fill(null),
+    });
+    expect(deserializeLineup(new URLSearchParams(qs)).fixture).toEqual({ season: '2026-27', id: 74 });
+  });
+
+  it('carries an edited away side and the side showing, and leaves an untouched match short', () => {
+    const away = { formation: '3-5-2' as const, playerIds: ['a1', ...Array(10).fill(null)] };
+    const qs = serializeLineup({
+      formation: '4-3-3',
+      title: '',
+      fixture: { season: '2026-27', id: 64 },
+      playerIds: [],
+      away,
+      side: 'away',
+    });
+    const parsed = deserializeLineup(new URLSearchParams(qs));
+    expect(parsed.away).toEqual(away);
+    expect(parsed.side).toBe('away');
+    expect(parsed.playerIds.every((id) => id === null)).toBe(true);
+    expect(new URLSearchParams(qs).has('f')).toBe(false);
+
+    const bare = deserializeLineup(new URLSearchParams('m=64&s=2026-27'));
+    expect(bare.away).toBeNull();
+    expect(bare.side).toBe('home');
+  });
+
+  it('drops a match without a valid season, since fixture ids restart every season', () => {
+    expect(deserializeLineup(new URLSearchParams('m=74')).fixture).toBeNull();
+    expect(deserializeLineup(new URLSearchParams('m=74&s=2026')).fixture).toBeNull();
+    expect(deserializeLineup(new URLSearchParams('m=abc&s=2026-27')).fixture).toBeNull();
+  });
 });

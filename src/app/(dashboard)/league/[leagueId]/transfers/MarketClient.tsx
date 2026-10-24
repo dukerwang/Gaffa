@@ -24,6 +24,7 @@ import { setServerClock, useTick, formatAuctionClock, isClosing } from '@/compon
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import styles from './market.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import EmptyState from '@/components/ui/EmptyState';
 
 const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
 const ProposeBuilder = dynamic(() => import('@/components/transfers/ProposeBuilder'), { ssr: false });
@@ -186,7 +187,7 @@ export default function MarketClient({
           {/* ── Closing now ─────────────────────────────── */}
           <div className={styles.sect}>
             <h2 className={styles.sectTitle}>
-              Closing now <AuctionTimingHelp />
+              Closing Now <AuctionTimingHelp />
             </h2>
             <span className={styles.sectHint}>
               free agents and listed players together
@@ -199,7 +200,7 @@ export default function MarketClient({
           </div>
 
           {closing.length === 0 ? (
-            <p className={styles.empty}>Nothing is under the hammer right now.</p>
+            <EmptyState size="compact">Nothing is under the hammer right now.</EmptyState>
           ) : (
             <div className={styles.closingGrid}>
               {closing.map((a) => {
@@ -323,7 +324,7 @@ export default function MarketClient({
           </div>
 
           {model.listings.length === 0 ? (
-            <p className={styles.empty}>No club has listed a player yet.</p>
+            <EmptyState size="compact">No club has listed a player yet.</EmptyState>
           ) : (
             <div className={styles.boardGrid}>
               {model.listings.slice(0, 6).map((l) => (
@@ -426,7 +427,7 @@ export default function MarketClient({
           </div>
 
           {wire.length === 0 ? (
-            <p className={styles.empty}>Nothing has moved yet.</p>
+            <EmptyState size="compact">Nothing has moved yet.</EmptyState>
           ) : (
             wire.map((e) => (
               <div key={e.id} className={styles.event}>

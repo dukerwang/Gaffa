@@ -1,0 +1,125 @@
+/* Gaffa UI Primitive: Popover
+   Lifted off the page, so a shadow and no border (UI_RULES 7).
+
+   z-index sits above ResponsiveModal's scrim (a literal 1000, older than the
+   --z-* scale) and the player card's overlay (1100), because a Select can
+   open inside either. When the modal moves
+   onto --z-modal, this can move onto --z-dropdown. */
+
+.popover {
+  position: fixed;
+  z-index: 1150;
+  background: var(--color-bg-card);
+  border-radius: var(--r-shell);
+  box-shadow: 0 0 0 1px rgba(27, 25, 21, 0.06), var(--shadow-lg);
+  padding: var(--s1);
+  max-width: min(360px, calc(100vw - 16px));
+  max-height: min(420px, calc(100dvh - 32px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none;
+
+  transform-origin: var(--popover-origin);
+  transition: opacity 150ms var(--ease-out-strong),
+              transform 180ms var(--ease-out-strong);
+}
+
+.popover[data-state='closed'] {
+  opacity: 0;
+  transform: scale(0.96) translateY(-4px);
+  pointer-events: none;
+  transition-duration: 120ms;
+}
+
+.popover[data-state='closed'][data-side='top'] {
+  transform: scale(0.96) translateY(4px);
+}
+
+.popover[data-state='open'] {
+  opacity: 1;
+  transform: none;
+}
+
+:global([data-theme='dark']) .popover {
+  background: var(--color-bg-elevated);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), var(--shadow-lg);
+}
+
+/* --- Sheet mode (phones): docked to the bottom over a scrim --- */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1149;
+  background: rgba(17, 16, 14, 0.4);
+  transition: opacity 240ms var(--ease-drawer);
+}
+
+.scrim[data-state='closed'] {
+  opacity: 0;
+  pointer-events: none;
+  transition-duration: 200ms;
+}
+
+.sheet.popover {
+  top: auto;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-width: none;
+  max-height: 70vh;
+  max-height: 70dvh;
+  border-radius: var(--r-shell) var(--r-shell) 0 0;
+  padding: 0 var(--s2) calc(var(--s2) + env(safe-area-inset-bottom));
+  transform-origin: bottom center;
+  transition: transform 280ms var(--ease-drawer), opacity 200ms ease;
+}
+
+.sheet.popover[data-state='closed'],
+.sheet.popover[data-state='closed'][data-side='top'] {
+  opacity: 1;
+  transform: translateY(100%);
+  transition-duration: 200ms;
+}
+
+/* A grab bar and the field's name, pinned while the list scrolls under it. */
+.sheet::before {
+  content: attr(data-sheet-title);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: block;
+  margin: 0 calc(var(--s2) * -1);
+  padding: 22px var(--s4) var(--s2);
+  background: inherit;
+  font-family: var(--font-label);
+  font-size: var(--t-12);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background-image: linear-gradient(var(--color-border-strong), var(--color-border-strong));
+  background-size: 36px 4px;
+  background-position: center 8px;
+  background-repeat: no-repeat;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet.popover,
+  .sheet.popover[data-state='closed'] {
+    transform: none;
+    transition: opacity 160ms ease;
+  }
+  .sheet.popover[data-state='closed'] {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover,
+  .popover[data-state='closed'],
+  .popover[data-state='closed'][data-side='top'] {
+    transform: none;
+    transition: opacity 120ms ease;
+  }
+}

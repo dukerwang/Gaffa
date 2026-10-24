@@ -3,6 +3,8 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import NavigationLink from '@/components/ui/NavigationLink';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { Icon, IconButton } from '@/components/ui';
 import CrestBadge from '@/components/crest/CrestBadge';
 import type { CrestConfig } from '@/components/crest/types';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
@@ -121,11 +123,11 @@ export default function SquadPeekDrawer({
                   <span>{data.standing.w}W {data.standing.d}D {data.standing.l}L</span>
                 </>
               ) : (
-                <span>Loading…</span>
+                <Skeleton shape="text" width={168} className={styles.metaSkeleton} />
               )}
             </p>
           </div>
-          <button type="button" className={styles.close} onClick={onClose} aria-label="Close">✕</button>
+          <IconButton label="Close" tooltip={false} className={styles.close} onClick={onClose} icon={<Icon name="x" size={18} strokeWidth={2} />} />
         </header>
 
         <div className={styles.body}>
@@ -279,12 +281,14 @@ function Fig({ k, v, sub }: { k: string; v: string; sub?: string }) {
   );
 }
 
+/** The figures strip, the pitch and the bench, in the places they will land. */
 function PeekSkeleton() {
   return (
-    <div className={styles.skeleton} aria-hidden>
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className={styles.skelRow} />
-      ))}
+    <div className={styles.skeleton} aria-busy="true" aria-label="Loading squad">
+      <Skeleton height={58} />
+      <Skeleton shape="text" width={96} />
+      <Skeleton height={232} />
+      <Skeleton shape="text" lines={3} />
     </div>
   );
 }

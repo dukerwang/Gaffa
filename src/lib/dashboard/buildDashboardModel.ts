@@ -17,6 +17,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { unstable_cache } from 'next/cache';
 import type { FplStatus } from '@/lib/fpl/api';
 import type { GwFixture } from '@/lib/fpl/fixtures';
+import { toFixtureRow } from './fixtureRows';
 import type { GranularPosition } from '@/types';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { resolveClub } from '@/lib/clubs/registry';
@@ -527,18 +528,7 @@ async function loadTopRatedPlayers(
 
 /** This week's Premier League fixtures, live first, as the dashboard and the public home draw them. */
 export function buildFixturesModel(fixtures: GwFixture[]): FixturesModel {
-  const rows: FixtureRow[] = fixtures.map((f) => ({
-    id: f.id,
-    homeName: f.homeName,
-    awayName: f.awayName,
-    homeBadge: f.homeBadge,
-    awayBadge: f.awayBadge,
-    homeScore: f.homeScore,
-    awayScore: f.awayScore,
-    kickoff: f.kickoff,
-    state: f.finished ? 'finished' : f.started ? 'live' : 'upcoming',
-    minutes: f.minutes,
-  }));
+  const rows: FixtureRow[] = fixtures.map(toFixtureRow);
   const order = { live: 0, finished: 1, upcoming: 2 } as const;
   rows.sort((a, b) => order[a.state] - order[b.state]);
   const dated = fixtures.map((f) => f.kickoff).filter((k): k is string => !!k).sort();

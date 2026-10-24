@@ -123,21 +123,24 @@
   border-color: var(--color-accent);
 }
 
-.select {
-  padding: var(--s2) var(--s3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--r-control);
-  background: var(--color-bg-card);
-  font-family: var(--font-sans);
+/* Kit Select in the filter bar, sized like the search field beside it (44px,
+   the strong keyline, 13px type), each at the width of its longest option.
+   On a phone the bar becomes search on top, then two filters a row. */
+.filterSelect { flex: none; }
+.filterSelect button[aria-haspopup] {
+  min-height: 44px;
+  border-color: var(--color-border-strong);
   font-size: var(--t-13);
   color: var(--color-text-secondary);
-  cursor: pointer;
-  max-width: 220px;
 }
-
-.select:focus {
-  outline: none;
-  border-color: var(--color-accent);
+.fPos { width: 150px; }
+.fClub { width: 166px; }
+.fTeam { width: 184px; }
+.fMins { width: 188px; }
+.fSync { width: 176px; }
+@media (max-width: 700px) {
+  .tools > .filterSelect { width: calc(50% - var(--s2) / 2); }
+  .tools > input { flex-basis: 100%; max-width: none; }
 }
 
 /* The minimum-games slider. Its label and value are plain text, not a tracked
@@ -202,52 +205,6 @@
   border: 2px solid var(--color-bg-card);
   border-radius: var(--r-round);
   cursor: pointer;
-}
-
-/* ── Primary / Secondary / Both ─────────────────────────── */
-
-.segmented {
-  display: inline-flex;
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-control);
-  overflow: hidden;
-  background: var(--color-bg-card);
-}
-
-.segment {
-  background: transparent;
-  border: none;
-  border-right: 1px solid var(--color-border);
-  padding: var(--s2) var(--s3);
-  font-family: var(--font-label);
-  font-size: var(--t-12);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-}
-
-.segment:last-child { border-right: none; }
-@media (hover: hover) and (pointer: fine) {
-  .segment:hover { background: var(--color-bg-card-hover); }
-}
-
-/* Filled in ink, not in the accent. This is a view toggle, not "yours" — and
-   the 1.0 version painted `--color-accent` with a hardcoded #FFFFFF label,
-   which is 2.5:1 in dark where the accent is the brighter colour. Free
-   Agency's position chips took the same ink treatment for the same reason. */
-.segmentOn {
-  background: var(--color-text-primary);
-  border-color: var(--color-text-primary);
-  color: var(--color-bg-primary);
-}
-@media (hover: hover) and (pointer: fine) {
-  .segmentOn:hover {
-    background: var(--color-text-primary);
-    border-color: var(--color-text-primary);
-    color: var(--color-bg-primary);
-  }
 }
 
 /* ── Table ──────────────────────────────────────────────── */
@@ -487,15 +444,11 @@
   .tools { padding: var(--s3) var(--s4); }
   .tableWrap { padding: 0 var(--s4) var(--s6); }
 
-  .input,
-  .select { max-width: none; }
+  .input { max-width: none; }
 }
 
 @media (max-width: 640px) {
   .input { flex-basis: 100%; max-width: none; }
-  .select { flex: 1 1 140px; }
-  .segmented { flex: 1 1 100%; }
-  .segment { flex: 1; justify-content: center; }
 
   /* GP, PPG, Avg Rating and Form drop first on a phone — Goals and Assists
      stay, since they're what a manager scans a table for, and the card

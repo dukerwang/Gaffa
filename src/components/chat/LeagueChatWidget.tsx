@@ -4,6 +4,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Icon } from '@/components/ui/Icon';
+import { Tooltip } from '@/components/ui/Tooltip';
+import { IconButton, Tabs } from '@/components/ui';
+import iconButton from '@/components/ui/IconButton.module.css';
 import FormattedText from '@/components/ui/FormattedText';
 import CrestBadge from '@/components/crest/CrestBadge';
 import TradeOfferCard, { type TradeSummary } from '@/components/chat/TradeOfferCard';
@@ -484,15 +487,9 @@ function LeagueChatWidgetContent({
             {viewMode === 'chat' && (
               <div className={styles.headerTitleWrapper}>
                 {activeTab.type === 'lobby' ? (
-                  <>
-                    <Icon name="message-square" size={15} strokeWidth={2} />
-                    <span className={styles.headerTitle}>League Lobby</span>
-                  </>
+                  <span className={styles.headerTitle}>League Lobby</span>
                 ) : activeTab.type === 'futbolpedia' ? (
-                  <>
-                    <Icon name="soccer" size={15} strokeWidth={2} />
-                    <span className={styles.headerTitle}>Futbolpedia</span>
-                  </>
+                  <span className={styles.headerTitle}>Futbolpedia</span>
                 ) : (
                   <>
                     <span className={styles.channelItemAvatar}>
@@ -512,76 +509,48 @@ function LeagueChatWidgetContent({
           </div>
 
           <div className={styles.headerRightActions}>
-            {/* Direct link to dedicated full chat page */}
-            <Link
-              href={`/league/${leagueId}/chat`}
-              className={styles.headerActionBtn}
-              title="Open full chat page"
-              aria-label="Open full chat page"
-              onClick={closeChat}
-            >
-              <Icon name="external-link" size={15} strokeWidth={2} />
-            </Link>
-
-            {/* Minimize button */}
-            <button
-              className={styles.headerActionBtn}
-              type="button"
-              title="Minimize chat"
-              aria-label="Minimize chat"
-              onClick={minimizeChat}
-            >
-              <Icon name="minus" size={16} strokeWidth={2.5} />
-            </button>
-
-            {/* Close / Dismiss button */}
-            <button
-              className={styles.headerActionBtn}
-              type="button"
-              title="Close chat"
-              aria-label="Close chat"
-              onClick={closeChat}
-            >
-              <Icon name="x" size={16} strokeWidth={2.5} />
-            </button>
+            {/* A link, so it borrows IconButton's look rather than being one. */}
+            <Tooltip content="Open Full Chat">
+              <Link
+                href={`/league/${leagueId}/chat`}
+                className={`${iconButton.button} ${iconButton.variant_ghost} ${iconButton.size_md}`}
+                aria-label="Open Full Chat"
+                onClick={closeChat}
+              >
+                <Icon name="external-link" size={16} strokeWidth={2} />
+              </Link>
+            </Tooltip>
+            <IconButton label="Minimize" icon={<Icon name="minus" size={18} strokeWidth={2.25} />} onClick={minimizeChat} />
+            <IconButton label="Close" icon={<Icon name="x" size={18} strokeWidth={2.25} />} onClick={closeChat} />
           </div>
         </header>
 
-        {/* Channel Switcher Tab Bar (when in Chat mode on Desktop) */}
+        {/* Channel tabs, in a chat. Direct Messages opens the list of managers. */}
         {viewMode === 'chat' && (
           <div className={styles.channelTabBar}>
-            <button
-              type="button"
-              className={`${styles.tabBtn} ${activeTab.type === 'lobby' ? styles.tabBtnActive : ''}`}
-              onClick={() => setActiveTab({ type: 'lobby' })}
-            >
-              <Icon name="message-square" size={13} strokeWidth={2} />
-              <span>Lobby</span>
-              {unreadSummary.lobbyUnread && activeTab.type !== 'lobby' && <span className={styles.tabBadge} />}
-            </button>
-
-            {askClub && (
-              <button
-                type="button"
-                className={`${styles.tabBtn} ${activeTab.type === 'futbolpedia' ? styles.tabBtnActive : ''}`}
-                onClick={() => setActiveTab({ type: 'futbolpedia' })}
-              >
-                <Icon name="soccer" size={13} strokeWidth={2} />
-                <span>Futbolpedia</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              className={`${styles.tabBtn} ${activeTab.type === 'dm' ? styles.tabBtnActive : ''}`}
-              onClick={() => setViewMode('channels')}
-            >
-              <Icon name="users" size={13} strokeWidth={2} />
-              <span>
-                {activeTab.type === 'dm' ? `@${activeTab.username}` : 'Direct Messages'}
-              </span>
-              {unreadSummary.dmUnreadPeerIds.length > 0 && <span className={styles.tabBadge} />}
-            </button>
+            <Tabs
+              ariaLabel="Chat channels"
+              idBase="league-chat"
+              className={styles.channelTabs}
+              value={activeTab.type}
+              onChange={(t) => {
+                if (t === 'dm') setViewMode('channels');
+                else setActiveTab({ type: t });
+              }}
+              items={[
+                {
+                  value: 'lobby' as const,
+                  label: 'Lobby',
+                  unread: unreadSummary.lobbyUnread && activeTab.type !== 'lobby',
+                },
+                ...(askClub ? [{ value: 'futbolpedia' as const, label: 'Futbolpedia' }] : []),
+                {
+                  value: 'dm' as const,
+                  label: activeTab.type === 'dm' ? `@${activeTab.username}` : 'Direct Messages',
+                  unread: unreadSummary.dmUnreadPeerIds.length > 0,
+                },
+              ]}
+            />
           </div>
         )}
 

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/context/ThemeContext';
 import { Icon } from '@/components/ui/Icon';
+import { toast } from '@/components/ui/toast';
+import { Switch } from '@/components/ui/Switch';
 import NotificationsToggle from '@/components/layout/NotificationsToggle';
 import LeaveLeagueButton from '@/components/settings/LeaveLeagueButton';
 import PlatformAdminSection from '@/components/settings/PlatformAdminSection';
@@ -82,7 +84,9 @@ export default function SettingsClient({
       const data = await res.json();
       setPrefs(resolvePrefs(data.prefs));
     } catch {
+      // The switch flips back on its own; without a word it reads as a misclick.
       setPrefs(previous);
+      toast.error('Setting not saved', { description: 'Try again.' });
     } finally {
       setPending(null);
     }
@@ -103,16 +107,12 @@ export default function SettingsClient({
               <span className={styles.rowLabel}>Dark mode</span>
               <span className={styles.rowMeta}>{themeIsDark ? 'On' : 'Off'}</span>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={themeIsDark}
-              aria-label="Toggle dark mode"
-              className={`${styles.switch} ${themeIsDark ? styles.switchOn : ''}`}
-              onClick={() => setTheme(themeIsDark ? 'light' : 'dark')}
-            >
-              <span className={styles.switchThumb} />
-            </button>
+            <Switch
+              size="sm"
+              checked={themeIsDark}
+              ariaLabel="Dark mode"
+              onChange={(on) => setTheme(on ? 'dark' : 'light')}
+            />
           </div>
         </div>
       </section>
@@ -143,33 +143,25 @@ export default function SettingsClient({
                   <span className={styles.rowMeta}>{meta.hint}</span>
                 </div>
                 <div className={styles.cellCenter}>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={row.push}
-                    aria-label={`${meta.label} push`}
+                  <Switch
+                    size="sm"
+                    checked={row.push}
+                    ariaLabel={`${meta.label} push`}
                     disabled={pending === `${kind}:push`}
-                    className={`${styles.switch} ${row.push ? styles.switchOn : ''}`}
-                    onClick={() => togglePref(kind, 'push')}
-                  >
-                    <span className={styles.switchThumb} />
-                  </button>
+                    onChange={() => togglePref(kind, 'push')}
+                  />
                 </div>
                 <div className={styles.cellCenter}>
                   {kind === 'chat' || kind === 'product' ? (
                     <span className={styles.dash} title={`No email for ${meta.label.toLowerCase()}`}>—</span>
                   ) : (
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={row.email}
-                      aria-label={`${meta.label} email`}
+                    <Switch
+                      size="sm"
+                      checked={row.email}
+                      ariaLabel={`${meta.label} email`}
                       disabled={pending === `${kind}:email`}
-                      className={`${styles.switch} ${row.email ? styles.switchOn : ''}`}
-                      onClick={() => togglePref(kind, 'email')}
-                    >
-                      <span className={styles.switchThumb} />
-                    </button>
+                      onChange={() => togglePref(kind, 'email')}
+                    />
                   )}
                 </div>
               </div>

@@ -8,6 +8,9 @@ import ThemeToggle from './ThemeToggle';
 import NotificationBell from './NotificationBell';
 import ChatNavIcon from './ChatNavIcon';
 import { Icon } from '@/components/ui/Icon';
+import { NumberRoll } from '@/components/ui/NumberRoll';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { Popover } from '@/components/ui/Popover';
 import CrestBadge from '@/components/crest/CrestBadge';
 import { clubHref } from '@/lib/teams/clubHref';
 import { isAwaitingDraft } from '@/lib/leagues/status';
@@ -89,11 +92,15 @@ export default function TopBar() {
   const [leagueBalances, setLeagueBalances] = useState<LeagueTeamBalance[]>([]);
   const [leagueBalancesLoading, setLeagueBalancesLoading] = useState(false);
 
-  const userDropdownRef = useRef<HTMLDivElement>(null);
   const pageNavRef = useRef<HTMLDivElement>(null);
-  const balanceDropdownRef = useRef<HTMLDivElement>(null);
+  // The two menus are kit Popovers, anchored here and closed by the Popover itself.
+  const [balanceAnchor, setBalanceAnchor] = useState<HTMLButtonElement | null>(null);
+  const [userAnchor, setUserAnchor] = useState<HTMLButtonElement | null>(null);
   const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const balanceDropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // A click right after hover opened the menu keeps it open rather than shutting it.
+  const balanceOpenedByHover = useRef(false);
+  const balanceOpenRef = useRef(false);
   const navTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Extract current leagueId from URL — exclude static segments like 'create', 'join'
@@ -220,22 +227,14 @@ export default function TopBar() {
   // Close switcher or dropdowns on outside click & Escape key
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target as Node)) {
-        setUserDropdownOpen(false);
-      }
       if (pageNavRef.current && !pageNavRef.current.contains(e.target as Node)) {
         setOpenDropdown(null);
-      }
-      if (balanceDropdownRef.current && !balanceDropdownRef.current.contains(e.target as Node)) {
-        setBalanceDropdownOpen(false);
       }
     }
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         setOpenDropdown(null);
-        setUserDropdownOpen(false);
-        setBalanceDropdownOpen(false);
       }
     }
 
@@ -363,19 +362,29 @@ export default function TopBar() {
   // Club Balance dropdown: every club's balance, fetched fresh each time it
   // opens rather than cached — this figure changes the moment a bid resolves
   // or a trade completes, and nothing else in the topbar polls for it.
-  const handleBalanceEnter = useCallback(() => {
+  // Hover opens it for a mouse only; a tap would otherwise open it on the
+  // synthetic enter and shut it again on the click.
+  const handleBalanceEnter = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType !== 'mouse') return;
     if (balanceDropdownTimeoutRef.current) {
       clearTimeout(balanceDropdownTimeoutRef.current);
       balanceDropdownTimeoutRef.current = null;
     }
+    if (!balanceOpenRef.current) balanceOpenedByHover.current = true;
     setBalanceDropdownOpen(true);
   }, []);
 
-  const handleBalanceLeave = useCallback(() => {
+  const handleBalanceLeave = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType !== 'mouse') return;
     balanceDropdownTimeoutRef.current = setTimeout(() => {
+      balanceOpenedByHover.current = false;
       setBalanceDropdownOpen(false);
     }, 150);
   }, []);
+
+  useEffect(() => {
+    balanceOpenRef.current = balanceDropdownOpen;
+  }, [balanceDropdownOpen]);
 
   useEffect(() => {
     if (!balanceDropdownOpen || !currentLeagueId) return;
@@ -396,7 +405,7 @@ export default function TopBar() {
       <div className={styles.inner}>
         {/* --- Wordmark --- */}
         <Link href={isAuthenticated ? '/dashboard' : '/login'} className={styles.brand} onClick={() => setIsNavigating(true)}>
-          <span className={styles.brandIcon}><Icon name="gaffa" size={20} strokeWidth={2} /></span>
+          <span className={styles.brandIcon}><Icon name="gaffa" size={26} /></span>
           <span className={`${styles.brandName} ${!currentLeagueId ? styles.brandNameKeep : ''}`}>Gaffa</span>
         </Link>
 
@@ -510,80 +519,109 @@ export default function TopBar() {
           {currentLeagueId && currentTeam && (
             <div
               className={styles.balanceContainer}
-              ref={balanceDropdownRef}
-              onMouseEnter={handleBalanceEnter}
-              onMouseLeave={handleBalanceLeave}
+              onPointerEnter={handleBalanceEnter}
+              onPointerLeave={handleBalanceLeave}
             >
               <button
+                ref={setBalanceAnchor}
                 type="button"
                 className={styles.balancePill}
                 title="Club Balance"
-                onClick={() => setBalanceDropdownOpen((open) => !open)}
-                aria-haspopup="true"
+                onClick={() => {
+                  if (balanceOpenedByHover.current) {
+                    balanceOpenedByHover.current = false;
+                    return;
+                  }
+                  setBalanceDropdownOpen((open) => !open);
+                }}
+                aria-haspopup="dialog"
                 aria-expanded={balanceDropdownOpen}
               >
                 <span className={styles.balancePillLabel}>Club Balance</span>
-                <span className={styles.balancePillAmount}>€{currentTeam.faab_budget ?? 0}m</span>
+                <span className={styles.balancePillAmount}>
+                  <NumberRoll value={currentTeam.faab_budget ?? 0} format={(n) => `€${n}m`} />
+                </span>
                 <span className={`${styles.chevron} ${balanceDropdownOpen ? styles.chevronOpen : ''}`}>▾</span>
               </button>
 
-              {balanceDropdownOpen && (
-                <div className={styles.balanceDropdown}>
-                  <div className={styles.dropdownSectionLabel}>Club Balances</div>
-                  {leagueBalancesLoading && leagueBalances.length === 0 ? (
-                    <div className={styles.balanceDropdownEmpty}>Loading…</div>
-                  ) : (
-                    <div className={styles.balanceList}>
-                      {leagueBalances.map((team) => {
-                        const isCurrent = team.id === currentTeam.id;
-                        return (
-                          <Link
-                            key={team.id}
-                            href={clubHref(currentLeagueId, team.id, isCurrent)}
-                            className={`${styles.balanceRow} ${isCurrent ? styles.balanceRowActive : ''}`}
-                            onClick={() => {
-                              setBalanceDropdownOpen(false);
-                              setIsNavigating(true);
-                            }}
-                          >
-                            <CrestBadge
-                              config={team.crest_config}
-                              teamName={team.team_name}
-                              size={20}
-                              interactive={false}
-                            />
-                            <span className={styles.balanceRowName}>{team.team_name}</span>
-                            <span className={styles.balanceRowAmount}>€{team.faab_budget ?? 0}m</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                  <div className={styles.dropdownDivider} />
+              <Popover
+                open={balanceDropdownOpen}
+                onClose={() => {
+                  balanceOpenedByHover.current = false;
+                  setBalanceDropdownOpen(false);
+                }}
+                anchor={balanceAnchor}
+                placement="bottom-end"
+                sheet
+                sheetTitle="Club Balances"
+                aria-label="Club Balances"
+                className={styles.menuPanel}
+                onPointerEnter={handleBalanceEnter}
+                onPointerLeave={handleBalanceLeave}
+              >
+                <div className={styles.menuLabel}>Club Balances</div>
+                {leagueBalancesLoading && leagueBalances.length === 0 ? (
+                  <div aria-busy="true" aria-label="Loading Club Balances">
+                    {Array.from({ length: 4 }, (_, i) => (
+                      <div key={i} className={`${styles.menuRow} ${styles.menuRowCrest}`}>
+                        <Skeleton shape="circle" width={20} height={20} />
+                        <Skeleton shape="text" width={`${52 + (i % 3) * 12}%`} />
+                        <Skeleton shape="text" width={40} className={styles.balanceRowSkeletonAmount} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  leagueBalances.map((team) => {
+                    const isCurrent = team.id === currentTeam.id;
+                    return (
+                      <Link
+                        key={team.id}
+                        href={clubHref(currentLeagueId, team.id, isCurrent)}
+                        className={`${styles.menuRow} ${styles.menuRowCrest}`}
+                        aria-current={isCurrent ? 'true' : undefined}
+                        onClick={() => {
+                          setBalanceDropdownOpen(false);
+                          setIsNavigating(true);
+                        }}
+                      >
+                        <CrestBadge
+                          config={team.crest_config}
+                          teamName={team.team_name}
+                          size={20}
+                          interactive={false}
+                        />
+                        <span className={styles.menuRowName}>{team.team_name}</span>
+                        <span className={styles.menuRowFig}>€{team.faab_budget ?? 0}m</span>
+                      </Link>
+                    );
+                  })
+                )}
+                <div className={styles.menuSep} />
+                <Link
+                  href={`/league/${currentLeagueId}/finance`}
+                  className={`${styles.menuRow} ${styles.menuRowQuiet}`}
+                  onClick={() => {
+                    setBalanceDropdownOpen(false);
+                    setIsNavigating(true);
+                  }}
+                >
+                  <span className={styles.menuRowName}>Finance</span>
+                  <Icon name="chevron-right" size={16} strokeWidth={2} />
+                </Link>
+                {currentLeague?.is_dynasty !== false && (
                   <Link
-                    href={`/league/${currentLeagueId}/finance`}
-                    className={styles.dropdownActionLink}
+                    href={`/league/${currentLeagueId}/team/roster#facilities`}
+                    className={`${styles.menuRow} ${styles.menuRowQuiet}`}
                     onClick={() => {
                       setBalanceDropdownOpen(false);
                       setIsNavigating(true);
                     }}
                   >
-                    View Finance →
+                    <span className={styles.menuRowName}>Club Facilities</span>
+                    <Icon name="chevron-right" size={16} strokeWidth={2} />
                   </Link>
-                  {currentLeague?.is_dynasty !== false && (
-                    <Link
-                      href={`/league/${currentLeagueId}/team/roster#facilities`}
-                      className={styles.dropdownActionLink}
-                      onClick={() => {
-                        setBalanceDropdownOpen(false);
-                        setIsNavigating(true);
-                      }}
-                    >
-                      Club Facilities →
-                    </Link>
-                  )}
-                </div>
-              )}
+                )}
+              </Popover>
             </div>
           )}
 
@@ -616,21 +654,23 @@ export default function TopBar() {
                 onNavigate={() => setIsNavigating(true)}
               />
 
-              {/* Consolidated User Profile Dropdown */}
-              <div className={styles.userDropdownContainer} ref={userDropdownRef}>
+              {/* Account menu */}
+              <div className={styles.userDropdownContainer}>
                 <button
+                  ref={setUserAnchor}
                   className={styles.avatarBtn}
-                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  onClick={() => setUserDropdownOpen((open) => !open)}
                   type="button"
-                  aria-label="User menu"
+                  aria-label="Account"
                   aria-expanded={userDropdownOpen}
-                  aria-haspopup="true"
+                  aria-haspopup="dialog"
                 >
                   {currentLeagueId && currentCrestConfig ? (
                     <CrestBadge
                       config={currentCrestConfig}
                       size={32}
                       teamName={currentTeam?.team_name || username}
+                      interactive={false}
                     />
                   ) : (
                     <div className={styles.userInitialsAvatar} style={{ width: '32px', height: '32px', fontSize: '11px' }}>
@@ -639,137 +679,100 @@ export default function TopBar() {
                   )}
                 </button>
 
-                {userDropdownOpen && (
-                  <div className={styles.userDropdown}>
-                    {/* Header Profile Identity */}
-                    <div className={styles.dropdownHeader}>
-                      <div style={{ marginRight: '12px', flexShrink: 0 }}>
-                        {currentLeagueId && currentCrestConfig ? (
-                          <CrestBadge
-                            config={currentCrestConfig}
-                            size={40}
-                            teamName={currentTeam?.team_name || username}
-                            teamId={currentTeam?.id}
-                          />
-                        ) : (
-                          <div className={styles.userInitialsAvatar} style={{ width: '40px', height: '40px', fontSize: '13px' }}>
-                            {initials}
-                          </div>
-                        )}
+                <Popover
+                  open={userDropdownOpen}
+                  onClose={() => setUserDropdownOpen(false)}
+                  anchor={userAnchor}
+                  placement="bottom-end"
+                  sheet
+                  sheetTitle="Account"
+                  aria-label="Account"
+                  className={`${styles.menuPanel} ${styles.menuPanelAccount}`}
+                >
+                  <Link
+                    href={currentLeagueId ? `/league/${currentLeagueId}/crest` : '/settings'}
+                    className={styles.menuIdentity}
+                    onClick={() => { setUserDropdownOpen(false); setIsNavigating(true); }}
+                  >
+                    {currentLeagueId && currentCrestConfig ? (
+                      <CrestBadge
+                        config={currentCrestConfig}
+                        size={40}
+                        teamName={currentTeam?.team_name || username}
+                        interactive={false}
+                      />
+                    ) : (
+                      <div className={styles.userInitialsAvatar} style={{ width: '40px', height: '40px', fontSize: '13px' }}>
+                        {initials}
                       </div>
-                      <div className={styles.dropdownHeaderDetails}>
-                        <div className={styles.dropdownClubName}>
-                          {currentTeam?.team_name || 'My Club'}
-                        </div>
-                        <div className={styles.dropdownUsername}>
-                          @{username || 'manager'}
-                        </div>
-                        {currentLeagueId && (
-                          <Link
-                            href={`/league/${currentLeagueId}/crest`}
-                            className={styles.editCrestLink}
-                            onClick={() => setUserDropdownOpen(false)}
-                          >
-                            Edit Crest →
-                          </Link>
-                        )}
-                      </div>
-                    </div>
+                    )}
+                    <span className={styles.menuIdentityText}>
+                      <b>{currentTeam?.team_name || 'My Club'}</b>
+                      <span>@{username || 'manager'}{currentLeagueId ? ' · Edit Crest' : ''}</span>
+                    </span>
+                  </Link>
 
-                    <div className={styles.dropdownDivider} />
+                  <div className={styles.menuSep} />
 
-                    {/* League Switcher Section */}
-                    <div className={styles.dropdownSection}>
-                      <div className={styles.dropdownSectionLabel}>Switch League</div>
-                      {teams.length > 0 ? (
-                        <div className={styles.leagueList}>
-                          {teams.map((team) => (
-                            <Link
-                              key={team.league.id}
-                              href={`/league/${team.league.id}`}
-                              className={`${styles.dropdownItem} ${team.league.id === currentLeagueId ? styles.dropdownItemActive : ''}`}
-                              onClick={() => {
-                                setUserDropdownOpen(false);
-                                setIsNavigating(true);
-                              }}
-                            >
-                              <span
-                                className={`${styles.leagueDot} ${team.league.id === currentLeagueId ? styles.leagueDotActive : styles.leagueDotInactive}`}
-                              />
-                              <span className={styles.dropdownItemName}>{team.league.name}</span>
-                              <span className={styles.dropdownItemSeason}>{team.league.season}</span>
-                            </Link>
-                          ))}
-                        </div>
-                      ) : (
-                        <div style={{ padding: '8px 16px', fontSize: '13px', color: 'var(--color-text-muted)' }}>
-                          No leagues yet
-                        </div>
-                      )}
-
-                      <div className={styles.dropdownDivider} style={{ margin: '8px 0' }} />
-
+                  {teams.map((team) => {
+                    const isCurrent = team.league.id === currentLeagueId;
+                    return (
                       <Link
-                        href="/league/create"
-                        className={styles.dropdownActionLink}
+                        key={team.league.id}
+                        href={`/league/${team.league.id}`}
+                        className={styles.menuRow}
+                        aria-current={isCurrent ? 'true' : undefined}
                         onClick={() => { setUserDropdownOpen(false); setIsNavigating(true); }}
                       >
-                        + Create League
+                        <span className={styles.menuRowName}>{team.league.name}</span>
+                        <span className={styles.menuRowMeta}>{team.league.season}</span>
+                        <span className={styles.menuRowCheck}>
+                          {isCurrent && <Icon name="check" size={16} strokeWidth={2.25} />}
+                        </span>
                       </Link>
-                      <Link
-                        href="/league/join"
-                        className={styles.dropdownActionLink}
-                        onClick={() => { setUserDropdownOpen(false); setIsNavigating(true); }}
-                      >
-                        ↳ Join League
-                      </Link>
-                    </div>
+                    );
+                  })}
+                  <Link
+                    href="/league/create"
+                    className={styles.menuRow}
+                    onClick={() => { setUserDropdownOpen(false); setIsNavigating(true); }}
+                  >
+                    <Icon name="plus" size={16} strokeWidth={2} />
+                    <span className={styles.menuRowName}>Create a League</span>
+                  </Link>
+                  <Link
+                    href="/league/join"
+                    className={styles.menuRow}
+                    onClick={() => { setUserDropdownOpen(false); setIsNavigating(true); }}
+                  >
+                    <Icon name="users" size={16} strokeWidth={2} />
+                    <span className={styles.menuRowName}>Join a League</span>
+                  </Link>
 
-                    <div className={styles.dropdownDivider} />
+                  <div className={styles.menuSep} />
 
+                  {([
+                    ['layout', 'Lineup Builder', '/lineup-builder'],
+                    ['settings', 'Settings', currentLeagueId ? `/league/${currentLeagueId}/settings` : '/settings'],
+                    ['help-circle', 'Help', currentLeagueId ? `/league/${currentLeagueId}/help` : '/help'],
+                  ] as const).map(([icon, label, href]) => (
                     <Link
-                      href="/lineup-builder"
-                      className={styles.dropdownActionLink}
+                      key={label}
+                      href={href}
+                      className={styles.menuRow}
                       onClick={() => { setUserDropdownOpen(false); setIsNavigating(true); }}
                     >
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                        <Icon name="layout" size={14} strokeWidth={1.75} />
-                        Lineup Builder
-                      </span>
+                      <Icon name={icon} size={16} strokeWidth={1.75} />
+                      <span className={styles.menuRowName}>{label}</span>
                     </Link>
+                  ))}
 
-                    <Link
-                      href={currentLeagueId ? `/league/${currentLeagueId}/settings` : '/settings'}
-                      className={styles.dropdownActionLink}
-                      onClick={() => { setUserDropdownOpen(false); setIsNavigating(true); }}
-                    >
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                        <Icon name="settings" size={14} strokeWidth={1.75} />
-                        Settings
-                      </span>
-                    </Link>
+                  <div className={styles.menuSep} />
 
-                    <Link
-                      href={currentLeagueId ? `/league/${currentLeagueId}/help` : '/help'}
-                      className={styles.dropdownActionLink}
-                      onClick={() => { setUserDropdownOpen(false); setIsNavigating(true); }}
-                    >
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                        <Icon name="help-circle" size={14} strokeWidth={1.75} />
-                        Help
-                      </span>
-                    </Link>
-
-                    <div className={styles.dropdownDivider} />
-
-                    {/* Mobile settings / Sign out */}
-                    <div style={{ padding: '4px 0' }}>
-                      <button onClick={handleSignOut} className={styles.dropdownSignOutBtn} type="button">
-                        Sign out
-                      </button>
-                    </div>
-                  </div>
-                )}
+                  <button type="button" onClick={handleSignOut} className={`${styles.menuRow} ${styles.menuRowDanger}`}>
+                    <span className={styles.menuRowName}>Sign Out</span>
+                  </button>
+                </Popover>
               </div>
             </>
           )}

@@ -1,0 +1,166 @@
+/* Gaffa UI Primitive: MoneyStepper */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.disabled {
+  opacity: 0.5;
+}
+
+.fullWidth {
+  align-items: stretch;
+}
+
+.fullWidth .control {
+  width: 100%;
+}
+
+.fullWidth .figure,
+.fullWidth .input {
+  flex: 1;
+  width: auto;
+}
+
+.label {
+  font-family: var(--font-label);
+  font-size: var(--t-13);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--color-text-secondary);
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: 6px;
+  border-radius: calc(var(--r-shell) + 2px);
+  background: var(--color-bg-inset);
+}
+
+.step {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--r-shell);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(28, 28, 28, 0.08);
+  touch-action: manipulation;
+  /* Held for seconds on a phone: no selection, magnifier or callout. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: background-color var(--dur-fast) ease,
+              transform var(--dur-instant) var(--ease-out-strong),
+              opacity var(--dur-fast) ease;
+  --press-scale: 0.9;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .step:hover:not(:disabled) {
+    background: var(--color-bg-card-hover);
+  }
+}
+
+.step:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+:global([data-theme='dark']) .step {
+  background: var(--color-bg-elevated);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.figure,
+.input {
+  min-width: 5.2ch;
+  height: 52px;
+  padding: 0 var(--s2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--t-32);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--color-text-primary);
+  border-radius: var(--r-control);
+  cursor: text;
+}
+
+.figure:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.input {
+  width: 5.2ch;
+  border: none;
+  background: var(--color-bg-card);
+  text-align: center;
+  outline: 2px solid var(--color-accent);
+}
+
+/* At a bound: a short sideways shake, so a refused step still answers. */
+.bump {
+  display: inline-flex;
+  animation: bump 260ms var(--ease-out-strong);
+}
+
+@keyframes bump {
+  20% { transform: translateX(-4px); }
+  50% { transform: translateX(3px); }
+  75% { transform: translateX(-1px); }
+}
+
+.hint {
+  font-size: var(--t-13);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* Compact, for a figure inside a row. Under a finger the buttons keep 44px. */
+.sm .control {
+  gap: var(--s1);
+  padding: 3px;
+}
+
+.sm .step {
+  width: 36px;
+  height: 36px;
+}
+
+.sm .figure,
+.sm .input {
+  min-width: 4.6ch;
+  height: 36px;
+  font-size: var(--t-20);
+}
+
+.sm .input {
+  width: 4.6ch;
+}
+
+@media (pointer: coarse) {
+  .sm .step {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bump {
+    animation: none;
+  }
+}

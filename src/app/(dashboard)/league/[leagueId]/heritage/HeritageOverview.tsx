@@ -22,6 +22,7 @@ import HeritageNav from './HeritageNav';
 import type { BoardClub, HonoursBoard } from '@/lib/heritage/honoursBoard';
 import type { HeadToHead, Tally } from '@/lib/heritage/headToHead';
 import styles from './heritage.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface Props {
   leagueId: string;
@@ -242,11 +243,11 @@ export default function HeritageOverview({
               })}
             </div>
           ) : (
-            <p className={styles.empty}>
+            <EmptyState>
               {viewerTeamId
                 ? 'No completed fixtures yet. You’ll see your record after your first one.'
                 : 'You need a club in this league to see head-to-head records.'}
-            </p>
+            </EmptyState>
           )}
         </div>
 

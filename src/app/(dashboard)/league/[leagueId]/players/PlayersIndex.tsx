@@ -2,7 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { QUALITY_LABEL } from '@/lib/outlook/labels';
+import { useRouter } from 'next/navigation';
 import NavigationLink from '@/components/ui/NavigationLink';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { Select } from '@/components/ui/Select';
+import { gaffaClubItem, plClubItem, plainItem } from '@/components/select/domainItems';
+import type { CrestConfig } from '@/components/crest/types';
 import dynamic from 'next/dynamic';
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
@@ -16,11 +21,12 @@ import type { GranularPosition } from '@/types';
 import { STYLE_LABEL } from '@futbolpedia/engine';
 import type { OutlookStyle } from '@futbolpedia/engine';
 import type { ExplorerRow, IndexScout } from '@/lib/players/indexData';
-import type { IndexRowPlayer } from './page';
+import type { IndexRowPlayer } from './(index)/page';
 import { isPlayerMapped } from '@/lib/players/playerMapping';
 import { POS_FILTER_OPTIONS, resolveActivePosition, type PosFilter, type PosType } from '@/lib/players/positionFilter';
 import styles from './playersIndex.module.css';
 import { fold } from '@/lib/text/fold';
+import EmptyState from '@/components/ui/EmptyState';
 
 /**
  * The players index. Cards is the default view.
@@ -44,6 +50,8 @@ interface Props {
   gameweek: number | null;
   shadowMaps: React.ComponentProps<typeof GlobalStatsTableType>['shadowMaps'];
   isSiteAdmin?: boolean;
+  /** Each Gaffa club's crest, for the club filter. */
+  teamCrests?: Record<string, CrestConfig | null>;
 }
 
 const MINUTES_LABEL: Record<string, string> = {
@@ -90,7 +98,7 @@ function Pill({
 }
 
 export default function PlayersIndex({
-  leagueId, leagueName, players, scout, season, seasons, view: initialView, explorerRows, gameweeks, gameweek, shadowMaps, isSiteAdmin,
+  leagueId, leagueName, players, scout, season, seasons, view: initialView, explorerRows, gameweeks, gameweek, shadowMaps, isSiteAdmin, teamCrests = {},
 }: Props) {
   const [currentView, setCurrentView] = useState<'cards' | 'table' | 'explorer'>(initialView ?? 'cards');
   const [search, setSearch] = useState('');
@@ -168,6 +176,13 @@ export default function PlayersIndex({
   }, [initialView]);
 
   const view = currentView;
+
+  const router = useRouter();
+  /** The switchers were links; they still navigate, and still start the top bar's loading bar. */
+  function go(href: string) {
+    window.dispatchEvent(new Event('navigation-start'));
+    router.push(href);
+  }
 
   function handleViewSelect(nextView: 'cards' | 'table' | 'explorer') {
     setCurrentView(nextView);
@@ -258,35 +273,29 @@ export default function PlayersIndex({
           </div>
 
           {seasons.length > 1 && (
-            <nav className={styles.seasons} aria-label="Season">
-              {seasons.map((s) => (
-                <NavigationLink
-                  key={s}
-                  href={`/league/${leagueId}/players?view=${view}&season=${s}`}
-                  className={`${styles.seasonTab} ${s === season ? styles.seasonTabOn : ''}`}
-                  aria-current={s === season ? 'page' : undefined}
-                >
-                  {s.replace('-', '/')}
-                </NavigationLink>
-              ))}
-            </nav>
+            <SegmentedControl
+              variant="ink"
+              ariaLabel="Season"
+              value={season}
+              onChange={(s) => go(`/league/${leagueId}/players?view=${view}&season=${s}`)}
+              options={seasons.map((s) => ({ value: s, label: s.replace('-', '/') }))}
+            />
           )}
 
-          <nav className={styles.seg} aria-label="View">
-            {(['cards', 'table', 'explorer'] as const).map((v) => (
-              <NavigationLink
-                key={v}
-                href={`/league/${leagueId}/players?view=${v}&season=${season}${
-                  v === 'table' && gameweek ? `&gw=${gameweek}` : ''
-                }`}
-                className={`${styles.segBtn} ${v === view ? styles.segOn : ''}`}
-                aria-current={v === view ? 'page' : undefined}
-                onClick={() => handleViewSelect(v)}
-              >
-                {v === 'cards' ? 'Cards' : v === 'table' ? 'Table' : 'Explorer'}
-              </NavigationLink>
-            ))}
-          </nav>
+          <SegmentedControl<'cards' | 'table' | 'explorer'>
+            variant="ink"
+            ariaLabel="View"
+            value={view}
+            onChange={(v) => {
+              handleViewSelect(v);
+              go(`/league/${leagueId}/players?view=${v}&season=${season}${v === 'table' && gameweek ? `&gw=${gameweek}` : ''}`);
+            }}
+            options={[
+              { value: 'cards', label: 'Cards' },
+              { value: 'table', label: 'Table' },
+              { value: 'explorer', label: 'Explorer' },
+            ]}
+          />
         </div>
       </header>
     </>
@@ -336,6 +345,7 @@ export default function PlayersIndex({
           season={season}
           shadowMaps={shadowMaps}
           isSiteAdmin={isSiteAdmin}
+          teamCrests={teamCrests}
         />
       </div>
     );
@@ -353,49 +363,42 @@ export default function PlayersIndex({
           onChange={(e) => { setSearch(e.target.value); setShown(CARD_PAGE); }}
           aria-label="Search player"
         />
-        <select
-          className={styles.select}
+        <Select<PosFilter>
+          className={`${styles.filterSelect} ${styles.fPos}`}
+          ariaLabel="Position"
           value={posFilter}
-          onChange={(e) => { setPosFilter(e.target.value as PosFilter); setShown(CARD_PAGE); }}
-          aria-label="Position"
-        >
-          {POS_FILTER_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        <select
-          className={styles.select}
+          onChange={(v) => { setPosFilter(v); setShown(CARD_PAGE); }}
+          items={POS_FILTER_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+        />
+        <Select
+          className={`${styles.filterSelect} ${styles.fClub}`}
+          ariaLabel="Club"
           value={clubFilter}
-          onChange={(e) => { setClubFilter(e.target.value); setShown(CARD_PAGE); }}
-          aria-label="Club"
-        >
-          <option value="ALL">All clubs</option>
-          {clubOptions.map((club) => (
-            <option key={club} value={club}>{club}</option>
-          ))}
-        </select>
-        <select
-          className={styles.select}
+          onChange={(v) => { setClubFilter(v); setShown(CARD_PAGE); }}
+          items={[plainItem('ALL', 'All clubs'), ...clubOptions.map((club) => plClubItem(club))]}
+        />
+        <Select
+          className={`${styles.filterSelect} ${styles.fTeam}`}
+          ariaLabel="Gaffa club"
           value={teamFilter}
-          onChange={(e) => { setTeamFilter(e.target.value); setShown(CARD_PAGE); }}
-          aria-label="Gaffa club"
-        >
-          <option value="ALL">All Gaffa clubs</option>
-          <option value="FREE">Free agents</option>
-          {teamOptions.map(([id, name]) => (
-            <option key={id} value={id}>{name}</option>
-          ))}
-        </select>
-        <select
-          className={styles.select}
+          onChange={(v) => { setTeamFilter(v); setShown(CARD_PAGE); }}
+          items={[
+            plainItem('ALL', 'All Gaffa clubs'),
+            plainItem('FREE', 'Free agents'),
+            ...teamOptions.map(([id, name]) => gaffaClubItem(id, name, teamCrests[id])),
+          ]}
+        />
+        <Select<'played' | 'all' | 'gt45'>
+          className={`${styles.filterSelect} ${styles.fMins}`}
+          ariaLabel="Minutes filter"
           value={minMins}
-          onChange={(e) => handleSetMinMins(e.target.value as 'played' | 'all' | 'gt45')}
-          aria-label="Minutes filter"
-        >
-          <option value="played">Played (&gt;0 mins)</option>
-          <option value="all">Meaningful (&ge;15 mins)</option>
-          <option value="gt45">Starters (&gt;45 mins)</option>
-        </select>
+          onChange={handleSetMinMins}
+          items={[
+            { value: 'played', label: 'Played (>0 mins)' },
+            { value: 'all', label: 'Meaningful (≥15 mins)' },
+            { value: 'gt45', label: 'Starters (>45 mins)' },
+          ]}
+        />
 
         <div className={styles.slider}>
           <label className={styles.sliderLabel} htmlFor="cardsMinGames">Min games</label>
@@ -411,19 +414,17 @@ export default function PlayersIndex({
           <span className={styles.sliderValue}>{minGames}</span>
         </div>
 
-        <div className={styles.segmented} role="group" aria-label="Which positions count">
-          {(['primary', 'secondary', 'both'] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={`${styles.segment} ${posType === t ? styles.segmentOn : ''}`}
-              aria-pressed={posType === t}
-              onClick={() => handleSetPosType(t)}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl<'primary' | 'secondary' | 'both'>
+          variant="ink"
+          ariaLabel="Which positions count"
+          value={posType}
+          onChange={handleSetPosType}
+          options={[
+            { value: 'primary', label: 'Primary' },
+            { value: 'secondary', label: 'Secondary' },
+            { value: 'both', label: 'Both' },
+          ]}
+        />
 
         {activeFilters > 0 && (
           <button
@@ -571,7 +572,7 @@ export default function PlayersIndex({
       </div>
 
       {filtered.length === 0 && (
-        <p className={styles.empty}>No players match these filters.</p>
+        <EmptyState>No players match these filters.</EmptyState>
       )}
 
       {shown < filtered.length && (

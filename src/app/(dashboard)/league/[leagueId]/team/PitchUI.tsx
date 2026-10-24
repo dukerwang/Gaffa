@@ -20,6 +20,7 @@ import { getFormationLockStatus, assignStartersForFormation } from '@/lib/lineup
 import { playStatus, scoreCell, type PlayStatus, type ScoreCell } from '@/lib/lineups/scoreCell';
 import { scoreAppearanceAtSlot, type RefStatsMap } from '@/lib/scoring/matchups';
 import type { RosterCapacity } from '@/lib/roster/capacity';
+import { adjustCapacity, applyPendingMoves, pruneSettledMoves, type PendingMoves } from '@/lib/lineups/pendingMoves';
 import NavigationLink from '@/components/ui/NavigationLink';
 import CrestBadge from '@/components/crest/CrestBadge';
 import type { RawStats } from '@/types';
@@ -30,6 +31,8 @@ import facilityStyles from '@/components/facilities/facilities.module.css';
 import type { FacilityView } from '@/lib/facilities/facilities';
 import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/academyEligibility';
 import { serializeLineup } from '@/lib/lineups/lineupSerializer';
+import { Tooltip } from '@/components/ui/Tooltip';
+import { IconButton } from '@/components/ui/IconButton';
 
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -74,6 +77,9 @@ const DEFAULT_TAXI_AGE_LIMIT = 21;
  * pitch.module.css's .nodePtsBadge comment for why this exists twice.
  */
 function ptsBand(points: number): string {
+    if (points >= 43.02) return styles.nodePtsRarest;
+    if (points >= 39.76) return styles.nodePtsRarer;
+    if (points >= 36.58) return styles.nodePtsRare;
     if (points >= 29) return styles.nodePtsElite;
     if (points >= 15.8) return styles.nodePtsGood;
     if (points >= 5.6) return styles.nodePtsFair;
@@ -291,6 +297,7 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isDimmed, isEmp
                     name={player ? pitchFullName(player) : slotPos}
                     club={player?.pl_team}
                     size="md"
+                    phoneSize="sm"
                     headTopPct={player?.portrait_head_top_pct}
                     headWidthPct={player?.portrait_head_width_pct}
                     photoVersion={player?.photo_version}
@@ -317,7 +324,7 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isDimmed, isEmp
                     {player ? (
                         <>
                             <span
-                                className={`${styles.nodePlayerNameCenter} ${isInvalid ? styles.nodeNameInvalid : ''}`}
+                                className={`${styles.nodePlayerNameCenter} ${displayName(player).length > 12 ? styles.nodeNameLong : ''} ${isInvalid ? styles.nodeNameInvalid : ''}`}
                                 onClick={(e) => {
                                     if (onViewDetails) {
                                         e.stopPropagation();
@@ -395,9 +402,9 @@ function RowScore({ cell }: { cell: ScoreCell }) {
 export default function PitchUI({
     teamId,
     teamName,
-    allEntries,
-    irEntries,
-    taxiEntries,
+    allEntries: serverAllEntries,
+    irEntries: serverIrEntries,
+    taxiEntries: serverTaxiEntries,
     taxiAgeLimit = DEFAULT_TAXI_AGE_LIMIT,
     season,
     initialFormation,
@@ -415,7 +422,7 @@ export default function PitchUI({
     lineupWeekLabel,
     activeRosterCount,
     maxRosterSize,
-    capacity,
+    capacity: serverCapacity,
     leagueId,
     facilityOffers,
     lineupLocked = false,
@@ -424,6 +431,27 @@ export default function PitchUI({
     projectionGameweek,
 }: Props) {
     const router = useRouter();
+
+    // Academy and IR moves show at once, without waiting for router.refresh()
+    // to re-run the server page (src/lib/lineups/pendingMoves.ts).
+    const [movedTo, setMovedTo] = useState<PendingMoves>({});
+    const serverLists = useMemo(
+        () => ({ squad: serverAllEntries, taxi: serverTaxiEntries, ir: serverIrEntries }),
+        [serverAllEntries, serverTaxiEntries, serverIrEntries],
+    );
+    useEffect(() => { setMovedTo((prev) => pruneSettledMoves(serverLists, prev)); }, [serverLists]);
+    const recordMove = useCallback((moves: PendingMoves) => {
+        setMovedTo((prev) => ({ ...prev, ...moves }));
+    }, []);
+    // A Club Facilities slot bought from the rail counts at once too.
+    const [boughtSlots, setBoughtSlots] = useState<{ academy?: number; ir?: number }>({});
+    const shownLists = useMemo(() => applyPendingMoves(serverLists, movedTo), [serverLists, movedTo]);
+    const { squad: allEntries, taxi: taxiEntries, ir: irEntries } = shownLists;
+    const capacity = useMemo(
+        () => serverCapacity && adjustCapacity(serverCapacity, serverLists, shownLists, boughtSlots),
+        [serverCapacity, serverLists, shownLists, boughtSlots],
+    );
+
     const scoringStartedTeamIds = scoringLockedTeamIds ?? lockedTeamIds;
     const scoringLineupSet = useMemo(() => new Set(scoringLineupPlayerIds ?? []), [scoringLineupPlayerIds]);
     const isIrLocked = useCallback((player: Player | undefined) => !!player && isIrChangeLocked({
@@ -958,6 +986,7 @@ export default function PitchUI({
                 return;
             }
             unassignPlayer(playerId);
+            recordMove({ [playerId]: 'taxi' });
             setLineupSelection(null);
             router.refresh();
         } catch {
@@ -965,7 +994,7 @@ export default function PitchUI({
         } finally {
             setSidebarLoading(false);
         }
-    }, [teamId, unassignPlayer, router]);
+    }, [teamId, unassignPlayer, recordMove, router]);
 
     // ── Move active player directly to IR ──
     const handleMoveToIr = useCallback(async (playerId: string) => {
@@ -983,6 +1012,7 @@ export default function PitchUI({
                 return;
             }
             unassignPlayer(playerId);
+            recordMove({ [playerId]: 'ir' });
             setLineupSelection(null);
             router.refresh();
         } catch {
@@ -990,7 +1020,7 @@ export default function PitchUI({
         } finally {
             setSidebarLoading(false);
         }
-    }, [teamId, unassignPlayer, router]);
+    }, [teamId, unassignPlayer, recordMove, router]);
 
     // ── Taxi swap: swap an active player with an academy player ──
     const handleTaxiSwap = useCallback(async (outgoingTaxiId: string, incomingActiveId: string) => {
@@ -1013,13 +1043,14 @@ export default function PitchUI({
                 return;
             }
             unassignPlayer(incomingActiveId);
+            recordMove({ [incomingActiveId]: 'taxi', [outgoingTaxiId]: 'bench' });
             router.refresh();
         } catch {
             setSidebarError('Could not reach the server. Try again.');
         } finally {
             setSidebarLoading(false);
         }
-    }, [teamId, unassignPlayer, router]);
+    }, [teamId, unassignPlayer, recordMove, router]);
 
     type DirectPlacement = { type: 'starter'; slotIndex: number } | { type: 'bench'; slot: BenchSlot };
 
@@ -1039,6 +1070,7 @@ export default function PitchUI({
                 const d = await res.json();
                 failSidebar(d, 'Failed to activate');
             } else {
+                recordMove({ [playerId]: 'bench' });
                 if (placement?.type === 'starter') {
                     setAssignments((prev) => ({ ...prev, [placement.slotIndex]: playerId }));
                     setSaveError(null);
@@ -1055,7 +1087,7 @@ export default function PitchUI({
         } finally {
             setSidebarLoading(false);
         }
-    }, [holding, teamId, router]);
+    }, [holding, teamId, recordMove, router]);
 
     // ── IR swap: swap an active player with an IR player ──
     const handleIrSwap = useCallback(async (outgoingIrId: string, incomingActiveId: string) => {
@@ -1078,13 +1110,14 @@ export default function PitchUI({
                 return;
             }
             unassignPlayer(incomingActiveId);
+            recordMove({ [incomingActiveId]: 'ir', [outgoingIrId]: 'bench' });
             router.refresh();
         } catch {
             setSidebarError('Could not reach the server. Try again.');
         } finally {
             setSidebarLoading(false);
         }
-    }, [teamId, unassignPlayer, router]);
+    }, [teamId, unassignPlayer, recordMove, router]);
 
     // ── IR standalone activate ──
     const handleIrActivate = useCallback(async (playerId: string, placement?: DirectPlacement) => {
@@ -1102,6 +1135,7 @@ export default function PitchUI({
                 const d = await res.json();
                 failSidebar(d, 'Failed to activate from IR');
             } else {
+                recordMove({ [playerId]: 'bench' });
                 if (placement?.type === 'starter') {
                     setAssignments((prev) => ({ ...prev, [placement.slotIndex]: playerId }));
                     setSaveError(null);
@@ -1118,7 +1152,7 @@ export default function PitchUI({
         } finally {
             setSidebarLoading(false);
         }
-    }, [holding, teamId, router]);
+    }, [holding, teamId, recordMove, router]);
 
     // ── Starter node click ──
     const handleStarterClick = useCallback(
@@ -2035,15 +2069,16 @@ export default function PitchUI({
                             <span className={styles.selectionLabel} title={selectionHint ?? undefined}>
                                 {selectionLabel}
                             </span>
-                            <button
-                                type="button"
-                                className={styles.selectionCancelBtn}
-                                onClick={clearAll}
-                                aria-label="Cancel selection"
-                                title="Cancel"
-                            >
-                                ×
-                            </button>
+                            <Tooltip content="Cancel">
+                                <button
+                                    type="button"
+                                    className={styles.selectionCancelBtn}
+                                    onClick={clearAll}
+                                    aria-label="Cancel selection"
+                                >
+                                    ×
+                                </button>
+                            </Tooltip>
                         </span>
                     )}
                 </div>
@@ -2153,7 +2188,7 @@ export default function PitchUI({
                                 {teamName && <span className={`g-label ${styles.pitchLabelLeft}`}>{teamName}</span>}
                                 {activeRosterCount !== undefined && (
                                     <span className={`g-label ${styles.pitchLabelRight}`}>
-                                        {activeRosterCount}/{maxRosterSize} Active Roster
+                                        {capacity?.active ?? activeRosterCount}/{maxRosterSize} Active Roster
                                     </span>
                                 )}
                             </div>
@@ -2283,6 +2318,7 @@ export default function PitchUI({
                                                 name={entry ? pitchFullName(entry.player) : slot}
                                                 club={entry?.player.pl_team}
                                                 size="md"
+                                                phoneSize="sm"
                                                 headTopPct={entry?.player.portrait_head_top_pct}
                                                 headWidthPct={entry?.player.portrait_head_width_pct}
                                                 photoVersion={entry?.player.photo_version}
@@ -2495,7 +2531,7 @@ export default function PitchUI({
                                     Expand · €{irOffer.next!.price}m
                                 </button>
                             )}
-                            <button type="button" onClick={() => setSidebarError(null)} className={styles.sidebarErrorDismiss} aria-label="Dismiss">✕</button>
+                            <IconButton size="sm" label="Dismiss" tooltip={false} onClick={() => setSidebarError(null)} icon={<Icon name="x" size={16} strokeWidth={2} />} />
                         </div>
                     )}
 
@@ -2713,7 +2749,15 @@ export default function PitchUI({
                             facility={buyingFacility}
                             balance={facilityOffers.balance}
                             onClose={() => setBuyingFacility(null)}
-                            onPurchased={() => { setSidebarError(null); router.refresh(); }}
+                            onPurchased={() => {
+                                const bought = buyingFacility;
+                                if (bought?.next && (bought.key === 'academy' || bought.key === 'ir')) {
+                                    const slotsNow = bought.next.slots;
+                                    setBoughtSlots((prev) => ({ ...prev, [bought.key]: slotsNow }));
+                                }
+                                setSidebarError(null);
+                                router.refresh();
+                            }}
                         />
                     )}
                 </div>

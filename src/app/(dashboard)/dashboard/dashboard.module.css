@@ -14,7 +14,6 @@
 .page {
   max-width: 1180px;
   margin: 0 auto;
-  padding-bottom: var(--s16);
 }
 
 /* ---------- the shelf ----------
@@ -29,51 +28,106 @@
   --shelf-soft: color-mix(in oklab, var(--color-text-inverse) 68%, var(--color-topbar));
   position: relative;
   margin-top: calc(var(--space-8) * -1);
-  padding: var(--s8) 0 96px;
+  padding: var(--s10) 0 112px;
   color: var(--shelf-ink);
   border-image: repeating-linear-gradient(90deg, var(--shelf-a) 0 36px, var(--shelf-b) 36px 72px) fill 0 / 0 / 0 100vmax;
 }
 
-.shelfInner {
+.shelfInner { display: flex; flex-direction: column; }
+
+/* The lockup is the topbar's wordmark scaled up beside the mark, so the brand
+   has one voice at every size. Tracked caps pair with the mark's line weight;
+   a heavy lowercase display face fought it. */
+.hero {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas: 'stack title pills';
-  align-items: end;
-  gap: var(--s6);
+  align-items: center;
+  gap: 28px;
 }
-.shelfTitle { grid-area: title; min-width: 0; }
+.seal {
+  display: block;
+  width: 112px;
+  height: 112px;
+  color: var(--color-bg);
+  animation: sealIn 500ms var(--ease-out-expo) both;
+}
+.seal circle {
+  stroke-dasharray: 352;
+  animation: sealDraw 900ms var(--ease-out-expo) both;
+}
+.wordmark { min-width: 0; }
 .shelfH {
   margin: 0;
   font-family: var(--font-serif);
   font-weight: 700;
-  font-size: var(--t-40);
+  font-size: clamp(44px, 6.4vw, 84px);
   line-height: 1;
-  letter-spacing: -0.034em;
+  /* Tracking is proportional, so the topbar's 0.12em reads looser at 84px.
+     Display sizes want it tighter. */
+  letter-spacing: 0.08em;
+  margin-right: -0.08em;
+  text-transform: uppercase;
   color: var(--shelf-ink);
+  /* Capitals sit in the top of the line box with the descender space empty
+     below, which made the lockup read high. Trim the box to the capitals. */
+  text-box: trim-both cap alphabetic;
+  animation: sealIn 600ms var(--ease-out-expo) 120ms both;
 }
-.shelfSub { font-size: var(--t-13); color: var(--shelf-soft); margin-top: var(--s2); }
-
-.stack { grid-area: stack; display: flex; }
-.stackItem {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: var(--r-round);
-  background: var(--color-bg-card);
-  border: 3px solid var(--color-topbar);
-  margin-left: -12px;
+.descriptor {
+  margin-top: 18px;
+  font-family: var(--font-label);
+  font-size: var(--t-13);
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--shelf-soft);
+  animation: sealIn 600ms var(--ease-out-expo) 220ms both;
 }
-.stackItem:first-child { margin-left: 0; }
-.stackMore {
-  composes: stackItem;
+.matchweek {
+  justify-self: end;
+  padding-left: 28px;
+  border-left: 1px solid color-mix(in oklab, var(--shelf-ink) 22%, transparent);
+  animation: sealIn 600ms var(--ease-out-expo) 320ms both;
+}
+.matchweekK {
+  display: block;
   font-family: var(--font-label);
   font-size: var(--t-12);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--shelf-soft);
+}
+.matchweekV {
+  font-family: var(--font-serif);
   font-weight: 700;
-  color: var(--color-text-primary);
+  font-size: 56px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin: 8px 0 6px;
+}
+.matchweekD { font-size: var(--t-13); color: var(--shelf-soft); }
+@supports not (text-box: trim-both cap alphabetic) {
+  .shelfH { padding-top: 0.13em; }
+}
+@keyframes sealIn { from { opacity: 0; transform: translateY(8px); } }
+@keyframes sealDraw { from { stroke-dashoffset: 352; } }
+@media (prefers-reduced-motion: reduce) {
+  .seal, .seal circle, .shelfH, .descriptor, .matchweek { animation: none; }
 }
 
-.pills { grid-area: pills; display: flex; flex-wrap: wrap; gap: var(--s2); padding-bottom: 2px; }
+.shelfLabel { display: flex; align-items: center; gap: var(--s3); margin-top: 48px; }
+.shelfLabelH {
+  margin: 0;
+  font-family: var(--font-label);
+  font-size: var(--t-13);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.shelfSub { font-size: var(--t-13); color: var(--shelf-soft); }
+
+.pills { margin-left: auto; display: flex; flex-wrap: wrap; gap: var(--s2); }
 .pill {
   display: inline-flex;
   align-items: center;
@@ -335,7 +389,10 @@
 .lockLink { margin-left: auto; font-size: var(--t-13); font-weight: 600; white-space: nowrap; color: var(--color-accent-ink); text-decoration: none; }
 @media (hover: hover) and (pointer: fine) { .lockLink:hover { text-decoration: underline; } }
 
-.seg { margin-left: 6px; }
+.topEnd { margin-left: auto; display: flex; align-items: center; gap: var(--s4); flex: none; }
+.topRule { width: 1px; height: 18px; background: var(--color-border); }
+.topEnd .lockLink { margin-left: 0; }
+.topLinkFoot { display: none; }
 
 .mwTile {
   flex: none;
@@ -438,23 +495,113 @@
 /* ---------- fixtures + about ---------- */
 .bottomRow { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: var(--s8); align-items: start; }
 .bottomRowSolo { grid-template-columns: minmax(0, 1fr); }
-.fixtures { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--s8); margin-top: var(--s3); }
-.fx {
+.fxWrap { container-type: inline-size; }
+
+/* Week stepper: arrows for neighbours, a scrubber strip for jumps. */
+.fxStep { display: flex; gap: 6px; flex: none; margin-left: var(--s5); }
+.fxStepBtn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--color-text-primary) 7%, transparent);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
+}
+.fxStepBtn:active:not(:disabled) { transform: scale(var(--press-scale, 0.97)); }
+.fxStepBtn:disabled { opacity: 0.32; cursor: default; }
+.fxStepBtn:focus-visible, .weekChip:focus-visible, .weekBack:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .fxStepBtn:hover:not(:disabled) { background: color-mix(in oklab, var(--color-text-primary) 12%, transparent); }
+}
+
+.weekNav { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s4); }
+.weekStrip {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 20px, black calc(100% - 20px), transparent);
+  mask-image: linear-gradient(90deg, transparent, black 20px, black calc(100% - 20px), transparent);
+}
+.weekStrip::-webkit-scrollbar { display: none; }
+.weekChip {
+  flex: none;
+  min-width: 38px;
+  height: 36px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+}
+.weekChipDone { color: var(--color-text-muted); }
+.weekChipNow { font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px; text-decoration-color: var(--color-accent); }
+.weekChip[aria-current='page'] { background: var(--color-text-primary); color: var(--color-bg-card); }
+@media (hover: hover) and (pointer: fine) {
+  .weekChip:not([aria-current='page']):hover { background: color-mix(in oklab, var(--color-text-primary) 8%, transparent); }
+}
+.weekBack {
+  flex: none;
+  min-height: 36px;
+  padding: 0 var(--s2);
+  border: 0;
+  background: transparent;
+  font-size: var(--t-13);
+  font-weight: 600;
+  color: var(--color-accent-ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* One day at a time, centred on the score so both crests line up. */
+.fixtures { margin-top: 0; }
+.fxDay { break-inside: avoid; }
+.fxDaySolo { composes: fxDay; break-inside: auto; }
+.fxDayH { margin: 0; padding: var(--s4) 0 var(--s2); font-family: var(--font-label); font-size: var(--t-12); font-weight: 600; letter-spacing: 0.04em; color: var(--color-text-muted); }
+.fxRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px minmax(0, 1fr);
   align-items: center;
-  gap: 11px;
-  padding: 11px 0;
+  gap: 12px;
+  min-height: 50px;
   border-bottom: var(--line);
 }
-.fxUpcoming { composes: fx; opacity: 0.62; }
-.fxBadge { width: 24px; height: 24px; object-fit: contain; flex: none; }
-.fxName { flex: 1 1 0; min-width: 0; font-size: var(--t-14, 14px); font-weight: 600; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fxNameAway { composes: fxName; text-align: right; }
+.fxHome, .fxAway { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.fxHome { justify-content: flex-end; text-align: right; }
+.fxBadge { width: 26px; height: 26px; object-fit: contain; flex: none; }
+.fxName { min-width: 0; font-size: var(--t-14, 14px); font-weight: 600; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fxNameLost { color: var(--color-text-muted); }
-.fxScore { flex: none; font-family: var(--font-serif); font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--color-text-primary); }
-.fxTime { flex: none; font-family: var(--font-mono); font-size: var(--t-12); font-weight: 500; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
-.fxState { flex: none; width: 30px; text-align: right; font-family: var(--font-label); font-size: var(--t-10); font-weight: 700; letter-spacing: 0.06em; color: var(--color-text-muted); }
+.fxMid { display: grid; justify-items: center; line-height: 1.1; }
+.fxScore { font-family: var(--font-serif); font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--color-text-primary); }
+.fxTime { font-family: var(--font-serif); font-size: var(--t-14, 14px); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--color-text-muted); white-space: nowrap; }
+.fxState { margin-top: 2px; font-family: var(--font-label); font-size: var(--t-10); font-weight: 700; letter-spacing: 0.06em; color: var(--color-text-muted); }
 .fxMin { composes: fxState; font-family: var(--font-mono); font-weight: 600; letter-spacing: 0; color: var(--color-live); }
+.fxEmpty { margin: var(--s6) 0; text-align: center; font-size: var(--t-13); color: var(--color-text-muted); }
+
+@container (min-width: 760px) {
+  .fixtures { columns: 2; column-gap: var(--s8); }
+}
+
+@keyframes fxFromRight { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+@keyframes fxFromLeft { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+.fxFromRight { animation: fxFromRight 200ms var(--ease-standard) both; }
+.fxFromLeft { animation: fxFromLeft 200ms var(--ease-standard) both; }
+@media (prefers-reduced-motion: reduce) {
+  .fxFromRight, .fxFromLeft { animation: none; }
+}
 
 .about {
   border-radius: 14px;
@@ -492,25 +639,32 @@
 @media (max-width: 1100px) {
   .cardGrid { grid-template-columns: minmax(0, 1fr); }
   .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .fixtures { grid-template-columns: 1fr; }
   .bottomRow { grid-template-columns: minmax(0, 1fr) 320px; }
 }
 
 /* ---------- mobile: one column, composed for the thumb ---------- */
 @media (max-width: 860px) {
-  .shelf { margin-top: calc(var(--space-4) * -1); padding: 18px 0 66px; }
-  .shelfInner {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: 'title stack' 'pills pills';
-    gap: 14px var(--s3);
+  .shelf { margin-top: calc(var(--space-4) * -1); padding: 24px 0 80px; }
+  .hero { grid-template-columns: auto minmax(0, 1fr); gap: 14px 18px; }
+  .seal { width: 76px; height: 76px; }
+  .shelfH { font-size: clamp(34px, 11vw, 48px); }
+  .descriptor { font-size: var(--t-11); letter-spacing: 0.2em; margin-top: 12px; }
+  .matchweek {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 14px 0 0;
+    border-left: 0;
+    border-top: 1px solid color-mix(in oklab, var(--shelf-ink) 20%, transparent);
   }
-  .shelfH { font-size: 29px; letter-spacing: -0.032em; }
-  .shelfSub { font-size: var(--t-12); margin-top: 6px; }
-  .stackItem { width: 34px; height: 34px; border-width: 2px; margin-left: -10px; }
-  .pills { padding-bottom: 0; }
+  .matchweekK { order: -1; }
+  .matchweekV { font-size: 28px; margin: 0; }
+  .shelfLabel { margin-top: 24px; flex-wrap: wrap; }
+  .pills { margin-left: 0; width: 100%; }
   .pill { height: 26px; padding: 0 10px; font-size: var(--t-11); gap: 6px; }
   .pillDot { width: 6px; height: 6px; }
-  .shelfDesktopOnly { display: none; }
 
   .leagueRow { margin-top: -48px; grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .cardGrid { gap: 14px; }
@@ -529,13 +683,14 @@
   .lockT { font-size: 25px; letter-spacing: -0.028em; }
   .lockTSm { font-size: 23px; }
   .lockSub { margin-top: 5px; }
-  .topLock { flex-wrap: wrap; row-gap: var(--s3); }
-  .seg { margin-left: 0; order: 3; flex-basis: 100%; }
+  .topRule, .topLinkHead { display: none; }
+  .topLinkFoot { display: block; width: fit-content; margin: var(--s3) 0 0 auto; }
   .mwTile { width: 46px; height: 46px; border-radius: 11px; }
   .mwTileK { font-size: 9px; }
   .mwTileV { font-size: 23px; }
   .fxLock { flex-wrap: wrap; row-gap: 0; }
-  .fxLock .lockLink { order: 2; margin-left: auto; align-self: flex-start; padding-top: 4px; }
+  .fxStep { margin-left: auto; align-self: flex-start; }
+  .fxStepBtn { width: 44px; height: 44px; }
   .progress { order: 3; flex-basis: 100%; width: 100%; margin: 14px 0 0; }
   .progressKey { justify-content: flex-start; gap: var(--s3); }
 
@@ -562,9 +717,11 @@
   .cap { margin-top: 3px; }
 
   .bottomRow { grid-template-columns: minmax(0, 1fr); gap: 34px; }
-  .fixtures { grid-template-columns: 1fr; gap: 0; margin-top: var(--s2); }
-  .fx { gap: 9px; padding: 10px 0; }
-  .fixtures > .fx:nth-child(n + 6) { display: none; }
+  .fxRow { grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr); gap: 6px; min-height: 52px; }
+  .fxHome, .fxAway { gap: 6px; }
+  .fxBadge { width: 24px; height: 24px; }
+  .fxName { font-size: var(--t-13); }
+  .weekChip { min-width: 44px; height: 44px; }
   .about { padding: 18px var(--s4) var(--s4); }
   .aboutT { font-size: 23px; letter-spacing: -0.026em; }
   .baseline { width: 54px; }
@@ -579,5 +736,28 @@
   .doorsMobile .doorIcon { width: 36px; height: 36px; border-radius: 10px; }
   .doorsMobile .doorSub { line-height: 1.45; margin-top: 3px; }
   .doorsMobile .card:hover { transform: none; }
+  /* The third door takes the full row, laid out like the desktop rail's. */
+  .doorsMobile .doorWide { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 13px; }
 
 }
+
+/* ---------- closing band: bookends the shelf ---------- */
+.closer {
+  position: relative;
+  margin-top: var(--s16);
+  /* Cancels .main's bottom padding so the band ends at the page's last pixel,
+     the way .shelf cancels its top padding. */
+  margin-bottom: calc(var(--space-8) * -1);
+  padding: var(--s12) 0;
+  color: var(--shelf-ink);
+  --shelf-ink: var(--color-text-inverse);
+  --shelf-soft: color-mix(in oklab, var(--color-text-inverse) 68%, var(--color-topbar));
+  border-image: repeating-linear-gradient(90deg, var(--color-topbar) 0 36px, color-mix(in oklab, var(--color-topbar) 94%, white) 36px 72px) fill 0 / 0 / 0 100vmax;
+}
+@media (max-width: 768px) {
+  .closer { margin-bottom: calc(var(--space-4) * -1); }
+}
+.closerInner { display: flex; align-items: center; gap: var(--s5); }
+.closerMark { width: 56px; height: 56px; color: var(--color-bg); flex: none; }
+.closerName { font-family: var(--font-serif); font-weight: 700; font-size: var(--t-24, 24px); letter-spacing: 0.14em; text-transform: uppercase; }
+.closerSub { margin-top: 6px; font-family: var(--font-label); font-size: var(--t-12); font-weight: 600; letter-spacing: 0.28em; text-transform: uppercase; color: var(--shelf-soft); }

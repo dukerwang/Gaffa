@@ -39,7 +39,7 @@ export function Crest({ crest, name, size, teamId }: { crest: CrestConfig | null
 
 // ── Points badge: the pitch's shipped ramp ──
 export const ptsBand = (v: number) =>
-  v >= 29 ? s.ptsElite : v >= 15.8 ? s.ptsGood : v >= 5.6 ? s.ptsFair : v >= 2 ? s.ptsBelow : v > 0 ? s.ptsWeak : s.ptsBad;
+  v >= 43.02 ? s.ptsRarest : v >= 39.76 ? s.ptsRarer : v >= 36.58 ? s.ptsRare : v >= 29 ? s.ptsElite : v >= 15.8 ? s.ptsGood : v >= 5.6 ? s.ptsFair : v >= 2 ? s.ptsBelow : v > 0 ? s.ptsWeak : s.ptsBad;
 export function Pts({ v, status = 'played' }: { v: number; status?: 'played' | 'dnp' | 'pend' }) {
   if (status === 'pend') return <span className={`${s.pts} ${s.ptsPend}`}>–</span>;
   if (status === 'dnp') return <span className={`${s.pts} ${s.ptsDnp}`}>DNP</span>;

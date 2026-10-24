@@ -149,44 +149,10 @@
   font-size: 13px;
 }
 
-.switch {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  width: 34px;
-  height: 20px;
-  border-radius: 999px;
-  border: none;
-  background: var(--color-border);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-  flex-shrink: 0;
-  padding: 0;
-}
 
-.switch:disabled {
-  cursor: default;
-  opacity: 0.5;
-}
 
-.switchOn {
-  background: var(--color-accent-green);
-}
 
-.switchThumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--color-bg-card);
-  transition: transform var(--transition-fast);
-}
 
-.switchOn .switchThumb {
-  transform: translateX(14px);
-}
 
 .form {
   display: flex;
@@ -274,30 +240,8 @@
   justify-content: flex-start;
 }
 
-.removeButton {
-  flex-shrink: 0;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-control);
-  background: transparent;
-  color: var(--color-accent-red);
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
 
-@media (hover: hover) and (pointer: fine) {
-  .removeButton:hover:not(:disabled) {
-    background: var(--color-bg-elevated);
-  }
-}
 
-.removeButton:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
 
 .statusLine {
   margin: 0;
@@ -317,4 +261,12 @@
   .gridRow {
     grid-template-columns: 1fr 52px 52px;
   }
+}
+
+/* The consequence the browser dialog used to state sits above the hold. */
+.dangerStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
 }

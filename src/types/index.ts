@@ -200,6 +200,8 @@ export interface Player {
   pl_team_changed_at: string | null; // set by syncPlayers when this row is new or its club just changed; null once stale
   primary_position: GranularPosition | null;
   secondary_positions: GranularPosition[];
+  /** From Transfermarkt (migration 176). Places a left-footed centre-back on the left of a pair. */
+  preferred_foot?: 'left' | 'right' | 'both' | null;
   market_value: number | null; // in millions EUR (from Transfermarkt)
   market_value_updated_at: string | null;
   adp: number | null;
@@ -338,6 +340,13 @@ export interface RawStats {
    * are retained for breakdown UI and historical compatibility.
    */
   fpl_def_contrib?: number;
+  /**
+   * Whether he was in the starting XI for this match, from FPL's `starts`.
+   * Written by the live stats sync; the Lineup Builder reads it to show a
+   * match's starting lineups. Absent on rows synced before 2026-10-20 and
+   * not backfilled. See src/lib/fixtures/starters.ts.
+   */
+  started?: boolean;
 }
 
 export interface DraftPick {

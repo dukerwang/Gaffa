@@ -9,6 +9,9 @@ import type { SquadEntry } from './ClubClient';
 import { money, signedMoney, statusMeta, valueOf } from './clubDerive';
 import { calculateAgeInYears } from '@/lib/transfers/academyEligibility';
 import type { LeagueFeatures } from '@/lib/leagues/features';
+import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { toast } from '@/components/ui/toast';
+import { HoldButton } from '@/components/ui/HoldButton';
 import styles from './club.module.css';
 
 interface Props {
@@ -36,7 +39,6 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
   const { openPlayer } = usePlayerCard();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [confirmDrop, setConfirmDrop] = useState(false);
   const [listingOpen, setListingOpen] = useState(false);
 
   if (!entry) {
@@ -52,6 +54,7 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
   }
 
   const p = entry.player;
+  const name = getPlayerDisplayName(p, 'full');
   const value = valueOf(entry);
   const paid = Number(entry.acquisitionValue ?? 0);
   const net = value - paid;
@@ -94,11 +97,21 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
     ? []
     : [{ ...(p as unknown as EnrichedPlayer), status: entry.status, recent_ppg: 0, listing: null }];
 
-  async function call(path: string, body: { playerId: string; action?: string; actionType?: string; target?: string }) {
-    setBusy(true); setErr(null); setConfirmDrop(false);
+  // `done` is the toast title on success. A drop during a live gameweek is
+  // queued rather than made, and the route says so; that message wins.
+  async function call(
+    path: string,
+    body: { playerId: string; action?: string; actionType?: string; target?: string },
+    done: string,
+    description?: string,
+  ) {
+    setBusy(true); setErr(null);
     try {
       const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error ?? 'Action failed'); return; }
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { setErr(d.error ?? 'Action failed'); return; }
+      if (d.deferred) toast(`${name}: drop queued`, { description: d.message });
+      else toast.success(done, { description });
       onAfter();
     } catch {
       setErr('Could not reach the server. Try again.');
@@ -113,7 +126,7 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
   // server keeps regardless.
   const primary: { label: string; run: () => void }[] = [];
   const activate = (target: 'bench' | 'taxi' | 'ir') =>
-    call(`/api/teams/${teamId}/held/${entry.id}`, { playerId: entry.playerId, target });
+    call(`/api/teams/${teamId}/held/${entry.id}`, { playerId: entry.playerId, target }, target === 'taxi' ? `${name} activated to the academy` : target === 'ir' ? `${name} activated to IR` : `${name} activated`);
   if (!viewerIsOwner) { /* no transitions offered */ }
   else if (entry.status === 'held') {
     // Held players (R6): Activate into reserves, or straight into the academy or
@@ -126,12 +139,12 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
     }
   }
   else if ((entry.status === 'ir' || entry.status === 'taxi') && hold.holding) { /* R7: moving up is an addition; see the note below */ }
-  else if (entry.status === 'ir') primary.push({ label: 'Activate from IR', run: () => call(`/api/teams/${teamId}/ir`, { playerId: entry.playerId, action: 'activate' }) });
-  else if (entry.status === 'taxi') primary.push({ label: 'Promote to squad', run: () => call(`/api/teams/${teamId}/taxi`, { playerId: entry.playerId, action: 'activate' }) });
+  else if (entry.status === 'ir') primary.push({ label: 'Activate from IR', run: () => call(`/api/teams/${teamId}/ir`, { playerId: entry.playerId, action: 'activate' }, `${name} back from IR`) });
+  else if (entry.status === 'taxi') primary.push({ label: 'Promote to squad', run: () => call(`/api/teams/${teamId}/taxi`, { playerId: entry.playerId, action: 'activate' }, `${name} promoted to the squad`) });
   else {
     const f = p.fpl_status;
-    if (f === 'i' || f === 'd' || f === 'u') primary.push({ label: 'Place on IR', run: () => call(`/api/teams/${teamId}/ir`, { playerId: entry.playerId, action: 'move_to_ir' }) });
-    if (features.academy && age != null && age <= academyAgeLimit) primary.push({ label: 'Send to Academy', run: () => call(`/api/teams/${teamId}/taxi`, { playerId: entry.playerId, action: 'move_to_taxi' }) });
+    if (f === 'i' || f === 'd' || f === 'u') primary.push({ label: 'Place on IR', run: () => call(`/api/teams/${teamId}/ir`, { playerId: entry.playerId, action: 'move_to_ir' }, `${name} placed on IR`) });
+    if (features.academy && age != null && age <= academyAgeLimit) primary.push({ label: 'Send to Academy', run: () => call(`/api/teams/${teamId}/taxi`, { playerId: entry.playerId, action: 'move_to_taxi' }, `${name} sent to the academy`) });
   }
 
   return (
@@ -199,15 +212,16 @@ export default function Inspector({ entry, teamId, leagueId, viewerIsOwner, acad
 
           {entry.isPendingDrop ? (
             <span className={`${styles.act} ${styles.actDanger}`} aria-disabled="true">Drop queued</span>
-          ) : confirmDrop ? (
-            <button type="button" className={`${styles.act} ${styles.actDanger}`} disabled={busy}
-              onClick={() => call(`/api/teams/${teamId}/drop`, { playerId: entry.playerId, actionType: 'drop' })}>
-              Confirm — {money(severance)}
-            </button>
           ) : (
-            <button type="button" className={`${styles.act} ${styles.actDanger}`} disabled={busy} onClick={() => setConfirmDrop(true)}>
-              Drop
-            </button>
+            <HoldButton
+              size="sm"
+              fullWidth
+              className={styles.actHold}
+              disabled={busy}
+              onConfirm={() => call(`/api/teams/${teamId}/drop`, { playerId: entry.playerId, actionType: 'drop' }, `${name} released`, `Severance ${money(severance)}`)}
+            >
+              Drop · {money(severance)}
+            </HoldButton>
           )}
         </div>
         )}

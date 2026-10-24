@@ -26,6 +26,9 @@
 
 /* ── Points badge: the pitch's shipped ramp ── */
 .pts { display: inline-block; font-family: var(--font-serif); font-weight: 700; font-size: 11px; font-variant-numeric: tabular-nums lining-nums; line-height: 1.25; padding: 1px 4px; border-radius: 4px; color: #fff; white-space: nowrap; }
+.ptsRarest { background: #143577; } /* >= 43.02, display >= 9.4 */
+.ptsRarer { background: #1F4FA8; }  /* >= 39.76, display >= 9.2 */
+.ptsRare { background: #3F72CE; }   /* >= 36.58, display >= 9.0, the lightest feat blue */
 .ptsElite { background: #2D6A4F; } .ptsGood { background: #387D53; } .ptsFair { background: #8C6C00; }
 .ptsBelow { background: #9D6407; } .ptsWeak { background: #AC5B0E; } .ptsBad { background: #9B2335; }
 .ptsPend { color: var(--color-text-muted); background: var(--color-bg-card); box-shadow: inset 0 0 0 1px var(--color-text-muted); }

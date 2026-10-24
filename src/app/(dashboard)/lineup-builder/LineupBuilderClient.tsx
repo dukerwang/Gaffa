@@ -1,33 +1,89 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Formation, GranularPosition, Player } from '@/types';
 import { FORMATION_SLOTS } from '@/types';
-import clubsData from '@/lib/clubs/clubs.json';
 import { serializeLineup, VALID_FORMATIONS, type SerializedLineup } from '@/lib/lineups/lineupSerializer';
-import { exportLineupToBlob, type LineupExportSlot } from '@/lib/lineups/lineupImageExport';
 import ReadOnlyFormationBoard, { type FormationBoardSlot } from '@/components/formation/ReadOnlyFormationBoard';
 import Portrait from '@/components/players/Portrait';
 import { Icon } from '@/components/ui/Icon';
 import PositionBadge from '@/components/players/PositionBadge';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
-import { resolveClub } from '@/lib/clubs/registry';
+import { clubBadgePath, resolveClub } from '@/lib/clubs/registry';
+import {
+  fixtureKey,
+  fixtureTitle,
+  kickoffDay,
+  type BuilderFixture,
+  type MatchLineups,
+  type MatchSide,
+  type SideSource,
+} from '@/lib/lineups/builderFixtures';
+import { fitFormation } from '@/lib/lineups/fitFormation';
 import LineupPlayerPickerModal from './LineupPlayerPickerModal';
+import { ClubPicker, MatchPicker } from './BuilderPickers';
 import styles from './lineup-builder.module.css';
+
+/* eslint-disable @next/next/no-img-element */
 
 interface Props {
   allPlayers: Player[];
   initialState: SerializedLineup;
+  /** Two matchweeks either side of the one in progress. */
+  fixtures: BuilderFixture[];
+  /** The match a shared link names, when it names one that exists. */
+  initialFixture: BuilderFixture | null;
+  /** Each listed match's opening XIs: its starters once played, otherwise each club's last XI. */
+  lineups: MatchLineups;
 }
 
 const FORMATIONS: readonly Formation[] = VALID_FORMATIONS;
 
 const BACK_LINES = ['3', '4', '5'] as const;
 
-export default function LineupBuilderClient({ allPlayers, initialState }: Props) {
-  const [formation, setFormation] = useState<Formation>(initialState.formation);
+const SIDES: readonly MatchSide[] = ['home', 'away'];
+
+/** One XI: a shape and who fills each of its eleven slots. */
+interface XI {
+  formation: Formation;
+  assignments: Record<number, Player | null>;
+}
+
+function xiFromIds(formation: Formation, ids: (string | null)[], playerById: Map<string, Player>): XI {
+  const assignments: Record<number, Player | null> = {};
+  for (let i = 0; i < 11; i++) {
+    const id = ids[i];
+    assignments[i] = id ? playerById.get(id) ?? null : null;
+  }
+  return { formation, assignments };
+}
+
+/** A side's opening XI, laid out on the formation its starters fit best. Empty when there is none. */
+function xiFromSource(source: SideSource | null, playerById: Map<string, Player>): XI {
+  if (!source) return xiFromIds('4-3-3', [], playerById);
+  const players = source.playerIds.map((id) => playerById.get(id)).filter((p): p is Player => !!p);
+  const fit = fitFormation(players, source.layout);
+  return xiFromIds(fit.formation, fit.playerIds, playerById);
+}
+
+/**
+ * What a side opens with. A played match opens on its real starters. A match not
+ * yet played opens empty, for your own prediction; its last XI is one tap away
+ * (Use Last XI) rather than filled in, so an upcoming match never reads as if
+ * its lineup were already known.
+ */
+function openingXI(source: SideSource | null, playerById: Map<string, Player>): XI {
+  return source?.kind === 'started' ? xiFromSource(source, playerById) : xiFromSource(null, playerById);
+}
+
+const idsOf = (xi: XI) => Array.from({ length: 11 }, (_, i) => xi.assignments[i]?.id ?? null);
+const sameXI = (a: XI, b: XI) => a.formation === b.formation && idsOf(a).join() === idsOf(b).join();
+
+export default function LineupBuilderClient({ allPlayers, initialState, fixtures, initialFixture, lineups }: Props) {
   const [title, setTitle] = useState<string>(initialState.title);
-  const [clubFilter, setClubFilter] = useState<string | null>(initialState.clubFilter ?? null);
+  const [fixture, setFixture] = useState<BuilderFixture | null>(initialFixture);
+  const [side, setSide] = useState<MatchSide>(initialState.side ?? 'home');
+  const [clubFilter, setClubFilter] = useState<string | null>(initialFixture ? null : initialState.clubFilter ?? null);
 
   // Map of all players by ID for fast lookup
   const playerById = useMemo(() => {
@@ -36,22 +92,120 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
     return map;
   }, [allPlayers]);
 
-  // Slot assignments (0..10)
-  const [assignments, setAssignments] = useState<Record<number, Player | null>>(() => {
-    const initial: Record<number, Player | null> = {};
-    for (let i = 0; i < 11; i++) {
-      const pid = initialState.playerIds[i];
-      initial[i] = pid ? playerById.get(pid) ?? null : null;
+  // An old link's match can sit outside the window; it still heads the list.
+  const fixtureOptions = useMemo(
+    () =>
+      initialFixture && !fixtures.some((f) => fixtureKey(f) === fixtureKey(initialFixture))
+        ? [initialFixture, ...fixtures]
+        : fixtures,
+    [fixtures, initialFixture],
+  );
+  const fixturesByWeek = useMemo(() => {
+    const current = fixtures[0]?.season;
+    const weeks = new Map<string, BuilderFixture[]>();
+    for (const f of fixtureOptions) {
+      const label = !current || f.season === current ? `Matchweek ${f.gameweek}` : `${f.season} Matchweek ${f.gameweek}`;
+      weeks.set(label, [...(weeks.get(label) ?? []), f]);
     }
-    return initial;
+    return [...weeks.entries()];
+  }, [fixtureOptions, fixtures]);
+
+  // Every club with an active player, by name. clubs.json also keeps relegated clubs, which have no one to pick.
+  const leagueClubs = useMemo(() => {
+    const bySlug = new Map<string, string>();
+    for (const p of allPlayers) {
+      const club = resolveClub(p.pl_team);
+      if (club) bySlug.set(club.slug, club.name);
+    }
+    return [...bySlug.entries()]
+      .map(([slug, name]) => ({ slug, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [allPlayers]);
+
+  // The free-form XI, and each match's two, kept apart so switching between them loses nothing.
+  const [soloXI, setSoloXI] = useState<XI>(() =>
+    initialFixture
+      ? xiFromIds('4-3-3', [], playerById)
+      : xiFromIds(initialState.formation, initialState.playerIds, playerById),
+  );
+  const [matchXIs, setMatchXIs] = useState<Record<string, Record<MatchSide, XI>>>(() => {
+    if (!initialFixture) return {};
+    const source = lineups[fixtureKey(initialFixture)];
+    const linkedHome = initialState.playerIds.some(Boolean);
+    return {
+      [fixtureKey(initialFixture)]: {
+        home: linkedHome
+          ? xiFromIds(initialState.formation, initialState.playerIds, playerById)
+          : openingXI(source?.home ?? null, playerById),
+        away: initialState.away
+          ? xiFromIds(initialState.away.formation, initialState.away.playerIds, playerById)
+          : openingXI(source?.away ?? null, playerById),
+      },
+    };
   });
+
+  const matchKey = fixture ? fixtureKey(fixture) : null;
+  const source: SideSource | null = matchKey ? lineups[matchKey]?.[side] ?? null : null;
+  const active: XI = (matchKey && matchXIs[matchKey]?.[side]) || soloXI;
+  const { formation, assignments } = active;
+
+  const updateActive = useCallback(
+    (fn: (xi: XI) => XI) => {
+      if (!matchKey) {
+        setSoloXI(fn);
+        return;
+      }
+      setMatchXIs((prev) => {
+        const pair = prev[matchKey];
+        if (!pair) return prev;
+        return { ...prev, [matchKey]: { ...pair, [side]: fn(pair[side]) } };
+      });
+    },
+    [matchKey, side],
+  );
+  const setFormation = useCallback((f: Formation) => updateActive((xi) => ({ ...xi, formation: f })), [updateActive]);
+  const setAssignments = useCallback(
+    (fn: (prev: Record<number, Player | null>) => Record<number, Player | null>) =>
+      updateActive((xi) => ({ ...xi, assignments: fn(xi.assignments) })),
+    [updateActive],
+  );
+
+  const sideClub = useMemo(
+    () => (fixture ? { slug: fixture[side], name: side === 'home' ? fixture.homeName : fixture.awayName } : null),
+    [fixture, side],
+  );
+  const clubOptions = useMemo(() => (sideClub ? [sideClub] : leagueClubs), [sideClub, leagueClubs]);
+
+  // Each side's opening XI: the way back after edits, and what a link can leave out.
+  const sourceXIs = useMemo(() => {
+    if (!matchKey) return null;
+    const pair = lineups[matchKey];
+    return {
+      home: openingXI(pair?.home ?? null, playerById),
+      away: openingXI(pair?.away ?? null, playerById),
+    };
+  }, [matchKey, lineups, playerById]);
+  const sourceXI = sourceXIs?.[side] ?? null;
+  const edited = source?.kind === 'started' && sourceXI !== null && !sameXI(sourceXI, active);
+  // For a match not yet played: the club's last XI, offered rather than filled in.
+  const lastXI = useMemo(
+    () => (source?.kind === 'last' ? xiFromSource(source, playerById) : null),
+    [source, playerById],
+  );
+  const canUseLast = lastXI !== null && !sameXI(lastXI, active);
 
   // Active slot being edited in modal
   const [activeSlot, setActiveSlot] = useState<{ slotIndex: number; pos: GranularPosition } | null>(null);
 
   // Status feedback message (e.g. "Copied to clipboard")
   const [feedbackNotice, setFeedbackNotice] = useState<string | null>(null);
-  const [isExporting, setIsExporting] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1600);
+    return () => clearTimeout(t);
+  }, [copied]);
 
   // Clear notice after 3 seconds
   useEffect(() => {
@@ -62,20 +216,24 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
 
   // Sync URL query params whenever state changes
   useEffect(() => {
-    const playerIds = Array(11)
-      .fill(null)
-      .map((_, i) => assignments[i]?.id ?? null);
-
+    const pair = matchKey ? matchXIs[matchKey] : null;
+    const home = pair?.home ?? soloXI;
+    // A side left as the match gave it stays out of the link, which rebuilds it from the match.
+    const homeAsGiven = pair && sourceXIs ? sameXI(sourceXIs.home, pair.home) : false;
+    const awayAsGiven = pair && sourceXIs ? sameXI(sourceXIs.away, pair.away) : false;
     const serialized = serializeLineup({
-      formation,
+      formation: home.formation,
       title,
-      clubFilter,
-      playerIds,
+      clubFilter: fixture ? null : clubFilter,
+      fixture: fixture ? { season: fixture.season, id: fixture.id } : null,
+      playerIds: homeAsGiven ? [] : idsOf(home),
+      away: pair && !awayAsGiven ? { formation: pair.away.formation, playerIds: idsOf(pair.away) } : null,
+      side,
     });
 
     const newUrl = `${window.location.pathname}?${serialized}`;
     window.history.replaceState(null, '', newUrl);
-  }, [formation, title, clubFilter, assignments]);
+  }, [title, clubFilter, fixture, matchKey, matchXIs, soloXI, side, sourceXIs]);
 
   // Set of player IDs currently assigned to avoid duplicates
   const assignedPlayerIds = useMemo(() => {
@@ -140,7 +298,7 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
 
       setActiveSlot(null);
     },
-    [activeSlot]
+    [activeSlot, setAssignments]
   );
 
   const handleRemovePlayer = useCallback(() => {
@@ -150,139 +308,208 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
       [activeSlot.slotIndex]: null,
     }));
     setActiveSlot(null);
-  }, [activeSlot]);
+  }, [activeSlot, setAssignments]);
 
   const handleReset = useCallback(() => {
     const empty: Record<number, Player | null> = {};
     for (let i = 0; i < 11; i++) empty[i] = null;
-    setAssignments(empty);
+    setAssignments(() => empty);
     setFeedbackNotice('Lineup cleared');
-  }, []);
+  }, [setAssignments]);
 
-  const handleCopyLink = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setFeedbackNotice('Link copied to clipboard');
-    } catch {
-      setFeedbackNotice('Failed to copy link');
-    }
-  }, []);
+  const handleRestore = useCallback(() => {
+    if (!sourceXI) return;
+    updateActive(() => sourceXI);
+    setFeedbackNotice('Starting XI restored');
+  }, [sourceXI, updateActive]);
 
-  const handleShare = useCallback(async () => {
-    setIsExporting(true);
-    try {
-      // SAFETY: FORMATION_SLOTS maps every supported Formation to an array of 11 GranularPositions.
-      const slotsList: LineupExportSlot[] = (FORMATION_SLOTS[formation] as GranularPosition[]).map(
-        (pos, slotIndex) => ({
-          slotIndex,
-          pos,
-          player: assignments[slotIndex] ?? null,
-        })
-      );
+  const handleUseLast = useCallback(() => {
+    if (!lastXI) return;
+    updateActive(() => lastXI);
+  }, [lastXI, updateActive]);
 
-      const blob = await exportLineupToBlob({
-        title: title || 'Starting XI',
-        formation,
-        slots: slotsList,
+  const handleSelectFixture = useCallback(
+    (key: string) => {
+      const next = fixtureOptions.find((f) => fixtureKey(f) === key) ?? null;
+      // A match names the lineup unless you've named it yourself.
+      setTitle((prev) => {
+        const t = prev.trim();
+        const auto = !t || (fixture !== null && t === fixtureTitle(fixture));
+        return auto ? (next ? fixtureTitle(next) : '') : prev;
       });
-
-      if (!blob) {
-        setFeedbackNotice('Could not generate image');
-        setIsExporting(false);
-        return;
+      if (next) {
+        const k = fixtureKey(next);
+        setMatchXIs((prev) =>
+          prev[k]
+            ? prev
+            : {
+                ...prev,
+                [k]: {
+                  home: openingXI(lineups[k]?.home ?? null, playerById),
+                  away: openingXI(lineups[k]?.away ?? null, playerById),
+                },
+              },
+        );
       }
+      setSide('home');
+      setFixture(next);
+    },
+    [fixture, fixtureOptions, lineups, playerById],
+  );
 
-      const file = new File([blob], 'lineup.png', { type: 'image/png' });
+  // What gets shared is a link to the public /share/xi page, whose link preview is
+  // the lineup card itself (rendered by /share/xi/image). The builder's own URL is
+  // kept current by the effect above, so its query is the XI.
+  const shareQuery = () => window.location.search.replace(/^\?/, '');
+  const shareUrl = () => `${window.location.origin}/share/xi?${shareQuery()}`;
+  const imageUrl = () => `/share/xi/image?${shareQuery()}`;
 
-      // If Web Share API with files is supported (mobile iOS/Android)
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: title || 'Starting XI',
-            text: `Check out my ${title || 'Starting XI'} on Gaffa:`,
-          });
-          setIsExporting(false);
-          return;
-        } catch (shareErr) {
-          // If user cancelled, just exit gracefully
-          if (shareErr instanceof Error && shareErr.name === 'AbortError') {
-            setIsExporting(false);
-            return;
-          }
-        }
-      }
+  // Render the preview card ahead of the share, so the CDN has it by the time the
+  // recipient's (or the sender's) messaging app asks for it.
+  const warmed = useRef<string | null>(null);
+  const warmPreview = useCallback(() => {
+    const url = imageUrl();
+    if (warmed.current === url) return;
+    warmed.current = url;
+    void fetch(url).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-      // Fallback: Copy image to clipboard
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            'image/png': blob,
-          }),
-        ]);
-        setFeedbackNotice('Lineup image copied to clipboard');
-      } catch {
-        // If clipboard write failed, trigger download
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${(title || 'lineup').toLowerCase().replace(/\s+/g, '_')}.png`;
-        a.click();
-        URL.revokeObjectURL(url);
-        setFeedbackNotice('Lineup image downloaded');
-      }
-    } catch (err) {
-      console.error('Share export error:', err);
-      setFeedbackNotice('Error generating share image');
-    } finally {
-      setIsExporting(false);
+  const copyLink = useCallback(async (notice: string) => {
+    try {
+      await navigator.clipboard.writeText(shareUrl());
+      setCopied(true);
+      setFeedbackNotice(notice);
+    } catch {
+      setFeedbackNotice("Couldn't copy the link");
     }
-  }, [assignments, formation, title]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCopyLink = useCallback(() => {
+    warmPreview();
+    void copyLink('Link copied');
+  }, [copyLink, warmPreview]);
+
+  // The share sheet gets the link alone: no message text, no attachment. The
+  // preview carries the lineup and the title says whose it is.
+  const handleShare = useCallback(async () => {
+    warmPreview();
+    if (navigator.share) {
+      try {
+        await navigator.share({ url: shareUrl() });
+        return;
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+      }
+    }
+    await copyLink('Link copied. Paste it anywhere to share the XI.');
+  }, [copyLink, warmPreview]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const slotPositions = FORMATION_SLOTS[formation] as GranularPosition[];
   const caption = feedbackNotice ?? `${filledCount} of 11 picked`;
+  const lastLabel = source?.kind === 'last'
+    ? `Last XI · vs. ${source.from.opponentName} (${source.from.atHome ? 'H' : 'A'}) · ${kickoffDay(source.from.kickoff)}`
+    : null;
+  const provenance = !fixture
+    ? null
+    : source?.kind === 'started'
+      ? `Starting XI · ${kickoffDay(source.from.kickoff)}`
+      : lastLabel && !canUseLast
+        ? lastLabel
+        : fixture.finished
+          ? 'No lineup recorded'
+          : `Kicks off ${kickoffDay(fixture.kickoff)}`;
 
   return (
     <div className={styles.page}>
       <div className={`g-panel ${styles.board}`}>
         <div className={styles.head}>
-          <div className={styles.titleBlock}>
-            <input
-              type="text"
-              className={styles.titleInput}
-              value={title}
-              maxLength={60}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Name Your Lineup"
-              aria-label="Lineup name"
-            />
-            <div className={styles.meterRow}>
+          <div className={styles.titleRow}>
+            {fixture ? (
+              // A match's title is its two sides; choosing one shows that club's XI.
               <div
-                className={styles.meter}
-                role="progressbar"
-                aria-label="Players picked"
-                aria-valuemin={0}
-                aria-valuemax={11}
-                aria-valuenow={filledCount}
+                className={styles.matchTitle}
+                role="radiogroup"
+                aria-label="Side"
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    const next: MatchSide = e.key === 'ArrowLeft' ? 'home' : 'away';
+                    setSide(next);
+                    e.currentTarget.querySelector<HTMLButtonElement>(`[data-side="${next}"]`)?.focus();
+                  }
+                }}
               >
-                {Array.from({ length: 11 }, (_, i) => (
-                  <i key={i} className={i < filledCount ? styles.meterOn : undefined} />
-                ))}
+                {SIDES.map((s, i) => {
+                  const badge = clubBadgePath(fixture[s]);
+                  return (
+                    <Fragment key={s}>
+                      {i === 1 && <span className={styles.matchVs}>vs.</span>}
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={side === s}
+                        tabIndex={side === s ? 0 : -1}
+                        data-side={s}
+                        className={`${styles.matchSide} ${side === s ? styles.matchSideOn : ''}`}
+                        onClick={() => setSide(s)}
+                      >
+                        {badge && <img src={badge} alt="" width={30} height={30} className={styles.matchCrest} />}
+                        <span>{s === 'home' ? fixture.homeName : fixture.awayName}</span>
+                      </button>
+                    </Fragment>
+                  );
+                })}
               </div>
-              <span className={styles.caption} role="status" aria-live="polite">
-                {caption}
-              </span>
+            ) : (
+              <input
+                type="text"
+                className={styles.titleInput}
+                value={title}
+                maxLength={60}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Name Your Lineup"
+                aria-label="Lineup name"
+              />
+            )}
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className={styles.iconBtn}
+                onClick={handleCopyLink}
+                aria-label="Copy Link"
+                data-tip={copied ? 'Copied' : 'Copy Link'}
+              >
+                <Icon name={copied ? 'check' : 'copy'} size={18} strokeWidth={1.75} />
+              </button>
+              <button
+                type="button"
+                className={`${styles.iconBtn} ${styles.iconBtnPrimary}`}
+                onClick={handleShare}
+                onPointerEnter={warmPreview}
+                onFocus={warmPreview}
+                aria-label="Share XI"
+                data-tip="Share XI"
+              >
+                <Icon name="share-out" size={18} strokeWidth={1.75} />
+              </button>
             </div>
           </div>
-          <div className={styles.actions}>
-            <button type="button" className={styles.secondaryBtn} onClick={handleCopyLink}>
-              <Icon name="copy" size={16} strokeWidth={1.75} />
-              Copy Link
-            </button>
-            <button type="button" className={styles.primaryBtn} onClick={handleShare} disabled={isExporting}>
-              <Icon name="share" size={16} strokeWidth={1.75} />
-              {isExporting ? 'Generating…' : 'Share XI'}
-            </button>
+          <div className={styles.meterRow}>
+            <div
+              className={styles.meter}
+              role="progressbar"
+              aria-label="Players picked"
+              aria-valuemin={0}
+              aria-valuemax={11}
+              aria-valuenow={filledCount}
+            >
+              {Array.from({ length: 11 }, (_, i) => (
+                <i key={i} className={i < filledCount ? styles.meterOn : undefined} />
+              ))}
+            </div>
+            <span className={styles.caption} role="status" aria-live="polite">
+              {caption}
+            </span>
           </div>
         </div>
 
@@ -327,26 +554,37 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
           <aside className={styles.rail} aria-label="Starting XI">
             <div className={styles.railHead}>
               <div className={styles.railTitleRow}>
-                <h2 className={styles.railH}>Starting XI</h2>
+                <h2 className={styles.railH}>{sideClub ? `${sideClub.name} XI` : 'Starting XI'}</h2>
                 <button type="button" className={styles.textBtn} onClick={handleReset} disabled={filledCount === 0}>
                   Clear XI
                 </button>
               </div>
-              <label className={styles.pickFrom}>
-                <span className="g-label">Pick From</span>
-                <select
-                  className={styles.select}
-                  value={clubFilter || ''}
-                  onChange={(e) => setClubFilter(e.target.value || null)}
-                >
-                  <option value="">All Clubs</option>
-                  {clubsData.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {fixtureOptions.length > 0 && (
+                <div className={styles.pickFrom}>
+                  <span className="g-label">Match</span>
+                  <MatchPicker weeks={fixturesByWeek} value={fixture} onChange={handleSelectFixture} />
+                </div>
+              )}
+              {fixture ? (
+                <div className={styles.provenance}>
+                  <span className={styles.provenanceText}>{provenance}</span>
+                  {edited && (
+                    <button type="button" className={styles.textBtn} onClick={handleRestore}>
+                      Restore
+                    </button>
+                  )}
+                  {canUseLast && lastLabel && (
+                    <button type="button" className={styles.textBtn} onClick={handleUseLast} title={lastLabel}>
+                      Use Last XI
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className={styles.pickFrom}>
+                  <span className="g-label">Pick From</span>
+                  <ClubPicker clubs={clubOptions} value={clubFilter} onChange={setClubFilter} ariaLabel="Pick From" />
+                </div>
+              )}
             </div>
             <ol className={styles.railList}>
               {slotPositions.map((pos, i) => {
@@ -398,7 +636,9 @@ export default function LineupBuilderClient({ allPlayers, initialState }: Props)
           onSelectPlayer={handleSelectPlayer}
           onRemovePlayer={handleRemovePlayer}
           onClose={() => setActiveSlot(null)}
-          initialClubFilter={clubFilter}
+          initialClubFilter={sideClub ? sideClub.slug : clubFilter}
+          clubOptions={clubOptions}
+          matchOnly={fixture !== null}
         />
       )}
     </div>

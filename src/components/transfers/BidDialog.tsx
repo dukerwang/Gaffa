@@ -16,6 +16,13 @@ import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { isAcademyEligible, type AcademyCapacity } from '@/lib/transfers/academyEligibility';
 import { getPushAvailability, subscribeToPush, type PushAvailability } from '@/lib/push/subscribe';
 import { freeAgentMinimumBid } from '@/lib/leagues/features';
+import { toast } from '@/components/ui/toast';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { MoneyStepper } from '@/components/ui/MoneyStepper';
+import { NumberRoll } from '@/components/ui/NumberRoll';
+import BidRange from './BidRange';
+import { Select } from '@/components/ui/Select';
+import { PORTRAIT_WIDTH, plainItem, playerItem } from '@/components/select/domainItems';
 
 
 /**
@@ -154,6 +161,12 @@ export default function BidDialog({
   const belowFloor = Number.isNaN(amount) || amount < floor;
   const wouldTakeClause = clause != null && !Number.isNaN(amount) && amount >= clause;
   const overCommitted = committedTotal > budget;
+
+  // Bids are whole millions (the bid route refuses anything else). The stepper
+  // and the range run from the floor to the Club Balance; a club that can't
+  // reach the floor sees the figure at the floor, locked, and the balance error.
+  const minBid = Math.ceil(floor);
+  const canAfford = budget >= minBid;
   // Held players (R7): a club holding a player can't sign anyone.
   const holding = myRoster.some((r) => r.status === 'held');
 
@@ -179,7 +192,22 @@ export default function BidDialog({
       }
       onDone();
 
+      // The toast confirms a bid only when the dialog closes on it. When it
+      // stays open on the push prompt, that screen already says "Bid placed".
+      const name = getPlayerDisplayName(player, 'full');
+      const confirm = () => {
+        if (data.is_buy_now) {
+          // Unresolved means the sweep will finish it; don't claim the signing yet.
+          toast.success('Release clause paid', {
+            description: data.resolved ? `${name} · €${amount}m` : `${name} · €${amount}m. The transfer is completing.`,
+          });
+        } else {
+          toast.success('Bid placed', { description: `${name} · €${amount}m` });
+        }
+      };
+
       if (wouldTakeClause) {
+        confirm();
         handleClose();
         return;
       }
@@ -194,6 +222,7 @@ export default function BidDialog({
         // ignore
       }
 
+      confirm();
       handleClose();
     } catch {
       setMessage('Could not reach the server. Try again.');
@@ -284,7 +313,14 @@ export default function BidDialog({
             onClick={submit}
             disabled={busy || belowFloor || tooExpensive || settling || notOpenYet || holding}
           >
-            {busy ? 'Sending…' : wouldTakeClause ? `Pay ${money(amount)}` : `Bid ${money(amount)}`}
+            {busy ? (
+              'Sending…'
+            ) : (
+              <>
+                {wouldTakeClause ? 'Pay ' : 'Bid '}
+                <NumberRoll value={amount} format={money} />
+              </>
+            )}
           </button>
         </>
       }
@@ -307,16 +343,6 @@ export default function BidDialog({
           </div>
         </div>
         <div className={styles.rung}>
-          <div className={styles.rungLabel}>Minimum</div>
-          <div className={styles.rungValue}>{money(floor)}</div>
-        </div>
-        <div className={styles.rung}>
-          <div className={styles.rungLabel}>Clause</div>
-          <div className={`${styles.rungValue} ${clause != null ? styles.gold : styles.off}`}>
-            {clause != null ? money(clause) : '—'}
-          </div>
-        </div>
-        <div className={styles.rung}>
           <div className={styles.rungLabel}>{notOpenYet ? 'Opens' : 'Closes'}</div>
           {/* The countdown is the canonical mono case. */}
           <div className={`${styles.rungValue} ${expiresAt ? styles.rungLive : ''}`}>
@@ -329,32 +355,27 @@ export default function BidDialog({
         <p className={styles.error}>Bidding opens at {opensLabel} — this lot won&rsquo;t take a bid yet.</p>
       )}
 
-      <label className={styles.field}>
-        <span className={styles.fieldLabel}>Your bid</span>
-        <div className={styles.amountRow}>
-          <span className={styles.currency}>€</span>
-          <input
-            className={styles.amount}
-            type="number"
-            min={floor}
-            step={1}
-            value={Number.isNaN(amount) ? '' : amount}
-            onFocus={(e) => e.target.select()}
-            onChange={(e) => {
-              const raw = e.target.value;
-              if (raw === '') {
-                setAmount(NaN);
-                return;
-              }
-              const n = parseInt(raw, 10);
-              setAmount(Number.isNaN(n) ? NaN : n);
-            }}
-          />
-          <span className={styles.suffix}>m</span>
-        </div>
-        <div className={styles.hint}>
-          Minimum {money(floor)} · Club Balance {money(budget)}
-        </div>
+      {/* Minimum and Clause live here, as things to press, rather than in the
+          ladder above, which only states facts (approved 2026-10-23). */}
+      <div className={styles.field}>
+        <MoneyStepper
+          fullWidth
+          label="Your bid"
+          labelClassName={styles.fieldLabel}
+          value={amount}
+          onChange={setAmount}
+          min={minBid}
+          max={Math.max(minBid, budget)}
+          disabled={!canAfford}
+        />
+        <BidRange
+          value={amount}
+          onChange={setAmount}
+          min={minBid}
+          max={budget}
+          clause={clause}
+          disabled={!canAfford}
+        />
         {openBidCount > 0 && (
           <p className={overCommitted ? styles.error : styles.hint}>
             {money(committedTotal)} committed across {openBidCount} open bid
@@ -367,44 +388,42 @@ export default function BidDialog({
             )}
           </p>
         )}
-      </label>
+      </div>
 
       {/* Proactive academy routing (117): offered whenever the player is
           eligible and there's room, independent of roster fullness — the
           full-roster fallback below already covers that case on its own. */}
       {!rosterFull && academyEligible && (
-        <label className={styles.field}>
-          <span className={styles.checkboxRow}>
-            <input
-              type="checkbox"
-              checked={sendToAcademy}
-              onChange={(e) => setSendToAcademy(e.target.checked)}
-            />
-            Send to academy if I win
-          </span>
-          <div className={styles.hint}>
-            Academy: {academy.current}/{academy.max} slots · U{academy.age_limit} only.
-          </div>
-        </label>
+        <div className={styles.field}>
+          <Checkbox
+            checked={sendToAcademy}
+            onChange={setSendToAcademy}
+            label="Send to academy if I win"
+            description={`Academy: ${academy.current}/${academy.max} slots · U${academy.age_limit} only.`}
+          />
+        </div>
       )}
 
       {rosterFull && (
-        <label className={styles.field}>
+        <div className={styles.field}>
           <span className={styles.fieldLabel}>Player to drop</span>
-          <select className={styles.select} value={dropId} onChange={(e) => setDropId(e.target.value)}>
-            <option value="">{redraft ? 'Choose a player to drop' : 'Send him to the academy if there is room'}</option>
-            {droppable.map((r) => (
-              <option key={r.id} value={r.id}>
-                {getPlayerDisplayName(r, 'full')} · {r.primary_position} · {money(Number(r.market_value) || 0)}
-              </option>
-            ))}
-          </select>
+          <Select
+            fullWidth
+            className={styles.playerSelect}
+            ariaLabel="Player to drop"
+            value={dropId}
+            onChange={setDropId}
+            items={[
+              plainItem('', redraft ? 'Choose a player to drop' : 'Send him to the academy if there is room', PORTRAIT_WIDTH),
+              ...droppable.map((r) => playerItem(r)),
+            ]}
+          />
           <div className={styles.hint}>
             {redraft
               ? 'Your squad is full. Name the player to drop if you win him. Dropping is free.'
               : 'Your squad is full. Nominate a player to release upon winning, or send him to the academy. You cannot bid if neither has open slots.'}
           </div>
-        </label>
+        </div>
       )}
 
       {belowFloor && <p className={styles.error}>The minimum bid is {money(floor)}.</p>}

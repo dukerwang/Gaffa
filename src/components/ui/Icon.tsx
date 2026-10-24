@@ -16,6 +16,9 @@ type IconName =
   | 'help-circle'
   | 'chevron-right'
   | 'chevron-left'
+  | 'chevron-down'
+  | 'more'
+  | 'trash'
   | 'arrow-up'
   | 'arrow-down'
   | 'repeat'
@@ -28,6 +31,8 @@ type IconName =
   | 'plus'
   | 'minus'
   | 'share'
+  | 'share-out'
+  | 'download'
   | 'copy'
   | 'external-link';
 
@@ -62,6 +67,20 @@ export const Icon: React.FC<IconProps> = ({
       </>
     ),
     check: <path d="M20 6 9 17l-5-5" />,
+    'chevron-down': <path d="m6 9 6 6 6-6" />,
+    more: (
+      <>
+        <circle cx="5" cy="12" r="1" />
+        <circle cx="12" cy="12" r="1" />
+        <circle cx="19" cy="12" r="1" />
+      </>
+    ),
+    trash: (
+      <>
+        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      </>
+    ),
     x: <path d="M18 6 6 18M6 6l12 12" />,
     alert: (
       <>
@@ -200,6 +219,21 @@ export const Icon: React.FC<IconProps> = ({
         <circle cx="18" cy="19" r="3" />
         <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
         <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+      </>
+    ),
+    // The box-and-arrow share glyph iOS, macOS and most of the web use.
+    'share-out': (
+      <>
+        <path d="M12 3v12" />
+        <path d="m8 7 4-4 4 4" />
+        <path d="M8 10H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2" />
+      </>
+    ),
+    download: (
+      <>
+        <path d="M12 3v12" />
+        <path d="m7 10 5 5 5-5" />
+        <path d="M5 21h14" />
       </>
     ),
     copy: (

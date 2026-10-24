@@ -17,6 +17,8 @@ import { setServerClock, useTick, formatAuctionClock, isClosing } from '@/compon
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import AuctionTimingHelp from '@/components/transfers/AuctionTimingHelp';
 import styles from './auctions.module.css';
+import EmptyState from '@/components/ui/EmptyState';
+import { Icon, IconButton } from '@/components/ui';
 
 const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
 
@@ -239,11 +241,11 @@ export default function AuctionsClient({
           )}
 
           {visible.length === 0 ? (
-            <p className={styles.empty}>
+            <EmptyState size="compact">
               {biddableAuctions.length === 0
                 ? 'The room is empty. Nothing is under the hammer.'
                 : 'No lot matches that filter.'}
-            </p>
+            </EmptyState>
           ) : (
             visible.map((a) => (
               <Lot
@@ -314,7 +316,7 @@ export default function AuctionsClient({
           </div>
 
           {ticker.length === 0 ? (
-            <p className={styles.empty}>No bids yet.</p>
+            <EmptyState size="compact">No bids yet.</EmptyState>
           ) : (
             ticker.map((e) => (
               <div key={e.id} className={styles.event}>
@@ -445,6 +447,10 @@ function Lot({
   // clean, so a room full of lots is not a paint chart.
   const hue = { '--pf': `var(--color-pos-${String(p.primary_position).toLowerCase()})` } as React.CSSProperties;
 
+  // The drawer's content mounts the first time it opens and stays, so closing animates too.
+  const [seen, setSeen] = useState(expanded);
+  if (expanded && !seen) setSeen(true);
+
   return (
     <>
       <div className={`${styles.lot} ${state} g-row`} style={hue}>
@@ -557,19 +563,23 @@ function Lot({
                   : `Open at ${money(next)}`}
             </button>
           )}
-          <button
-            type="button"
+          <IconButton
+            variant="secondary"
+            tooltip={false}
             className={styles.toggle}
             onClick={onToggle}
             aria-expanded={expanded}
-            aria-label={expanded ? 'Hide bid history' : 'Show bid history'}
-          >
-            {expanded ? '▴' : '▾'}
-          </button>
+            label={expanded ? 'Hide Bid History' : 'Show Bid History'}
+            icon={<Icon name="chevron-down" size={18} strokeWidth={2} />}
+          />
         </div>
       </div>
 
-      {expanded && (
+      {/* Folds open with Disclosure's motion. Mounted on first open only, so a
+          room of collapsed lots doesn't load a large portrait for each. */}
+      <div className={styles.exPanel} data-open={expanded || undefined}>
+        <div className={styles.exInner} inert={!expanded || undefined}>
+      {seen && (
         <div className={`${styles.ex} ${state}`}>
           {/* The lot-size portrait (66x78) belongs here, not in the row. The
               row's name column was already 10px short of the string it wanted
@@ -671,6 +681,8 @@ function Lot({
           </div>
         </div>
       )}
+        </div>
+      </div>
     </>
   );
 }

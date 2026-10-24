@@ -665,3 +665,76 @@ The examples are pinned by player id in `EXAMPLES` in
 The hero now opens on the crest-and-name wordmark at display size, followed by
 "Fantasy football, played like the real thing." That line is an agent's
 wording, not Duke's.
+
+## 2026-10-23 — Kit adoption: hold to confirm, ink switchers
+
+Chosen from prototypes on `/kit`, after the Top Rated head took the ink
+switcher (option A of three).
+
+> "Port hold-to-confirm to all four cases plus the other browser dialogs, and
+> switch all six section switchers to A (ink)."
+
+The four cases were the roster Inspector's Drop, the departure sheet's "for
+Nothing" buttons, the loan recall and Leave League. The six switchers were the
+Players view, which positions count (Players and Stats), the Club Ledger, the
+squad view, Projected XI / Saved Lineup and the inbox filter.
+
+Not decided, and left as they were: the Transactions filters, the League Home
+fixture tabs, the Player Explorer legend and the player card's chart switch.
+The Players season switch was moved to ink with the view switch beside it,
+because the two shared one style; that was an agent's call, not his.
+
+Later the same day, from the dropdown prototype:
+
+> "Port batch 4 with option B (whole filter bar) for the club filters, plus the
+> commissioner and player-to-drop dropdowns."
+
+and, while it was being built:
+
+> "can you just make sure it's still compatible with and optimized on mobile?
+> in fact, make sure everything we're doing is"
+
+How the second was met is an agent's reading, not his: on a phone (640px and
+under) the kit Select docks as a bottom sheet with 48px rows instead of
+floating at the field, and under a finger every kit control reaches 44px
+(HoldButton, Button md, Select, the Switch hit area).
+
+**Bid amount.** Of the first pressable-ladder prototype (B):
+
+> "i like the idea of B. but it's not intuitive enough, you have 4 boxes and
+> only 2 are clickable and they aren't even directly next to each other out of
+> the 4. the boxes themselves also don't "imply" clickability enough"
+
+Then, of the two replacements:
+
+> "Port option D to the bid dialog: stepper, range bar with the clause notch,
+> facts-only ladder, and the 48px phone footer."
+
+The lesson worth keeping from his first quote: don't make some boxes in a row
+of look-alike boxes secretly pressable. Separate what you read from what you
+press.
+
+**Loading pages.** From the /kit prototype (A: real labels with shapes for the
+data; B: shapes only):
+
+> "Port option A (labels and shapes) as loading.tsx for League Home, Roster,
+> Transfers and Players, with desktop layouts too."
+
+How it was built is an agent's reading: each skeleton lays out in its page's
+own CSS module, and Home, the Transfer Market and the Players index moved into
+route groups ((home), (market), (index)) so a skeleton covers only its page.
+Every other route keeps the 3px bar.
+
+**Tabs, menus and close buttons.** From the /kit prototype (six cases, each
+today beside the kit version on a phone):
+
+> "Port the recommended set: 1A, 2A, 3A, 4A, 5A and 6."
+
+That is: kit Tabs and a season Select on the player card, kit Tabs and
+IconButtons in the league chat, kit Tabs (link mode) for Heritage and Cups,
+kit Popovers for the Club Balance and account menus (a sheet on a phone),
+a tap-to-open Popover for auction timing with a folding bid history, and
+IconButton for the plain close buttons. How it was built is an agent's
+reading: the account menu keeps Create and Join as two rows rather than the
+prototype's one, because no single page offers both; the lineup error notice
+takes the small IconButton so the notice keeps its height.

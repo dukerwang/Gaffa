@@ -8,6 +8,11 @@ import Modal from './Modal';
 import styles from './ListingEditor.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { listingStance } from '@/lib/transfers/listingStance';
+import { toast } from '@/components/ui/toast';
+import { Select } from '@/components/ui/Select';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { MoneyStepper } from '@/components/ui/MoneyStepper';
+import { PORTRAIT_WIDTH, plainItem, playerItem } from '@/components/select/domainItems';
 
 /**
  * List a player, or edit a listing that has not been bid on yet.
@@ -190,17 +195,23 @@ export default function ListingEditor({
       }
 
       // A seller who just raised their ask should know somebody is mid-negotiation.
+      // It's a note on a success, so it rides on the toast rather than in the
+      // dialog's error line, and stays up longer so it gets read.
       const stranded =
         (data.outstandingOffers?.length ?? 0) + (data.outstandingLoans?.length ?? 0);
-      if (stranded > 0) {
-        setError(
-          `Saved. Note ${stranded} approach${stranded === 1 ? '' : 'es'} already in flight ` +
-            'still stand on the old terms — they are not withdrawn by this edit.',
-        );
-      }
+      const name = selected ? getPlayerDisplayName(selected, 'full') : 'Player';
+      toast.success(editing ? 'Listing updated' : `${name} listed`, {
+        description:
+          stranded > 0
+            ? `${stranded} approach${stranded === 1 ? '' : 'es'} already in flight still stand${stranded === 1 ? 's' : ''} on the old terms.`
+            : editing
+              ? name
+              : undefined,
+        duration: stranded > 0 ? 8000 : undefined,
+      });
 
       onDone();
-      if (stranded === 0) onClose();
+      onClose();
     } catch {
       setError('Could not reach the server. Try again.');
     } finally {
@@ -219,6 +230,7 @@ export default function ListingEditor({
         setError(data.error ?? 'That listing could not be withdrawn.');
         return;
       }
+      toast('Listing withdrawn', { description: selected ? getPlayerDisplayName(selected, 'full') : undefined });
       onDone();
       onClose();
     } finally {
@@ -251,22 +263,17 @@ export default function ListingEditor({
       {!editing && !initialPlayerId && (
         <div className={styles.section}>
           <span className={styles.label}>Who</span>
-          <select
-            className={styles.select}
+          <Select
+            fullWidth
+            className={styles.playerSelect}
+            ariaLabel="Player to list"
             value={playerId}
-            onChange={(e) => {
-              const pid = e.target.value;
+            onChange={(pid) => {
               setPlayerId(pid);
               setMinBid(floorFor(myRoster, pid));
             }}
-          >
-            <option value="">Choose a player…</option>
-            {listable.map((p) => (
-              <option key={p.id} value={p.id}>
-                {getPlayerDisplayName(p, 'full')} · {p.primary_position} · {money(Number(p.market_value) || 0)}
-              </option>
-            ))}
-          </select>
+            items={[plainItem('', 'Choose a player…', PORTRAIT_WIDTH), ...listable.map((p) => playerItem(p))]}
+          />
         </div>
       )}
 
@@ -330,73 +337,77 @@ export default function ListingEditor({
 
       <div className={styles.section}>
         <span className={styles.label}>Prices</span>
+        {/* Each price is a route of its own and every one is optional (114):
+            tick it to open that route, then set the figure. Unticked is off. */}
         <div className={styles.prices}>
-          <label className={styles.priceField}>
-            <span className={styles.priceLabel}>Minimum bid</span>
-            <input
-              className={styles.priceInput}
-              type="number"
-              min={floor}
-              value={minBidSet ? (minBid as number) : ''}
-              placeholder="No auction"
-              onFocus={(e) => e.target.select()}
-              onChange={(e) => {
-                const raw = e.target.value;
-                if (raw === '') {
-                  // Blank is a real, valid state since 114 — not "incomplete
-                  // number," but "no open auction on this listing at all."
-                  setMinBid(null);
-                  return;
-                }
-                const n = parseInt(raw, 10);
-                setMinBid(Number.isNaN(n) ? NaN : Math.max(0, n));
-              }}
+          <div className={styles.priceRow}>
+            <Checkbox
+              checked={minBidSet}
+              onChange={(on) => setMinBid(on ? Math.max(floor, 1) : null)}
+              label="Minimum bid"
+              description="Open an auction at this price or above."
             />
-          </label>
-          <label className={styles.priceField}>
-            <span className={styles.priceLabel}>Asking price</span>
-            <input
-              className={styles.priceInput}
-              type="number"
-              value={askPrice == null || Number.isNaN(askPrice) ? '' : askPrice}
-              placeholder="—"
-              onFocus={(e) => e.target.select()}
-              onChange={(e) => {
-                const raw = e.target.value;
-                if (raw === '') {
-                  setAskPrice(null);
-                  return;
-                }
-                const n = parseInt(raw, 10);
-                setAskPrice(Number.isNaN(n) ? NaN : Math.max(0, n));
-              }}
+            {minBidSet && (
+              <MoneyStepper
+                fullWidth
+                label="Minimum bid"
+                labelClassName="sr-only"
+                value={minBid as number}
+                onChange={setMinBid}
+                min={Math.max(floor, 1)}
+              />
+            )}
+          </div>
+          <div className={styles.priceRow}>
+            <Checkbox
+              checked={askSet}
+              onChange={(on) =>
+                setAskPrice(on ? Math.max(marketValue, minBidSet ? (minBid as number) : 0, 1) : null)
+              }
+              label="Asking price"
+              description="Invite offers. You still accept or decline each one."
             />
-          </label>
-          <label className={styles.priceField}>
-            <span className={styles.priceLabel}>Release clause</span>
-            <input
-              className={styles.priceInput}
-              type="number"
-              value={clause == null || Number.isNaN(clause) ? '' : clause}
-              placeholder="—"
-              onFocus={(e) => e.target.select()}
-              onChange={(e) => {
-                const raw = e.target.value;
-                if (raw === '') {
-                  setClause(null);
-                  return;
-                }
-                const n = parseInt(raw, 10);
-                setClause(Number.isNaN(n) ? NaN : Math.max(0, n));
-              }}
+            {askSet && (
+              <MoneyStepper
+                fullWidth
+                label="Asking price"
+                labelClassName="sr-only"
+                value={askPrice as number}
+                onChange={setAskPrice}
+                min={minBidSet ? (minBid as number) : 1}
+              />
+            )}
+          </div>
+          <div className={styles.priceRow}>
+            <Checkbox
+              checked={clauseSet}
+              onChange={(on) =>
+                setClause(
+                  on
+                    ? Math.max(
+                        marketValue,
+                        askSet ? (askPrice as number) + 1 : 0,
+                        minBidSet ? (minBid as number) + 1 : 0,
+                        1,
+                      )
+                    : null,
+                )
+              }
+              label="Release clause"
+              description="Sell at once to any club that pays it."
             />
-          </label>
+            {clauseSet && (
+              <MoneyStepper
+                fullWidth
+                label="Release clause"
+                labelClassName="sr-only"
+                value={clause as number}
+                onChange={setClause}
+                min={minBidSet ? (minBid as number) + 1 : 1}
+              />
+            )}
+          </div>
         </div>
-        <p className={styles.hint}>
-          Set only what applies — enter a minimum bid to open an auction, an asking price to invite offers, or
-          a release clause for instant buyouts. Leave a field blank to turn that route off. Asking prices invite
-          proposals you must still accept; release clauses complete immediately upon payment.
-        </p>
       </div>
 
       {belowFloor && floor > 0 && (

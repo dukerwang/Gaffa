@@ -1,17 +1,18 @@
 'use client';
 
 import { useTheme } from '@/context/ThemeContext';
+import { Tooltip } from '@/components/ui/Tooltip';
 import styles from './ThemeToggle.module.css';
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
 
   return (
+    <Tooltip content={theme === 'light' ? 'Dark Mode' : 'Light Mode'} placement="bottom">
     <button
       onClick={toggleTheme}
       className={styles.toggle}
-      aria-label="Toggle theme"
-      title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
     >
       <span className={styles.icon}>
         {theme === 'light' ? (
@@ -33,5 +34,6 @@ export default function ThemeToggle() {
         )}
       </span>
     </button>
+    </Tooltip>
   );
 }

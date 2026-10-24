@@ -15,7 +15,7 @@ export default function LocalTime({
 }: {
   iso: string | null;
   endIso?: string | null;
-  variant: 'time' | 'dayTime' | 'range';
+  variant: 'time' | 'clock' | 'dayTime' | 'range';
   prefix?: string;
   className?: string;
 }) {
@@ -27,6 +27,8 @@ export default function LocalTime({
   let text: string;
   if (variant === 'time') {
     text = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  } else if (variant === 'clock') {
+    text = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
   } else if (variant === 'dayTime') {
     const day = d.toLocaleDateString(undefined, { weekday: 'short' });
     const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });

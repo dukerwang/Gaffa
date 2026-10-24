@@ -3,8 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
+import { HoldButton } from '@/components/ui/HoldButton';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import FormattedText from '@/components/ui/FormattedText';
 import styles from './Inbox.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface Notification {
   id: string;
@@ -63,9 +66,6 @@ export default function InboxClient({ leagueId, leagueName }: InboxClientProps) 
   };
 
   const handleClearInbox = async () => {
-    if (!confirm("Clear your entire inbox for this league? This can't be undone.")) {
-      return;
-    }
     try {
       const res = await fetch('/api/notifications', {
         method: 'DELETE',
@@ -172,9 +172,9 @@ export default function InboxClient({ leagueId, leagueName }: InboxClientProps) 
               </button>
             )}
             {notifications.length > 0 && (
-              <button className={`${styles.btn} ${styles.btnDanger}`} onClick={handleClearInbox}>
-                <Icon name="x" size={16} /> Clear Inbox
-              </button>
+              <HoldButton size="sm" confirmedLabel="Cleared" onConfirm={handleClearInbox}>
+                Clear Inbox
+              </HoldButton>
             )}
           </div>
         </div>
@@ -185,20 +185,16 @@ export default function InboxClient({ leagueId, leagueName }: InboxClientProps) 
 
       {/* Filter and Count Row */}
       <div className={styles.controls}>
-        <div className={styles.tabs}>
-          <button
-            className={`${styles.tab} ${filter === 'all' ? styles.tabActive : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            All Alerts ({notifications.length})
-          </button>
-          <button
-            className={`${styles.tab} ${filter === 'unread' ? styles.tabActive : ''}`}
-            onClick={() => setFilter('unread')}
-          >
-            Unread ({unreadCount})
-          </button>
-        </div>
+        <SegmentedControl<'all' | 'unread'>
+          variant="ink"
+          ariaLabel="Inbox filter"
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: 'all', label: `All Alerts (${notifications.length})` },
+            { value: 'unread', label: `Unread (${unreadCount})` },
+          ]}
+        />
         <span style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontFamily: 'var(--font-sans)' }}>
           Showing {filteredNotifications.length} of {notifications.length} alerts
         </span>
@@ -262,19 +258,11 @@ export default function InboxClient({ leagueId, leagueName }: InboxClientProps) 
           })}
         </div>
       ) : (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>
-            <Icon name="mail" size={48} strokeWidth={1} />
-          </div>
-          <h2 className={styles.emptyTitle}>
-            {filter === 'unread' ? 'No Unread Alerts' : 'Inbox Is Empty'}
-          </h2>
-          <p className={styles.emptyDesc}>
-            {filter === 'unread'
-              ? 'You’re all caught up. Switch to All Alerts to see earlier events.'
-              : 'You have no notifications in this league yet.'}
-          </p>
-        </div>
+        <EmptyState title={filter === 'unread' ? 'No Unread Alerts' : 'Inbox Is Empty'}>
+          {filter === 'unread'
+            ? 'You’re all caught up. Switch to All Alerts to see earlier events.'
+            : 'You have no notifications in this league yet.'}
+        </EmptyState>
       )}
     </div>
   );

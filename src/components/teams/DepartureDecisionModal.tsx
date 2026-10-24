@@ -8,8 +8,9 @@
 
 import { useState } from 'react';
 import { getPlayerDisplayName, playerInitial } from '@/lib/players/displayName';
-import { ResponsiveModal, Button } from '@/components/ui';
+import { ResponsiveModal, Button, HoldButton } from '@/components/ui';
 import styles from './DepartureDecisionModal.module.css';
+import { toast } from '@/components/ui/toast';
 
 export interface DepartureLike {
   id: string;
@@ -72,6 +73,11 @@ export default function DepartureDecisionModal({ req, leagueId, slots, rosterCou
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }),
       });
       if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d.error ?? 'Action failed'); return; }
+      const name = getPlayerDisplayName({ name: dep.name, web_name: dep.webName }, 'full');
+      if (action === 'release') toast.success(`${name} released`, { description: `Compensation ${money(dep.compensation)}` });
+      else if (action === 'retain') toast.success(`Rights to ${name} retained`, { description: `${slots.remaining - 1} of ${slots.total} retained slots left` });
+      else if (action === 'relinquish') toast(onLoan ? `${name} dropped` : `Rights to ${name} relinquished`);
+      else toast(`${name} declined`, { description: 'He goes to auction.' });
       onDone();
     } catch {
       setErr('Could not reach the server. Try again.');
@@ -107,9 +113,9 @@ export default function DepartureDecisionModal({ req, leagueId, slots, rosterCou
         <Button variant="secondary" disabled={busy} onClick={onClose}>
           Keep Him
         </Button>
-        <Button variant="danger" fullWidth disabled={busy} loading={busy} onClick={() => act('decline')}>
+        <HoldButton size="sm" fullWidth disabled={busy} onConfirm={() => act('decline')}>
           Decline for Nothing
-        </Button>
+        </HoldButton>
       </>
     );
   } else if (mode === 'relinquish') {
@@ -118,15 +124,9 @@ export default function DepartureDecisionModal({ req, leagueId, slots, rosterCou
         <Button variant="secondary" disabled={busy} onClick={onClose}>
           {onLoan ? 'Keep Him' : 'Keep Rights'}
         </Button>
-        <Button
-          variant="danger"
-          fullWidth
-          disabled={busy}
-          loading={busy}
-          onClick={() => act('relinquish')}
-        >
+        <HoldButton size="sm" fullWidth disabled={busy} onConfirm={() => act('relinquish')}>
           {onLoan ? 'Drop for Nothing' : 'Relinquish for Nothing'}
-        </Button>
+        </HoldButton>
       </>
     );
   }

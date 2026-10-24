@@ -13,8 +13,11 @@ import type { BidMode } from '@/components/transfers/BidDialog';
 import type { ProposeMode } from '@/components/transfers/ProposeBuilder';
 import { setServerClock } from '@/components/transfers/useTick';
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
+import { Select } from '@/components/ui/Select';
+import { plClubItem, plainItem } from '@/components/select/domainItems';
 import styles from './listings.module.css';
 import { fold } from '@/lib/text/fold';
+import EmptyState from '@/components/ui/EmptyState';
 
 const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
 const ProposeBuilder = dynamic(() => import('@/components/transfers/ProposeBuilder'), { ssr: false });
@@ -250,17 +253,27 @@ export default function ListingsClient({
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Search listings"
           />
-          <select className={styles.select} value={position} onChange={(e) => setPosition(e.target.value)} aria-label="Filter by position">
-            <option value="">Any position</option>
-            {positions.map((p) => <option key={p} value={p}>{p}</option>)}
-          </select>
-          <select className={styles.select} value={club} onChange={(e) => setClub(e.target.value)} aria-label="Filter by club">
-            <option value="">Any club</option>
-            {clubs.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select className={styles.select} value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort listings">
-            {SORTS.map((s) => <option key={s.key} value={s.key}>Sort: {s.label}</option>)}
-          </select>
+          <Select
+            className={`${styles.filterSelect} ${styles.fPos}`}
+            ariaLabel="Filter by position"
+            value={position}
+            onChange={setPosition}
+            items={[{ value: '', label: 'Any position' }, ...positions.map((p) => ({ value: p, label: p }))]}
+          />
+          <Select
+            className={`${styles.filterSelect} ${styles.fClub}`}
+            ariaLabel="Filter by club"
+            value={club}
+            onChange={setClub}
+            items={[plainItem('', 'Any club'), ...clubs.map((c) => plClubItem(c))]}
+          />
+          <Select<Sort>
+            className={`${styles.filterSelect} ${styles.fSort}`}
+            ariaLabel="Sort listings"
+            value={sort}
+            onChange={setSort}
+            items={SORTS.map((s) => ({ value: s.key, label: `Sort: ${s.label}` }))}
+          />
           <button type="button" className={styles.cta} onClick={() => setEditing('new')}>
             + List a player
           </button>
@@ -285,11 +298,11 @@ export default function ListingsClient({
       </div>
 
       {visible.length === 0 ? (
-        <p className={styles.empty}>
+        <EmptyState size="compact">
           {model.listings.length === 0
             ? 'No club has listed a player yet.'
             : 'No listing matches those filters.'}
-        </p>
+        </EmptyState>
       ) : (
         <div className={styles.grid}>
           {visible.map((l) => (

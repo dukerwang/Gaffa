@@ -7,6 +7,9 @@ import PositionBadge from '@/components/players/PositionBadge';
 import Modal from './Modal';
 import styles from './BidDialog.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { toast } from '@/components/ui/toast';
+import { Select } from '@/components/ui/Select';
+import { PORTRAIT_WIDTH, plainItem, playerItem } from '@/components/select/domainItems';
 
 const money = (n: number) => `€${n}m`;
 
@@ -51,6 +54,10 @@ export default function SignNowDialog({ open, onClose, leagueId, player, rosterF
         setMessage(json.error ?? 'Could not sign that player.');
         return;
       }
+      const dropped = myRoster.find((r) => r.id === dropId);
+      toast.success(`${getPlayerDisplayName(player, 'full')} signed`, {
+        description: dropped ? `${getPlayerDisplayName(dropped, 'full')} released to make room.` : undefined,
+      });
       onDone();
       onClose();
     } catch {
@@ -86,20 +93,20 @@ export default function SignNowDialog({ open, onClose, leagueId, player, rosterF
       </div>
 
       {rosterFull && (
-        <label className={styles.field}>
+        <div className={styles.field}>
           <span className={styles.fieldLabel}>Player to drop</span>
-          <select className={styles.select} value={dropId} onChange={(e) => setDropId(e.target.value)}>
-            <option value="">Choose a player to drop</option>
-            {droppable.map((r) => (
-              <option key={r.id} value={r.id}>
-                {getPlayerDisplayName(r, 'full')} · {r.primary_position}
-              </option>
-            ))}
-          </select>
+          <Select
+            fullWidth
+            className={styles.playerSelect}
+            ariaLabel="Player to drop"
+            value={dropId}
+            onChange={setDropId}
+            items={[plainItem('', 'Choose a player to drop', PORTRAIT_WIDTH), ...droppable.map((r) => playerItem(r))]}
+          />
           <div className={styles.hint}>
             Your squad is full. The player you drop is up for auction until the next Transfer Day.
           </div>
-        </label>
+        </div>
       )}
 
       {message && <p className={styles.error}>{message}</p>}

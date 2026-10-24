@@ -24,6 +24,7 @@
 
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { describeDeal } from '@/lib/transfers/describeDeal';
+import type { CrestConfig } from '@/components/crest/types';
 
 // ─── Inputs ───────────────────────────────────────────────────────────────────
 
@@ -38,6 +39,8 @@ export interface RegisterPlayer {
 export interface RegisterTeam {
   id: string;
   team_name: string;
+  /** For the club filter's crests; the register itself never reads it. */
+  crest_config?: CrestConfig | null;
 }
 
 export interface RawTransaction {

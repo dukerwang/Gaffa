@@ -16,6 +16,9 @@ import {
 } from '@/lib/transactions/buildRegister';
 import type { GranularPosition } from '@/types';
 import styles from './transactions.module.css';
+import EmptyState from '@/components/ui/EmptyState';
+import { Select } from '@/components/ui/Select';
+import { gaffaClubItem, plainItem } from '@/components/select/domainItems';
 
 /**
  * A season as a window in time. `transactions` carries no season column, so the
@@ -292,39 +295,22 @@ export default function TransactionsClient({
             />
           </label>
 
-          <div className={styles.selWrap}>
-            <select
-              className={styles.sel}
-              value={club}
-              aria-label="Filter by club"
-              onChange={(e) => setClub(e.target.value)}
-            >
-              <option value="all">All clubs</option>
-              {teams.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.team_name}
-                </option>
-              ))}
-            </select>
-            <Caret />
-          </div>
+          <Select
+            className={styles.selField}
+            ariaLabel="Filter by club"
+            value={club}
+            onChange={setClub}
+            items={[plainItem('all', 'All clubs'), ...teams.map((t) => gaffaClubItem(t.id, t.team_name, t.crest_config))]}
+          />
 
           {seasons.length > 1 ? (
-            <div className={styles.selWrap}>
-              <select
-                className={`${styles.sel} ${styles.selStrong}`}
-                value={season}
-                aria-label="Season"
-                onChange={(e) => setSeason(e.target.value)}
-              >
-                {seasons.map((s) => (
-                  <option key={s.season} value={s.season}>
-                    {s.season}
-                  </option>
-                ))}
-              </select>
-              <Caret />
-            </div>
+            <Select
+              className={`${styles.selField} ${styles.selStrong}`}
+              ariaLabel="Season"
+              value={season}
+              onChange={setSeason}
+              items={seasons.map((s) => ({ value: s.season, label: s.season }))}
+            />
           ) : (
             <span className={styles.seasonLabel}>{season}</span>
           )}
@@ -352,11 +338,11 @@ export default function TransactionsClient({
       </div>
 
       {groups.length === 0 ? (
-        <p className={styles.empty}>
+        <EmptyState>
           {entries.length === 0
             ? `No player has changed hands in ${leagueName} yet.`
             : 'Nothing matches these filters.'}
-        </p>
+        </EmptyState>
       ) : (
         <div key={isClient ? 'local' : 'utc'} className={styles.feed}>
           {groups.map((g) => (
@@ -382,24 +368,5 @@ export default function TransactionsClient({
         </div>
       )}
     </div>
-  );
-}
-
-function Caret() {
-  return (
-    <svg
-      className={styles.caret}
-      width="10"
-      height="10"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="3"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
   );
 }

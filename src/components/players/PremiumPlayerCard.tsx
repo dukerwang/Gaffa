@@ -3,8 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { Player, PlayerOwnership } from '@/types';
 import type { CrestConfig } from '@/components/crest/types';
-import { getPlayerDisplayName, playerInitial } from '@/lib/players/displayName';
-import { portraitUrl, withVersion } from '@/lib/players/photo';
+import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { portraitInitials, portraitUrl, withVersion } from '@/lib/players/photo';
 import { useParams } from 'next/navigation';
 import CrestBadge from '@/components/crest/CrestBadge';
 import SquadPeekButton from '@/components/teams/SquadPeekButton';
@@ -22,6 +22,7 @@ import {
   primeFront,
 } from '@/lib/players/cardCache';
 import { appearances, seasonFigures, type SeasonFigure } from '@/lib/players/cardSeason';
+import { useIsClient } from '@/lib/fixtures/formatKickoff';
 import styles from './PremiumPlayerCard.module.css';
 
 const POS_LONG: Record<string, string> = {
@@ -220,6 +221,13 @@ export default function PremiumPlayerCard({
 
   const resolvedPlayer = snapshot.player;
   const resolvedOwnership = snapshot.ownership ?? null;
+
+  // The league's owner map is seeded on the client only (LeagueOwnershipSeed),
+  // so the server renders the crest from the props alone. Hydration has to paint
+  // the same thing; the crest from the map follows a frame later. A card that
+  // mounts after hydration still shows it on its first frame.
+  const isClient = useIsClient();
+  const shownOwnership = isClient ? resolvedOwnership : (ownership ?? null);
 
   useEffect(() => {
     onResolve?.(resolvedPlayer, resolvedOwnership);
@@ -481,36 +489,36 @@ export default function PremiumPlayerCard({
                 </div>
               </div>
               <div className={styles.ownerSlot}>
-                {resolvedOwnership && (
-                  resolvedOwnership.loanedTo ? (
+                {shownOwnership && (
+                  shownOwnership.loanedTo ? (
                     <div
                       className={styles.loanCrests}
-                      title={`On loan from ${resolvedOwnership.owner.teamName} to ${resolvedOwnership.loanedTo.teamName}`}
+                      title={`On loan from ${shownOwnership.owner.teamName} to ${shownOwnership.loanedTo.teamName}`}
                     >
                       <SquadPeekButton
-                        teamId={resolvedOwnership.owner.teamId}
-                        teamName={resolvedOwnership.owner.teamName}
+                        teamId={shownOwnership.owner.teamId}
+                        teamName={shownOwnership.owner.teamName}
                         className={styles.loanCrestCol}
-                        title={`${resolvedOwnership.owner.teamName}: view squad`}
+                        title={`${shownOwnership.owner.teamName}: view squad`}
                       >
                         <CrestBadge
-                          config={resolvedOwnership.owner.crestConfig as CrestConfig | null}
+                          config={shownOwnership.owner.crestConfig as CrestConfig | null}
                           size={20}
-                          teamName={resolvedOwnership.owner.teamName}
+                          teamName={shownOwnership.owner.teamName}
                         />
                         <span className={styles.loanRole}>Lender</span>
                       </SquadPeekButton>
                       <span className={styles.loanArrow} aria-hidden="true">→</span>
                       <SquadPeekButton
-                        teamId={resolvedOwnership.loanedTo.teamId}
-                        teamName={resolvedOwnership.loanedTo.teamName}
+                        teamId={shownOwnership.loanedTo.teamId}
+                        teamName={shownOwnership.loanedTo.teamName}
                         className={styles.loanCrestCol}
-                        title={`${resolvedOwnership.loanedTo.teamName}: view squad`}
+                        title={`${shownOwnership.loanedTo.teamName}: view squad`}
                       >
                         <CrestBadge
-                          config={resolvedOwnership.loanedTo.crestConfig as CrestConfig | null}
+                          config={shownOwnership.loanedTo.crestConfig as CrestConfig | null}
                           size={20}
-                          teamName={resolvedOwnership.loanedTo.teamName}
+                          teamName={shownOwnership.loanedTo.teamName}
                         />
                         <span className={styles.loanRole}>On Loan</span>
                       </SquadPeekButton>
@@ -519,15 +527,15 @@ export default function PremiumPlayerCard({
                     // "Who owns him?" and "what else have they got?" are one
                     // question asked twice; the crest answers both.
                     <SquadPeekButton
-                      teamId={resolvedOwnership.owner.teamId}
-                      teamName={resolvedOwnership.owner.teamName}
+                      teamId={shownOwnership.owner.teamId}
+                      teamName={shownOwnership.owner.teamName}
                       className={styles.ownerCrest}
-                      title={`${resolvedOwnership.owner.teamName}: view squad`}
+                      title={`${shownOwnership.owner.teamName}: view squad`}
                     >
                       <CrestBadge
-                        config={resolvedOwnership.owner.crestConfig as CrestConfig | null}
+                        config={shownOwnership.owner.crestConfig as CrestConfig | null}
                         size={25}
-                        teamName={resolvedOwnership.owner.teamName}
+                        teamName={shownOwnership.owner.teamName}
                       />
                     </SquadPeekButton>
                   )
@@ -577,14 +585,16 @@ export default function PremiumPlayerCard({
                     onError={advancePhoto}
                   />
                 )}
-                {/* Stays mounted and fades out as the photo fades in, so the
-                    window never flashes through a transparent cut-out. */}
-                <div
-                  className={`${styles.photoPlaceholder} ${showPlaceholder ? '' : styles.photoPlaceholderHidden}`}
-                  aria-hidden="true"
-                >
-                  {playerInitial(resolvedPlayer)}
-                </div>
+              </div>
+
+              {/* Stays mounted and fades out as the photo fades in, so the
+                  window never flashes through a transparent cut-out. Sits in
+                  the window, not the photo slot, so the initials centre on it. */}
+              <div
+                className={`${styles.photoPlaceholder} ${showPlaceholder ? '' : styles.photoPlaceholderHidden}`}
+                aria-hidden="true"
+              >
+                {portraitInitials(fullName)}
               </div>
 
               {figures && (

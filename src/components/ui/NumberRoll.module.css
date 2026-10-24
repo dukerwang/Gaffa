@@ -1,0 +1,58 @@
+/* Gaffa UI Primitive: NumberRoll */
+
+.roll {
+  display: inline-flex;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.visual {
+  display: inline-flex;
+}
+
+/* One line tall; the strip behind it is ten lines tall. The soft mask fades
+   digits in and out at the column edge rather than cutting them. */
+.column {
+  display: inline-block;
+  height: 1.1em;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, transparent 0, black 18%, black 82%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 18%, black 82%, transparent 100%);
+  animation: columnIn var(--dur-base) var(--ease-out-strong);
+}
+
+.strip {
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--dur-slow) var(--ease-out-strong);
+  will-change: transform;
+}
+
+.strip > span {
+  display: block;
+  height: 1.1em;
+  line-height: 1.1em;
+  text-align: center;
+}
+
+.static {
+  display: inline-block;
+  height: 1.1em;
+  line-height: 1.1em;
+}
+
+@keyframes columnIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .strip {
+    transition: none;
+  }
+  .column {
+    animation: none;
+  }
+}

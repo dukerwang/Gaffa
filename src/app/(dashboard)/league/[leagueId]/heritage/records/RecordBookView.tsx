@@ -17,6 +17,7 @@ import type { CrestConfig } from '@/components/crest/types';
 import type { RecordBookEntry } from '@/lib/heritage/records';
 import HeritageNav from '../HeritageNav';
 import styles from '../heritage.module.css';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface Club {
   teamId: string;
@@ -92,9 +93,9 @@ export default function RecordBookView({ leagueId, records, clubs, titles, viewe
       <HeritageNav leagueId={leagueId} active="Record Book" />
 
       {records.length === 0 && titles.length === 0 ? (
-        <p className={styles.empty}>
+        <EmptyState>
           No records yet. You’ll see them after the first completed gameweek.
-        </p>
+        </EmptyState>
       ) : (
         <>
           {groups.map((g) => {

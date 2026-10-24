@@ -83,18 +83,6 @@
 .close {
   margin-left: auto;
   align-self: flex-start;
-  background: none;
-  border: none;
-  font-size: 1rem;
-  line-height: 1;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  padding: 0.25rem 0.35rem;
-  border-radius: var(--radius-sm);
-  flex-shrink: 0;
-}
-@media (hover: hover) and (pointer: fine) {
-  .close:hover { color: var(--color-text-primary); background: var(--color-bg-card-hover); }
 }
 
 /* ── Body ── */
@@ -353,13 +341,8 @@
 }
 
 /* ── Skeleton ── */
-.skeleton { display: flex; flex-direction: column; gap: 8px; }
-.skelRow {
-  height: 34px;
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-elevated);
-  opacity: 0.6;
-}
+.skeleton { display: flex; flex-direction: column; gap: 12px; }
+.headMeta .metaSkeleton { display: inline-block; vertical-align: middle; }
 
 /* ── Footer ── */
 .footer {

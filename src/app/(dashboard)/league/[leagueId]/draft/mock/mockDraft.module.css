@@ -235,3 +235,12 @@
     font-size: 10px;
   }
 }
+
+/* Restart throws the mock away, so it holds; sized to sit with Pause and Exit. */
+.controlBtns .controlHold {
+  min-height: 0;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}

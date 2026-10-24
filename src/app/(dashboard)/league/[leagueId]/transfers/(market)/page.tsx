@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect, notFound } from 'next/navigation';
 import { buildTransfersModel } from '@/lib/transfers/buildTransfersModel';
-import MarketClient from './MarketClient';
+import MarketClient from '../MarketClient';
 
 export const dynamic = 'force-dynamic';
 

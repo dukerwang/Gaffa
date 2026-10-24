@@ -173,26 +173,7 @@
 
 /* ---- Toolbar + To-do -------------------------------------- */
 .toolbar { margin-top: var(--s5); display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
-.seg {
-  display: inline-flex; padding: 3px; gap: 3px;
-  background: var(--color-bg-elevated); border: 1px solid var(--color-border-subtle); border-radius: var(--r-control);
-}
-.segBtn {
-  padding: var(--s1) var(--s3); border: 1px solid transparent; border-radius: var(--r-control);
-  background: none; cursor: pointer;
-  font-family: var(--font-label); font-size: var(--t-12); font-weight: 700;
-  letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-secondary);
-  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
-}
-@media (hover: hover) and (pointer: fine) {
-  .segBtn:hover { color: var(--color-text-primary); }
-}
-/* The keyline and the ground are the state; the label stays ink. It read
-   --color-accent before, which is the fill token doing a text job. */
-.segBtnOn { background: var(--color-bg-card); border-color: var(--color-border); color: var(--color-text-primary); }
-@media (hover: hover) and (pointer: fine) {
-  .segBtnOn:hover { background: var(--color-bg-card); border-color: var(--color-border); color: var(--color-text-primary); }
-}
+
 .tbSpacer { flex: 1 1 auto; }
 .toolbarData { display: inline-flex; align-items: center; gap: var(--s2); }
 .tbGroup { display: inline-flex; align-items: center; gap: var(--s2); }
@@ -289,10 +270,6 @@
 .clubPitch { overflow: hidden; }
 .pitchHead { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); padding: var(--s4); border-bottom: 1px solid var(--color-border); }
 .pitchCaption { margin-top: 3px; font-size: var(--t-12); color: var(--color-text-muted); }
-.pitchMode { display: inline-flex; flex: none; padding: 3px; gap: 3px; border: 1px solid var(--color-border-subtle); border-radius: var(--r-control); background: var(--color-bg-elevated); }
-.pitchMode button { min-height: 30px; padding: 0 var(--s2); border: 1px solid transparent; border-radius: calc(var(--r-control) - 2px); background: transparent; color: var(--color-text-secondary); cursor: pointer; font-family: var(--font-label); font-size: var(--t-11); font-weight: 700; letter-spacing: .04em; }
-.pitchModeOn { background: var(--color-bg-card) !important; border-color: var(--color-border) !important; color: var(--color-text-primary) !important; }
-
 
 .clubPitchField { padding: var(--s4); background: var(--color-bg-card-alt); }
 
@@ -303,19 +280,9 @@
 .pitchFoot { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s1) var(--s3); padding: var(--s3) var(--s4); border-top: 1px solid var(--color-border-subtle); }
 .sidelinedToggle {
   display: inline-flex; align-items: center; gap: var(--s2); flex: none;
-  border: 0; background: none; padding: 0; cursor: pointer;
   font-size: var(--t-12); font-weight: var(--font-semibold); color: var(--color-text-primary);
+  cursor: pointer; user-select: none;
 }
-.sidelinedToggleTrack {
-  position: relative; flex: none; width: 30px; height: 18px; border-radius: var(--r-pill);
-  background: var(--color-border-strong); transition: background var(--dur-fast) var(--ease-standard);
-}
-.sidelinedToggleTrack::after {
-  content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: var(--r-round);
-  background: var(--color-bg-card); transition: transform var(--dur-fast) var(--ease-standard);
-}
-.sidelinedToggle[aria-checked="true"] .sidelinedToggleTrack { background: var(--color-accent); }
-.sidelinedToggle[aria-checked="true"] .sidelinedToggleTrack::after { transform: translateX(12px); }
 .pitchFootNote { font-size: var(--t-12); color: var(--color-text-muted); }
 
 .formationBar {
@@ -659,13 +626,7 @@
     background: rgba(28, 28, 28, 0.28);
   }
   :global([data-theme='dark']) .railScrim { background: rgba(10, 13, 20, 0.6); }
-  .railClose {
-    display: flex; align-items: center; justify-content: center;
-    width: 32px; height: 32px; margin: var(--s2) 0 var(--s1) auto;
-    border-radius: var(--r-round); border: 1px solid var(--color-border-subtle);
-    background: var(--color-bg-elevated); color: var(--color-text-secondary);
-    font-size: var(--t-13); cursor: pointer;
-  }
+  .railClose { display: flex; margin: var(--s2) 0 var(--s1) auto; }
   .figs { grid-template-columns: repeat(2, 1fr); }
   .fig:nth-child(3) { border-left: 0; }
   .fig:nth-child(n+3) { border-top: 1px solid var(--color-border-subtle); }
@@ -673,9 +634,8 @@
 }
 @media (max-width: 600px) {
   .toolbar { align-items: stretch; gap: var(--s2); }
-  .seg { order: 1; width: 100%; overflow-x: auto; padding: 4px; scrollbar-width: none; }
-  .seg::-webkit-scrollbar { display: none; }
-  .segBtn { min-height: 40px; flex: none; padding: 0 var(--s3); }
+  /* The view switch takes its own line above the to-do and the filters. */
+  .toolbar .viewSwitch { order: 1; width: 100%; }
   .tbSpacer { display: none; }
   .todo { order: 2; flex: 1 1 auto; }
   .todoBtn { width: 100%; min-height: 44px; justify-content: center; }
@@ -692,8 +652,7 @@
   .commandOptions { gap: var(--s1); }
   .commandOptions button { min-height: 48px; padding: 0 var(--s3); font-size: var(--t-14); }
   .pitchHead { display: block; padding: var(--s4); }
-  .pitchMode { width: 100%; margin-top: var(--s3); }
-  .pitchMode button { flex: 1 1 0; min-height: 40px; font-size: var(--t-12); }
+  .pitchHead .pitchModeSwitch { margin-top: var(--s3); }
   .clubPitchField { padding: var(--s2); }
   .mhClub { font-size: var(--t-32); }
   .mhTop { flex-wrap: wrap; }
@@ -708,3 +667,10 @@
   .acts { grid-template-columns: 1fr; }
 }
 
+/* The hold-to-drop takes the Inspector's tighter action type. */
+.acts .actHold { font-size: var(--t-12); font-weight: 700; letter-spacing: 0.04em; }
+
+/* Under a finger the Inspector's actions reach 44px, level with the hold-to-drop. */
+@media (pointer: coarse) {
+  .act { min-height: 44px; }
+}

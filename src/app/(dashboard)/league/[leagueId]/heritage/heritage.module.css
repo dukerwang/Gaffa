@@ -70,35 +70,6 @@
   line-height: 1.35;
 }
 
-/* ── Nav ──────────────────────────────────────────────── */
-.nav {
-  display: flex;
-  gap: var(--s6);
-  border-bottom: 2px solid var(--color-text-primary);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.nav::-webkit-scrollbar { display: none; }
-
-.tab,
-.tabActive {
-  flex: none;
-  white-space: nowrap;
-  font-size: var(--t-12);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  padding: 0 0 var(--s2);
-  margin-bottom: -2px;
-  border-bottom: 2px solid transparent;
-  text-decoration: none;
-  color: var(--color-text-muted);
-}
-.tabActive { color: var(--color-accent-ink); border-bottom-color: var(--color-accent-ink); }
-@media (hover: hover) and (pointer: fine) {
-  .tab:hover { color: var(--color-text-secondary); }
-}
-
 /* ── Sections ─────────────────────────────────────────── */
 .sect {
   display: flex;
@@ -359,13 +330,6 @@
 .barL { background: var(--color-defeat); }
 
 .chev { color: var(--color-text-muted); font-size: var(--t-17); line-height: 1; text-align: right; }
-
-.empty {
-  font-size: var(--t-13);
-  color: var(--color-text-secondary);
-  line-height: 1.55;
-  padding: var(--s5) 0;
-}
 
 /* ── Rail card ────────────────────────────────────────── */
 .railPad { padding: var(--s5); }

@@ -6,6 +6,8 @@ import { POS_COLOR } from '@/lib/positions/spine';
 import type { GranularPosition } from '@/types';
 import type { ExplorerRow } from '@/lib/players/indexData';
 import { fold } from '@/lib/text/fold';
+import { Select } from '@/components/ui/Select';
+import { plClubItem, plainItem } from '@/components/select/domainItems';
 import styles from './playerExplorer.module.css';
 
 /**
@@ -160,17 +162,13 @@ export default function PlayerExplorer({
           onChange={(e) => setSearch(e.target.value)}
           aria-label="Search player"
         />
-        <select
-          className={styles.select}
+        <Select
+          className={styles.filterSelect}
+          ariaLabel="Club"
           value={club}
-          onChange={(e) => setClub(e.target.value)}
-          aria-label="Club"
-        >
-          <option value="ALL">All clubs</option>
-          {clubOptions.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+          onChange={setClub}
+          items={[plainItem('ALL', 'All clubs'), ...clubOptions.map((c) => plClubItem(c))]}
+        />
       </div>
 
       <div className={styles.axisBar}>

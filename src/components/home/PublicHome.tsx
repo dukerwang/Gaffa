@@ -9,7 +9,7 @@ import type { HonourKind } from '@/lib/honours/getClubHonours';
 import type { FixturesModel } from '@/lib/dashboard/buildDashboardModel';
 import type { Showcase, ShowcaseRated } from '@/lib/publicHome/loadShowcase';
 import RatedPortrait from '@/app/(dashboard)/dashboard/RatedPortrait';
-import { Matchweek } from '@/app/(dashboard)/dashboard/Sections';
+import { Matchweek } from '@/app/(dashboard)/dashboard/Matchweek';
 import dash from '@/app/(dashboard)/dashboard/dashboard.module.css';
 import DockCta from './DockCta';
 import styles from './PublicHome.module.css';
@@ -416,7 +416,12 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
 
       {/* Fixtures + start */}
       <div className={`${styles.section} ${styles.bottomRow}`}>
-        <Matchweek model={{ gameweek, nextDeadline, fixtures }} fixturesHref={null} />
+        <Matchweek
+          currentWeek={gameweek}
+          weeks={fixtures.rows.length ? { [gameweek]: fixtures.rows } : {}}
+          nextDeadline={nextDeadline}
+          fixturesHref={null}
+        />
 
         <aside className={styles.start} id="start-league" aria-labelledby="start-league-title">
           <h2 id="start-league-title" className={styles.startT}>Start a League</h2>

@@ -140,6 +140,41 @@ describe('applyQuietHours', () => {
     });
 });
 
+describe('applyQuietHours: the morning up to noon', () => {
+    const ny: QuietHours = { start: '00:00', end: '08:00', timeZone: 'America/New_York' };
+
+    it('pushes a close just past 08:00 to noon (Neto: Tue 08:33 EDT)', () => {
+        expect(applyQuietHours(at('2026-10-20T12:33:42.000Z'), ny, { marketValue: 60, bidCount: 2 }))
+            .toBe(at('2026-10-20T16:00:00.000Z'));
+    });
+
+    it('pushes an 11:59 close to noon and leaves a 12:00 close alone', () => {
+        expect(applyQuietHours(at('2026-10-20T15:59:00.000Z'), ny, { marketValue: 60, bidCount: 2 }))
+            .toBe(at('2026-10-20T16:00:00.000Z'));
+        const noon = at('2026-10-20T16:00:00.000Z');
+        expect(applyQuietHours(noon, ny, { marketValue: 60, bidCount: 2 })).toBe(noon);
+    });
+
+    it('moves a €60m lot to noon on a Saturday, never 06:45', () => {
+        // Sat 2026-10-17 03:00 EDT, one bid, but €60m.
+        expect(applyQuietHours(at('2026-10-17T07:00:00.000Z'), ny, { marketValue: 60, bidCount: 1 }))
+            .toBe(at('2026-10-17T16:00:00.000Z'));
+    });
+
+    it('lets an uncontested weekend streamer close between 06:45 and noon', () => {
+        const sat0900 = at('2026-10-17T13:00:00.000Z'); // Sat 09:00 EDT
+        expect(applyQuietHours(sat0900, ny, { marketValue: 10, bidCount: 1 })).toBe(sat0900);
+        // ...but not before 06:45: Sat 03:00 EDT goes to 06:45 EDT (10:45 UTC).
+        expect(applyQuietHours(at('2026-10-17T07:00:00.000Z'), ny, { marketValue: 10, bidCount: 1 }))
+            .toBe(at('2026-10-17T10:45:00.000Z'));
+    });
+
+    it('sends a weekday streamer to noon, not 06:45', () => {
+        expect(applyQuietHours(at('2026-10-20T07:00:00.000Z'), ny, { marketValue: 10, bidCount: 1 }))
+            .toBe(at('2026-10-20T16:00:00.000Z'));
+    });
+});
+
 describe('calculateExpiresAt', () => {
     it('honours tier floors on fresh auctions', () => {
         // Tier 1 (< €25m): 12h floor
@@ -208,6 +243,49 @@ describe('calculateExpiresAt', () => {
 
         // It must resolve at or after 12:00 PM EDT
         expect(hour).toBeGreaterThanOrEqual(12);
+    });
+});
+
+describe('calculateExpiresAt: bids placed overnight', () => {
+    const ny: QuietHours = { start: '00:00', end: '08:00', timeZone: 'America/New_York' };
+
+    it('holds an overnight bid open until noon even when the floor close is just past quiet hours (Neto)', () => {
+        // Opened Sun 2026-10-18 08:33 EDT (12:33 UTC); €60m -> 48h floor -> Tue 08:33 EDT.
+        const first = at('2026-10-18T12:33:42.000Z');
+        // Rival bids Tue 00:47 EDT (04:47 UTC), 7h46m before the floor close.
+        const last = at('2026-10-20T04:47:12.000Z');
+        // Noon EDT Tue is 16:00 UTC.
+        expect(Date.parse(calculateExpiresAt(first, last, ny, { marketValue: 60, bidCount: 2 })))
+            .toBe(at('2026-10-20T16:00:00.000Z'));
+    });
+
+    it('rolls a 23:30 bid to noon the next day when the floor close is just past quiet hours', () => {
+        const first = at('2026-10-18T12:33:42.000Z');
+        const last = at('2026-10-19T03:30:00.000Z'); // Sun 23:30 EDT; €30m floor closes Mon 08:33 EDT
+        expect(Date.parse(calculateExpiresAt(first, last, ny, { marketValue: 30, bidCount: 2 })))
+            .toBe(at('2026-10-19T16:00:00.000Z'));
+    });
+
+    it('leaves an afternoon bid and an afternoon close on the same clock as before', () => {
+        const first = at('2026-10-18T18:00:00.000Z'); // Sun 14:00 EDT
+        const last = at('2026-10-20T00:47:12.000Z'); // Mon 20:47 EDT
+        expect(Date.parse(calculateExpiresAt(first, last, ny, { marketValue: 60, bidCount: 2 })))
+            .toBe(first + 48 * H);
+    });
+
+    it('never closes earlier than the clock it would have had without the overnight rule', () => {
+        const first = at('2026-10-18T12:33:42.000Z');
+        const last = at('2026-10-20T04:47:12.000Z');
+        const withGuard = Date.parse(calculateExpiresAt(first, last, ny, { marketValue: 60, bidCount: 2 }));
+        const without = Date.parse(calculateExpiresAt(first, last, null, { marketValue: 60, bidCount: 2 }));
+        expect(withGuard).toBeGreaterThanOrEqual(without);
+    });
+
+    it('does not delay an uncontested weekend first bid past its normal 12h window', () => {
+        // Sat 2026-10-17 00:30 EDT first bid on a €10m player: 12h floor -> Sat 12:30, past 6:45.
+        const first = at('2026-10-17T04:30:00.000Z');
+        expect(Date.parse(calculateExpiresAt(first, first, ny, { marketValue: 10, bidCount: 1 })))
+            .toBe(first + 12 * H);
     });
 });
 

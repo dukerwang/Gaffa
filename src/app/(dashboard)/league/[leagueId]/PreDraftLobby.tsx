@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import NavigationLink from '@/components/ui/NavigationLink';
+import { HoldButton } from '@/components/ui/HoldButton';
 import { createClient } from '@/lib/supabase/client';
 import SidebarChat from './SidebarChat';
 import DraftOrderManager from './DraftOrderManager';
@@ -157,10 +158,6 @@ export default function PreDraftLobby({
   }
 
   async function handleCancelSchedule() {
-    if (!confirm('Cancel the scheduled draft? Resets the countdown and returns to draft setup.')) {
-      return;
-    }
-
     setSchedSaving(true);
     setSchedError(null);
     setSchedSuccess(null);
@@ -433,14 +430,9 @@ export default function PreDraftLobby({
                     </button>
                     
                     {league.draft_scheduled_at && (
-                      <button
-                        type="button"
-                        onClick={handleCancelSchedule}
-                        disabled={schedSaving}
-                        className={styles.cancelScheduleBtn}
-                      >
-                        Cancel schedule
-                      </button>
+                      <HoldButton size="sm" disabled={schedSaving} onConfirm={handleCancelSchedule}>
+                        Cancel Schedule
+                      </HoldButton>
                     )}
                   </div>
                 </div>

@@ -452,41 +452,28 @@
   color: var(--color-on-accent);
 }
 
-.cashInline {
-  width: 80px;
-  flex-shrink: 0;
-  border: none;
-  border-bottom: 1px solid var(--color-border);
-  background: none;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: var(--text-base);
-  color: var(--color-accent-ink);
-  text-align: right;
-  padding: 0 0 2px;
+/* Cash is the kit stepper, compact, in the row. A narrow row (a phone) puts it
+   on its own line under the label rather than squeezing the hint. */
+.cashPick {
+  flex-wrap: wrap;
 }
 
-.cashInline:focus { outline: none; border-bottom-color: var(--color-accent); }
-.cashInline::placeholder { color: var(--color-text-muted); font-weight: 400; }
+.cashStepper {
+  flex-shrink: 0;
+}
 
-.cashInline::-webkit-outer-spin-button,
-.cashInline::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.cashInline { -moz-appearance: textfield; appearance: textfield; }
+@media (max-width: 640px) {
+  .cashPick .cashStepper {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
 
 /* ── Recall clause ──────────────────────────────────────── */
 
 .recall {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--s2);
-  margin-top: var(--s3);
-  font-size: var(--t-12);
-  color: var(--color-text-secondary);
-  line-height: 1.45;
-  cursor: pointer;
+  margin-top: var(--s2);
 }
-
-.recall input { margin-top: 2px; }
 
 /* ── Message + errors ───────────────────────────────────── */
 
@@ -788,13 +775,6 @@
   border: 2px solid var(--color-text-primary);
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
   cursor: pointer;
-}
-
-.recallNote {
-  margin: 3px 0 0;
-  font-size: var(--t-10);
-  color: var(--color-text-muted);
-  line-height: 1.4;
 }
 
 /* ── Loan contract sheet ────────────────────────────────── */
@@ -1113,4 +1093,14 @@
     border-top: 1px solid var(--color-border-subtle);
     text-align: left;
   }
+}
+
+/* Phone footer, as the bid dialog's: summary and warnings on their own lines,
+   then Cancel and a primary that takes the row, both 48px. */
+@media (max-width: 640px) {
+  .summary,
+  .warn { flex-basis: 100%; }
+  .ghost,
+  .go { min-height: 48px; }
+  .go { flex: 1; font-size: var(--t-15); }
 }

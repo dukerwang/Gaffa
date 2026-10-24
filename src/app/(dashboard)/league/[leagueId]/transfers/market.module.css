@@ -115,12 +115,6 @@
   .sectMore:hover { color: var(--color-accent-hover); }
 }
 
-.empty {
-  font-size: var(--t-13);
-  color: var(--color-text-muted);
-  padding: var(--s5) 0;
-}
-
 /* ── Closing now ────────────────────────────────────────── */
 
 .closingGrid {

@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import NavigationLink from '@/components/ui/NavigationLink';
+import { Select, Tabs } from '@/components/ui';
 import CrestBadge from '@/components/crest/CrestBadge';
 import type { CrestConfig } from '@/components/crest/types';
 import type { Player, PlayerOwnership } from '@/types';
@@ -118,14 +119,6 @@ function CloseIcon() {
   );
 }
 
-function Chevron() {
-  return (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
 export default function PlayerDetailsModal(props: Props) {
   if (!props.player) return null;
   // Keyed on the player so switching subjects starts clean: tab, season, slot.
@@ -213,20 +206,7 @@ function PlayerCardShell({
   const effectiveSlot = ranks.some((r) => r.position === slot) || slot === primary ? slot : primary;
   const slotRank = ranks.find((r) => r.position === effectiveSlot)?.rank ?? null;
 
-  // ── Menu ──────────────────────────────────────────────────────────────────
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onDown = (e: PointerEvent) => {
-      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
-    };
-    document.addEventListener('pointerdown', onDown);
-    return () => document.removeEventListener('pointerdown', onDown);
-  }, [menuOpen]);
-
   const pickSeason = (s: string) => {
-    setMenuOpen(false);
     if (s === selected) return;
     setSeason(s === currentSeason ? null : s);
     loadSeason(s);
@@ -240,11 +220,8 @@ function PlayerCardShell({
     document.body.style.overflow = 'hidden';
     document.body.dataset.playerCardOpen = 'true';
     const onKey = (e: KeyboardEvent) => {
+      // An open season list catches its own Escape before it gets here.
       if (e.key !== 'Escape' || document.body.dataset.squadPeekOpen) return;
-      if (menuRef.current?.dataset.open === 'true') {
-        setMenuOpen(false);
-        return;
-      }
       onCloseRef.current();
     };
     document.addEventListener('keydown', onKey);
@@ -258,27 +235,6 @@ function PlayerCardShell({
   // A text drag that ends on the scrim must not close the card: both the press
   // and the click have to land on the scrim itself.
   const scrimDown = useRef(false);
-
-  // ── Tabs ink ──────────────────────────────────────────────────────────────
-  const tabsRef = useRef<HTMLDivElement>(null);
-  const inkRef = useRef<HTMLSpanElement>(null);
-  useLayoutEffect(() => {
-    const tabsEl = tabsRef.current;
-    const ink = inkRef.current;
-    if (!tabsEl || !ink) return;
-    const place = () => {
-      const active = tabsEl.querySelector<HTMLButtonElement>('[aria-selected="true"]');
-      if (!active) return;
-      ink.style.width = `${active.offsetWidth}px`;
-      ink.style.transform = `translateX(${active.offsetLeft}px)`;
-    };
-    place();
-    // The tabs resize when the season menu arrives beside them (after the log
-    // loads) and when the label font swaps in, so the ink follows.
-    const ro = new ResizeObserver(place);
-    ro.observe(tabsEl);
-    return () => ro.disconnect();
-  }, [tab, desktop]);
 
   // ── Phone: compact strip once the card has scrolled under the top ────────
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -357,70 +313,53 @@ function PlayerCardShell({
   );
 
   const tabs = (
-    <div className={styles.tabs} role="tablist" ref={tabsRef}>
-      <span className={styles.ink} ref={inkRef} aria-hidden="true" />
-      {(['stats', 'scout'] as const).map((t) => (
-        <button
-          key={t}
-          type="button"
-          role="tab"
-          className={styles.tab}
-          aria-selected={tab === t}
-          onClick={() => pickTab(t)}
-        >
-          {t === 'stats' ? 'Stats' : 'Scouting'}
-        </button>
-      ))}
-    </div>
+    <Tabs
+      ariaLabel="Player card"
+      idBase="player-card"
+      value={tab}
+      onChange={pickTab}
+      className={styles.tabs}
+      items={[
+        { value: 'stats', label: 'Stats' },
+        { value: 'scout', label: 'Scouting' },
+      ]}
+    />
   );
 
   const seasonMenu = options.length > 0 && selected && (
-    <div className={styles.seasonWrap} ref={menuRef} data-open={menuOpen ? 'true' : 'false'}>
-      <button
-        type="button"
-        className={styles.seasonBtn}
-        aria-haspopup="menu"
-        aria-expanded={menuOpen}
-        onClick={() => setMenuOpen((v) => !v)}
-      >
-        {seasonLabel(selected)}
-        <Chevron />
-      </button>
-      <div className={styles.menu} role="menu" aria-label="Season">
-        {options.map((s) => {
-          const on = s === selected;
-          const row = s === currentSeason ? null : currentBack?.history.find((h) => h.season === s);
-          const pts = s === currentSeason ? resolved.player.total_points : row?.total_points;
-          return (
-            <button
-              key={s}
-              type="button"
-              role="menuitemradio"
-              aria-checked={on}
-              className={styles.menuItem}
-              onPointerEnter={() => loadSeason(s)}
-              onFocus={() => loadSeason(s)}
-              onClick={() => {
-                pickSeason(s);
-                if (!desktop) keepTabsInView();
-              }}
-            >
-              <i aria-hidden="true">{on ? '✓' : ''}</i>
-              <b>{seasonLabel(s)}</b>
-              <em>
-                {pts != null ? `${Math.round(Number(pts))} pts` : ''}
-                {s === currentSeason ? '' : ' · Final'}
-              </em>
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <Select
+      size="sm"
+      ariaLabel="Season"
+      className={styles.season}
+      value={selected}
+      onChange={(s) => {
+        pickSeason(s);
+        if (!desktop) keepTabsInView();
+      }}
+      // A past season starts loading as soon as it's highlighted.
+      onActiveChange={loadSeason}
+      items={options.map((s) => {
+        const row = s === currentSeason ? null : currentBack?.history.find((h) => h.season === s);
+        const pts = s === currentSeason ? resolved.player.total_points : row?.total_points;
+        const final = s === currentSeason ? '' : ' · Final';
+        return {
+          value: s,
+          label: seasonLabel(s),
+          trailing: pts != null ? `${Math.round(Number(pts))} pts${final}` : final.slice(3) || undefined,
+        };
+      })}
+    />
   );
 
   const views = (
     <>
-      <div className={styles.view} hidden={tab !== 'stats'}>
+      <div
+        className={styles.view}
+        hidden={tab !== 'stats'}
+        role="tabpanel"
+        id="player-card-panel-stats"
+        aria-labelledby="player-card-tab-stats"
+      >
         <PlayerCardStats
           back={selectedBack}
           isCurrent={isCurrent}
@@ -432,7 +371,7 @@ function PlayerCardShell({
       {/* Mounted on first visit only: the Scouting route is never called for a
           card nobody turned to. */}
       {tab === 'scout' && (
-        <div className={styles.view}>
+        <div className={styles.view} role="tabpanel" id="player-card-panel-scout" aria-labelledby="player-card-tab-scout">
           <PlayerCardScouting playerId={player.id} leagueId={leagueId} season={selected} isCurrent={isCurrent} />
         </div>
       )}

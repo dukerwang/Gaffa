@@ -10,6 +10,10 @@ import FormArrow from '@/components/players/FormArrow';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { SPINE, POS_COLOR } from '@/lib/positions/spine';
 import { Icon } from '@/components/ui/Icon';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { Select } from '@/components/ui/Select';
+import { gaffaClubItem, plClubItem, plainItem } from '@/components/select/domainItems';
+import type { CrestConfig } from '@/components/crest/types';
 import { isPlayerMapped } from '@/lib/players/playerMapping';
 import { POS_FILTER_OPTIONS, resolveActivePosition, type PosFilter } from '@/lib/players/positionFilter';
 import styles from './stats.module.css';
@@ -37,6 +41,8 @@ interface Props {
     gt45: Record<string, Record<string, PositionStats>>;
   };
   isSiteAdmin?: boolean;
+  /** Each Gaffa club's crest, for the club filter. Absent on the public share pages. */
+  teamCrests?: Record<string, CrestConfig | null>;
 }
 
 type SortKey =
@@ -51,7 +57,7 @@ type SortKey =
 
 type SortDir = 'desc' | 'asc';
 
-export default function GlobalStatsTable({ leagueId, leagueName, players, season, shadowMaps, isSiteAdmin }: Props) {
+export default function GlobalStatsTable({ leagueId, leagueName, players, season, shadowMaps, isSiteAdmin, teamCrests = {} }: Props) {
   const { openPlayer, prefetchPlayer, primePlayers } = usePlayerCard();
   const [search, setSearch] = useState('');
   const [posFilter, setPosFilter] = useState<PosFilter>('ALL');
@@ -292,67 +298,55 @@ export default function GlobalStatsTable({ leagueId, leagueName, players, season
           onChange={(e) => setSearch(e.target.value)}
           aria-label="Search player"
         />
-        <select
-          className={styles.select}
+        <Select<PosFilter>
+          className={`${styles.filterSelect} ${styles.fPos}`}
+          ariaLabel="Position"
           value={posFilter}
-          onChange={(e) => setPosFilter(e.target.value as PosFilter)}
-          aria-label="Position"
-        >
-          {POS_FILTER_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <select
-          className={styles.select}
+          onChange={setPosFilter}
+          items={POS_FILTER_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+        />
+        <Select
+          className={`${styles.filterSelect} ${styles.fClub}`}
+          ariaLabel="Club"
           value={clubFilter}
-          onChange={(e) => setClubFilter(e.target.value)}
-          aria-label="Club"
-        >
-          <option value="ALL">All clubs</option>
-          {clubOptions.map((club) => (
-            <option key={club} value={club}>
-              {club}
-            </option>
-          ))}
-        </select>
-        <select
-          className={styles.select}
+          onChange={setClubFilter}
+          items={[plainItem('ALL', 'All clubs'), ...clubOptions.map((club) => plClubItem(club))]}
+        />
+        <Select
+          className={`${styles.filterSelect} ${styles.fTeam}`}
+          ariaLabel="Gaffa club"
           value={teamFilter}
-          onChange={(e) => setTeamFilter(e.target.value)}
-          aria-label="Gaffa club"
-        >
-          <option value="ALL">All Gaffa clubs</option>
-          <option value="FREE">Free agents</option>
-          {teamOptions.map(([id, name]) => (
-            <option key={id} value={id}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <select
-          className={styles.select}
+          onChange={setTeamFilter}
+          items={[
+            plainItem('ALL', 'All Gaffa clubs'),
+            plainItem('FREE', 'Free agents'),
+            ...teamOptions.map(([id, name]) => gaffaClubItem(id, name, teamCrests[id])),
+          ]}
+        />
+        <Select<'played' | 'all' | 'gt45'>
+          className={`${styles.filterSelect} ${styles.fMins}`}
+          ariaLabel="Minutes filter"
           value={minMins}
-          onChange={(e) => handleSetMinMins(e.target.value as 'played' | 'all' | 'gt45')}
-          aria-label="Minutes filter"
-        >
-          <option value="played">Played (&gt;0 mins)</option>
-          <option value="all">Meaningful (&ge;15 mins)</option>
-          <option value="gt45">Starters (&gt;45 mins)</option>
-        </select>
+          onChange={handleSetMinMins}
+          items={[
+            { value: 'played', label: 'Played (>0 mins)' },
+            { value: 'all', label: 'Meaningful (≥15 mins)' },
+            { value: 'gt45', label: 'Starters (>45 mins)' },
+          ]}
+        />
 
         {isSiteAdmin && (
-          <select
-            className={styles.select}
+          <Select<'all' | 'synced' | 'unsynced'>
+            className={`${styles.filterSelect} ${styles.fSync}`}
+            ariaLabel="Sync status"
             value={syncFilter}
-            onChange={(e) => setSyncFilter(e.target.value as 'all' | 'synced' | 'unsynced')}
-            aria-label="Sync status"
-          >
-            <option value="all">Sync: All players</option>
-            <option value="synced">Sync: Synced only</option>
-            <option value="unsynced">Sync: Unsynced only</option>
-          </select>
+            onChange={setSyncFilter}
+            items={[
+              { value: 'all', label: 'Sync: All players' },
+              { value: 'synced', label: 'Sync: Synced only' },
+              { value: 'unsynced', label: 'Sync: Unsynced only' },
+            ]}
+          />
         )}
 
         <div className={styles.slider}>
@@ -369,19 +363,17 @@ export default function GlobalStatsTable({ leagueId, leagueName, players, season
           <span className={styles.sliderValue}>{minGames}</span>
         </div>
 
-        <div className={styles.segmented} role="group" aria-label="Which positions count">
-          {(['primary', 'secondary', 'both'] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={`${styles.segment} ${posType === t ? styles.segmentOn : ''}`}
-              aria-pressed={posType === t}
-              onClick={() => handleSetPosType(t)}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl<'primary' | 'secondary' | 'both'>
+          variant="ink"
+          ariaLabel="Which positions count"
+          value={posType}
+          onChange={handleSetPosType}
+          options={[
+            { value: 'primary', label: 'Primary' },
+            { value: 'secondary', label: 'Secondary' },
+            { value: 'both', label: 'Both' },
+          ]}
+        />
       </div>
 
       <div className={styles.tableWrap}>

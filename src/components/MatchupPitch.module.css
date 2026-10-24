@@ -526,6 +526,9 @@
    Filled, because the badge sits on a green pitch where a tinted outline reads
    as noise at 11px. White text on all four so the ramp is legible in both
    themes without a second set of tokens. */
+.ptsRarest,
+.ptsRarer,
+.ptsRare,
 .ptsElite,
 .ptsGood,
 .ptsFair,
@@ -534,6 +537,9 @@
     color: #fff;
     border-color: transparent;
 }
+.ptsRarest   { background: #143577; }   /* >= 43.02 — display >= 9.4 */
+.ptsRarer    { background: #1F4FA8; }   /* >= 39.76 — display >= 9.2 */
+.ptsRare     { background: #3F72CE; }   /* >= 36.58 — display >= 9.0, the lightest of the feat blues */
 .ptsElite    { background: #2D6A4F; }   /* >= 29   — display >= 8.5, a return that decides a week */
 .ptsGood     { background: #387D53; }   /* >= 15.8 — display >= 7.5 */
 .ptsFair     { background: #8C6C00; }   /* >= 5.6  — display >= 6.5 */

@@ -341,18 +341,14 @@
 
 .photoPlaceholder {
   position: absolute;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  width: 120px;
-  height: 160px;
+  inset: 0;
+  z-index: 2;
   display: grid;
   place-items: center;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
   font-family: var(--font-serif);
-  font-size: 60px;
+  font-size: 72px;
   font-weight: 700;
+  letter-spacing: 0.02em;
   color: rgba(255, 255, 255, 0.8);
   opacity: 1;
   transition: opacity 180ms ease-out;
