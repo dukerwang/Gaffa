@@ -4,8 +4,9 @@
  * Single source of truth for the current FPL/fantasy season string.
  *
  * The season string format is "YYYY-YY" (e.g. "2025-26", "2026-27").
- * It is derived exclusively from the FPL bootstrap-static API — never
- * hardcoded — so season transitions happen automatically when FPL's data
+ * It is derived exclusively from the FPL bootstrap-static API, through the
+ * slim cached copy in src/lib/fpl/bootstrapSlim.ts. It is never hardcoded, so
+ * season transitions happen automatically when FPL's data
  * switches over (mid-June each year).
  *
  * Usage:
@@ -18,6 +19,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
 
 // ── Module-level cache (lives for the duration of one serverless invocation) ──
 let _cachedFplSeason: string | null = null;
@@ -49,14 +51,7 @@ export async function getCurrentFplSeason(fallback?: string, useRawSeason = fals
   const dynamicFallback = fallback ?? `${startYear}-${String(startYear + 1).slice(2)}`;
 
   try {
-    const res = await fetch(
-      'https://fantasy.premierleague.com/api/bootstrap-static/',
-      { next: { revalidate: 3600 } },
-    );
-    if (!res.ok) return dynamicFallback;
-
-    const data = await res.json();
-    const events = (data.events ?? []) as { id: number; deadline_time: string; finished?: boolean }[];
+    const { events } = await getBootstrapSlim();
 
     // GW1 has the earliest deadline — its year determines the season
     const gw1 = events.find((e) => e.id === 1);
@@ -89,10 +84,8 @@ export async function getCurrentFplSeason(fallback?: string, useRawSeason = fals
  * Module-cached for the life of the invocation, like `getCurrentFplSeason`
  * above. Both are called by `resolveCardSeason`, which runs on every player-card
  * request — and this one was the only season helper without a cache, so it
- * re-fetched and re-parsed the ~1MB bootstrap payload every time. Next's Data
- * Cache spares the network but not the `JSON.parse`, and its key includes
- * headers, so this call and the one in cardData.ts (which sends a User-Agent)
- * do not even share an entry.
+ * re-fetched and re-parsed the bootstrap payload every time. That payload is
+ * now past the Data Cache's 2MB limit, so both helpers read the slim copy.
  *
  * The answer moves exactly once a season, so a per-invocation cache is free.
  */
@@ -101,17 +94,10 @@ let _cachedKickedOff: boolean | null = null;
 export async function isFplSeasonKickedOff(): Promise<boolean> {
   if (_cachedKickedOff !== null) return _cachedKickedOff;
   try {
-    const res = await fetch(
-      'https://fantasy.premierleague.com/api/bootstrap-static/',
-      { next: { revalidate: 3600 } },
-    );
-    // A failed fetch answers false but is NOT cached — that would pin a
-    // transient outage for the rest of the invocation. Only an answer actually
-    // read off the payload is worth keeping.
-    if (!res.ok) return false;
-
-    const data = await res.json();
-    const events = (data.events ?? []) as { id: number; deadline_time: string; finished?: boolean }[];
+    // A failed read answers false but is NOT cached (it throws into the catch
+    // below): that would pin a transient outage for the rest of the invocation.
+    // Only an answer actually read off the payload is worth keeping.
+    const { events } = await getBootstrapSlim();
 
     // If the retrieved season has already finished (GW38 completed), we are in the offseason preparing for the next season
     const lastEvent = events[events.length - 1];

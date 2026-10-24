@@ -167,7 +167,7 @@ describe('the IR gate', () => {
     });
     const res = await propose(deal());
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/healthy player occupying an IR slot/);
+    expect(res.body.error).toMatch(/healthy player is on IR/);
   });
 
   it('allows it when the player on IR is injured', async () => {
@@ -203,10 +203,10 @@ describe('who is actually tradeable', () => {
 
   it('refuses a player who is out on loan on either side', async () => {
     setup((t) => { t.roster_entries.find((e) => e.player_id === MINE)!.status = 'loan_out'; });
-    expect((await propose(deal())).body.error).toMatch(/offered players are currently out on loan/);
+    expect((await propose(deal())).body.error).toMatch(/offered players are out on loan/);
 
     setup((t) => { t.roster_entries.find((e) => e.player_id === THEIRS)!.status = 'loan_in'; });
-    expect((await propose(deal())).body.error).toMatch(/requested players are currently out on loan/);
+    expect((await propose(deal())).body.error).toMatch(/requested players are out on loan/);
   });
 
   it('refuses any player whose auction is live, and names him', async () => {

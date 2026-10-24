@@ -127,18 +127,17 @@ export function AboutGaffa() {
         </span>
       </div>
       <p className={styles.aboutP}>
-        There are twelve tactical roles, and every player is rated against the median for <b>his own</b>. A
-        full-back is judged as a full-back, so one who overlaps and keeps a clean sheet can outscore a striker who
-        scores once and does little else.
+        The most realistic fantasy football game. Players score the way their match went, you buy and sell in a
+        market tied to real Premier League transfers, and you play for four trophies every season.
       </p>
       <div className={styles.aboutFacts}>
         <div className={styles.fact}>
-          <div className={styles.factT}>Dynasty Squads</div>
-          <div className={styles.factD}>One draft, ever. You keep your squad season to season.</div>
+          <div className={styles.factT}>Transfer Wire</div>
+          <div className={styles.factD}>A real signing worth €50m or more goes to auction, and you earn compensation when a player leaves the league.</div>
         </div>
         <div className={styles.fact}>
-          <div className={styles.factT}>Transfer Market</div>
-          <div className={styles.factD}>Auctions, loans, and trades, paid from your Club Balance.</div>
+          <div className={styles.factT}>Four Trophies</div>
+          <div className={styles.factD}>The league title, plus the Champions, League, and Consolation Cups.</div>
         </div>
       </div>
       <NavigationLink href="/guide" className={styles.aboutBtn}>

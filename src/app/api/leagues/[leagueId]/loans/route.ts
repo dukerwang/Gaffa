@@ -1,3 +1,4 @@
+import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -243,17 +244,11 @@ export async function POST(req: NextRequest, { params }: Props) {
   // 5. Fetch current FPL GW to enforce season timing (loans blocked in final 8 GWs)
   let currentFplGw = 0;
   try {
-    const fplRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', {
-      headers: { 'User-Agent': 'FantasyFutbol/1.0' },
-      next: { revalidate: 3600 },
-    });
-    if (fplRes.ok) {
-      const fplData = await fplRes.json();
-      const now = new Date();
-      for (const ev of fplData.events as any[]) {
-        if (ev.deadline_time && new Date(ev.deadline_time) <= now) {
-          currentFplGw = Math.max(currentFplGw, ev.id);
-        }
+    const fplData = await getBootstrapSlim();
+    const now = new Date();
+    for (const ev of fplData.events) {
+      if (ev.deadline_time && new Date(ev.deadline_time) <= now) {
+        currentFplGw = Math.max(currentFplGw, ev.id);
       }
     }
   } catch (err) {
@@ -380,7 +375,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
     if (loanFee === 0 && bonusCap === 0) {
       return NextResponse.json({
-        error: 'A performance bonus clause on a €0-fee loan is invalid because the bonus cap is calculated as 3x the loan fee (€0). Please set a loan fee of at least €1m or ask the commissioner to configure a default flat cap.'
+        error: 'A performance bonus clause on a €0-fee loan is invalid because the bonus cap is calculated as 3x the loan fee (€0). Set a loan fee of at least €1m or ask the commissioner to configure a default flat cap.'
       }, { status: 400 });
     }
   }

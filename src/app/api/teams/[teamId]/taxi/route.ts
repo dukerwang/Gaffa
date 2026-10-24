@@ -92,7 +92,7 @@ export async function POST(req: NextRequest, { params }: Props) {
             return NextResponse.json({ error: 'Both players are already in the academy' }, { status: 400 });
         }
         if (outgoingEntry.status !== 'taxi') {
-            return NextResponse.json({ error: 'Target player is not currently in the academy' }, { status: 400 });
+            return NextResponse.json({ error: 'Target player isn’t in the academy' }, { status: 400 });
         }
         if (incomingEntry.status === 'ir') {
             return NextResponse.json({ error: 'Player is on IR. Activate them first before moving to the academy.' }, { status: 400 });
@@ -289,7 +289,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
     if (action === 'activate') {
         if (entry.status !== 'taxi') {
-            return NextResponse.json({ error: 'Player is not currently in the academy' }, { status: 400 });
+            return NextResponse.json({ error: 'Player isn’t in the academy' }, { status: 400 });
         }
         // Held players (R7): promoting from the academy is an addition.
         if (await isHolding(admin, teamId)) {

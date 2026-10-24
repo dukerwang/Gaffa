@@ -397,8 +397,11 @@ function PlayerCardShell({
         )}
       </span>
       {leagueId && (
+        // No prefetch: the link is on screen for every card opened, so prefetching
+        // rendered the profile page on the server for every open, followed or not.
         <NavigationLink
           href={`/league/${leagueId}/players/${player.id}`}
+          prefetch={false}
           onClick={onClose}
           className={styles.ghost}
         >
@@ -410,6 +413,7 @@ function PlayerCardShell({
       {leagueId && owner && myTeamId && owner.teamId !== myTeamId && !onPick && !onNominate && (
         <NavigationLink
           href={`/league/${leagueId}/transfers/deals?proposeTeam=${owner.teamId}&proposePlayer=${player.id}`}
+          prefetch={false}
           onClick={onClose}
           className={styles.primary}
         >

@@ -84,13 +84,6 @@ export interface RatedPlayer {
   photoVersion: string | null;
 }
 
-export interface RoleRatingPair {
-  gameweek: number;
-  total: number;
-  keeper: RatedPlayer & { rank: number };
-  striker: RatedPlayer & { rank: number };
-}
-
 export interface FixtureRow {
   id: number;
   homeName: string;
@@ -114,15 +107,16 @@ export interface DashboardModel {
     matchweek: { gameweek: number; players: RatedPlayer[] } | null;
     season: RatedPlayer[];
   };
-  roleRatings: RoleRatingPair | null;
-  fixtures: {
-    rows: FixtureRow[];
-    finished: number;
-    live: number;
-    toCome: number;
-    firstKickoff: string | null;
-    lastKickoff: string | null;
-  };
+  fixtures: FixturesModel;
+}
+
+export interface FixturesModel {
+  rows: FixtureRow[];
+  finished: number;
+  live: number;
+  toCome: number;
+  firstKickoff: string | null;
+  lastKickoff: string | null;
 }
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -221,18 +215,7 @@ export async function buildDashboardModel(
 
   // ── Fixtures ──────────────────────────────────────────────
   const resolvedFixtures = await fixtures;
-  const rows: FixtureRow[] = resolvedFixtures.map(toFixtureRow);
-  const order = { live: 0, finished: 1, upcoming: 2 } as const;
-  rows.sort((a, b) => order[a.state] - order[b.state]);
-  const dated = resolvedFixtures.map((f) => f.kickoff).filter((k): k is string => !!k).sort();
-  const fixturesModel = {
-    rows,
-    finished: rows.filter((r) => r.state === 'finished').length,
-    live: rows.filter((r) => r.state === 'live').length,
-    toCome: rows.filter((r) => r.state === 'upcoming').length,
-    firstKickoff: dated[0] ?? null,
-    lastKickoff: dated[dated.length - 1] ?? null,
-  };
+  const fixturesModel = buildFixturesModel(resolvedFixtures);
 
   // ── League cards ──────────────────────────────────────────
   const memberCount = new Map<string, number>();
@@ -458,15 +441,6 @@ export async function buildDashboardModel(
     offseason: cards.filter((c) => c.kind === 'offseason').length,
   };
 
-  // ── Role ratings (first run only) ─────────────────────────
-  // The product argument made with real players: the best goalkeeper of the
-  // last settled gameweek, beside the best striker he finished above.
-  let roleRatings: RoleRatingPair | null = null;
-  const settledGw = fpl.isFinished && !fpl.isLive ? fpl.currentGw : fpl.currentGw - 1;
-  if (cards.length === 0 && settledGw >= 1) {
-    roleRatings = await findRolePair(admin, season, settledGw);
-  }
-
   return {
     gameweek: fpl.displayGw,
     isLive: fpl.isLive,
@@ -474,7 +448,6 @@ export async function buildDashboardModel(
     cards,
     counts,
     topRated,
-    roleRatings,
     fixtures: fixturesModel,
   };
 }
@@ -553,64 +526,18 @@ async function loadTopRatedPlayers(
   return getCachedTopRatedPlayers(season, ratedGw);
 }
 
-async function fetchRolePair(admin: AdminClient, season: string, gameweek: number): Promise<RoleRatingPair | null> {
-  const bestAt = (position: string, maxRating?: number) => {
-    let q = admin
-      .from('player_stats')
-      .select(`match_rating, player:players!player_id!inner(${PLAYER_FIELDS})`)
-      .eq('season', season)
-      .eq('gameweek', gameweek)
-      .gt('match_rating', 0)
-      .eq('player.primary_position', position);
-    if (maxRating !== undefined) q = q.lt('match_rating', maxRating);
-    return q.order('match_rating', { ascending: false }).limit(1).maybeSingle();
-  };
-  const rankOf = async (rating: number) => {
-    const { count } = await admin
-      .from('player_stats')
-      .select('id', { count: 'exact', head: true })
-      .eq('season', season)
-      .eq('gameweek', gameweek)
-      .gt('match_rating', rating);
-    return (count ?? 0) + 1;
-  };
-
-  const { data: gk } = await bestAt('GK');
-  if (!gk) return null;
-  const { data: st } = await bestAt('ST', Number(gk.match_rating));
-  if (!st) return null;
-
-  const [{ count: total }, gkRank, stRank] = await Promise.all([
-    admin
-      .from('player_stats')
-      .select('id', { count: 'exact', head: true })
-      .eq('season', season)
-      .eq('gameweek', gameweek)
-      .gt('match_rating', 0),
-    rankOf(Number(gk.match_rating)),
-    rankOf(Number(st.match_rating)),
-  ]);
-
+/** This week's Premier League fixtures, live first, as the dashboard and the public home draw them. */
+export function buildFixturesModel(fixtures: GwFixture[]): FixturesModel {
+  const rows: FixtureRow[] = fixtures.map(toFixtureRow);
+  const order = { live: 0, finished: 1, upcoming: 2 } as const;
+  rows.sort((a, b) => order[a.state] - order[b.state]);
+  const dated = fixtures.map((f) => f.kickoff).filter((k): k is string => !!k).sort();
   return {
-    gameweek,
-    total: total ?? 0,
-    keeper: { ...toRated(one((gk as any).player), gk.match_rating), rank: gkRank },
-    striker: { ...toRated(one((st as any).player), st.match_rating), rank: stRank },
+    rows,
+    finished: rows.filter((r) => r.state === 'finished').length,
+    live: rows.filter((r) => r.state === 'live').length,
+    toCome: rows.filter((r) => r.state === 'upcoming').length,
+    firstKickoff: dated[0] ?? null,
+    lastKickoff: dated[dated.length - 1] ?? null,
   };
-}
-
-const getCachedRolePair = unstable_cache(
-  async (season: string, gameweek: number) => {
-    const admin = createAdminClient();
-    return fetchRolePair(admin, season, gameweek);
-  },
-  ['dashboard-role-pair'],
-  { revalidate: 300 },
-);
-
-async function findRolePair(admin: AdminClient, season: string, gameweek: number): Promise<RoleRatingPair | null> {
-  if (process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST)) {
-    return fetchRolePair(admin, season, gameweek);
-  }
-  return getCachedRolePair(season, gameweek);
 }

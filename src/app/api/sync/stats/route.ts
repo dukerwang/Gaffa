@@ -65,7 +65,7 @@ interface GameweekWindow {
  */
 async function getCurrentGameweekWindow(): Promise<GameweekWindow> {
     const res = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', {
-        next: { revalidate: 0 } // Always fresh — stale response picks wrong GW
+        cache: 'no-store' // Always fresh — stale response picks wrong GW
     });
     const data = await res.json();
     const now = new Date();
@@ -86,7 +86,7 @@ async function getCurrentGameweekWindow(): Promise<GameweekWindow> {
 async function isEventFinished(gw: number): Promise<boolean> {
     const res = await fetch(`${FPL_BASE}/bootstrap-static/`, {
         headers: { 'User-Agent': 'FantasyFutbol/1.0' },
-        next: { revalidate: 0 },
+        cache: 'no-store',
     });
     if (!res.ok) return false;
     const data = await res.json();
@@ -498,7 +498,7 @@ async function syncFplLiveRatings(
 async function syncFplForm(): Promise<NextResponse> {
   const fplRes = await fetch(`${FPL_BASE}/bootstrap-static/`, {
     headers: { 'User-Agent': 'FantasyFutbol/1.0' },
-    next: { revalidate: 0 },
+    cache: 'no-store',
   });
 
   if (!fplRes.ok) {

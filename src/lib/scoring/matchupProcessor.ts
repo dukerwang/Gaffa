@@ -547,7 +547,7 @@ export async function resolveAllStalledGameweeks(): Promise<{
 
         // 2. Fetch FPL bootstrap once — covers every stalled GW's `finished` flag
         const bsRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', {
-            next: { revalidate: 0 },
+            cache: 'no-store',
             headers: { 'User-Agent': 'FantasyFutbol/1.0' },
         });
 

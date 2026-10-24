@@ -260,8 +260,8 @@ export default function InboxClient({ leagueId, leagueName }: InboxClientProps) 
       ) : (
         <EmptyState title={filter === 'unread' ? 'No Unread Alerts' : 'Inbox Is Empty'}>
           {filter === 'unread'
-            ? 'You have catch up on all events! Switch back to "All Alerts" to review historical ledger logs.'
-            : 'There are no active notifications for your manager profile in this league yet.'}
+            ? 'You’re all caught up. Switch to All Alerts to see earlier events.'
+            : 'You have no notifications in this league yet.'}
         </EmptyState>
       )}
     </div>

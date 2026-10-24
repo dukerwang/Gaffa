@@ -1,3 +1,5 @@
+import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
+
 /**
  * Which Premier League clubs are "locked" right now — i.e. have already kicked
  * off in the current gameweek.
@@ -21,7 +23,6 @@
  * the same request, and never stored.
  */
 
-const FPL_BOOTSTRAP = 'https://fantasy.premierleague.com/api/bootstrap-static/';
 const FPL_FIXTURES = 'https://fantasy.premierleague.com/api/fixtures/';
 
 export interface LockedClubs {
@@ -34,24 +35,19 @@ export async function getLockedPlTeamIds(): Promise<LockedClubs> {
   let currentGw = 0;
 
   try {
-    const res = await fetch(FPL_BOOTSTRAP, {
-      headers: { 'User-Agent': 'FantasyFutbol/1.0' },
-      next: { revalidate: 300 },
-    });
-    if (!res.ok) return { lockedPlTeamIds: [], currentGameweek: 0 };
+    const data = await getBootstrapSlim();
 
-    const data = await res.json();
     const now = new Date();
     let finished = false;
 
     // Current GW = the highest whose deadline has passed.
-    for (const ev of data.events as { id: number; deadline_time: string | null; finished: boolean }[]) {
+    for (const ev of data.events) {
       if (!ev.deadline_time || new Date(ev.deadline_time) > now) continue;
       if (ev.id > currentGw) {
         currentGw = ev.id;
-        finished = ev.finished;
+        finished = !!ev.finished;
       } else if (ev.id === currentGw) {
-        finished = ev.finished;
+        finished = !!ev.finished;
       }
     }
 

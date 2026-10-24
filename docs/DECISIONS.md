@@ -612,6 +612,60 @@ import are gone.
 > grotesk? i literally picked a font".
 
 ---
+
+## 2026-09-29 — Gaffa's pitch, and a public front page
+
+**The pitch is realism, on three pillars.** Asked what Gaffa's pitch is, after
+saying agent-written copy pitched it badly by describing mechanics:
+> "i feel like you can pitch it as the most "realistic" fantasy football game at
+> least. scores that match what you watched is part of that "realism". making
+> the fantasy scoring exactly match the consensus opinion of a single
+> performance, and also a collective & accurate assessment of a player's
+> overall performance, is the ultimate "fantasy" of any fantasy sports game,
+> and thats exactly what the vision of gaffa is. the coolest things in gaffa in
+> my opinion are the unique transfers system, which is also directly correlated
+> to how the game handles real life transfers in and out of the premier league,
+> the scoring system (already covered), and the cups system (multiple trophies)."
+
+Gaffa is not the first data-driven fantasy football game (Sorare, Kickbase,
+Comunio and Fantrax predate it), so the copy never claims "first".
+
+**No login screen at the front door.** Visitors see a public dashboard that
+advertises Gaffa; managers with leagues keep their dashboard, with the About
+Gaffa block rewritten but kept light. Chosen 2026-09-29.
+
+**The headline is provisional.** On "The Most Realistic Fantasy Football Game"
+(2026-10-02):
+> "i'm hoping there's a better way of titling/marketing "the most realistic
+> fantasy football game", but it's good enough to implement where we can change
+> it along the way or later"
+
+**Show elite players.** On the prototype using Tarkowski as the example
+centre-back (2026-10-02):
+> "instead of tarkowski, you should give examples of elite cb's like saliba."
+
+## 2026-10-08 — Front page examples are fixed
+
+**One example per feature, with players people recognise.** On the front page
+picking from the latest matchweeks:
+> "when you're introducing/marketing features you need to just stick to one
+> example, real life example is good too, and use prominent players that people
+> will recognize instead of lesser known ones to get your point across."
+
+The examples are pinned by player id in `EXAMPLES` in
+`src/lib/publicHome/loadShowcase.ts`.
+
+## 2026-10-12 — Brand first on the front page
+
+**Say "most realistic" without saying it, and lead with Gaffa.**
+> "my main request is to "say" the "most realistic fantasy football game"
+> without actually saying it. because the gaffa brand should be first but
+> instead it's just a thing in the top left, make it more prominent."
+
+The hero now opens on the crest-and-name wordmark at display size, followed by
+"Fantasy football, played like the real thing." That line is an agent's
+wording, not Duke's.
+
 ## 2026-10-23 — Kit adoption: hold to confirm, ink switchers
 
 Chosen from prototypes on `/kit`, after the Top Rated head took the ink

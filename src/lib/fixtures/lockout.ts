@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getCurrentFplSeason } from '@/lib/season/currentSeason';
 import { resolveClub, slugMapFromBootstrapTeams } from '@/lib/clubs/registry';
+import { getBootstrapSlim, type FplBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
 
 const FPL_BASE = 'https://fantasy.premierleague.com/api';
 const USER_AGENT = 'FantasyFutbol/1.0';
@@ -44,13 +45,14 @@ export async function getLockedPlTeamIds(
 
             if (lockedSlugs.size === 0) return lockedPlTeamIds;
 
-            const bootRes = await fetch(`${FPL_BASE}/bootstrap-static/`, {
-                headers: { 'User-Agent': USER_AGENT },
-                next: { revalidate: 3600 },
-            });
-            if (bootRes.ok) {
-                const boot = await bootRes.json();
-                for (const [fplId, slug] of slugMapFromBootstrapTeams(boot.teams ?? [])) {
+            let boot: FplBootstrapSlim | null = null;
+            try {
+                boot = await getBootstrapSlim();
+            } catch (bootErr) {
+                console.error('[lockout] Failed to fetch FPL bootstrap:', bootErr);
+            }
+            if (boot) {
+                for (const [fplId, slug] of slugMapFromBootstrapTeams(boot.teams)) {
                     if (lockedSlugs.has(slug)) lockedPlTeamIds.add(fplId);
                 }
                 return lockedPlTeamIds;

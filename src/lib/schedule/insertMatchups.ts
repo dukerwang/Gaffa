@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
 import { buildSchedule } from './generator';
 
 interface InsertMatchupsResult {
@@ -71,15 +72,7 @@ export async function insertMatchups(
  */
 async function getStartGw(): Promise<number> {
   try {
-    const res = await fetch(
-      'https://fantasy.premierleague.com/api/bootstrap-static/',
-      { next: { revalidate: 300 } },
-    );
-    if (!res.ok) return 1;
-
-    const data = await res.json();
-    const events: Array<{ id: number; is_current: boolean; finished: boolean }> =
-      data.events ?? [];
+    const { events } = await getBootstrapSlim();
 
     if (events.length === 0) return 1;
 

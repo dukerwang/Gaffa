@@ -1,3 +1,4 @@
+import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -74,36 +75,33 @@ export async function POST(req: NextRequest, { params }: Props) {
   // 7. Lock check: cannot recall during an active gameweek (recheck if any matches have kicked off for the current GW)
   let isPlayerLocked = false;
   try {
-    const fplRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', { next: { revalidate: 60 } });
-    if (fplRes.ok) {
-      const fplData = await fplRes.json();
-      const now = new Date();
-      let currentGw = 0;
-      let isCurrentGwFinished = false;
-      for (const ev of fplData.events as any[]) {
-        if (ev.deadline_time && new Date(ev.deadline_time) <= now) {
-          if (ev.id > currentGw) {
-            currentGw = ev.id;
-            isCurrentGwFinished = !!ev.finished;
-          }
+    const fplData = await getBootstrapSlim();
+    const now = new Date();
+    let currentGw = 0;
+    let isCurrentGwFinished = false;
+    for (const ev of fplData.events) {
+      if (ev.deadline_time && new Date(ev.deadline_time) <= now) {
+        if (ev.id > currentGw) {
+          currentGw = ev.id;
+          isCurrentGwFinished = !!ev.finished;
         }
       }
+    }
 
-      if (currentGw && !isCurrentGwFinished) {
-        const fixRes = await fetch(`https://fantasy.premierleague.com/api/fixtures/?event=${currentGw}`, { next: { revalidate: 60 } });
-        if (fixRes.ok) {
-          const fixtures = await fixRes.json();
-          const lockedPlTeamIds = new Set<number>();
-          for (const f of fixtures) {
-            if (f.kickoff_time && new Date(f.kickoff_time) <= now) {
-              lockedPlTeamIds.add(f.team_h);
-              lockedPlTeamIds.add(f.team_a);
-            }
+    if (currentGw && !isCurrentGwFinished) {
+      const fixRes = await fetch(`https://fantasy.premierleague.com/api/fixtures/?event=${currentGw}`, { next: { revalidate: 60 } });
+      if (fixRes.ok) {
+        const fixtures = await fixRes.json();
+        const lockedPlTeamIds = new Set<number>();
+        for (const f of fixtures) {
+          if (f.kickoff_time && new Date(f.kickoff_time) <= now) {
+            lockedPlTeamIds.add(f.team_h);
+            lockedPlTeamIds.add(f.team_a);
           }
+        }
 
-          if (lockedPlTeamIds.size > 0 && player.pl_team_id && lockedPlTeamIds.has(player.pl_team_id)) {
-            isPlayerLocked = true;
-          }
+        if (lockedPlTeamIds.size > 0 && player.pl_team_id && lockedPlTeamIds.has(player.pl_team_id)) {
+          isPlayerLocked = true;
         }
       }
     }

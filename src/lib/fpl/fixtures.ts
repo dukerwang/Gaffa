@@ -1,11 +1,5 @@
 import { clubByFplCode } from '@/lib/clubs/registry';
-
-interface FplTeamRaw {
-  id: number;
-  code: number;
-  name: string;
-  short_name: string;
-}
+import { getBootstrapSlim, type FplTeamSlim } from '@/lib/fpl/bootstrapSlim';
 
 interface FplFixtureRaw {
   id: number;
@@ -38,8 +32,8 @@ export interface GwFixture {
   minutes: number;
 }
 
-function toGwFixtures(teams: FplTeamRaw[], rawFixtures: FplFixtureRaw[]): GwFixture[] {
-  const teamsById = new Map<number, FplTeamRaw>(teams.map((t) => [t.id, t]));
+function toGwFixtures(teams: FplTeamSlim[], rawFixtures: FplFixtureRaw[]): GwFixture[] {
+  const teamsById = new Map<number, FplTeamSlim>(teams.map((t) => [t.id, t]));
   const badgeFor = (teamId: number): string | null => {
     const team = teamsById.get(teamId);
     const club = team ? clubByFplCode(team.code) : null;
@@ -79,15 +73,16 @@ function toGwFixtures(teams: FplTeamRaw[], rawFixtures: FplFixtureRaw[]): GwFixt
  */
 export async function getGameweekFixtures(gameweek: number, limit?: number): Promise<GwFixture[]> {
   try {
-    const [bootstrapRes, fixturesRes] = await Promise.all([
-      fetch('https://fantasy.premierleague.com/api/bootstrap-static/', { next: { revalidate: 300 } }),
+    // FPL team ids are seasonal: both reads are of the live season, so the
+    // ids in one line up with the other.
+    const [bootstrap, fixturesRes] = await Promise.all([
+      getBootstrapSlim(),
       fetch(`https://fantasy.premierleague.com/api/fixtures/?event=${gameweek}`, { next: { revalidate: 60 } }),
     ]);
 
-    if (!bootstrapRes.ok || !fixturesRes.ok) return [];
+    if (!fixturesRes.ok) return [];
 
-    const bootstrap = await bootstrapRes.json();
-    const fixtures = toGwFixtures(bootstrap.teams ?? [], (await fixturesRes.json()) as FplFixtureRaw[]);
+    const fixtures = toGwFixtures(bootstrap.teams, (await fixturesRes.json()) as FplFixtureRaw[]);
     return limit ? fixtures.slice(0, limit) : fixtures;
   } catch (error) {
     console.error('Error fetching gameweek fixtures:', error);
@@ -104,16 +99,16 @@ export async function getGameweekFixtures(gameweek: number, limit?: number): Pro
 export async function getSeasonFixtures(): Promise<Map<number, GwFixture[]>> {
   const byWeek = new Map<number, GwFixture[]>();
   try {
-    const [bootstrapRes, fixturesRes] = await Promise.all([
-      fetch('https://fantasy.premierleague.com/api/bootstrap-static/', { next: { revalidate: 300 } }),
+    // The slim bootstrap, not the 600-player payload: only team names and codes are read.
+    const [bootstrap, fixturesRes] = await Promise.all([
+      getBootstrapSlim(),
       fetch('https://fantasy.premierleague.com/api/fixtures/', { next: { revalidate: 60 } }),
     ]);
-    if (!bootstrapRes.ok || !fixturesRes.ok) return byWeek;
+    if (!fixturesRes.ok) return byWeek;
 
-    const bootstrap = await bootstrapRes.json();
     const raw = ((await fixturesRes.json()) as FplFixtureRaw[]).filter((f) => f.event);
     const weekOf = new Map(raw.map((f) => [f.id, f.event as number]));
-    for (const fx of toGwFixtures(bootstrap.teams ?? [], raw)) {
+    for (const fx of toGwFixtures(bootstrap.teams, raw)) {
       const gw = weekOf.get(fx.id)!;
       const list = byWeek.get(gw);
       if (list) list.push(fx);

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   try {
     const fplRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', {
       headers: { 'User-Agent': 'FantasyFutbol/1.0' },
-      next: { revalidate: 3600 },
+      cache: 'no-store',
     });
     if (fplRes.ok) {
       const fplData = await fplRes.json();

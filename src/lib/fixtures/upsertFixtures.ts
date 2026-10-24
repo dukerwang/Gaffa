@@ -100,9 +100,13 @@ export async function snapshotCurrentFplFixtures(
 
     const [fixRes, bootRes] = await Promise.all([
         fetch(url, { headers: { 'User-Agent': USER_AGENT }, next: { revalidate: 0 } }),
+        // Never the slim cache: its team list can trail a summer rollover by a
+        // few minutes, and these rows are durable. The seasonal ids in
+        // `fixtures` must be read against the team list fetched with them.
+        // no-store because the full payload is over the Data Cache's 2MB limit.
         fetch(`${FPL_BASE}/bootstrap-static/`, {
             headers: { 'User-Agent': USER_AGENT },
-            next: { revalidate: 3600 },
+            cache: 'no-store',
         }),
     ]);
 

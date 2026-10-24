@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -7,13 +8,18 @@ import { getCurrentFplSeason } from '@/lib/season/currentSeason';
 import { buildDashboardModel } from '@/lib/dashboard/buildDashboardModel';
 import LeagueCard from './LeagueCard';
 import TopRated from './TopRated';
-import FirstRun from './FirstRun';
+import { loadShowcase } from '@/lib/publicHome/loadShowcase';
+import PublicHome from '@/components/home/PublicHome';
 import { toFixtureRow } from '@/lib/dashboard/fixtureRows';
 import { Matchweek, type SeasonWeeks } from './Matchweek';
 import { AboutGaffa, Closer, Doors, Shelf } from './Sections';
 import styles from './dashboard.module.css';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Dashboard',
+};
 
 /**
  * The home screen. A thin renderer over `buildDashboardModel`: your leagues
@@ -33,11 +39,19 @@ export default async function DashboardPage() {
   const weeks: SeasonWeeks = {};
   for (const [gw, list] of seasonFixtures) weeks[gw] = list.map(toFixtureRow);
 
+  // No clubs yet: the same front page a visitor sees, with the actions going
+  // straight to create and join.
   if (model.cards.length === 0) {
+    const showcase = await loadShowcase();
     return (
-      <div className={styles.page}>
-        <FirstRun model={model} />
-      </div>
+      <PublicHome
+        showcase={showcase}
+        fixtures={model.fixtures}
+        gameweek={model.gameweek}
+        nextDeadline={model.nextDeadline}
+        season={season}
+        signedIn
+      />
     );
   }
 

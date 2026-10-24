@@ -425,7 +425,7 @@ export function ClubPitch({
         <span className={styles.pitchFootNote}>
           {includeSidelined
             ? 'Showing squad strength as if everyone were fit and eligible.'
-            : 'Showing only players who can actually be fielded this week.'}
+            : 'Showing only players you can field this week.'}
         </span>
       </div>
     </section>

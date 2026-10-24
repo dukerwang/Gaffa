@@ -15,7 +15,7 @@ export const maxDuration = 60; // 1 minute max for Vercel Hobby tier
 
 async function getCurrentGameweek(): Promise<number> {
     const res = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', {
-        next: { revalidate: 3600 }
+        cache: 'no-store'
     });
     const data = await res.json();
     const now = new Date();

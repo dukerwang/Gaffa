@@ -44,9 +44,16 @@ Use one of these words in the Stage column.
 
 ## Matchups redesign and the October update
 
-PR #40 merged the matchups redesign, and PR #41 reverted it on `main` on 2026-10-12. The redesign is restored on `release/2026-10-09`, which is 30 commits ahead of `main` and 81 behind. It has no remote copy. It also carries the public front page, the October changelog, one fixed example per front-page section, and the player-card and bootstrap perf work.
+PR #40 merged the matchups redesign, and PR #41 reverted it on `main` on 2026-10-12. The redesign is restored on `release/2026-10-09`. It also carries the public front page, the October changelog, one fixed example per front-page section, and the player-card and bootstrap perf work.
 
-Do next: push the branch, then merge `main` into it or rebase it, resolve conflicts, run `npm run build`, and ship.
+On 2026-10-24 the branch was pushed and `main` was merged into it. Typecheck, tests and the build pass, and the public front page was checked on the Vercel preview. The signed-in dashboard and the matchups pages have not been checked in a browser by anyone but you.
+
+Do next: review the preview signed in, settle the follow-ups below, then open the PR into `main`.
+
+Follow-ups for this release:
+
+- **Login carousel.** `AuthShowcase` still draws the old matchup pitch: it imports `MatchupPitch.module.css`, and the component it copied is gone. Update it to the redesigned matchups and the new front page. Until then the carousel shows the previous design.
+- **Matchup scoreboard background.** Settled on 2026-10-24: one fixed background (`.hx` in `gw.module.css`), the pitch's mown stripes in `--color-pitch` and `--color-pitch-band`, the same greens as the lineups beneath it. Duke chose it from three options (cream panel, warm ink, pitch stripes) after a club-colour blend, a near-black ink and a deep green each failed. The crests carry the clubs' colours. Awaiting Duke's review in the browser. The club-colour blend turned warm colours to mustard and maroon. `clubColour()` in `matchupView.ts` is still computed but no longer used by the scoreboard.
 
 ## Home page
 

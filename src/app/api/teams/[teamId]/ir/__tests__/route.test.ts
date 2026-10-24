@@ -276,7 +276,7 @@ describe('activating from IR', () => {
   it('refuses a player who is not on IR', async () => {
     const res = await ir({ playerId: HEALTHY, action: 'activate' });
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Player is not currently on IR');
+    expect(res.body.error).toBe('Player isn’t on IR');
   });
 
   it('refuses when the active roster has no room', async () => {
@@ -338,7 +338,7 @@ describe('swapping a player into IR', () => {
     setup();
     const res = await ir({ playerId: INJURED, action: 'swap', swapWithPlayerId: HEALTHY });
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Target player is not currently on IR');
+    expect(res.body.error).toBe('Target player isn’t on IR');
   });
 
   it('refuses when both are already on IR', async () => {

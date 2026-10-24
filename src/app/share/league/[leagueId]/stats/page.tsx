@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { notFound } from 'next/navigation';
 import GlobalStatsTable from '@/app/(dashboard)/league/[leagueId]/stats/GlobalStatsTable';
@@ -9,6 +10,30 @@ export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{ leagueId: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { leagueId } = await params;
+  const admin = createAdminClient();
+  const { data: league } = await admin
+    .from('leagues')
+    .select('name')
+    .eq('id', leagueId)
+    .single();
+
+  const title = league?.name ? `${league.name} — League Stats` : 'League Stats';
+  const description = league?.name
+    ? `Player and club statistics for ${league.name} on Gaffa dynasty fantasy football.`
+    : 'Player and club statistics on Gaffa dynasty fantasy football.';
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+    },
+  };
 }
 
 export interface StatPlayer extends Player {

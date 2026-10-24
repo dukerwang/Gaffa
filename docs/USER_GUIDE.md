@@ -379,7 +379,7 @@ A marquee signing sits there long enough for everyone to plan a bid. A cheap rot
 
 **Nothing settles before midday.** A lot due to expire between 23:00 and noon local moves to **midday** instead, so the next manager to wake gets a full morning to answer. The same goes for a bid placed in those hours: it can't leave the previous leader only sleeping hours to answer, so the lot stays open until at least midday. One exception: an uncontested weekend lot — a single bid, under €20m, on a Saturday or Sunday — settles at **06:45**, ahead of the early kickoff, so a last-minute streamer is available to play. Anything at €20m or more, or with a second bid, waits for midday. Your league's quiet-hours setting switches this protection on or off; it doesn't change the 23:00 and midday edges.
 
-**Auctions over €50m open at midday**, rather than the moment the overnight sync sweeps the player in. Bidding is blind either way, but the "new auction" notice isn't: released at 4am it only reaches whoever happens to be awake.
+**Auctions over €50m open at midday**, rather than the moment the overnight sync sweeps the player in. The bidding runs the same whenever it opens, but the "new auction" notice doesn't: released at 4am, it only reaches whoever happens to be awake.
 
 When the clock hits zero, **a free-agent auction settles immediately** — the winning bid lands even if that player's Premier League club has already kicked off. There is no seller XI to protect. The card reads **settling** until the win posts, not "ended."
 
@@ -504,9 +504,13 @@ Buy them from **Club Facilities** at the top of your club page. Slot 5 of the Ac
 
 ## 12. The Academy
 
-A stash — commonly **3 slots**, expandable to 5 with Club Facilities upgrades (§11) — for **U21** players that you want to hold long-term without using an active roster spot. They can still be listed, traded, or loaned. A loan takes them off the academy for the spell; they come back there if they are still U21 and a slot is free.
+A stash — commonly **3 slots**, expandable to 5 with Club Facilities upgrades (§11) — for **U21** players that you want to hold long-term without using an active roster spot. They can still be listed, traded, or loaned. A loan takes them off the academy for the spell; they come back there if they still qualify and a slot is free.
 
-The catch: once an Academy player **turns 21** he no longer qualifies. Gaffa checks automatically and promotes him to your active bench if there's room. If your roster is full he stays parked until you make space — nothing is auto-dropped for you.
+**Who qualifies.** A player qualifies if he's **21 or younger on 1 August**, the start of the season. That age holds all season: a birthday in October doesn't change it. On the next 1 August, he's judged again.
+
+**When he ages out.** Nothing moves him for you, and nothing is dropped. He can stay in your Academy, but while he does, you can't place a bid or move anyone else into the Academy. Promote him to your squad or drop him to clear it.
+
+**Why 1 August?** So eligibility is settled for a whole season at once. A prospect you sign in September is still a prospect in May, and a birthday never forces a move mid-season.
 
 **Why an age cutoff rather than a games-played rule?** Because the Academy is meant for prospects you're betting on, not for hiding useful squad players off the books. Age is the one criterion a manager can't manufacture.
 

@@ -1,3 +1,4 @@
+import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -179,17 +180,11 @@ export async function POST(req: NextRequest, { params }: Props) {
   // After that GW's last kickoff, writes go to next week — not the frozen row.
   let currentFplGw = 0;
   try {
-    const fplRes = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', {
-      headers: { 'User-Agent': 'FantasyFutbol/1.0' },
-      next: { revalidate: 3600 },
-    });
-    if (fplRes.ok) {
-      const fplData = await fplRes.json();
-      const now = new Date();
-      for (const ev of fplData.events as any[]) {
-        if (ev.deadline_time && new Date(ev.deadline_time) <= now) {
-          currentFplGw = Math.max(currentFplGw, ev.id);
-        }
+    const fplData = await getBootstrapSlim();
+    const now = new Date();
+    for (const ev of fplData.events) {
+      if (ev.deadline_time && new Date(ev.deadline_time) <= now) {
+        currentFplGw = Math.max(currentFplGw, ev.id);
       }
     }
   } catch {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type TouchEvent } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type TouchEvent } from 'react';
 import NavigationLink from '@/components/ui/NavigationLink';
 import { Icon } from '@/components/ui/Icon';
 import { useIsClient } from '@/lib/fixtures/formatKickoff';
@@ -148,7 +148,9 @@ export function Matchweek({
 
   // Keep the chosen chip centred in the strip. The strip scrolls itself, so
   // the page never jumps; the first placement is instant, later ones glide.
-  useEffect(() => {
+  // A layout effect, so the first placement lands before the browser paints
+  // and the strip never shows at the wrong end for a frame.
+  useLayoutEffect(() => {
     const strip = stripRef.current;
     const chip = strip?.querySelector<HTMLElement>('[aria-current="page"]');
     if (!strip || !chip) return;

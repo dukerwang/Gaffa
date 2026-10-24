@@ -42,6 +42,7 @@
     "supabase/functions",
     "scratch",
     "tools/oxlint/anti-slop",
+    ".next/dev",
     "*.js",
     "*.mjs"
   ]

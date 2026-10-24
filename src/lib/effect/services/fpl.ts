@@ -84,7 +84,8 @@ const retrySchedule = Schedule.exponential(Duration.millis(300)).pipe(
 function fetchFplJson<A, I>(url: string, schema: Schema.Schema<A, I, never>): Effect.Effect<A, FplError> {
   return Effect.gen(function* () {
     const response = yield* Effect.tryPromise({
-      try: () => fetch(url, { headers: { 'User-Agent': 'Gaffa-App/1.0' } }),
+      // no-store: bootstrap-static is over the Data Cache's 2MB limit.
+      try: () => fetch(url, { headers: { 'User-Agent': 'Gaffa-App/1.0' }, cache: 'no-store' }),
       catch: (err) =>
         new FplHttpError({
           url,

@@ -97,10 +97,6 @@ export default function TopBar() {
   const [balanceAnchor, setBalanceAnchor] = useState<HTMLButtonElement | null>(null);
   const [userAnchor, setUserAnchor] = useState<HTMLButtonElement | null>(null);
   const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const balanceDropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  // A click right after hover opened the menu keeps it open rather than shutting it.
-  const balanceOpenedByHover = useRef(false);
-  const balanceOpenRef = useRef(false);
   const navTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Extract current leagueId from URL — exclude static segments like 'create', 'join'
@@ -251,7 +247,8 @@ export default function TopBar() {
     setIsNavigating(true);
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push('/login');
+    // The public front page, not the sign-in form: it's where a signed-out visitor starts.
+    router.push('/');
     router.refresh();
   }
 
@@ -362,30 +359,8 @@ export default function TopBar() {
   // Club Balance dropdown: every club's balance, fetched fresh each time it
   // opens rather than cached — this figure changes the moment a bid resolves
   // or a trade completes, and nothing else in the topbar polls for it.
-  // Hover opens it for a mouse only; a tap would otherwise open it on the
-  // synthetic enter and shut it again on the click.
-  const handleBalanceEnter = useCallback((e: React.PointerEvent) => {
-    if (e.pointerType !== 'mouse') return;
-    if (balanceDropdownTimeoutRef.current) {
-      clearTimeout(balanceDropdownTimeoutRef.current);
-      balanceDropdownTimeoutRef.current = null;
-    }
-    if (!balanceOpenRef.current) balanceOpenedByHover.current = true;
-    setBalanceDropdownOpen(true);
-  }, []);
-
-  const handleBalanceLeave = useCallback((e: React.PointerEvent) => {
-    if (e.pointerType !== 'mouse') return;
-    balanceDropdownTimeoutRef.current = setTimeout(() => {
-      balanceOpenedByHover.current = false;
-      setBalanceDropdownOpen(false);
-    }, 150);
-  }, []);
-
-  useEffect(() => {
-    balanceOpenRef.current = balanceDropdownOpen;
-  }, [balanceDropdownOpen]);
-
+  // It opens on click only: it used to open on hover, and a mouse passing over
+  // the pill by accident flashed the menu.
   useEffect(() => {
     if (!balanceDropdownOpen || !currentLeagueId) return;
     setLeagueBalancesLoading(true);
@@ -517,23 +492,13 @@ export default function TopBar() {
         <div className={styles.rightSection}>
           {/* Club Balance */}
           {currentLeagueId && currentTeam && (
-            <div
-              className={styles.balanceContainer}
-              onPointerEnter={handleBalanceEnter}
-              onPointerLeave={handleBalanceLeave}
-            >
+            <div className={styles.balanceContainer}>
               <button
                 ref={setBalanceAnchor}
                 type="button"
                 className={styles.balancePill}
                 title="Club Balance"
-                onClick={() => {
-                  if (balanceOpenedByHover.current) {
-                    balanceOpenedByHover.current = false;
-                    return;
-                  }
-                  setBalanceDropdownOpen((open) => !open);
-                }}
+                onClick={() => setBalanceDropdownOpen((open) => !open)}
                 aria-haspopup="dialog"
                 aria-expanded={balanceDropdownOpen}
               >
@@ -546,18 +511,13 @@ export default function TopBar() {
 
               <Popover
                 open={balanceDropdownOpen}
-                onClose={() => {
-                  balanceOpenedByHover.current = false;
-                  setBalanceDropdownOpen(false);
-                }}
+                onClose={() => setBalanceDropdownOpen(false)}
                 anchor={balanceAnchor}
                 placement="bottom-end"
                 sheet
                 sheetTitle="Club Balances"
                 aria-label="Club Balances"
                 className={styles.menuPanel}
-                onPointerEnter={handleBalanceEnter}
-                onPointerLeave={handleBalanceLeave}
               >
                 <div className={styles.menuLabel}>Club Balances</div>
                 {leagueBalancesLoading && leagueBalances.length === 0 ? (

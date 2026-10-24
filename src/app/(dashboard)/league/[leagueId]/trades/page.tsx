@@ -1,3 +1,4 @@
+import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
 import { effectiveSlots } from '@/lib/facilities/facilities';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -311,14 +312,10 @@ export default async function TradesPage({ params, searchParams }: Props) {
  */
 async function resolveCurrentGameweek(): Promise<number> {
   try {
-    const res = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', {
-      next: { revalidate: 3600 },
-    });
-    if (!res.ok) return 1;
-    const data = await res.json();
+    const data = await getBootstrapSlim();
     const now = new Date();
     let gw = 1;
-    for (const ev of data.events as { id: number; deadline_time: string }[]) {
+    for (const ev of data.events) {
       if (ev.deadline_time && new Date(ev.deadline_time) <= now) gw = Math.max(gw, ev.id);
     }
     return gw;

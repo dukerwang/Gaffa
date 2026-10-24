@@ -15,7 +15,7 @@ read that. These are the files worth knowing exist:
 | When you are about to | Read first |
 |---|---|
 | Touch UI, CSS, layout, or typography | `docs/UI_RULES.md`, `docs/UI_COMPONENTS.md`, then `DESIGN.md` |
-| Write or rename anything a manager reads | `docs/UI_RULES.md` rules 1–4 |
+| Write or rename anything a manager reads | `docs/UI_RULES.md` rules 1–4a |
 | Make a design argument or assert a policy | `docs/DECISIONS.md` |
 | Change a league mechanic or scoring rule | `docs/USER_GUIDE.md` |
 | Work on scoring, auctions, or the data pipeline | `CLAUDE.md`, `README.md` |
@@ -33,9 +33,16 @@ coin a named rule, and do not cite one back to Duke as his.
 Work is done when `npm run build` passes. Run it before saying a task is
 complete and before pushing.
 
-`npm test` (vitest, 749 tests, ~4s) uses disposable fixtures and has no
+`npm test` (vitest, a few seconds) uses disposable fixtures and has no
 production access. Run it, fix failures, and rerun without asking.
+`npm run typecheck` (`tsc --noEmit`, ~3s) checks the full codebase including test
+files; use it for fast pre-flight feedback during turns.
 `npm run check:ui` is likewise free to run at will.
+
+Tests run in a shared Vitest environment with `isolate: false` and automatic mock resets.
+Write tests with zero shared mutable state: never mutate global singletons or process
+state across test files, restore fake timers with `vi.useRealTimers()` in `afterEach`,
+and keep fixtures disposable.
 
 Do not claim a feature is live on Vercel until the build passes.
 
@@ -64,8 +71,7 @@ default; lists only for real sequences. Oxford comma.
 
 **Case is not a style preference here, it is a decision:** buttons and short UI
 labels are **Title Case** ("Save Lineup", "Manage Squad", "Active Roster") —
-decided 2026-09-09 (`docs/DECISIONS.md`), reversing the sentence-case rule this
-file carried before. Running prose (help text, errors, state notices) stays sentence case.
+decided 2026-09-09 (`docs/DECISIONS.md`). Running prose (help text, errors, state notices) stays sentence case.
 Never set caps with `text-transform` on an action button.
 
 **No inanimate agency:** Tools, keys, buttons, containers, tabs, dialogs, and rules

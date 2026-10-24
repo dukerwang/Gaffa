@@ -94,7 +94,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     .eq('status', 'ir');
 
   if (illegalIr?.some(e => (e.player as unknown as { fpl_status: string } | null)?.fpl_status === 'a')) {
-    return NextResponse.json({ error: 'Cannot place a bid while you have a healthy player occupying an IR slot. Please activate them first.' }, { status: 400 });
+    return NextResponse.json({ error: 'You can’t bid while a healthy player is on IR. Activate him first.' }, { status: 400 });
   }
 
   // League settings for roster/academy validations

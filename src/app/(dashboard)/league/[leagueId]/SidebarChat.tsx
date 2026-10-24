@@ -216,7 +216,7 @@ export default function SidebarChat({
           <div className={styles.emptyState}>
             <div className={styles.emptyTitle}>Lobby is quiet</div>
             <p className={styles.emptyDesc}>
-              Banter, draft strategies, or announcements start right here. Write the first message!
+              Banter, draft strategies, or announcements start right here. Write the first message.
             </p>
           </div>
         )}

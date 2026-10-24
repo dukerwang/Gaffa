@@ -96,7 +96,9 @@ const getCachedEnrichmentData = unstable_cache(
   async (season: string) => {
     const admin = createAdminClient();
     const [{ data: rankings }, { data: archives }] = await Promise.all([
-      admin.from('player_rankings').select('*'),
+      admin
+        .from('player_rankings')
+        .select('player_id, overall_rank, position_ranks'),
       admin
         .from('season_player_stats_archive')
         .select('player_id, total_points, ppg, form_rating, overall_rank, position_ranks')

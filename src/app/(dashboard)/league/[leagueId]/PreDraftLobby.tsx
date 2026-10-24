@@ -285,7 +285,7 @@ export default function PreDraftLobby({
           </h2>
           <p className={styles.ctaDesc}>
             {isActive
-              ? 'Picks are being made in real time. Enter the draft room now to make selections, set your queue, and configure scouting lists!'
+              ? 'Picks are being made in real time. Enter the draft room now to make selections, set your queue, and configure scouting lists.'
               : league.draft_scheduled_at
               ? 'The countdown has begun. Research players, configure your queue, and prepare your draft room. Kickoff is automated.'
               : 'Join the League lobby, customize your club credentials, and review the drafting pool. Once the commissioner randomizes the picks and launches the draft, the entry gate will open.'}

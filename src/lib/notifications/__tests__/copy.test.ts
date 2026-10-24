@@ -164,7 +164,7 @@ describe('bid and market notices', () => {
       expect(n.pushTitle).toBe('ADVANCING: Kylian Mbappé · VDP');
       expect(n.content).toContain('**BREAKING:** **Vardy Party** are in advanced stages');
       expect(n.content).toContain('(**€110m**)');
-      expect(n.pushBody).toBe('ADVANCING: Kylian Mbappé to VDP (€110m). 2h left to bid!');
+      expect(n.pushBody).toBe('ADVANCING: Kylian Mbappé to VDP (€110m). 2h left to bid.');
     });
 
     it('generates blockbuster alert for 80m+ deals', () => {
@@ -172,7 +172,7 @@ describe('bid and market notices', () => {
       expect(n.title).toBe('Closing in: VDP on verge of Cole Palmer');
       expect(n.pushTitle).toBe('Closing in: Cole Palmer · VDP');
       expect(n.content).toContain('blockbuster agreement');
-      expect(n.pushBody).toBe('Closing in: VDP lead for Cole Palmer at €85m. 2h left to bid!');
+      expect(n.pushBody).toBe('Closing in: VDP lead for Cole Palmer at €85m. 2h left to bid.');
     });
 
     it('generates standard countdown for regular deals', () => {
