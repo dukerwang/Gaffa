@@ -14,7 +14,6 @@
 .page {
   max-width: 1180px;
   margin: 0 auto;
-  padding-bottom: var(--s16);
 }
 
 /* ---------- the shelf ----------
@@ -793,11 +792,17 @@
 .closer {
   position: relative;
   margin-top: var(--s16);
+  /* Cancels .main's bottom padding so the band ends at the page's last pixel,
+     the way .shelf cancels its top padding. */
+  margin-bottom: calc(var(--space-8) * -1);
   padding: var(--s12) 0;
   color: var(--shelf-ink);
   --shelf-ink: var(--color-text-inverse);
   --shelf-soft: color-mix(in oklab, var(--color-text-inverse) 68%, var(--color-topbar));
   border-image: repeating-linear-gradient(90deg, var(--color-topbar) 0 36px, color-mix(in oklab, var(--color-topbar) 94%, white) 36px 72px) fill 0 / 0 / 0 100vmax;
+}
+@media (max-width: 768px) {
+  .closer { margin-bottom: calc(var(--space-4) * -1); }
 }
 .closerInner { display: flex; align-items: center; gap: var(--s5); }
 .closerMark { width: 56px; height: 56px; color: var(--color-bg); flex: none; }
