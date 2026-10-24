@@ -84,9 +84,9 @@
 .gwSelS { font-size: 12px; color: var(--color-text-muted); white-space: nowrap; min-height: 17px; }
 .gwSelLive { color: var(--color-live); font-weight: 600; }
 
-/* ══ The scoreboard: one fixed ink. The crests carry the clubs' colours; a blend of two arbitrary club colours turned warm ones to mustard and maroon. ══ */
+/* ══ The scoreboard: Gaffa's own green, deepened a step so it sits under the top bar. The crests carry the clubs' colours; a blend of two arbitrary club colours turned warm ones to mustard and maroon. ══ */
 .hx { position: relative; display: block; border-radius: 16px; overflow: hidden; color: #fff;
-  background: #151a21;
+  background: color-mix(in oklab, var(--color-topbar) 72%, #000);
   box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.07); }
 :global([data-theme="dark"]) .hx { box-shadow: 0 0 0 1px rgba(255,255,255,.07), var(--shadow-lg); }
 .hxWide { margin-bottom: 36px; }
