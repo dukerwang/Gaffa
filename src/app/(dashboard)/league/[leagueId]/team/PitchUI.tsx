@@ -297,6 +297,7 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isDimmed, isEmp
                     name={player ? pitchFullName(player) : slotPos}
                     club={player?.pl_team}
                     size="md"
+                    phoneSize="sm"
                     headTopPct={player?.portrait_head_top_pct}
                     headWidthPct={player?.portrait_head_width_pct}
                     photoVersion={player?.photo_version}
@@ -323,7 +324,7 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isDimmed, isEmp
                     {player ? (
                         <>
                             <span
-                                className={`${styles.nodePlayerNameCenter} ${isInvalid ? styles.nodeNameInvalid : ''}`}
+                                className={`${styles.nodePlayerNameCenter} ${displayName(player).length > 12 ? styles.nodeNameLong : ''} ${isInvalid ? styles.nodeNameInvalid : ''}`}
                                 onClick={(e) => {
                                     if (onViewDetails) {
                                         e.stopPropagation();
@@ -2317,6 +2318,7 @@ export default function PitchUI({
                                                 name={entry ? pitchFullName(entry.player) : slot}
                                                 club={entry?.player.pl_team}
                                                 size="md"
+                                                phoneSize="sm"
                                                 headTopPct={entry?.player.portrait_head_top_pct}
                                                 headWidthPct={entry?.player.portrait_head_width_pct}
                                                 photoVersion={entry?.player.photo_version}

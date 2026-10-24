@@ -226,26 +226,16 @@ export default function PlayerCardStats({ back, isCurrent, slot, primary, focusG
           <p className={styles.empty}>No matches in {seasonName ?? 'this season'} yet.</p>
         ) : (
           <table className={styles.log} ref={tableRef}>
-            <colgroup>
-              <col className={styles.cMw} />
-              <col />
-              <col className={styles.cRes} />
-              <col className={styles.cMin} />
-              <col className={`${styles.cGa} ${styles.hideNarrow}`} />
-              <col className={`${styles.cGa} ${styles.hideNarrow}`} />
-              <col className={styles.cRtg} />
-              <col className={styles.cPts} />
-            </colgroup>
             <thead>
               <tr>
-                <th>MW</th>
+                <th className={styles.cMw}>MW</th>
                 <th>Opponent</th>
-                <th>Result</th>
-                <th>Min</th>
-                <th className={styles.hideNarrow}>G</th>
-                <th className={styles.hideNarrow}>A</th>
-                <th>Rtg</th>
-                <th>Pts</th>
+                <th className={styles.cRes}>Result</th>
+                <th className={styles.cMin}>Min</th>
+                <th className={`${styles.cGa} ${styles.hideNarrow}`}>G</th>
+                <th className={`${styles.cGa} ${styles.hideNarrow}`}>A</th>
+                <th className={styles.cRtg}>Rtg</th>
+                <th className={styles.cPts}>Pts</th>
               </tr>
             </thead>
             <tbody>
