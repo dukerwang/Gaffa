@@ -9,6 +9,7 @@ import type { MatchReport } from '@/lib/narrative/matchReport';
 import type { BenchPlayer, Line, MatchState, MatchupView, PitchPlayer, SideView } from '@/lib/matchups/matchupView';
 import { fmt } from '@/lib/matchups/roundView';
 import { Crest, Face, FitText, Glyph, Local, Pts, kickoffShort, s, useWidth } from './parts';
+import { Disclosure } from '@/components/ui/Disclosure';
 import RowPitch, { rowCount } from './RowPitch';
 import { useSwipePager } from './useSwipePager';
 import Worm, { onClock, turnIndex } from './Worm';
@@ -235,8 +236,13 @@ export function Momentum({ view, teams }: { view: MatchupView; teams: { a: TeamL
     ? <>Lead changed <Local>{() => kickoffShort(rs[turn].t)}</Local></>
     : live ? `${rs.length - last - 1} kickoff${rs.length - last - 1 === 1 ? '' : 's'} to come`
     : `${Math.abs(endM) <= 10 ? 'Level' : `${endM > 0 ? name('a') : name('b')} led`} throughout`;
+  const lanes = (
+    <div className={s.mmLanes} style={{ gridTemplateColumns: `repeat(${rs.length}, minmax(0, 1fr))` }}>
+      {rs.map((_, i) => lane(i))}
+    </div>
+  );
   return (
-    <section className={`${s.blk}${open ? ` ${s.mmOpen}` : ''}`}>
+    <section className={s.blk}>
       <div className={s.sh}>
         <h2 className={s.shT}>Momentum</h2>
         <span className={`${s.shTools} ${s.mmKey}`}>
@@ -253,17 +259,10 @@ export function Momentum({ view, teams }: { view: MatchupView; teams: { a: TeamL
             <Worm rs={rs} W={W} H={phone ? 150 : 200} scale={50} live={live} colorA={teams.a.color} colorB={teams.b.color} labels={!phone} turnTag pad={8} />
           </div>
         </div>
-        <button type="button" className={s.mmMore} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-          <span>{summary}</span>
-          <span className={s.mmMoreB}>{open ? 'Hide Kickoffs' : 'Show Kickoffs'}<Glyph k="chev" /></span>
-        </button>
-        <div className={s.mmFold}>
-          <div>
-            <div className={s.mmLanes} style={{ gridTemplateColumns: `repeat(${rs.length}, minmax(0, 1fr))` }}>
-              {rs.map((_, i) => lane(i))}
-            </div>
-          </div>
-        </div>
+        {/* A wide screen shows every kickoff. A phone folds them under the kit's Disclosure. */}
+        {phone ? (
+          <Disclosure className={s.mmDisc} title="Kickoffs" meta={summary} open={open} onOpenChange={setOpen}>{lanes}</Disclosure>
+        ) : lanes}
       </div>
     </section>
   );
