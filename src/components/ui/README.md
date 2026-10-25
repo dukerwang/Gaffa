@@ -42,6 +42,11 @@ is a decision of Duke's; change them freely, and say why.
   keyframes so a quick open-close reverses from where it is.
 - **Reduced motion** keeps opacity and colour, and drops movement.
 - **Hover styles** sit behind `@media (hover: hover) and (pointer: fine)`.
+- **A panel's outline is drawn over its rows.** Use a real `border`, or an
+  `::after` with `position: absolute; inset: 0; box-shadow: inset 0 0 0 1px
+  var(--color-border); pointer-events: none`. Never an inset `box-shadow` on the
+  panel itself: it sits beneath a child's background, so a highlighted row, a
+  hovered row or a full-bleed pitch hides the left and right edges.
 - **Layers.** Popover 1150, Tooltip 1200, Toaster 1300: all above
   `ResponsiveModal`'s literal 1000 and the player card's 1100, because each can open inside a modal. Move
   them onto the `--z-*` scale when the modal moves.
