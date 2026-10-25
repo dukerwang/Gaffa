@@ -267,7 +267,7 @@ It works — an absent starter is replaced from your bench once his fixture fini
 
 In the league it's a draw — a gap of 10 or fewer is a draw, and 0–0 qualifies.
 
-In a cup tie there are no draws, so it has to resolve. The first tie-break is the best individual performer, but at 0–0 nobody has one: every player scored zero, so there's nothing to compare. In that case the club in the **higher bracket position** advances — the better seed in the opening round. So a genuine 0–0 cup tie is settled by where you finished in the league, which is the only thing left to separate the two sides.
+In a cup tie there are no draws, so it has to resolve. The first tie-break is the best individual performer, but at 0–0 nobody has one: every player scored zero, so there's nothing to compare. In that case the club in the **higher bracket position** advances: the better seed in a seeded round, or the club higher in the table at the draw in a League Cup round that was drawn. So a genuine 0–0 cup tie is settled by where you stand in the league, which is the only thing left to separate the two sides.
 
 ---
 
@@ -294,13 +294,27 @@ It solves a real problem with league-only fantasy football, too: by March, half 
 - Some rounds are **two-legged**, decided on **aggregate** across both gameweeks.
 - **There are no draws in a cup.** The league's 10-point draw band doesn't apply — somebody has to advance.
 - **Level ties are settled by your best individual performer.** If the scores are equal, the club whose highest-scoring single player outscored the other's goes through.
-- **If even that is level** — including a 0–0, where nobody has a best performer — the club in the **higher bracket position** advances. In the opening round that's the better seed.
+- **If even that is level** — including a 0–0, where nobody has a best performer — the club in the **higher bracket position** advances. In a seeded round that's the better seed; in a drawn League Cup round it's the club that stood higher in the table when the round was drawn.
 
 That tie-break is worth thinking about in a cup week. A side built on one outstanding player and a thin supporting cast can lose a league match on aggregate points and still survive a cup tie on the strength of that one performance.
 
 Everything advances automatically as gameweeks resolve — there's nothing to confirm.
 
-In a small league (4–6 managers) every club enters the Champions Cup and the Consolation Cup holds placeholder slots; there aren't enough teams for three meaningful brackets.
+### The League Cup draw
+
+The Champions Cup is a fixed, seeded bracket: you can see your whole path to the final from the start. The **League Cup is drawn round by round.** Its first round is seeded, with byes to the top seeds, and every round after that is drawn at random once the round before it finishes. You get a notification with your opponent as soon as the draw is made.
+
+**Why a draw?** Two seeded cups taken from the same table come out as the same bracket: in a small league, the Champions Cup and the League Cup would be the same ties in the same order, one story told twice. An open draw is also how domestic cups work in real football, where you don't know who you'll get until the balls come out.
+
+### Small leagues (4–6 managers)
+
+Every club enters the Champions Cup, and the Consolation Cup is played by the clubs it knocks out:
+
+- **6 clubs:** both quarter-final losers and both semi-final losers. Their semi-finals are drawn once all four are known, and played over MW36 and MW37, with the final at MW38.
+- **5 clubs:** the quarter-final loser and both semi-final losers. The highest-placed of the three gets a bye to the final.
+- **4 clubs:** the two semi-final losers, in a single final at MW38.
+
+So in a small league, going out of the Champions Cup isn't the end of your season: there's still a trophy to play for.
 
 Cup results feed end-of-season prize money (§14) — so a cup run pays as well as flatters.
 

@@ -106,6 +106,10 @@ The next free number across every branch, checked 2026-10-25 (head was 182). Con
 
 It's additive apart from the link clearing, which removes no team, score or result.
 
+### Migration 184: bye clubs into the next round
+
+Found while building Stage A. `createTournament` marked each first-round bye won, but read `next_matchup_id` from rows fetched before the links were written, so a bye club was never placed in the next round. Both live Champions Cups had semi-finals holding one club each, which would never have started at MW34. `createTournaments.ts` now keeps the links it writes. Migration 184 places the existing bye clubs where their bracket already sends them (Militia: ChelsZ FC and Hayden FC; Dragoon: Moises FC and Pizzaking's Club). It changes no pairing, score or result.
+
 ---
 
 ## 2. The Cups page

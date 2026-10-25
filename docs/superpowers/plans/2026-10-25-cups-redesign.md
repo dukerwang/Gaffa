@@ -59,7 +59,7 @@
 
 ## Task 1: Pure draw logic
 
-- [ ] Create `src/lib/tournaments/draw.ts`:
+- [x] Create `src/lib/tournaments/draw.ts`:
   ```ts
   export interface Entrant { teamId: string; rank: number }   // league_standings.rank; 999 if unranked
   export interface DrawnTie { a: string; b: string | null }   // b null = bye
@@ -73,29 +73,29 @@
     playersA: { playerId: string; points: number }[]; playersB: { playerId: string; points: number }[];
   }): { winnerId: string; decidedBy: DecidedBy }
   ```
-- [ ] **`pairDraw`:**
+- [x] **`pairDraw`:**
   - Throw if there are more than `ties * 2` entrants or fewer than `ties`. A round always has at least one club per tie.
   - `byes = ties * 2 - entrants.length`. The `byes` best-ranked entrants (lowest rank, ties broken by `teamId` for determinism) each get a tie with `b: null`.
   - Fisher–Yates shuffle the rest with `random`, pair them in order, and put the better-ranked club in each pair as `a`.
   - Fisher–Yates shuffle the full tie list into bracket order.
-- [ ] **`consolationFeeds`:** true for 6 clubs on quarter-final or semi-final, 5 on quarter-final or semi-final, 4 on semi-final, and false otherwise. Match on `roundName.toLowerCase()` with `includes('quarter')` and `includes('semi')`, as the current code does.
-- [ ] **`decideTie`:**
+- [x] **`consolationFeeds`:** true for 6 clubs on quarter-final or semi-final, 5 on quarter-final or semi-final, 4 on semi-final, and false otherwise. Match on `roundName.toLowerCase()` with `includes('quarter')` and `includes('semi')`, as the current code does.
+- [x] **`decideTie`:**
   - Higher total wins, with `'score'`.
   - Otherwise `resolveTiebreaker` from `engine.ts` decides, with `'best_performer'`.
   - Otherwise `teamA` wins, with `'position'`.
-- [ ] `src/lib/tournaments/__tests__/draw.test.ts`, using a seeded LCG for `random`:
+- [x] `src/lib/tournaments/__tests__/draw.test.ts`, using a seeded LCG for `random`:
   - **`pairDraw`:** every entrant appears exactly once; `a` always outranks `b`; 4 entrants in 2 ties gives no byes; 3 in 2 gives the best-ranked a bye; 2 in 1 gives one tie with `a` the better-ranked; it throws on too many entrants; two different seeds give different pairings for 4 entrants (the draw really is random).
   - **`consolationFeeds`:** the full table for 4, 5, 6 and 7 clubs.
   - **`decideTie`:** each of the three outcomes.
-- [ ] `npm test`, then commit.
+- [x] `npm test`, then commit.
 
 ## Task 2: Migration 183
 
-- [ ] Re-check the highest migration number across branches.
-- [ ] **Pre-check the live data:**
+- [x] Re-check the highest migration number across branches.
+- [x] **Pre-check the live data:**
   - `SELECT t.status, count(*) FROM tournament_matchups m JOIN tournament_rounds r ON r.id = m.round_id JOIN tournaments t ON t.id = r.tournament_id WHERE t.type = 'secondary_cup' AND m.next_matchup_id IS NOT NULL GROUP BY 1`. Note the counts.
   - Confirm that no League Cup tie in a live league has a score yet: every `team_*_score_leg1` is 0 in the non-completed tournaments.
-- [ ] Write `supabase/migrations/183_cup_draws.sql`, with a header comment pointing at the spec:
+- [x] Write `supabase/migrations/183_cup_draws.sql`, with a header comment pointing at the spec:
   - `ALTER TABLE tournament_matchups ADD COLUMN IF NOT EXISTS decided_by text CHECK (decided_by IN ('score','best_performer','position'));`
   - `ALTER TABLE tournament_rounds ADD COLUMN IF NOT EXISTS drawn_at timestamptz;`
   - `UPDATE tournament_matchups m SET next_matchup_id = NULL FROM tournament_rounds r, tournaments t WHERE r.id = m.round_id AND t.id = r.tournament_id AND t.type = 'secondary_cup' AND t.status <> 'completed' AND m.next_matchup_id IS NOT NULL;`
@@ -106,8 +106,8 @@
     4. For each element, update the tie at that `bracket_position`: set `team_a_id` and `team_b_id`, set `status = 'active'` when `b` is present, and otherwise set `status = 'completed'`, `winner_id = a`, `decided_by = NULL`. For a bye tie with `next_matchup_id`, place `a` in the linked tie (even position fills `team_a_id`, odd fills `team_b_id`) and set that tie `active` once both sides are filled.
     5. `UPDATE tournament_rounds SET drawn_at = now() WHERE id = p_round_id; RETURN true;`
   - `REVOKE EXECUTE ON FUNCTION apply_cup_draw(uuid, jsonb) FROM PUBLIC, anon, authenticated;`
-- [ ] Apply with `apply_migration`.
-- [ ] **Verify:**
+- [x] Apply with `apply_migration`.
+- [x] **Verify:**
   - Re-run the pre-check query: League Cup links are 0 for non-completed tournaments.
   - Inside one `execute_sql` that starts `BEGIN;` and ends `ROLLBACK;`, take Matchday Militia's League Cup semi-final round:
     - Calling it while the quarter-finals are pending returns false.
@@ -115,18 +115,18 @@
     - A second call returns false.
     - A `p_ties` naming a club that isn't through returns false.
   - In a second rolled-back transaction, a 3-entrant Consolation draw with one bye puts the bye club in the final.
-- [ ] Commit.
+- [x] Commit.
 
 ## Task 3: Types and creation
 
-- [ ] `src/types/index.ts`: add `decided_by: 'score' | 'best_performer' | 'position' | null` to `TournamentMatchup` and `drawn_at: string | null` to `TournamentRound`.
-- [ ] `createTournaments.ts` step 4: skip linking `next_matchup_id` when `type === 'secondary_cup'`.
-- [ ] `src/lib/tournaments/__tests__/engine.test.ts`: `buildRoundSpecs` for a 4-club Consolation Cup (bracket 2) is a single Final at MW38; for 5 and 6 clubs (bracket 4) it's a two-legged semi-final at MW36–37 plus a final at MW38. This pins today's behaviour, which the new drop-in relies on.
-- [ ] `npm test`, then commit.
+- [x] `src/types/index.ts`: add `decided_by: 'score' | 'best_performer' | 'position' | null` to `TournamentMatchup` and `drawn_at: string | null` to `TournamentRound`.
+- [x] `createTournaments.ts` step 4: skip linking `next_matchup_id` when `type === 'secondary_cup'`.
+- [x] `src/lib/tournaments/__tests__/engine.test.ts`: `buildRoundSpecs` for a 4-club Consolation Cup (bracket 2) is a single Final at MW38; for 5 and 6 clubs (bracket 4) it's a two-legged semi-final at MW36–37 plus a final at MW38. This pins today's behaviour, which the new drop-in relies on.
+- [x] `npm test`, then commit.
 
 ## Task 4: The draw runner
 
-- [ ] Create `src/lib/tournaments/runDraw.ts`:
+- [x] Create `src/lib/tournaments/runDraw.ts`:
   ```ts
   export async function runDraw(admin: SupabaseClient, opts: {
     tournament: { id: string; league_id: string; name: string };
@@ -142,51 +142,54 @@
      - Two-club tie, two legs: "**League Cup** semi-final draw: you play **Hayden FC** over MW21 and MW24."
      - Bye: "**League Cup** semi-final draw: you have a bye to the final."
      - Run all copy through `gaffa-ui-copy` before committing.
-- [ ] `src/lib/tournaments/__tests__/runDraw.test.ts` with `createFakeSupabase` and a stubbed `apply_cup_draw`:
+- [x] `src/lib/tournaments/__tests__/runDraw.test.ts` with `createFakeSupabase` and a stubbed `apply_cup_draw`:
   - An unfinished previous round makes no RPC call.
   - A finished round passes `p_ties` that cover exactly the winners.
   - RPC `true` notifies each manager once and skips a Caretaker club.
   - RPC `false` sends no notifications.
-- [ ] `npm test`, then commit.
+- [x] `npm test`, then commit.
 
 ## Task 5: Advancement
 
-- [ ] **Injectable admin.** `executeAdvanceTournament(tournamentId, gameweek, admin = createAdminClient())`. The existing callers (`matchupProcessor.ts`, `api/sync/tournaments/route.ts`, and the `matchupProcessor.rowCap` test's mock) keep working unchanged.
-- [ ] Replace the inline winner logic with `decideTie`, and write `decided_by` alongside `winner_id` and `status`.
-- [ ] **Consolation drop-in.**
+- [x] **Injectable admin.** `executeAdvanceTournament(tournamentId, gameweek, admin = createAdminClient())`. The existing callers (`matchupProcessor.ts`, `api/sync/tournaments/route.ts`, and the `matchupProcessor.rowCap` test's mock) keep working unchanged.
+- [x] Replace the inline winner logic with `decideTie`, and write `decided_by` alongside `winner_id` and `status`.
+- [x] **Consolation drop-in.**
   - Replace the hard-coded `totalLeagueTeams === 5 / 4 / 6` branch with `consolationFeeds(totalLeagueTeams, round.name)`.
   - Replace the `start_gameweek = 36` lookup with the Consolation Cup's lowest `round_number` round.
   - Keep "first empty place" placement, but no longer set `status: 'active'` on a filled tie in a 5- or 6-club league. The draw activates ties there. A 4-club Consolation final still activates when its second club lands.
-- [ ] **After the per-tie loop, for each round finalized this call** (`gameweek === round.end_gameweek`):
+- [x] **After the per-tie loop, for each round finalized this call** (`gameweek === round.end_gameweek`):
   - **`secondary_cup`:** if every tie in the round is `completed` and a next round exists, `runDraw` the next round.
   - **`primary_cup`, semi-final, 5 or 6 clubs:** once both semi-finals are `completed`, `runDraw` the Consolation Cup's first round.
-- [ ] Remove the `advanceWinner` call for `secondary_cup`. `next_matchup_id` is already null there, but leave no path that relies on it.
-- [ ] **Tests** in `src/lib/tournaments/__tests__/advanceTournament.test.ts`, with `createFakeSupabase` and the scoring reads stubbed. Run a 6-club league end to end with scripted league scores:
+- [x] Remove the `advanceWinner` call for `secondary_cup`. `next_matchup_id` is already null there, but leave no path that relies on it.
+- [x] **Tests** in `src/lib/tournaments/__tests__/advanceTournament.test.ts`, with `createFakeSupabase` and the scoring reads stubbed. Run a 6-club league end to end with scripted league scores:
   - The Champions Cup quarter-finals at MW33 drop two losers into the Consolation Cup, still pending.
   - The semi-finals at MW35 drop two more and trigger the Consolation draw.
   - The Consolation semi-finals resolve at MW37, the final at MW38, and the Consolation tournament ends `completed`.
   - A separate case: a League Cup round resolving triggers exactly one `apply_cup_draw` for the next round.
   - A level tie at 0–0 records `decided_by = 'position'`.
   - If stubbing the scoring path through `scoreLeg` grows past a page of setup, extract `finalizeRound(admin, tournament, round, results)` and test that instead.
-- [ ] `npm test`, then commit.
+- [x] `npm test`, then commit.
 
 ## Task 6: Docs for the mechanics
 
-- [ ] **`docs/USER_GUIDE.md` §6:**
+- [x] **`docs/USER_GUIDE.md` §6:**
   - The League Cup is an open draw after its first round, with the reason (two cups with the same draw are one story told twice; real domestic cups are open draws).
   - The Consolation Cup in small leagues: Champions Cup quarter-final and semi-final losers in a 6-club league, with the 5- and 4-club versions.
   - The last tie-break in a drawn round is league position.
   - Replace the "In a small league (4–6 managers)…placeholder slots" paragraph.
-- [ ] **`docs/DECISIONS.md`:** a 2026-10-25 entry quoting Duke. Round-by-round draws: "this season is fine, since no cups have started, now is a good time. just want to have a set and working system before the cups start". Also the Consolation entrants, the Trophy Shelf, the Round Pager, the seed column, and the tie page. On the old seeds: "why does it look so ugly". Mark anything that's an agent's reading as such.
-- [ ] **`CLAUDE.md`:** check the "Cup ties never draw" domain rule still reads true, and add one line on the League Cup draw (`apply_cup_draw`, migration 183).
-- [ ] Commit.
+- [x] **`docs/DECISIONS.md`:** a 2026-10-25 entry quoting Duke. Round-by-round draws: "this season is fine, since no cups have started, now is a good time. just want to have a set and working system before the cups start". Also the Consolation entrants, the Trophy Shelf, the Round Pager, the seed column, and the tie page. On the old seeds: "why does it look so ugly". Mark anything that's an agent's reading as such.
+- [x] **`CLAUDE.md`:** check the "Cup ties never draw" domain rule still reads true, and add one line on the League Cup draw (`apply_cup_draw`, migration 183).
+- [x] Commit.
 
 ## Task 7: Ship Stage A
 
-- [ ] `npm test`, `npm run build` and `npm run check:ui` all pass.
-- [ ] Push the branch, open a PR for Stage A, merge it to `main`, and confirm the Vercel production deploy is green.
-- [ ] Bind the PR with the `ccd_pr` tools.
-- [ ] Re-run the Task 2 verification query against production data.
+Also shipped in Stage A, not planned: migration 184 and the `createTournaments` bye fix (spec, “Migration 184”), and the final-round check in `executeAdvanceTournament` (a final is now the last round_number, since League Cup ties have no next tie).
+
+
+- [x] `npm test`, `npm run build` and `npm run check:ui` all pass.
+- [x] Push the branch, open a PR for Stage A, merge it to `main`, and confirm the Vercel production deploy is green.
+- [x] Bind the PR with the `ccd_pr` tools.
+- [x] Re-run the Task 2 verification query against production data.
 
 ---
 

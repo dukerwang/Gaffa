@@ -738,3 +738,45 @@ IconButton for the plain close buttons. How it was built is an agent's
 reading: the account menu keeps Create and Join as two rows rather than the
 prototype's one, because no single page offers both; the lineup error notice
 takes the small IconButton so the notice keeps its height.
+
+---
+
+## 2026-10-25 — Cups: the page and the draw
+
+Chosen during the Cups brainstorm, from mockups built on Matchday
+Militia's real data (`design-2.0/cups/`). Spec:
+`docs/superpowers/specs/2026-10-25-cups-redesign-design.md`.
+
+**Scope: the page and the mechanics behind it.** Picked from three options
+("Page + mechanics").
+
+**The League Cup is drawn round by round**, FA Cup style, rather than given
+a different seeding or a single open draw. Picked from four options. On
+starting it this season:
+> "this season is fine, since no cups have started, now is a good time. just
+> want to have a set and working system before the cups start"
+
+**A 6-club league's Consolation Cup takes both Champions Cup quarter-final
+losers and both semi-final losers**, rather than a single final between
+the semi-final losers. Picked from two options. The 5- and 4-club versions
+in the spec are an agent's extension of the same rule.
+
+**Page composition: the Trophy Shelf** (option A of three), with the draw
+moving sideways:
+> "i think A is probably the best, but maybe instead of it being a vertical
+> scroll for round-by-round, it's horizontal? would require some sort of
+> swipe, not sure."
+
+**The Round Pager over Round Columns, and a seed column on ties.** Of the
+original seeds:
+> "also this "3 v 6" seeding numbering and formatting needs to change, why
+> does it look so ugly."
+
+and then:
+> "i've selected round pager and seed column"
+
+That the League Cup and Consolation Cup show no seeds, because their ties
+are drawn, is an agent's reading.
+
+**Tapping a tie opens a full tie page**, built from the matchups redesign.
+Picked over a bottom sheet and over no detail view.
