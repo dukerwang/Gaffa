@@ -1,11 +1,11 @@
 // Renders Matchday Militia's crests and the three cup trophies to SVG strings
 // for the brainstorm mockups. Run: node node_modules/tsx/dist/cli.mjs <this file>
 import { writeFileSync } from 'node:fs';
-import { SHIELDS } from '/Users/dukewang/Fantasy Futbol/src/components/crest/shields';
-import { DIVISIONS } from '/Users/dukewang/Fantasy Futbol/src/components/crest/divisions';
-import { CURATED_ICONS } from '/Users/dukewang/Fantasy Futbol/src/components/crest/icons';
+import { SHIELDS } from '../../src/components/crest/shields';
+import { DIVISIONS } from '../../src/components/crest/divisions';
+import { CURATED_ICONS } from '../../src/components/crest/icons';
 // Untyped .mjs; resolved through allowJs.
-import { trophySvg } from '/Users/dukewang/Fantasy Futbol/design-2.0/trophies/trophies.mjs';
+import { trophySvg } from '../trophies/trophies.mjs';
 
 type C = { icon: string | null; shape: string; division: string; showText: boolean; iconColor: string; textColor: string; borderColor: string; primaryColor: string; tertiaryColor?: string; secondaryColor: string };
 
