@@ -132,6 +132,34 @@
   }
 }
 
+/* On a coloured ground, in either theme. The ink is the deep green, which holds
+   its contrast on the light fill whatever the page theme is. */
+.variant_inverse {
+  background: var(--color-text-inverse);
+  color: var(--color-green-900);
+  border-color: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .variant_inverse:hover:not(:disabled):not(.loading) {
+    background: color-mix(in oklab, var(--color-text-inverse) 90%, var(--color-green-900));
+    color: var(--color-green-900);
+  }
+}
+
+.variant_onDark {
+  background: color-mix(in oklab, var(--color-text-inverse) 16%, transparent);
+  color: var(--color-text-inverse);
+  border-color: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .variant_onDark:hover:not(:disabled):not(.loading) {
+    background: color-mix(in oklab, var(--color-text-inverse) 24%, transparent);
+    color: var(--color-text-inverse);
+  }
+}
+
 /* Full Width */
 .fullWidth {
   width: 100%;

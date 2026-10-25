@@ -4,7 +4,8 @@ import React from 'react';
 import NavigationLink from '@/components/ui/NavigationLink';
 import styles from './Button.module.css';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+/** `inverse` and `onDark` are for a coloured ground (the matchup scoreboard): a solid light button and a quiet translucent one. */
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'inverse' | 'onDark';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface BaseButtonProps {

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import NavigationLink from '@/components/ui/NavigationLink';
+import { Button } from '@/components/ui/Button';
 import { DRAW_THRESHOLD } from '@/lib/scoring/drawBand';
 import type { MatchState, PitchPlayer, SideView } from '@/lib/matchups/matchupView';
 import { fmt, ordinal } from '@/lib/matchups/roundView';
@@ -91,7 +92,7 @@ export default function Scoreboard(props: ScoreboardProps) {
       </>
     );
   };
-  const setLineup = <NavigationLink href={lineupHref} className={`${s.btn} ${s.hxBtnGo}`}>Set Lineup</NavigationLink>;
+  const setLineup = <Button href={lineupHref} variant="inverse" className={s.hxBtn}>Set Lineup</Button>;
 
   let mid: ReactNode;
   if (up) {
@@ -133,7 +134,7 @@ export default function Scoreboard(props: ScoreboardProps) {
       </>
     );
     footM = mine
-      ? <div className={s.hxFootS}><NavigationLink href={lineupHref} className={`${s.btn} ${s.hxBtnGo}`} style={{ flex: 1 }}>Set Lineup</NavigationLink><NavigationLink href={squadHref} className={`${s.btn} ${s.hxBtnQ}`} style={{ flex: 1 }}>Squad</NavigationLink></div>
+      ? <div className={s.hxFootS}><Button href={lineupHref} variant="inverse" className={s.hxBtn} fullWidth>Set Lineup</Button><Button href={squadHref} variant="onDark" className={s.hxBtn} fullWidth>Squad</Button></div>
       : <div className={s.hxFootS}>{nextUp(vA)}</div>;
   } else {
     footD = <><div className={s.hxFootS}>{standouts(vA)}</div><div className={s.hxFootS}>{standouts(vB)}</div></>;

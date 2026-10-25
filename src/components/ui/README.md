@@ -14,7 +14,7 @@ is a decision of Duke's; change them freely, and say why.
 
 | Component | Use it for | Motion |
 | --- | --- | --- |
-| `Button` | Any action. `primary` once per view. | Press scale; label and spinner cross through a 2px blur when loading. |
+| `Button` | Any action. `primary` once per view. `inverse` and `onDark` are for a coloured ground, such as the matchup scoreboard. | Press scale; label and spinner cross through a 2px blur when loading. |
 | `IconButton` | An icon-only action. `label` is required and doubles as the tooltip. | Press scale 0.92. |
 | `HoldButton` | A costly, hard-to-undo action (release, withdraw) in place of an "Are you sure?" dialog. | Fills on a linear 1.2s clock; drains in 200ms on early release. |
 | `SegmentedControl` | A compact filter or view switch in a section head. | One thumb slides between segments. |
