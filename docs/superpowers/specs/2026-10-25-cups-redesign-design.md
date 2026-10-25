@@ -44,20 +44,31 @@ What doesn't change: who enters each cup, the cup schedules, two-legged rounds, 
 
 - The first round is generated as it is today: seeded, with byes to the top seeds. Byes still reward a high finish.
 - League Cup ties don't link to the next round. `createTournaments.ts` stops setting `next_matchup_id` for `secondary_cup`, and the migration clears it on every existing League Cup tie in a tournament that isn't `completed`. This is the only change to this season's League Cup data. No published pairing or result changes.
-- When the last tie of a round is `completed`, the next round is drawn by `draw_cup_round` (below). Its pool is the `winner_id` of every tie in the round before, and a bye counts as a tie the bye club won.
+- When the last tie of a round is `completed`, the next round is drawn (below). Its pool is the `winner_id` of every tie in the round before, and a bye counts as a tie the bye club won.
 - **Last-resort tie-break.** Today a dead-level tie (a 0–0, or best performers level) goes to `team_a` (`executeAdvanceTournament`, "Fallback: higher seed (team_a) wins"). In a drawn round, the club higher in `league_standings.rank` at the moment of the draw is placed as `team_a`. The existing fallback therefore means "higher league position" without any change to the tie-break code.
 
-### `draw_cup_round(p_round_id uuid)`
+### The draw: `pairDraw` and `apply_cup_draw`
 
-A Postgres RPC. Three paths can resolve a gameweek (the resolve cron, the stats sync, and a plain page load on matchups), so the draw has to be atomic and idempotent.
+Three paths can resolve a gameweek (the resolve cron, the stats sync, and a plain page load on matchups), so the draw has to be atomic and idempotent. The pairing logic is TypeScript, so it can be unit-tested with an injected random source. The write is a Postgres RPC that guards it. The logic is never written twice.
 
-1. Lock the round row `FOR UPDATE`. Return without changes if `drawn_at` is set.
-2. Build the entrant set. If the tournament has a round before this one, use the winners of that round, and refuse (return without changes) unless every tie in it is `completed`. Otherwise (a Consolation Cup's first round), use the clubs already placed in this round's ties.
-3. Order the entrants at random (`ORDER BY random()`). If there are fewer entrants than places, the highest-placed entrants by league rank take the byes.
-4. Pair the entrants in order across the round's ties by `bracket_position`. Within each tie, the higher-placed club is `team_a`. A tie with two clubs is set `active`. A bye tie is set `completed` with the bye club as `winner_id`, and if the tie has a `next_matchup_id` (the Consolation Cup keeps its fixed links after its one draw), the bye club is placed in that tie the way `advanceWinner` places a winner.
-5. Set `drawn_at = now()` and return the pairings, so the caller can notify.
+**`pairDraw(entrants, ties, random)`** (TypeScript, `src/lib/tournaments/draw.ts`). `entrants` are `{ teamId, rank }`, where rank is `league_standings.rank` at the moment of the draw. It returns one `{ a, b | null }` per tie, in `bracket_position` order:
 
-`executeAdvanceTournament` calls it after finalizing a round's ties on that round's `end_gameweek`:
+1. If there are fewer entrants than places, the highest-ranked entrants take the byes, one per tie.
+2. The rest are shuffled (Fisher–Yates over `random`) and paired in order.
+3. Within each tie, the higher-ranked club is `a`.
+4. The ties are shuffled into bracket positions, so a bye doesn't always sit at the top.
+
+**`apply_cup_draw(p_round_id uuid, p_ties jsonb)`** (Postgres RPC, migration 183). It returns `true` if it applied the draw and `false` if it changed nothing:
+
+1. Lock the round row `FOR UPDATE`. Return `false` if `drawn_at` is set.
+2. Work out the entrant set. If the tournament has a round before this one, it's the winners of that round, and the RPC returns `false` unless every tie in that round is `completed`. Otherwise (a Consolation Cup's first round), it's the clubs already placed in this round's ties.
+3. Return `false` unless the clubs in `p_ties` are exactly that entrant set, and the number of ties equals the round's ties. A caller that read stale data can't write a wrong draw.
+4. Write each tie by `bracket_position`. A tie with two clubs is set `active`. A bye tie is set `completed` with the bye club as `winner_id`. If the bye tie has a `next_matchup_id` (the Consolation Cup keeps its fixed links after its one draw), the bye club is placed in that tie the way `advanceWinner` places a winner (even position fills `team_a`, odd fills `team_b`).
+5. Set `drawn_at = now()` and return `true`.
+
+If two callers race, both compute a draw, the first one to take the lock applies its draw, and the second gets `false`. Only the caller that got `true` sends notifications.
+
+`executeAdvanceTournament` runs the draw after finalizing a round's ties on that round's `end_gameweek`:
 
 - **League Cup:** draw the next round, if there is one.
 - **Consolation Cup:** its first round is drawn from the **Champions Cup's** advance, right after the Champions Cup semi-final losers have dropped in. By then every expected entrant is in. This doesn't apply to a 4-club league, whose Consolation Cup is a single final (see below).
@@ -90,7 +101,7 @@ The next free number across every branch, checked 2026-10-25 (head was 182). Con
 
 - `ALTER TABLE tournament_matchups ADD COLUMN decided_by text CHECK (decided_by IN ('score','best_performer','position'))`
 - `ALTER TABLE tournament_rounds ADD COLUMN drawn_at timestamptz`
-- `CREATE FUNCTION draw_cup_round(p_round_id uuid)`
+- `CREATE FUNCTION apply_cup_draw(p_round_id uuid, p_ties jsonb)`
 - Clear `next_matchup_id` on League Cup ties in tournaments that aren't `completed`.
 
 It's additive apart from the link clearing, which removes no team, score or result.
@@ -172,7 +183,7 @@ A `loading.tsx` with real labels and shapes for the data (the kit's option A, de
 
 **Route:** `/league/[leagueId]/tournaments/[tieId]`, reached from any tie card or the Next Tie card. It has a back link to the Cups page with `?cup=` set.
 
-**Data.** A cup tie has the same shape as a league matchup, but its two clubs usually aren't each other's league opponent that week. So each side is loaded from that club's own league matchup for the gameweek. `loadMatchupView` (`src/lib/matchups/matchupView.ts`) is split so that one side can be loaded alone (a `loadSideView(teamId, gameweek)`), and `loadTieView` builds a `MatchupView` from the two sides.
+**Data.** A cup tie has the same shape as a league matchup, but its two clubs usually aren't each other's league opponent that week. So each side is loaded from that club's own league matchup for the gameweek. `loadTieView` builds a synthetic `MatchupRow`: the cup tie's two clubs as `team_a` and `team_b`, each with the lineup and score from its own league matchup. It then passes that row to the unchanged `loadMatchupView` (`src/lib/matchups/matchupView.ts`). `loadMatchupView` already scores each side independently from its lineup, so it needs no split. This is the same source `scoreLeg` uses to score a cup leg. (The approved design said `loadMatchupView` would be split; the synthetic row gets the same result with no change to matchups code.)
 
 **Layout:**
 
@@ -193,7 +204,7 @@ Left out for now: `Momentum` and `Report`. Both are built around a single league
 |---|---|
 | `src/lib/cups/cupsView.ts` | Pure view builders: shelf statuses, Next Tie, round pages, slot labels, decided-by labels. No I/O |
 | `src/lib/cups/loadCupsPage.ts` | Reads for the Cups page, in parallel waves as the current page does |
-| `src/lib/cups/loadTieView.ts` | Reads for the tie page, on top of the split `loadMatchupView` |
+| `src/lib/cups/loadTieView.ts` | Reads for the tie page, through `loadMatchupView` with a synthetic row |
 | `src/components/cups/` | `TrophyShelf`, `NextTie`, `RoundPager`, `TieCard`, one `cups.module.css` |
 | `src/app/(dashboard)/league/[leagueId]/tournaments/page.tsx` | Rewritten on the above |
 | `src/app/(dashboard)/league/[leagueId]/tournaments/[tieId]/page.tsx` | New |
@@ -210,7 +221,9 @@ Copy follows `docs/UI_RULES.md`: Title Case names and labels, sentence-case pros
 
 Vitest, under `src/lib/cups/__tests__/` and `src/lib/tournaments/__tests__/` (both inside the existing `vitest.config.ts` glob):
 
-- **Draw:** the pool is the prior round's winners, byes included. `team_a` is the higher-placed club. A second call changes nothing. It refuses while a prior tie is unfinished. Byes go to the highest-placed when entrants fall short. The pairing logic lives in TypeScript (`pairDraw(entrants, ranks, places, random)`) with an injectable random source, so tests are deterministic. The RPC mirrors it, and a test asserts that both produce the same pairing for a fixed order.
+- **`pairDraw`:** with a seeded random source, every entrant appears exactly once, `a` is always the higher-ranked club, and byes go to the highest-ranked when entrants fall short.
+- **The draw caller:** the pool is the prior round's winners, byes included. It doesn't call the RPC while a prior tie is unfinished. It notifies only when the RPC returns `true`.
+- **`apply_cup_draw`:** checked against the live database inside `BEGIN … ROLLBACK`. A second call returns `false`; a mismatched entrant set returns `false`; a Consolation bye lands in its linked final.
 - **Consolation:** entry and completion for 4, 5 and 6 clubs, including a full 6-club season run from Champions Cup quarter-finals to a completed Consolation final.
 - **`cupsView`:** every shelf status in the table above, the undrawn-slot labels, the decided-by labels, and the default cup selection.
 - **Routes:** the Cups and tie pages' loaders through `src/test/supabaseFake.ts`.
