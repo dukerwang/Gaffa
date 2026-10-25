@@ -1,0 +1,25 @@
+/* Loading states for the Gameweeks and Matchup pages. They lay out in gw.module.css's
+   own classes (bar, scoreboard, panels, rows), so every width and breakpoint matches
+   the page; this file holds only what a loader needs on top: bones that read on the
+   pitch, and the empty frames of the two charts. */
+
+/* A bone on the pitch green: white at low strength, not the card-grey inset. */
+.pb.pb { background: rgba(255, 255, 255, 0.2); }
+.pb.pb::after { background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.16) 50%, transparent 100%); }
+
+.fit { max-width: 100%; }
+.mid { margin-left: auto; margin-right: auto; }
+
+/* A chart's baseline with nothing plotted yet, in the height the chart will be. */
+.axis { display: flex; align-items: center; height: var(--h, 64px); width: 100%; }
+
+/* The top-performers chart: its gridlines and scale are the page's own, the dots are not here yet. */
+.chart { position: relative; height: 118px; }
+.tick { position: absolute; top: 0; bottom: 0; width: 0; }
+.tick i { position: absolute; left: 0; top: 4px; bottom: 22px; border-left: 1px solid var(--color-border-subtle); }
+.tick b { position: absolute; left: 0; bottom: 4px; transform: translateX(-50%); font-family: var(--font-label); font-size: 11px; font-weight: 600; color: var(--color-text-muted); }
+
+/* A half-pitch with its players still to come: rows of a face and a name. */
+.gRow { display: flex; justify-content: space-around; align-items: flex-start; height: 70px; padding-top: 6px; }
+.gCell { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; }
+.gGk { justify-content: center; }

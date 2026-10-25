@@ -87,19 +87,3 @@
   font-weight: 600;
   color: var(--color-text-secondary);
 }
-
-/* The matchup scoreboard's own corner, so its loader is the same shape. */
-.rounded {
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-/* A matchup's two halves: side by side, stacked on a phone. */
-.halves {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--s5);
-}
-@media (max-width: 640px) {
-  .halves { grid-template-columns: minmax(0, 1fr); }
-}
