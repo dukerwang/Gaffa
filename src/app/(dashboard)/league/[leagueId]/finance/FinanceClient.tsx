@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import styles from './finance.module.css';
 import EmptyState from '@/components/ui/EmptyState';
+import { Button } from '@/components/ui/Button';
+import { Icon } from '@/components/ui/Icon';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -354,25 +356,27 @@ export default function FinanceClient({
 
               {totalPages > 1 && (
                 <div className={styles.pagination}>
-                  <button
-                    className={styles.pageBtn}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    leadIcon={<Icon name="chevron-left" size={14} aria-hidden="true" />}
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={page === 0}
-                    type="button"
                   >
-                    ← Prev
-                  </button>
+                    Previous
+                  </Button>
                   <span className={styles.pageInfo}>
-                    Page {page + 1} of {totalPages} · {filtered.length} transactions
+                    Page {page + 1} of {totalPages}<span className={styles.pageCount}> · {filtered.length} transactions</span>
                   </span>
-                  <button
-                    className={styles.pageBtn}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    tailIcon={<Icon name="chevron-right" size={14} aria-hidden="true" />}
                     onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                     disabled={page >= totalPages - 1}
-                    type="button"
                   >
-                    Next →
-                  </button>
+                    Next
+                  </Button>
                 </div>
               )}
             </>
