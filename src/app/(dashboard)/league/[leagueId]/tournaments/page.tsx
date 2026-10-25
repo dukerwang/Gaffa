@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { Tabs } from '@/components/ui';
+import EmptyState from '@/components/ui/EmptyState';
 import type { Tournament, TournamentRound, TournamentMatchup } from '@/types';
 import { getSeeding } from '@/lib/tournaments/engine';
 import { BracketMatchup } from '@/components/tournaments/BracketMatchup';
@@ -76,9 +77,7 @@ export default async function TournamentsPage({ params, searchParams }: Props) {
                         </div>
                     </div>
                 </header>
-                <div className={styles.emptyCard}>
-                    No tournaments have been created yet.
-                </div>
+                <EmptyState>No tournaments have been created yet.</EmptyState>
             </div>
         );
     }
@@ -217,7 +216,7 @@ export default async function TournamentsPage({ params, searchParams }: Props) {
 
             <section className={styles.bracketSection}>
                 {roundsWithPairs.length === 0 ? (
-                    <div className={styles.emptyBracket}>Bracket not yet generated.</div>
+                    <EmptyState>Bracket not yet generated.</EmptyState>
                 ) : (
                     <div className={styles.bracket}>
                         {roundsWithPairs.map((round, roundIdx) => {

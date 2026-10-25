@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect, notFound } from 'next/navigation';
 import FinanceClient from './FinanceClient';
+import EmptyState from '@/components/ui/EmptyState';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,19 +37,7 @@ export default async function FinancePage({ params }: Props) {
   if (!myTeam && league.commissioner_id !== user.id) redirect('/dashboard');
 
   if (!myTeam) {
-    return (
-      <div
-        style={{
-          padding: 'var(--s16) var(--s8)',
-          textAlign: 'center',
-          fontFamily: 'var(--font-sans)',
-          fontSize: 'var(--t-13)',
-          color: 'var(--color-text-muted)',
-        }}
-      >
-        You do not have a team in this league.
-      </div>
-    );
+    return <EmptyState>You do not have a team in this league.</EmptyState>;
   }
 
   // Fetch all transactions for this team (no limit — finance page is a ledger)
