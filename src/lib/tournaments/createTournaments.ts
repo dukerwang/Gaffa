@@ -219,7 +219,8 @@ export async function createTournament(
     return { ok: false, error: `Failed to create matchups: ${mErr?.message}` };
   }
 
-  // 4. Link next_matchup_id (winner progression)
+  // 4. Link next_matchup_id (winner progression). The League Cup has no fixed
+  // path: each round after the first is drawn (src/lib/tournaments/runDraw.ts).
   const matchupsByRound = new Map<string, typeof insertedMatchups>();
   for (const m of insertedMatchups) {
     const arr = matchupsByRound.get(m.round_id) ?? [];
@@ -227,7 +228,10 @@ export async function createTournament(
     matchupsByRound.set(m.round_id, arr);
   }
 
-  for (let r = 0; r < rounds.length - 1; r++) {
+  // The rows above were read before the links exist, so the links are kept
+  // here for the bye step below rather than read off those rows.
+  const nextOf = new Map<string, string>();
+  for (let r = 0; type !== 'secondary_cup' && r < rounds.length - 1; r++) {
     const cur = (matchupsByRound.get(rounds[r].id) ?? []).sort(
       (a, b) => a.bracket_position - b.bracket_position,
     );
@@ -242,6 +246,7 @@ export async function createTournament(
           .from('tournament_matchups')
           .update({ next_matchup_id: nextMatchup.id })
           .eq('id', cm.id);
+        nextOf.set(cm.id, nextMatchup.id);
       }
     }
   }
@@ -256,8 +261,9 @@ export async function createTournament(
         .from('tournament_matchups')
         .update({ winner_id: winnerId, status: 'completed' })
         .eq('id', m.id);
-      if (m.next_matchup_id && winnerId) {
-        await advanceWinner(admin, m.next_matchup_id, winnerId, m.bracket_position);
+      const nextId = nextOf.get(m.id);
+      if (nextId && winnerId) {
+        await advanceWinner(admin, nextId, winnerId, m.bracket_position);
       }
     }
   }

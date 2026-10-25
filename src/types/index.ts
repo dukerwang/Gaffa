@@ -496,6 +496,8 @@ export interface TournamentRound {
   start_gameweek: number;
   end_gameweek: number;
   is_two_leg: boolean;
+  /** Set when the round's ties were drawn at random (migration 183); null for a seeded round. */
+  drawn_at: string | null;
   created_at: string;
   // Joined fields
   matchups?: TournamentMatchup[];
@@ -511,6 +513,8 @@ export interface TournamentMatchup {
   team_a_score_leg2: number;
   team_b_score_leg2: number;
   winner_id: string | null;
+  /** How a finished tie was decided (migration 183); null for a bye or an unfinished tie. */
+  decided_by: 'score' | 'best_performer' | 'position' | null;
   next_matchup_id: string | null;
   bracket_position: number;
   status: TournamentMatchupStatus;
