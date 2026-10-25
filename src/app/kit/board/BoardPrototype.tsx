@@ -1,27 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import {
   Button,
-  Checkbox,
   HoldButton,
   Icon,
   MoneyStepper,
+  NumberRoll,
   ResponsiveModal,
   SegmentedControl,
-  Select,
   toast,
 } from '@/components/ui';
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
 import CrestBadge from '@/components/crest/CrestBadge';
+import type { CrestConfig } from '@/components/crest/types';
+import RatedPortrait from '@/app/(dashboard)/dashboard/RatedPortrait';
+import { clubBadgePath } from '@/lib/clubs/registry';
 import styles from './board.module.css';
 
 /* Prototype only. Every name, price and clock here is invented; no route is
-   called. It is drawn from the kit and the app's tokens so that what is
-   approved is what ships, with nothing to port. */
+   called, and nothing is read. Players, portraits and badges are real so the
+   page is judged on real imagery.
 
-const photo = (code: number) => `https://resources.premierleague.com/premierleague25/photos/players/110x140/${code}.png`;
+   Meaning is carried by pictures, not captions:
+   - who wants what: a club crest beside a portrait or a position tile
+   - how you would pay: three small glyphs
+   - who can see a target: a lock, one crest, or many
+   - how senior a role target is: four dots
+   - where a target stands: the bottom edge of its tile (budget, live strip)
+     and a ring when a match exists
+   - how long a listing has left: a bar along its foot */
+
+/* ---------- invented data ---------- */
 
 interface Person {
   id: string;
@@ -29,110 +40,256 @@ interface Person {
   pos: string;
   club: string;
   value: number;
-  photo?: string;
+  code: number;
 }
 
-const PEOPLE: Record<string, Person> = {
-  rice: { id: 'rice', name: 'Declan Rice', pos: 'DM', club: 'Arsenal', value: 120, photo: photo(204480) },
-  gabriel: { id: 'gabriel', name: 'Gabriel', pos: 'CB', club: 'Arsenal', value: 100, photo: photo(226597) },
-  haaland: { id: 'haaland', name: 'Erling Haaland', pos: 'ST', club: 'Man City', value: 220, photo: photo(223094) },
-  wirtz: { id: 'wirtz', name: 'Florian Wirtz', pos: 'AM', club: 'Liverpool', value: 100, photo: photo(494595) },
-  havertz: { id: 'havertz', name: 'Kai Havertz', pos: 'ST', club: 'Arsenal', value: 55 },
-  ndiaye: { id: 'ndiaye', name: 'Iliman Ndiaye', pos: 'LW', club: 'Everton', value: 45 },
-  kroupi: { id: 'kroupi', name: 'Eli Junior Kroupi', pos: 'ST', club: 'Bournemouth', value: 12 },
+const P: Record<string, Person> = {
+  rice: { id: 'rice', name: 'Declan Rice', pos: 'DM', club: 'Arsenal', value: 120, code: 204480 },
+  gabriel: { id: 'gabriel', name: 'Gabriel', pos: 'CB', club: 'Arsenal', value: 100, code: 226597 },
+  haaland: { id: 'haaland', name: 'Erling Haaland', pos: 'ST', club: 'Man City', value: 220, code: 223094 },
+  wirtz: { id: 'wirtz', name: 'Florian Wirtz', pos: 'AM', club: 'Liverpool', value: 100, code: 494595 },
+  havertz: { id: 'havertz', name: 'Kai Havertz', pos: 'ST', club: 'Arsenal', value: 55, code: 219847 },
+  doku: { id: 'doku', name: 'Jérémy Doku', pos: 'LW', club: 'Man City', value: 45, code: 248875 },
+  kroupi: { id: 'kroupi', name: 'Junior Kroupi', pos: 'ST', club: 'Bournemouth', value: 12, code: 560262 },
+  gvardiol: { id: 'gvardiol', name: 'Joško Gvardiol', pos: 'CB', club: 'Man City', value: 60, code: 477424 },
+  colwill: { id: 'colwill', name: 'Levi Colwill', pos: 'CB', club: 'Chelsea', value: 38, code: 460028 },
+  saliba: { id: 'saliba', name: 'William Saliba', pos: 'CB', club: 'Arsenal', value: 85, code: 462424 },
+  hall: { id: 'hall', name: 'Lewis Hall', pos: 'LB', club: 'Newcastle', value: 24, code: 487838 },
+  saka: { id: 'saka', name: 'Bukayo Saka', pos: 'RW', club: 'Arsenal', value: 130, code: 223340 },
 };
 
+const mkCrest = (shape: string, division: string, primary: string, secondary: string, icon: string): CrestConfig => ({
+  shape,
+  division,
+  primaryColor: primary,
+  secondaryColor: secondary,
+  borderColor: secondary,
+  icon,
+  iconColor: '#FFFFFF',
+  showText: false,
+  textColor: '#FFFFFF',
+});
+
+type MgrKey = 'me' | 'pizza' | 'hayden' | 'chelsz' | 'tea' | 'totten' | 'xabi';
+const MGR: Record<MgrKey, { name: string; short: string; crest: CrestConfig }> = {
+  me: { name: 'Duke’s XI', short: 'You', crest: mkCrest('classic', 'solid', '#0C6D3E', '#F4EFE4', 'football') },
+  pizza: { name: 'Pizzaking’s Club', short: 'Pizzaking’s', crest: mkCrest('heraldic', 'quartered', '#B8322A', '#F0B429', 'crown') },
+  hayden: { name: 'Hayden FC', short: 'Hayden', crest: mkCrest('circle', 'sash', '#1F4E9C', '#FFFFFF', 'eagle') },
+  chelsz: { name: 'ChelsZ FC', short: 'ChelsZ', crest: mkCrest('classic', 'vertical-half', '#1E5BB8', '#E8EEF9', 'lion') },
+  tea: { name: 'Tea FC', short: 'Tea', crest: mkCrest('arch', 'solid', '#6B3F23', '#F2E3C6', 'star') },
+  totten: { name: 'tottenyang FC', short: 'tottenyang', crest: mkCrest('escutcheon', 'horizontal-half', '#14264F', '#E7ECF5', 'lightning') },
+  xabi: { name: 'Not Too Xabi', short: 'Xabi', crest: mkCrest('hexagon', 'chevron', '#C4262E', '#1B1B1B', 'football') },
+};
+
+type Stance = 'cash' | 'players' | 'loan';
 type Audience = 'you' | 'club' | 'league';
-const AUDIENCE_LABEL: Record<Audience, string> = { you: 'Only you', club: "Only Pizzaking's Club", league: 'The league' };
+type Level = 'star' | 'starter' | 'bench' | 'prospect';
+const LEVEL_DOTS: Record<Level, number> = { star: 4, starter: 3, bench: 2, prospect: 1 };
+const LEVEL_NAME: Record<Level, string> = { star: 'Star', starter: 'Starter', bench: 'Bench', prospect: 'Prospect' };
 
 interface Target {
   id: string;
   who: Person | null;
-  role?: string;
   pos: string;
-  terms: string;
+  level?: Level;
+  budget: number;
+  stance: Stance[];
   audience: Audience;
-  state: { kind: 'auction'; bid: number; ends: string } | { kind: 'match'; text: string } | { kind: 'quiet' };
-  note?: string;
+  /** The club that owns a named target, when he has one. */
+  owner?: MgrKey;
+  state:
+    | { kind: 'quiet' }
+    | { kind: 'auction'; bid: number; left: string }
+    | { kind: 'match'; who: Person; owner: MgrKey };
 }
 
 const TARGETS: Target[] = [
-  { id: 't1', who: PEOPLE.gabriel, pos: 'CB', terms: 'Will pay cash · up to €110m', audience: 'club', state: { kind: 'auction', bid: 58, ends: '2d 04h' }, note: "Pizzaking's Club listed him" },
-  { id: 't2', who: PEOPLE.haaland, pos: 'ST', terms: 'Will pay cash · up to €230m', audience: 'you', state: { kind: 'quiet' }, note: 'Tea FC want him too' },
-  { id: 't3', who: PEOPLE.wirtz, pos: 'AM', terms: 'Offering players', audience: 'league', state: { kind: 'quiet' }, note: 'ChelsZ FC want him too' },
-  { id: 't4', who: null, role: 'Starting Left-Back', pos: 'LB', terms: 'Will pay cash · up to €40m', audience: 'league', state: { kind: 'match', text: 'ChelsZ FC listed Hall' } },
+  { id: 't1', who: P.gabriel, pos: 'CB', budget: 110, stance: ['cash'], audience: 'club', owner: 'pizza', state: { kind: 'auction', bid: 58, left: '2d 04h' } },
+  { id: 't2', who: P.haaland, pos: 'ST', budget: 230, stance: ['cash', 'players'], audience: 'you', owner: 'hayden', state: { kind: 'quiet' } },
+  { id: 't3', who: P.wirtz, pos: 'AM', budget: 90, stance: ['players', 'loan'], audience: 'league', owner: 'tea', state: { kind: 'quiet' } },
+  { id: 't4', who: null, pos: 'LB', level: 'starter', budget: 40, stance: ['cash'], audience: 'league', state: { kind: 'match', who: P.hall, owner: 'chelsz' } },
+  { id: 't5', who: null, pos: 'ST', level: 'prospect', budget: 15, stance: ['cash', 'loan'], audience: 'you', state: { kind: 'quiet' } },
 ];
 
-interface Want {
+interface Ask {
   id: string;
-  club: string;
-  line: string;
-  terms: string;
-  yours: { text: string; count?: number } | { person: Person; text: string };
-  actions: [string, string];
+  from: MgrKey;
+  budget: number;
+  stance: Stance[];
+  direct?: boolean;
+  /** Named: the one player of yours they want. Role: what you have to answer it. */
+  named?: Person;
+  role?: { pos: string; level: Level; have: Person[]; more: number };
 }
 
-const WANTED: Want[] = [
-  { id: 'w1', club: 'tottenyang FC', line: 'want Declan Rice', terms: 'Will pay cash · up to €95m', yours: { person: PEOPLE.rice, text: 'Only you can see this' }, actions: ['List', 'Offer'] },
-  { id: 'w2', club: 'ChelsZ FC', line: 'want a starting centre-back', terms: 'Will pay cash · up to €35m', yours: { text: 'Gvardiol, Colwill +3', count: 5 }, actions: ['Message', 'Offer'] },
-  { id: 'w3', club: 'Tea FC', line: 'want a striker prospect', terms: 'Offering players', yours: { person: PEOPLE.kroupi, text: '20 · Academy' }, actions: ['Message', 'Offer'] },
+const ASKS: Ask[] = [
+  { id: 'a1', from: 'totten', budget: 95, stance: ['cash'], direct: true, named: P.rice },
+  { id: 'a2', from: 'chelsz', budget: 35, stance: ['cash', 'players'], role: { pos: 'CB', level: 'starter', have: [P.saliba, P.gvardiol, P.colwill], more: 2 } },
+  { id: 'a3', from: 'tea', budget: 20, stance: ['players'], named: P.kroupi },
 ];
 
-const LISTINGS = [
-  { id: 'l1', who: PEOPLE.havertz, interest: 'ChelsZ FC lead · 2 bids', price: 36, sub: 'High bid', ends: '1d 06h' },
-  { id: 'l2', who: PEOPLE.ndiaye, interest: 'Hayden FC want him', price: 45, sub: 'Offers only', ends: null },
+interface Listing {
+  id: string;
+  who: Person;
+  price: number;
+  /** Fraction of the clock still to run; null for a listing with no auction. */
+  left: number | null;
+  clock: string | null;
+  interest: MgrKey[];
+  lead?: MgrKey;
+}
+
+const LISTINGS: Listing[] = [
+  { id: 'l1', who: P.havertz, price: 36, left: 0.72, clock: '1d 06h', interest: ['chelsz', 'tea'], lead: 'chelsz' },
+  { id: 'l2', who: P.doku, price: 45, left: null, clock: null, interest: ['hayden'] },
 ];
 
-const BOARD_LISTED = [
-  { id: 'b1', who: PEOPLE.rice, owner: 'Hayden FC', price: 120, sub: 'Asking', ends: '3d 11h' },
-  { id: 'b2', who: PEOPLE.gabriel, owner: "Pizzaking's Club", price: 58, sub: 'High bid', ends: '2d 04h' },
-  { id: 'b3', who: PEOPLE.kroupi, owner: 'Tea FC', price: 12, sub: 'Offers only', ends: null },
+interface Listed {
+  id: string;
+  who: Person;
+  owner: MgrKey;
+  price: number;
+  left: number | null;
+  clock: string | null;
+}
+
+const BOARD_LISTED: Listed[] = [
+  { id: 'b1', who: P.gabriel, owner: 'pizza', price: 58, left: 0.52, clock: '2d 04h' },
+  { id: 'b2', who: P.saka, owner: 'hayden', price: 120, left: 0.84, clock: '3d 11h' },
+  { id: 'b3', who: P.hall, owner: 'chelsz', price: 24, left: 0.12, clock: '8h' },
+  { id: 'b4', who: P.colwill, owner: 'xabi', price: 38, left: null, clock: null },
 ];
-const BOARD_WANTED = [
-  { id: 'bw1', club: 'tottenyang FC', line: 'want a defensive midfielder', terms: 'Will pay cash · up to €80m', pos: 'DM' },
-  { id: 'bw2', club: 'Hayden FC', line: 'want Iliman Ndiaye', terms: 'Offering players', pos: 'LW' },
-  { id: 'bw3', club: 'Not Too Xabi', line: 'want a starting striker', terms: 'Will pay cash · up to €120m', pos: 'ST' },
+
+interface Wanted {
+  id: string;
+  from: MgrKey;
+  who?: Person;
+  pos: string;
+  level?: Level;
+  budget: number;
+  stance: Stance[];
+}
+
+const BOARD_WANTED: Wanted[] = [
+  { id: 'w1', from: 'totten', pos: 'DM', level: 'starter', budget: 80, stance: ['cash'] },
+  { id: 'w2', from: 'hayden', who: P.doku, pos: 'LW', budget: 50, stance: ['players'] },
+  { id: 'w3', from: 'xabi', pos: 'ST', level: 'star', budget: 120, stance: ['cash', 'loan'] },
+  { id: 'w4', from: 'tea', pos: 'CB', level: 'prospect', budget: 15, stance: ['cash'] },
 ];
 
 const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'DM', 'CM', 'AM', 'LW', 'RW', 'ST'];
+const posVar = (pos: string) => `var(--color-pos-${pos.toLowerCase()})`;
+const posStyle = (pos: string) => ({ '--pos': posVar(pos), '--pos-line': `var(--color-pos-${pos.toLowerCase()}-line)` }) as CSSProperties;
 
 type Sheet =
   | null
   | { kind: 'who' }
-  | { kind: 'named'; who: Person; editing?: Target }
-  | { kind: 'role'; editing?: Target }
+  | { kind: 'target'; who: Person | null; pos?: string; editing?: Target }
   | { kind: 'listing'; who: Person }
-  | { kind: 'listed'; who: Person; owner: string; price: number };
+  | { kind: 'listed'; item: Listed };
 
-const crest = (name: string, size = 22) => <CrestBadge config={null} teamName={name} size={size} interactive={false} />;
+/* ---------- small pictures ---------- */
 
-function Face({ p, size = 'xs' }: { p: Person; size?: 'xs' | 'xxs' }) {
-  return <Portrait photoUrl={p.photo ?? null} name={p.name} club={null} size={size} headTopPct={null} headWidthPct={null} photoVersion={null} />;
+function Mgr({ k, size = 24 }: { k: MgrKey; size?: number }) {
+  return <CrestBadge config={MGR[k].crest} teamName={MGR[k].name} size={size} interactive={false} />;
 }
 
-function Heading({ title, hint, right }: { title: string; hint?: string; right?: React.ReactNode }) {
-  return (
-    <div className={styles.sect}>
-      <h2 className={styles.sectT}>{title}</h2>
-      {hint && <span className={styles.sectHint}>{hint}</span>}
-      {right && <span className={styles.sectRight}>{right}</span>}
-    </div>
-  );
+function ClubBadge({ club, size = 14 }: { club: string; size?: number }) {
+  const src = clubBadgePath(club);
+  if (!src) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="" width={size} height={size} className={styles.clubBadge} />;
 }
 
-function AudienceLine({ a }: { a: Audience }) {
+/** Crests lapping over one another; the first one is on top. */
+function CrestStack({ keys, size = 22, lead }: { keys: MgrKey[]; size?: number; lead?: MgrKey }) {
   return (
-    <span className={styles.audience}>
-      <Icon name={a === 'league' ? 'users' : 'lock'} size={12} />
-      {AUDIENCE_LABEL[a]}
+    <span className={styles.crestStack} aria-hidden="true">
+      {keys.map((k, i) => (
+        <span
+          key={k}
+          className={`${styles.stackItem} ${k === lead ? styles.stackLead : ''}`}
+          style={{ zIndex: keys.length - i, width: size, height: size }}
+        >
+          <Mgr k={k} size={size - 4} />
+        </span>
+      ))}
     </span>
   );
 }
 
+const GLYPH: Record<Stance, ReactNode> = {
+  cash: (
+    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="8" cy="8" r="6.4" />
+      <path d="M10.3 5.9a3 3 0 1 0 0 4.2M5.3 7.3h4M5.3 8.8h4" />
+    </svg>
+  ),
+  players: <Icon name="repeat" size={14} />,
+  loan: (
+    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="8" cy="8" r="6.4" />
+      <path d="M8 4.6V8l2.4 1.5" />
+    </svg>
+  ),
+};
+const STANCE_NAME: Record<Stance, string> = { cash: 'Cash', players: 'Players', loan: 'Loan' };
+
+function Stances({ list }: { list: Stance[] }) {
+  return (
+    <span className={styles.stances} role="img" aria-label={list.map((s) => STANCE_NAME[s]).join(', ')}>
+      {list.map((s) => (
+        <span key={s}>{GLYPH[s]}</span>
+      ))}
+    </span>
+  );
+}
+
+function Level({ level }: { level: Level }) {
+  const n = LEVEL_DOTS[level];
+  return (
+    <span className={styles.level} role="img" aria-label={LEVEL_NAME[level]}>
+      {[0, 1, 2, 3].map((i) => (
+        <i key={i} className={i < n ? styles.levelOn : ''} />
+      ))}
+    </span>
+  );
+}
+
+/** Who can see a target, as a picture: a lock, a single crest, or the league. */
+function Eye({ a, owner }: { a: Audience; owner?: MgrKey }) {
+  if (a === 'club' && owner) return <Mgr k={owner} size={16} />;
+  return <Icon name={a === 'you' ? 'lock' : 'users'} size={13} />;
+}
+const EYE_NAME: Record<Audience, string> = { you: 'Only you', club: 'One club', league: 'The league' };
+
+const Money = ({ n, className }: { n: number; className?: string }) => <b className={`${styles.money} ${className ?? ''}`}>€{n}m</b>;
+
+function Cutout({ p }: { p: Person }) {
+  return <RatedPortrait photoUrl={String(p.code)} photoVersion={null} name={p.name} />;
+}
+
+function Pips({ on, total }: { on: number; total: number }) {
+  return (
+    <span className={styles.pips} role="img" aria-label={`${on} of ${total}`}>
+      {Array.from({ length: total }, (_, i) => (
+        <i key={i} className={i < on ? styles.pipOn : ''} />
+      ))}
+    </span>
+  );
+}
+
+function TimeBar({ left }: { left: number | null }) {
+  if (left === null) return null;
+  return <span className={`${styles.timeBar} ${left < 0.2 ? styles.timeUrgent : ''}`} style={{ '--p': left } as CSSProperties} aria-hidden="true" />;
+}
+
+/* ---------- the page ---------- */
+
 export default function BoardPrototype() {
   const [sheet, setSheet] = useState<Sheet>(null);
   const [view, setView] = useState<'listed' | 'wanted'>('listed');
-  const [position, setPosition] = useState('');
+  const [pos, setPos] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   const applyTheme = (t: 'light' | 'dark') => {
@@ -140,15 +297,13 @@ export default function BoardPrototype() {
     document.documentElement.dataset.theme = t;
   };
 
-  const listed = BOARD_LISTED.filter((r) => !position || r.who.pos === position);
-  const wanted = BOARD_WANTED.filter((r) => !position || r.pos === position);
-  const countFor = (pos: string) =>
-    (view === 'listed' ? BOARD_LISTED.filter((r) => r.who.pos === pos) : BOARD_WANTED.filter((r) => r.pos === pos)).length;
+  const listed = BOARD_LISTED.filter((r) => !pos || r.who.pos === pos);
+  const wanted = BOARD_WANTED.filter((r) => !pos || r.pos === pos);
+  const countFor = (p: string) => (view === 'listed' ? BOARD_LISTED.filter((r) => r.who.pos === p) : BOARD_WANTED.filter((r) => r.pos === p)).length;
 
   return (
-    <div className={styles.page}>
-      <div className={styles.proto}>
-        <span>Prototype · invented data</span>
+    <div className={styles.root}>
+      <div className={styles.themeSwitch}>
         <SegmentedControl
           size="sm"
           ariaLabel="Theme"
@@ -161,398 +316,579 @@ export default function BoardPrototype() {
         />
       </div>
 
-      <header className={styles.mast}>
-        <h1 className={styles.title}>The Board</h1>
-        <div className={styles.stats}>
-          <div className={styles.stat}><b className={styles.figAccent}>€204m</b><span>Club Balance</span></div>
-          <div className={styles.stat}><b>3</b><span>Wanted from you</span></div>
-          <div className={styles.stat}><b>4 of 10</b><span>Targets</span></div>
-          <div className={styles.stat}><b>2</b><span>Listed</span></div>
-        </div>
-      </header>
+      <div className={styles.page}>
+        {/* The anchor field: the green shelf, with what is waiting on you resting on its edge. */}
+        <div className={styles.top}>
+          <div className={styles.shelfBg} aria-hidden="true" />
+          <div className={styles.shelfIn}>
+            <div className={styles.mast}>
+              <h1 className={styles.title}>The Board</h1>
+              <span className={styles.balance}>
+                <Mgr k="me" size={26} />
+                <b><NumberRoll value={204} format={(n) => `€${n}m`} /></b>
+              </span>
+            </div>
 
-      <div className={styles.body}>
-        <main className={styles.main}>
-          <section className={styles.toAnswer}>
-            <Heading title="Wanted From You" hint="You could answer these" />
-            <div className={styles.panel}>
-              {WANTED.map((w) => (
-                <article key={w.id} className={styles.want}>
-                  <div className={styles.wantTop}>
-                    <span className={styles.wantCrest}>{crest(w.club, 28)}</span>
-                    <div className={styles.wantText}>
-                      <h3 className={styles.wantLine}>{w.club} {w.line}</h3>
-                      <p className={styles.terms}>{w.terms}</p>
+            <div className={styles.askHead}>
+              <h2 className={styles.askT}>Wanted From You</h2>
+              <span className={styles.askCount}>{ASKS.length}</span>
+            </div>
+            <div className={styles.asks}>
+              {ASKS.map((a, i) => (
+                <article key={a.id} className={styles.ask} style={{ '--i': i } as CSSProperties}>
+                  <div className={styles.askMain}>
+                    <div className={styles.askPlinth} style={posStyle(a.named?.pos ?? a.role!.pos)}>
+                      {a.named ? (
+                        <Cutout p={a.named} />
+                      ) : (
+                        <>
+                          {a.role!.have.map((p, j) => (
+                            <span key={p.id} className={styles.stackFace} style={{ left: `${j * 26 - 6}px`, zIndex: 3 - j }}>
+                              <Cutout p={p} />
+                            </span>
+                          ))}
+                          <span className={styles.stackMore}>+{a.role!.more}</span>
+                        </>
+                      )}
+                      {a.direct && (
+                        <span className={styles.plinthMark}>
+                          <Icon name="lock" size={12} />
+                        </span>
+                      )}
+                    </div>
+                    <div className={styles.askBody}>
+                      <span className={styles.askFrom}>
+                        <Mgr k={a.from} size={30} />
+                        <span className={styles.askName}>{MGR[a.from].name}</span>
+                      </span>
+                      <span className={styles.askWhat}>
+                        {a.named ? (
+                          <span className={styles.nameRow}>
+                            <PositionBadge position={a.named.pos} size="sm" />
+                            <span className={styles.clip}>{a.named.name}</span>
+                          </span>
+                        ) : (
+                          <span className={styles.nameRow}>
+                            <PositionBadge position={a.role!.pos} size="sm" />
+                            <Level level={a.role!.level} />
+                          </span>
+                        )}
+                      </span>
+                      <span className={styles.askTerms}>
+                        <Money n={a.budget} />
+                        <Stances list={a.stance} />
+                      </span>
                     </div>
                   </div>
-                  <div className={styles.wantYours}>
-                    {'person' in w.yours ? (
-                      <>
-                        <Face p={w.yours.person} size="xxs" />
-                        <span className={styles.yoursName}>{w.yours.person.name}<PositionBadge position={w.yours.person.pos} size="sm" /></span>
-                        <span className={styles.yoursSub}>{w.yours.text}</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className={styles.haveCount}>{w.yours.count}</span>
-                        <span className={styles.yoursName}>You have {w.yours.count}</span>
-                        <span className={styles.yoursSub}>{w.yours.text}</span>
-                      </>
-                    )}
-                  </div>
-                  <div className={styles.wantActions}>
-                    <Button variant="secondary" fullWidth onClick={() => toast(`${w.actions[0]} sent`)}>{w.actions[0]}</Button>
-                    <Button variant="primary" fullWidth onClick={() => toast('Offer opened')}>{w.actions[1]}</Button>
+                  <div className={styles.askActions}>
+                    {a.named && <Button variant="secondary" size="sm" fullWidth onClick={() => toast('Listed')}>List</Button>}
+                    <Button variant="primary" size="sm" fullWidth onClick={() => toast('Offer opened')}>Offer</Button>
                   </div>
                 </article>
               ))}
             </div>
-          </section>
+          </div>
+        </div>
 
-          <section>
-            <Heading title="Your Targets" hint="4 of 10" right={<Button size="sm" variant="primary" onClick={() => setSheet({ kind: 'who' })}>Add</Button>} />
-            <div className={styles.panel}>
-              {TARGETS.map((t) => (
+        <div className={styles.cols}>
+          <section className={styles.targets} aria-labelledby="h-targets">
+            <div className={styles.head}>
+              <h2 id="h-targets" className={styles.headT}>Your Targets</h2>
+              <div className={styles.headEnd}>
+                <Pips on={TARGETS.length} total={10} />
+                <Button size="sm" variant="primary" onClick={() => setSheet({ kind: 'who' })}>
+                  <span className={styles.btnIn}><Icon name="plus" size={14} />Add</span>
+                </Button>
+              </div>
+            </div>
+            <div className={styles.tiles}>
+              {TARGETS.map((t, i) => (
                 <button
                   key={t.id}
                   type="button"
-                  className={styles.row}
-                  onClick={() => setSheet(t.who ? { kind: 'named', who: t.who, editing: t } : { kind: 'role', editing: t })}
+                  className={`${styles.tile} ${t.state.kind === 'match' ? styles.tileMatch : ''}`}
+                  style={{ '--i': i } as CSSProperties}
+                  onClick={() => setSheet({ kind: 'target', who: t.who, pos: t.pos, editing: t })}
+                  aria-label={t.who ? t.who.name : `${t.pos} ${LEVEL_NAME[t.level!]}`}
                 >
-                  {t.who ? <Face p={t.who} /> : <span className={styles.posTile} style={{ '--pos': `var(--color-pos-${t.pos.toLowerCase()})` } as React.CSSProperties}>{t.pos}</span>}
-                  <span className={styles.rowBody}>
-                    <span className={styles.rowName}>
-                      {t.who?.name ?? t.role}
-                      <PositionBadge position={t.pos} size="sm" />
+                  <span className={styles.plinth} style={posStyle(t.pos)}>
+                    {t.who ? <Cutout p={t.who} /> : <span className={styles.bigPos}>{t.pos}</span>}
+                    <span className={styles.chipTL} title={EYE_NAME[t.audience]}>
+                      <Eye a={t.audience} owner={t.owner} />
                     </span>
-                    <span className={styles.rowSub}>{t.terms}</span>
-                    <span className={styles.rowMeta}>
-                      <AudienceLine a={t.audience} />
-                      {t.state.kind === 'quiet' && t.note && <span>{t.note}</span>}
-                      {t.state.kind === 'match' && <span className={styles.matchText}>{t.state.text}</span>}
+                    <span className={styles.chipTR}>
+                      <Stances list={t.stance} />
                     </span>
+                    {t.state.kind === 'auction' ? (
+                      <span className={styles.liveStrip}>
+                        <i className={styles.liveDot} />
+                        <b>€{t.state.bid}m</b>
+                        <span>{t.state.left}</span>
+                      </span>
+                    ) : (
+                      <span className={styles.budget}>€{t.budget}m</span>
+                    )}
+                    {t.state.kind === 'match' && (
+                      <span className={styles.matchChip}>
+                        <span className={styles.matchFace}>
+                          <Cutout p={t.state.who} />
+                        </span>
+                        <span className={styles.matchCrest}>
+                          <Mgr k={t.state.owner} size={16} />
+                        </span>
+                      </span>
+                    )}
                   </span>
-                  {/* A target nobody has listed has nothing to say on the right. */}
-                  {t.state.kind === 'auction' && (
-                    <span className={styles.rowEnd}>
-                      <span className={styles.atAuction}>At auction</span>
-                      <b className={styles.money}>€{t.state.bid}m</b>
-                      <span className={styles.clock}>{t.state.ends}</span>
-                    </span>
-                  )}
+                  <span className={`g-namerow ${styles.tileName}`}>
+                    <PositionBadge position={t.pos} size="sm" />
+                    {t.who ? <span>{t.who.name}</span> : <Level level={t.level!} />}
+                  </span>
+                  <span className={styles.cap}>
+                    {t.who ? (
+                      <>
+                        <ClubBadge club={t.who.club} />
+                        {t.who.club}
+                      </>
+                    ) : (
+                      LEVEL_NAME[t.level!]
+                    )}
+                  </span>
                 </button>
               ))}
             </div>
           </section>
 
-          <section>
-            <Heading title="Your Listings" hint="2 live" right={<Button size="sm" variant="primary" onClick={() => setSheet({ kind: 'listing', who: PEOPLE.havertz })}>Add</Button>} />
-            <div className={styles.panel}>
-              {LISTINGS.map((l) => (
-                <button key={l.id} type="button" className={styles.row} onClick={() => setSheet({ kind: 'listing', who: l.who })}>
-                  <Face p={l.who} />
-                  <span className={styles.rowBody}>
-                    <span className={styles.rowName}>{l.who.name}<PositionBadge position={l.who.pos} size="sm" /></span>
-                    <span className={styles.rowSub}>{l.interest}</span>
-                  </span>
-                  <span className={styles.rowEnd}>
-                    <b className={styles.money}>€{l.price}m</b>
-                    <span className={styles.quiet}>{l.sub}</span>
-                    {l.ends && <span className={styles.clock}>{l.ends}</span>}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <Heading
-              title="The Board"
-              right={
+          <section className={styles.board} aria-labelledby="h-board">
+            <div className={styles.head}>
+              <h2 id="h-board" className={styles.headT}>The Board</h2>
+              <div className={styles.headEnd}>
                 <SegmentedControl
                   variant="ink"
                   size="sm"
                   ariaLabel="Board view"
                   value={view}
-                  onChange={(v) => { setView(v); setPosition(''); }}
+                  onChange={(v) => {
+                    setView(v);
+                    setPos(null);
+                  }}
                   options={[
                     { value: 'listed', label: 'Listed' },
                     { value: 'wanted', label: 'Wanted' },
                   ]}
                 />
-              }
-            />
-            <div className={styles.filter}>
-              <Select
-                size="sm"
-                ariaLabel="Position"
-                value={position}
-                onChange={setPosition}
-                items={[
-                  { value: '', label: 'All Positions', trailing: String(view === 'listed' ? BOARD_LISTED.length : BOARD_WANTED.length) },
-                  ...POSITIONS.map((p) => ({ value: p, label: p, trailing: String(countFor(p)), disabled: countFor(p) === 0 })),
-                ]}
-              />
+              </div>
             </div>
-            <div className={styles.panel}>
-              {view === 'listed' ? (
-                listed.length ? listed.map((r) => (
-                  <div key={r.id} className={`${styles.row} ${styles.listedRow}`}>
-                    <button type="button" className={styles.rowHit} aria-label={`${r.who.name}, €${r.price}m`} onClick={() => setSheet({ kind: 'listed', who: r.who, owner: r.owner, price: r.price })} />
-                    <Face p={r.who} />
-                    <span className={styles.rowBody}>
-                      <span className={styles.rowName}>{r.who.name}<PositionBadge position={r.who.pos} size="sm" /></span>
-                      <span className={styles.rowSub}>{crest(r.owner, 16)}{r.owner}</span>
+
+            <div className={styles.rail} role="group" aria-label="Position">
+              {POSITIONS.map((p) => {
+                const n = countFor(p);
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    className={`${styles.posChip} ${pos === p ? styles.posChipOn : ''}`}
+                    style={posStyle(p)}
+                    disabled={n === 0}
+                    aria-pressed={pos === p}
+                    onClick={() => setPos(pos === p ? null : p)}
+                  >
+                    {p}
+                    <b>{n}</b>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className={styles.rows}>
+              {view === 'listed' &&
+                listed.map((r) => (
+                  <div key={r.id} className={styles.lrow}>
+                    <button type="button" className={styles.rowHit} aria-label={r.who.name} onClick={() => setSheet({ kind: 'listed', item: r })} />
+                    <Portrait photoUrl={String(r.who.code)} name={r.who.name} club={r.who.club} size="sm" headTopPct={null} headWidthPct={null} photoVersion={null} />
+                    <span className={styles.lBody}>
+                      <span className={`g-namerow ${styles.lName}`}>
+                        <PositionBadge position={r.who.pos} size="sm" />
+                        <span className={styles.clip}>{r.who.name}</span>
+                      </span>
+                      <span className={styles.lSub}>
+                        <Mgr k={r.owner} size={16} />
+                        {MGR[r.owner].short}
+                      </span>
                     </span>
-                    <span className={styles.rowEnd}>
-                      <b className={styles.money}>€{r.price}m</b>
-                      <span className={styles.quiet}>{r.sub}</span>
-                      {r.ends && <span className={styles.clock}>{r.ends}</span>}
+                    <span className={styles.lEnd}>
+                      <Money n={r.price} />
+                      {r.clock ? <span className={`${styles.clock} ${r.left! < 0.2 ? styles.clockUrgent : ''}`}>{r.clock}</span> : <span className={styles.offersOnly}>Offers</span>}
                     </span>
-                    <span className={styles.rowActions}>
+                    <span className={styles.lActions}>
                       <Button size="sm" variant="secondary">Offer</Button>
-                      <Button size="sm" variant="primary">Bid</Button>
+                      {r.clock && <Button size="sm" variant="primary">Bid</Button>}
+                    </span>
+                    <TimeBar left={r.left} />
+                  </div>
+                ))}
+
+              {view === 'wanted' &&
+                wanted.map((r) => (
+                  <div key={r.id} className={styles.wrow}>
+                    <Mgr k={r.from} size={34} />
+                    <Icon name="chevron-right" size={14} className={styles.wArrow} />
+                    {r.who ? (
+                      <Portrait photoUrl={String(r.who.code)} name={r.who.name} club={null} size="sm" headTopPct={null} headWidthPct={null} photoVersion={null} />
+                    ) : (
+                      <span className={styles.posTile} style={posStyle(r.pos)}>{r.pos}</span>
+                    )}
+                    <span className={styles.lBody}>
+                      <span className={`g-namerow ${styles.lName}`}>
+                        <PositionBadge position={r.pos} size="sm" />
+                        {r.who ? <span className={styles.clip}>{r.who.name}</span> : <Level level={r.level!} />}
+                      </span>
+                      <span className={styles.lSub}>{MGR[r.from].short}</span>
+                    </span>
+                    <span className={styles.lEnd}>
+                      <Money n={r.budget} />
+                      <Stances list={r.stance} />
                     </span>
                   </div>
-                )) : <p className={styles.empty}>Nothing listed at {position}.</p>
-              ) : (
-                wanted.length ? wanted.map((r) => (
-                  <div key={r.id} className={styles.row}>
-                    <span className={styles.wantCrest}>{crest(r.club, 28)}</span>
-                    <span className={styles.rowBody}>
-                      <span className={styles.rowName}>{r.club} {r.line}</span>
-                      <span className={styles.rowSub}>{r.terms}</span>
-                    </span>
-                    <PositionBadge position={r.pos} size="sm" />
-                  </div>
-                )) : <p className={styles.empty}>Nobody wants a {position}.</p>
+                ))}
+
+              {((view === 'listed' && listed.length === 0) || (view === 'wanted' && wanted.length === 0)) && (
+                <p className={styles.empty}>
+                  <PositionBadge position={pos} size="md" />
+                </p>
               )}
             </div>
           </section>
-        </main>
+
+          <section className={styles.listings} aria-labelledby="h-listings">
+            <div className={styles.head}>
+              <h2 id="h-listings" className={styles.headT}>Your Listings</h2>
+              <div className={styles.headEnd}>
+                <Button size="sm" variant="primary" onClick={() => setSheet({ kind: 'listing', who: P.havertz })}>
+                  <span className={styles.btnIn}><Icon name="plus" size={14} />Add</span>
+                </Button>
+              </div>
+            </div>
+            <div className={styles.rows}>
+              {LISTINGS.map((l) => (
+                <button key={l.id} type="button" className={styles.lrow} onClick={() => setSheet({ kind: 'listing', who: l.who })}>
+                  <Portrait photoUrl={String(l.who.code)} name={l.who.name} club={l.who.club} size="sm" headTopPct={null} headWidthPct={null} photoVersion={null} />
+                  <span className={styles.lBody}>
+                    <span className={`g-namerow ${styles.lName}`}>
+                      <PositionBadge position={l.who.pos} size="sm" />
+                      <span className={styles.clip}>{l.who.name}</span>
+                    </span>
+                    <CrestStack keys={l.interest} lead={l.lead} size={24} />
+                  </span>
+                  <span className={styles.lEnd}>
+                    <Money n={l.price} />
+                    {l.clock ? <span className={`${styles.clock} ${(l.left ?? 1) < 0.2 ? styles.clockUrgent : ''}`}>{l.clock}</span> : <span className={styles.offersOnly}>Offers</span>}
+                  </span>
+                  <TimeBar left={l.left} />
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
 
-      <Composer sheet={sheet} onClose={() => setSheet(null)} onPick={setSheet} />
+      <Sheets sheet={sheet} onClose={() => setSheet(null)} go={setSheet} />
     </div>
   );
 }
 
-/* --- The composer: one sheet for every kind of post --- */
+/* ---------- the sheets ---------- */
 
-function Composer({ sheet, onClose, onPick }: { sheet: Sheet; onClose: () => void; onPick: (s: Sheet) => void }) {
-  const [audience, setAudience] = useState<Audience>('club');
-  const [budget, setBudget] = useState(40);
-  const [cash, setCash] = useState(true);
-  const [players, setPlayers] = useState(false);
-  const [loan, setLoan] = useState(false);
-  const [note, setNote] = useState('');
-  const [floor, setFloor] = useState<'sixty' | 'none' | 'offers'>('sixty');
-  const [role, setRole] = useState('starter');
-  const [pos, setPos] = useState('LB');
-  const [query, setQuery] = useState('');
+function Sheets({ sheet, onClose, go }: { sheet: Sheet; onClose: () => void; go: (s: Sheet) => void }) {
+  if (!sheet) return null;
+  if (sheet.kind === 'who') return <WhoSheet onClose={onClose} go={go} />;
+  if (sheet.kind === 'target') return <TargetSheet key={sheet.editing?.id ?? sheet.who?.id ?? sheet.pos ?? 'new'} sheet={sheet} onClose={onClose} />;
+  if (sheet.kind === 'listing') return <ListingSheet key={sheet.who.id} who={sheet.who} onClose={onClose} />;
+  return <ListedSheet item={sheet.item} onClose={onClose} />;
+}
 
-  interface Option { value: string; label: string; keywords?: string; person: Person; mine?: boolean }
-  const groups: { label: string; options: Option[] }[] = [
-    { label: 'Your Squad', options: [PEOPLE.havertz, PEOPLE.ndiaye].map((p) => ({ value: p.id, label: p.name, keywords: p.club, person: p, mine: true })) },
-    { label: 'Other Clubs', options: [PEOPLE.rice, PEOPLE.gabriel, PEOPLE.haaland, PEOPLE.wirtz].map((p) => ({ value: p.id, label: p.name, keywords: p.club, person: p })) },
-    { label: 'Free Agents', options: [{ value: PEOPLE.kroupi.id, label: PEOPLE.kroupi.name, keywords: 'free agent', person: PEOPLE.kroupi }] },
-  ];
-
-  const terms = (
-    <div className={styles.termsRow}>
-      <span className={styles.fieldLabel}>What you would give or take</span>
-      <div className={styles.checks}>
-        <Checkbox checked={cash} onChange={setCash} label="Cash" />
-        <Checkbox checked={players} onChange={setPlayers} label="Players" />
-        <Checkbox checked={loan} onChange={setLoan} label="Loan" />
+function Plate({ p, owner, children }: { p: Person; owner?: MgrKey; children?: ReactNode }) {
+  return (
+    <div className={styles.plate}>
+      <div className={styles.plateImg} style={posStyle(p.pos)}>
+        <Cutout p={p} />
+      </div>
+      <div className={styles.plateBody}>
+        <span className={`g-namerow ${styles.plateName}`}>
+          <PositionBadge position={p.pos} size="sm" />
+          <span>{p.name}</span>
+        </span>
+        <span className={styles.plateSub}>
+          <ClubBadge club={p.club} size={16} />
+          {p.club}
+          {owner && <Mgr k={owner} size={18} />}
+        </span>
+        <Money n={p.value} className={styles.plateValue} />
+        {children}
       </div>
     </div>
   );
+}
 
-  const plate = (p: Person, sub: string) => (
-    <div className={styles.plate}>
-      <Face p={p} />
-      <span className={styles.plateBody}>
-        <span className={styles.rowName}>{p.name}<PositionBadge position={p.pos} size="sm" /></span>
-        <span className={styles.rowSub}>{sub}</span>
-      </span>
+function PosPicker({ value, onChange }: { value: string; onChange: (p: string) => void }) {
+  return (
+    <div className={styles.rail} role="radiogroup" aria-label="Position">
+      {POSITIONS.map((p) => (
+        <button
+          key={p}
+          type="button"
+          role="radio"
+          aria-checked={value === p}
+          className={`${styles.posChip} ${value === p ? styles.posChipOn : ''}`}
+          style={posStyle(p)}
+          onClick={() => onChange(p)}
+        >
+          {p}
+        </button>
+      ))}
     </div>
   );
+}
 
-  if (!sheet) return null;
+function WhoSheet({ onClose, go }: { onClose: () => void; go: (s: Sheet) => void }) {
+  const [q, setQ] = useState('');
+  const squad = [P.havertz, P.doku];
+  const others: { p: Person; owner: MgrKey }[] = [
+    { p: P.gabriel, owner: 'pizza' },
+    { p: P.haaland, owner: 'hayden' },
+    { p: P.wirtz, owner: 'tea' },
+    { p: P.saka, owner: 'hayden' },
+  ];
+  const free = [P.kroupi];
+  const match = (p: Person) => !q.trim() || `${p.name} ${p.club}`.toLowerCase().includes(q.trim().toLowerCase());
 
-  if (sheet.kind === 'who') {
-    const q = query.trim().toLowerCase();
-    const shown = groups
-      .map((g) => ({ ...g, options: g.options.filter((o) => !q || `${o.label} ${o.keywords ?? ''}`.toLowerCase().includes(q)) }))
-      .filter((g) => g.options.length > 0);
-    return (
-      <ResponsiveModal open onClose={onClose} title="Add" padded>
-        <div className={styles.form}>
-          <label className={styles.field}>
-            <span className={styles.fieldLabel}>Who</span>
-            <input className={styles.input} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search the league’s players" autoFocus />
-          </label>
-          <div className={styles.whoList}>
-            {shown.map((g) => (
-              <div key={g.label} className={styles.whoGroup}>
-                <span className={styles.fieldLabel}>{g.label}</span>
-                {g.options.map((o) => (
-                  <button
-                    key={o.value}
-                    type="button"
-                    className={styles.pickBtn}
-                    onClick={() => onPick(o.mine ? { kind: 'listing', who: o.person } : { kind: 'named', who: o.person })}
-                  >
-                    <Face p={o.person} size="xxs" />
-                    <span className={styles.rowName}>{o.label}<PositionBadge position={o.person.pos} size="sm" /></span>
-                    <span className={styles.pickValue}>{o.person.club} · €{o.person.value}m</span>
-                  </button>
-                ))}
-              </div>
-            ))}
-            {shown.length === 0 && <p className={styles.empty}>Nobody matches “{query}”.</p>}
-          </div>
-          <Button variant="ghost" onClick={() => onPick({ kind: 'role' })}>A Position Instead</Button>
+  const row = (p: Person, end: ReactNode, onPick: () => void) => (
+    <button key={p.id} type="button" className={styles.pick} onClick={onPick}>
+      <Portrait photoUrl={String(p.code)} name={p.name} club={p.club} size="sm" headTopPct={null} headWidthPct={null} photoVersion={null} />
+      <span className={`g-namerow ${styles.pickName}`}>
+        <PositionBadge position={p.pos} size="sm" />
+        <span className={styles.clip}>{p.name}</span>
+      </span>
+      <span className={styles.pickEnd}>
+        {end}
+        <Money n={p.value} className={styles.pickValue} />
+      </span>
+    </button>
+  );
+
+  return (
+    <ResponsiveModal open onClose={onClose} title="Add" padded>
+      <div className={styles.form}>
+        <label className={styles.search}>
+          <Icon name="search" size={16} />
+          <input className={styles.input} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search Players" autoFocus aria-label="Search players" />
+        </label>
+        <PosPicker value="" onChange={(p) => go({ kind: 'target', who: null, pos: p })} />
+        <div className={styles.pickList}>
+          {squad.filter(match).map((p) => row(p, <Mgr k="me" size={20} />, () => go({ kind: 'listing', who: p })))}
+          {others.filter((o) => match(o.p)).map((o) => row(o.p, <Mgr k={o.owner} size={20} />, () => go({ kind: 'target', who: o.p })))}
+          {free.filter(match).map((p) => row(p, <span className={styles.freeTag}>Free</span>, () => go({ kind: 'target', who: p })))}
         </div>
-      </ResponsiveModal>
-    );
-  }
+      </div>
+    </ResponsiveModal>
+  );
+}
 
-  if (sheet.kind === 'listed') {
-    return (
-      <ResponsiveModal
-        open
-        onClose={onClose}
-        title={sheet.who.name}
-        padded
-        footer={
-          <div className={styles.footer}>
-            <Button variant="secondary" onClick={() => { toast('Offer opened'); onClose(); }}>Offer</Button>
-            <Button variant="primary" onClick={() => { toast('Bid opened'); onClose(); }}>Bid €{sheet.price + 1}m</Button>
-          </div>
-        }
-      >
-        <div className={styles.form}>
-          {plate(sheet.who, `${sheet.owner} · Value €${sheet.who.value}m`)}
-          <div className={styles.rowSub}><b className={styles.money}>€{sheet.price}m</b><span className={styles.quiet}>Asking</span></div>
+function StanceChips({ value, onChange }: { value: Stance[]; onChange: (v: Stance[]) => void }) {
+  return (
+    <div className={styles.stanceChips} role="group" aria-label="Terms">
+      {(['cash', 'players', 'loan'] as Stance[]).map((s) => {
+        const on = value.includes(s);
+        return (
+          <button
+            key={s}
+            type="button"
+            aria-pressed={on}
+            className={`${styles.stanceChip} ${on ? styles.stanceOn : ''}`}
+            onClick={() => onChange(on ? value.filter((x) => x !== s) : [...value, s])}
+          >
+            {GLYPH[s]}
+            {STANCE_NAME[s]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function AudiencePicker({ value, onChange, owner }: { value: Audience; onChange: (a: Audience) => void; owner?: MgrKey }) {
+  const all: MgrKey[] = ['pizza', 'hayden', 'chelsz', 'tea', 'totten', 'xabi'];
+  const options: { v: Audience; label: string; icon: ReactNode }[] = [
+    { v: 'you', label: 'You', icon: <Icon name="lock" size={18} /> },
+    ...(owner ? [{ v: 'club' as Audience, label: MGR[owner].short, icon: <Mgr k={owner} size={22} /> }] : []),
+    { v: 'league', label: 'League', icon: <Icon name="users" size={18} /> },
+  ];
+  return (
+    <div className={styles.aud}>
+      <div className={styles.audTiles} role="radiogroup" aria-label="Who sees it" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+        {options.map((o) => (
+          <button key={o.v} type="button" role="radio" aria-checked={value === o.v} className={`${styles.audTile} ${value === o.v ? styles.audOn : ''}`} onClick={() => onChange(o.v)}>
+            <span className={styles.audIcon}>{o.icon}</span>
+            <span>{o.label}</span>
+          </button>
+        ))}
+      </div>
+      {/* The audience, drawn: nobody, one crest, or everyone. */}
+      {value === 'league' && (
+        <div className={styles.audSeen} aria-hidden="true">
+          <CrestStack keys={all} size={24} />
+          <Pips on={3} total={5} />
         </div>
-      </ResponsiveModal>
-    );
-  }
+      )}
+    </div>
+  );
+}
 
-  const isNamed = sheet.kind === 'named';
-  const editing = sheet.kind !== 'listing' ? sheet.editing : undefined;
+function TargetSheet({ sheet, onClose }: { sheet: Extract<Sheet, { kind: 'target' }>; onClose: () => void }) {
+  const { who, editing } = sheet;
+  const isRole = !who;
+  const free = !!who && who.id === 'kroupi';
+  const owner = editing?.owner ?? (who && !free ? ({ gabriel: 'pizza', haaland: 'hayden', wirtz: 'tea' } as Record<string, MgrKey>)[who.id] : undefined);
+
+  const [audience, setAudience] = useState<Audience>(editing?.audience ?? (isRole ? 'league' : 'you'));
+  const [budget, setBudget] = useState(editing?.budget ?? (who ? Math.round(who.value * 0.8) : 40));
+  const [stance, setStance] = useState<Stance[]>(editing?.stance ?? ['cash']);
+  const [level, setLevel] = useState<Level>(editing?.level ?? 'starter');
+  const [pos, setPos] = useState(editing?.pos ?? sheet.pos ?? 'LB');
+  const [note, setNote] = useState('');
 
   return (
     <ResponsiveModal
       open
       onClose={onClose}
-      title={sheet.kind === 'listing' ? 'List a Player' : editing ? 'Edit Target' : 'Add Target'}
+      title={editing ? 'Edit Target' : 'Add Target'}
       padded
       footer={
         <div className={styles.footer}>
-          {editing && <HoldButton size="sm" onConfirm={() => { toast('Target withdrawn'); onClose(); }}>Withdraw Target</HoldButton>}
-          <Button
-            variant="primary"
-            onClick={() => { toast(sheet.kind === 'listing' ? 'Listed' : 'Target added'); onClose(); }}
-          >
-            {sheet.kind === 'listing' ? `List ${sheet.who.name.split(' ').pop()}` : editing ? 'Save Target' : 'Add Target'}
+          {editing && (
+            <HoldButton size="sm" onConfirm={() => { toast('Withdrawn'); onClose(); }}>
+              Withdraw
+            </HoldButton>
+          )}
+          {free && <Button variant="secondary" onClick={() => { toast('Bid opened'); onClose(); }}>Bid</Button>}
+          <Button variant="primary" onClick={() => { toast(editing ? 'Saved' : 'Added'); onClose(); }}>
+            {editing ? 'Save' : 'Add Target'}
           </Button>
         </div>
       }
     >
       <div className={styles.form}>
-        {sheet.kind === 'role' ? (
-          <>
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>Position</span>
-              <Select size="md" fullWidth ariaLabel="Position" value={pos} onChange={setPos} items={POSITIONS.map((p) => ({ value: p, label: p }))} />
-            </div>
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>Level</span>
-              <SegmentedControl
-                fullWidth
-                ariaLabel="Role level"
-                value={role}
-                onChange={setRole}
-                options={[
-                  { value: 'star', label: 'Star' },
-                  { value: 'starter', label: 'Starter' },
-                  { value: 'bench', label: 'Bench' },
-                  { value: 'prospect', label: 'Prospect' },
-                ]}
-              />
-            </div>
-          </>
+        {who ? (
+          <Plate p={who} owner={owner} />
         ) : (
-          plate(sheet.who, `${sheet.who.club} · €${sheet.who.value}m`)
+          <>
+            <PosPicker value={pos} onChange={setPos} />
+            <SegmentedControl
+              fullWidth
+              ariaLabel="Level"
+              value={level}
+              onChange={setLevel}
+              options={(['star', 'starter', 'bench', 'prospect'] as Level[]).map((l) => ({ value: l, label: LEVEL_NAME[l] }))}
+            />
+          </>
         )}
 
-        {sheet.kind === 'listing' ? (
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>Auction Floor</span>
-            <SegmentedControl
-              fullWidth
-              ariaLabel="Auction floor"
-              value={floor}
-              onChange={setFloor}
-              options={[
-                { value: 'sixty', label: '60% of Value' },
-                { value: 'none', label: 'No Auction' },
-                { value: 'offers', label: 'Offers Only' },
-              ]}
-            />
-          </div>
-        ) : (
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>Who Sees It</span>
-            <SegmentedControl
-              fullWidth
-              ariaLabel="Who sees this target"
-              value={audience}
-              onChange={setAudience}
-              options={
-                isNamed
-                  ? [
-                      { value: 'you', label: 'Only You' },
-                      { value: 'club', label: 'Only Pizzaking’s' },
-                      { value: 'league', label: 'The League' },
-                    ]
-                  : [
-                      { value: 'league', label: 'The League' },
-                      { value: 'you', label: 'Only You' },
-                    ]
-              }
-            />
-            <p className={styles.consequence}>
-              {audience === 'you' && 'Nobody sees this and nobody is told.'}
-              {audience === 'club' && 'Only the club that owns him is told. It counts against your 10, not the league’s 5.'}
-              {audience === 'league' && 'Every club can see it, and clubs that own a match are told. 3 of 5 visible.'}
-            </p>
-          </div>
-        )}
+        {!free && <AudiencePicker value={audience} onChange={setAudience} owner={isRole ? undefined : owner} />}
 
         <MoneyStepper
           fullWidth
-          label={sheet.kind === 'listing' ? 'Asking Price' : 'Budget'}
+          label="Budget"
           value={budget}
           onChange={setBudget}
           min={1}
           max={250}
           step={1}
-          hint={sheet.kind === 'listing' ? 'Optional · Value €' + sheet.who.value + 'm' : 'Club Balance €204m'}
+          hint={
+            <span className={styles.hintBal}>
+              <Mgr k="me" size={16} />€204m
+            </span>
+          }
         />
+        <StanceChips value={stance} onChange={setStance} />
+        <label className={styles.noteField}>
+          <input className={styles.input} maxLength={140} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note" aria-label="Note" />
+          {note.length > 110 && <span className={styles.count}>{140 - note.length}</span>}
+        </label>
+      </div>
+    </ResponsiveModal>
+  );
+}
 
-        {terms}
+function ListingSheet({ who, onClose }: { who: Person; onClose: () => void }) {
+  const [floor, setFloor] = useState<'sixty' | 'none' | 'offers'>('sixty');
+  const [ask, setAsk] = useState(who.value);
+  const [stance, setStance] = useState<Stance[]>(['cash', 'players']);
+  const wantsHim: MgrKey[] = who.id === 'doku' ? ['hayden'] : ['chelsz', 'tea'];
 
-        {sheet.kind !== 'listing' && (
-          <label className={styles.field}>
-            <span className={styles.fieldLabel}>Note</span>
-            <input className={styles.input} maxLength={140} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" />
-            <span className={styles.count}>{note.length} of 140</span>
-          </label>
-        )}
+  return (
+    <ResponsiveModal
+      open
+      onClose={onClose}
+      title="List a Player"
+      padded
+      footer={
+        <div className={styles.footer}>
+          <Button variant="primary" onClick={() => { toast('Listed'); onClose(); }}>
+            List {who.name.split(' ').pop()}
+          </Button>
+        </div>
+      }
+    >
+      <div className={styles.form}>
+        <Plate p={who}>
+          <CrestStack keys={wantsHim} size={26} />
+        </Plate>
+        <SegmentedControl
+          fullWidth
+          ariaLabel="Auction floor"
+          value={floor}
+          onChange={setFloor}
+          options={[
+            { value: 'sixty', label: '60% of Value' },
+            { value: 'none', label: 'No Auction' },
+            { value: 'offers', label: 'Offers Only' },
+          ]}
+        />
+        <MoneyStepper fullWidth label="Asking Price" value={ask} onChange={setAsk} min={1} max={300} step={1} />
+        <StanceChips value={stance} onChange={setStance} />
+      </div>
+    </ResponsiveModal>
+  );
+}
+
+function ListedSheet({ item, onClose }: { item: Listed; onClose: () => void }) {
+  return (
+    <ResponsiveModal
+      open
+      onClose={onClose}
+      title={item.who.name}
+      padded
+      footer={
+        <div className={styles.footer}>
+          <Button variant="secondary" onClick={() => { toast('Offer opened'); onClose(); }}>Offer</Button>
+          {item.clock && (
+            <Button variant="primary" onClick={() => { toast('Bid opened'); onClose(); }}>
+              Bid €{item.price + 1}m
+            </Button>
+          )}
+        </div>
+      }
+    >
+      <div className={styles.form}>
+        <Plate p={item.who} owner={item.owner} />
+        <div className={styles.listedFoot}>
+          <Money n={item.price} className={styles.bigMoney} />
+          {item.clock && (
+            <span className={styles.listedClock}>
+              <span className={`${styles.clock} ${item.left! < 0.2 ? styles.clockUrgent : ''}`}>{item.clock}</span>
+              <TimeBar left={item.left} />
+            </span>
+          )}
+        </div>
       </div>
     </ResponsiveModal>
   );
