@@ -4,7 +4,7 @@ import { writeFileSync } from 'node:fs';
 import { SHIELDS } from '/Users/dukewang/Fantasy Futbol/src/components/crest/shields';
 import { DIVISIONS } from '/Users/dukewang/Fantasy Futbol/src/components/crest/divisions';
 import { CURATED_ICONS } from '/Users/dukewang/Fantasy Futbol/src/components/crest/icons';
-// @ts-expect-error untyped mjs
+// Untyped .mjs; resolved through allowJs.
 import { trophySvg } from '/Users/dukewang/Fantasy Futbol/design-2.0/trophies/trophies.mjs';
 
 type C = { icon: string | null; shape: string; division: string; showText: boolean; iconColor: string; textColor: string; borderColor: string; primaryColor: string; tertiaryColor?: string; secondaryColor: string };
