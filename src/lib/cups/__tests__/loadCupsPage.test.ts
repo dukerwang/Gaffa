@@ -38,17 +38,17 @@ function tables(): Tables {
 describe('loadCupsPage', () => {
   it('sends a viewer without a club in the league to the dashboard', async () => {
     const admin = createFakeSupabase(tables());
-    expect(await loadCupsPage(admin as any, { leagueId: 'L', userId: 'stranger', selectedCupId: null, events })).toEqual({ kind: 'redirect', to: '/dashboard' });
+    expect(await loadCupsPage(admin as any, { leagueId: 'L', userId: 'stranger', selectedCupId: null, events, currentSeason: '2026-27' })).toEqual({ kind: 'redirect', to: '/dashboard' });
   });
 
   it('is not found for an unknown league', async () => {
     const admin = createFakeSupabase(tables());
-    expect((await loadCupsPage(admin as any, { leagueId: 'nope', userId: 'u1', selectedCupId: null, events })).kind).toBe('notFound');
+    expect((await loadCupsPage(admin as any, { leagueId: 'nope', userId: 'u1', selectedCupId: null, events, currentSeason: '2026-27' })).kind).toBe('notFound');
   });
 
   it('builds this season’s cups for the viewer, ignoring last season’s', async () => {
     const admin = createFakeSupabase(tables());
-    const res = await loadCupsPage(admin as any, { leagueId: 'L', userId: 'u1', selectedCupId: null, events });
+    const res = await loadCupsPage(admin as any, { leagueId: 'L', userId: 'u1', selectedCupId: null, events, currentSeason: '2026-27' });
     if (res.kind !== 'ok') throw new Error(res.kind);
     expect(res.live).toBe(false);
     expect(res.model.selected?.id).toBe('lc');
@@ -66,7 +66,7 @@ describe('loadCupsPage', () => {
     ];
     const admin = createFakeSupabase(t);
     const live = [{ id: 16, deadline_time: '2026-12-19T11:00:00Z', is_current: true, finished: false }];
-    const res = await loadCupsPage(admin as any, { leagueId: 'L', userId: 'u1', selectedCupId: null, events: live });
+    const res = await loadCupsPage(admin as any, { leagueId: 'L', userId: 'u1', selectedCupId: null, events: live, currentSeason: '2026-27' });
     if (res.kind !== 'ok') throw new Error(res.kind);
     expect(res.live).toBe(true);
     const mine = res.model.rounds[0].ties.find((x) => x.mine)!;

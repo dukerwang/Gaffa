@@ -7,6 +7,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CrestConfig } from '@/components/crest/types';
 import { getBootstrapSlim, type FplEventSlim } from '@/lib/fpl/bootstrapSlim';
+import { getCurrentFplSeason } from '@/lib/season/currentSeason';
 import { DEFAULT_PRIZE_CONFIG, type PrizeConfig } from '@/lib/offseason/prizeDistribution';
 import type { TournamentType } from '@/types';
 import { buildCupsModel, type CupRow, type CupsModel, type RoundRow, type TieRow } from './cupsView';
@@ -27,7 +28,7 @@ export function fplState(events: FplEventSlim[], now = Date.now()): { currentGw:
 
 export async function loadCupsPage(
   admin: SupabaseClient,
-  opts: { leagueId: string; userId: string; selectedCupId: string | null; events?: FplEventSlim[] },
+  opts: { leagueId: string; userId: string; selectedCupId: string | null; events?: FplEventSlim[]; currentSeason?: string | null },
 ): Promise<CupsPageResult> {
   const { leagueId, userId } = opts;
   const [{ data: league }, { data: teams }, { data: cupsData }, events] = await Promise.all([
@@ -48,7 +49,7 @@ export async function loadCupsPage(
   for (const c of cupsData ?? []) {
     if (seen.has(c.type)) continue;
     seen.add(c.type);
-    cups.push({ id: c.id, type: c.type as TournamentType, name: c.name, status: c.status });
+    cups.push({ id: c.id, type: c.type as TournamentType, name: c.name, status: c.status, season: c.season });
   }
 
   const cupIds = cups.map((c) => c.id);
@@ -105,6 +106,7 @@ export async function loadCupsPage(
       consolation_cup: { winner: prizeConfig.consolation_cup_winner, runnerUp: prizeConfig.consolation_cup_runner_up },
     },
     selectedCupId: opts.selectedCupId,
+    currentSeason: opts.currentSeason !== undefined ? opts.currentSeason : await getCurrentFplSeason(undefined, true).catch(() => null),
   });
   return { kind: 'ok', leagueName: league.name, season, model, live };
 }

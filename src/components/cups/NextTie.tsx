@@ -32,8 +32,8 @@ export function NextTie({ next, kind }: { next: NextTieModel; kind: HonourKind }
         <div className={s.through}>
           <CrestBadge config={next.club.crest} size={44} teamName={next.club.name} interactive={false} />
           <div className={s.throughTx}>
-            <span className={s.throughH}>{next.mine ? 'You won the ' : `${next.club.name} won the `}{next.cupName}</span>
-            <span className={s.throughNote}>Winner</span>
+            <span className={s.throughH}>{next.mine ? 'You' : next.club.name}</span>
+            <span className={s.throughNote}>{next.cupName} Winner</span>
           </div>
         </div>
       </div>
@@ -44,7 +44,7 @@ export function NextTie({ next, kind }: { next: NextTieModel; kind: HonourKind }
     return (
       <div className={s.next}>
         <div className={s.through}>
-          <Trophy kind={kind} size="pip" height={40} />
+          <span className={s.pip}><Trophy kind={kind} size="pip" height={40} /></span>
           <div className={s.throughTx}>
             <span className={s.throughH}>{next.bye ? 'Bye to the' : 'Through to the'} {next.next}</span>
             <span className={s.throughNote}>{next.note}</span>
@@ -69,7 +69,7 @@ export function NextTie({ next, kind }: { next: NextTieModel; kind: HonourKind }
       <div className={s.meta}>
         <span>
           <b>{next.kind === 'out' ? `Out · ${next.round}` : next.round}</b>
-          {next.kind === 'tie' && <> · {next.mw}</>}
+          {next.kind === 'tie' && <> · {next.legs ? 'Two Legs' : next.mw}</>}
         </span>
         {live ? (
           <span className={s.metaLive}>Live</span>

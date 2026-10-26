@@ -180,6 +180,24 @@ describe('statuses', () => {
     expect(buildCupsModel({ ...input, myTeamId: 'hayden' }).shelf[1].status).toBe('Runner-Up');
   });
 
+  it('never treats a finished cup as your next tie', () => {
+    const input = militia({ myTeamId: 'chelsz' });
+    input.cups.find((c) => c.id === 'lc')!.status = 'completed';
+    const m = buildCupsModel(input);
+    expect(m.selected?.name).not.toBe('League Cup');
+    expect(buildCupsModel({ ...input, selectedCupId: 'lc' }).next).toBeNull();
+  });
+
+  it('keeps a past season’s scores but not its dates', () => {
+    const input = militia({ currentSeason: '2027-28' });
+    input.cups.forEach((c) => { c.season = '2026-27'; });
+    Object.assign(input.ties.find((t) => t.id === 'lq3')!, { status: 'completed', winner_id: 'xabi', team_a_score_leg1: 61, team_b_score_leg1: 40, decided_by: 'score' });
+    const qf = buildCupsModel({ ...input, selectedCupId: 'lc' }).rounds[0];
+    const mine = qf.ties.find((t) => t.mine)!;
+    expect([mine.a.score, mine.b.score]).toEqual([61, 40]);
+    expect(qf.when).toBe('');
+  });
+
   it('reads Not Entered for a cup you are not in, in a larger league', () => {
     const m = buildCupsModel(militia({ myTeamId: 'nobody', clubCount: 8 }));
     expect(m.shelf.map((s) => s.status)).toEqual(['Not Entered', 'Not Entered', 'Not Entered']);

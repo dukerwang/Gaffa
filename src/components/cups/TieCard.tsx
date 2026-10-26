@@ -4,7 +4,8 @@ import { fmt } from '@/lib/matchups/roundView';
 import type { TieLine, TieModel } from '@/lib/cups/cupsView';
 import s from './cups.module.css';
 
-function Line({ l, seeded }: { l: TieLine; seeded: boolean }) {
+/** One club's line of a tie: seed, crest, name, then its score or tag. */
+export function TieLineRow({ l, seeded }: { l: TieLine; seeded: boolean }) {
   const nameCls = `${s.nm}${l.mine ? ` ${s.nmMine}` : ''}${l.lost ? ` ${s.nmLost}` : ''}`;
   return (
     <div className={s.tl}>
@@ -26,6 +27,15 @@ function Line({ l, seeded }: { l: TieLine; seeded: boolean }) {
   );
 }
 
+/** A round's byes, one line per club, in a single card. */
+export function ByesCard({ ties, seeded = false }: { ties: TieModel[]; seeded?: boolean }) {
+  return (
+    <div className={`${s.tc}${ties.some((t) => t.a.mine) ? ` ${s.mine}` : ''}${seeded ? ` ${s.seeded}` : ''}`}>
+      {ties.map((t) => <TieLineRow key={t.id} l={t.a} seeded={seeded} />)}
+    </div>
+  );
+}
+
 /** One cup tie as two stacked lines. The whole card opens the tie page. */
 export function TieCard({ tie, seeded = false }: { tie: TieModel; seeded?: boolean }) {
   const foot = tie.state === 'live' || tie.decidedLabel;
@@ -33,8 +43,8 @@ export function TieCard({ tie, seeded = false }: { tie: TieModel; seeded?: boole
   return (
     <div className={`${s.tc}${tie.mine ? ` ${s.mine}` : ''}${seeded ? ` ${s.seeded}` : ''}`}>
       {tie.href && <NavigationLink href={tie.href} className={s.stretch} aria-label={label}>{null}</NavigationLink>}
-      <Line l={tie.a} seeded={seeded} />
-      <Line l={tie.b} seeded={seeded} />
+      <TieLineRow l={tie.a} seeded={seeded} />
+      <TieLineRow l={tie.b} seeded={seeded} />
       {foot && (
         <div className={s.tcFoot}>
           <span className={tie.state === 'live' ? s.live : undefined}>{tie.state === 'live' ? 'Live' : ''}</span>

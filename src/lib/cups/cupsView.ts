@@ -22,6 +22,7 @@ export interface CupRow {
   type: TournamentType;
   name: string;
   status: 'pending' | 'active' | 'completed';
+  season?: string;
 }
 
 export interface RoundRow {
@@ -69,6 +70,8 @@ export interface CupsInput {
   liveScores: Record<string, number>;
   prizes: Partial<Record<TournamentType, { winner: number; runnerUp: number }>>;
   selectedCupId: string | null;
+  /** FPL's season ("2026-27"); a cup from another season gets no dates or live state. */
+  currentSeason?: string | null;
 }
 
 // ─── Output ──────────────────────────────────────────────────
@@ -196,17 +199,22 @@ interface Ctx {
   tiesByRound: Map<string, TieRow[]>;
   seeds: Map<string, number>;
   seeded: boolean;
+  /** The cup belongs to a season FPL has moved on from: no dates, nothing live. */
+  pastSeason: boolean;
 }
 
 function legScore(ctx: Ctx, r: RoundRow, t: TieRow, side: 'a' | 'b', leg: 1 | 2): number | null {
   const { currentGw, currentGwFinished, liveScores } = ctx.input;
   const gw = leg === 1 ? r.start_gameweek : r.end_gameweek;
-  if (gw > currentGw) return null;
+  const stored = (side === 'a' ? (leg === 1 ? t.team_a_score_leg1 : t.team_a_score_leg2) : (leg === 1 ? t.team_b_score_leg1 : t.team_b_score_leg2));
+  // A finished tie keeps its scores, whatever matchweek FPL is on now (a past season's cup).
+  if (t.status === 'completed') return Number(stored);
+  if (gw > currentGw || ctx.pastSeason) return null;
   const club = side === 'a' ? t.team_a_id : t.team_b_id;
   // The running score for the current matchweek lives on the club's league
   // matchup; tournament_matchups catches up only when the matchweek resolves.
-  if (gw === currentGw && !currentGwFinished && club && liveScores[club] != null && t.status !== 'completed') return liveScores[club];
-  return Number(side === 'a' ? (leg === 1 ? t.team_a_score_leg1 : t.team_a_score_leg2) : (leg === 1 ? t.team_b_score_leg1 : t.team_b_score_leg2));
+  if (gw === currentGw && !currentGwFinished && club && liveScores[club] != null) return liveScores[club];
+  return Number(stored);
 }
 
 /** What fills an empty place: the clubs of the tie that feeds it, or the round it comes from. */
@@ -230,7 +238,7 @@ function tieModel(ctx: Ctx, r: RoundRow, t: TieRow): TieModel {
   const bothIn = !!t.team_a_id && !!t.team_b_id;
   const bye = t.status === 'completed' && !!t.winner_id && !bothIn;
   const state: TieState = t.status === 'completed' && bothIn ? 'done'
-    : bothIn && roundLive(r, ctx.input.currentGw, ctx.input.currentGwFinished) ? 'live'
+    : bothIn && !ctx.pastSeason && roundLive(r, ctx.input.currentGw, ctx.input.currentGwFinished) ? 'live'
     : 'upcoming';
 
   const line = (side: 'a' | 'b'): TieLine => {
@@ -335,8 +343,8 @@ function roundPages(ctx: Ctx): RoundPage[] {
       name: r.name,
       short: roundShort(r.name),
       mw: roundMw(r),
-      when: roundWhen(r, ctx.input.deadlines),
-      live: roundLive(r, ctx.input.currentGw, ctx.input.currentGwFinished),
+      when: ctx.pastSeason ? (r.is_two_leg ? 'Two Legs' : '') : roundWhen(r, ctx.input.deadlines),
+      live: !ctx.pastSeason && roundLive(r, ctx.input.currentGw, ctx.input.currentGwFinished),
       ties: models,
       pool: !!pool,
       note,
@@ -403,6 +411,8 @@ function nextTieFor(ctx: Ctx, pages: RoundPage[]): NextTie | null {
     if (club) return { kind: 'winner', cupName: cup.name, club, mine: club.id === me };
   }
 
+  // A finished cup with no recorded winner has nothing to come.
+  if (cup.status === 'completed') return null;
   const st = latestTie(input, rounds, tiesByRound);
   if (!st) return null;
   const { round, tie } = st;
@@ -426,7 +436,8 @@ function nextTieFor(ctx: Ctx, pages: RoundPage[]): NextTie | null {
       note: cup.type === 'secondary_cup' ? `Drawn after MW${round.end_gameweek}` : `MW${next.start_gameweek} · ${dayLabel(input.deadlines[next.start_gameweek])}`,
     };
   }
-  return { kind: 'tie', cupName: cup.name, round: round.name, mw: roundMw(round), when: roundWhen(round, input.deadlines), tie: model, legs: round.is_two_leg };
+  // The card has one line for this: the first leg's date, with two legs named on the left.
+  return { kind: 'tie', cupName: cup.name, round: round.name, mw: roundMw(round), when: dayLabel(input.deadlines[round.start_gameweek]), tie: model, legs: round.is_two_leg };
 }
 
 /** Seeds by club, read off the first round's bracket positions (Champions Cup only). */
@@ -460,6 +471,7 @@ export function buildCupsModel(input: CupsInput): CupsModel {
   if (!selected) {
     let soonest: { cup: CupRow; gw: number } | null = null;
     for (const c of input.cups) {
+      if (c.status === 'completed') continue;
       const st = latestTie(input, roundsOf(c.id), tiesByRound);
       if (st && st.tie.status !== 'completed' && (!soonest || st.round.start_gameweek < soonest.gw)) soonest = { cup: c, gw: st.round.start_gameweek };
       // Through (a win or a bye) to a round you're not placed in yet: that round counts.
@@ -496,7 +508,8 @@ export function buildCupsModel(input: CupsInput): CupsModel {
 
   const rounds = roundsOf(selected.id);
   const seeded = selected.type === 'primary_cup';
-  const ctx: Ctx = { input, cup: selected, rounds, tiesByRound, seeds: seeded ? seedsOf(rounds, tiesByRound) : new Map(), seeded };
+  const pastSeason = !!input.currentSeason && !!selected.season && selected.season !== input.currentSeason;
+  const ctx: Ctx = { input, cup: selected, rounds, tiesByRound, seeds: seeded ? seedsOf(rounds, tiesByRound) : new Map(), seeded, pastSeason };
   const pages = roundPages(ctx);
 
   // Open on your round, else the live or next round, else the last.

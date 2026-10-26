@@ -3,7 +3,7 @@
 import { useSwipePager } from '@/components/gameweeks/useSwipePager';
 import CrestBadge from '@/components/crest/CrestBadge';
 import type { RoundPage, TieLine } from '@/lib/cups/cupsView';
-import { TieCard } from './TieCard';
+import { ByesCard, TieCard } from './TieCard';
 import s from './cups.module.css';
 
 function PoolLine({ l }: { l: TieLine }) {
@@ -66,9 +66,14 @@ export function RoundPager({ rounds, initial, seeded }: { rounds: RoundPage[]; i
               <h3>{r.name}</h3>
               <span className={r.live ? s.live : undefined}>{r.live ? 'Live' : r.mw}</span>
             </div>
-            <p className={s.pgWhen}>{r.when}</p>
+            {r.when && <p className={s.pgWhen}>{r.when}</p>}
             <div className={s.stack}>
-              {r.pool ? <Pool round={r} /> : r.ties.map((t) => <TieCard key={t.id} tie={t} seeded={seeded} />)}
+              {r.pool ? <Pool round={r} /> : (
+                <>
+                  {r.ties.filter((t) => !t.bye).map((t) => <TieCard key={t.id} tie={t} seeded={seeded} />)}
+                  {r.ties.some((t) => t.bye) && <ByesCard ties={r.ties.filter((t) => t.bye)} seeded={seeded} />}
+                </>
+              )}
               {r.note && <p className={s.note}>{r.note}</p>}
               {r.prize && (
                 <p className={s.prize}>

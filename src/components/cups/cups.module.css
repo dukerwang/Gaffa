@@ -150,11 +150,15 @@
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
+.meta > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.meta > span:last-child { flex: none; }
 .meta b { font-weight: 600; color: var(--color-text-primary); }
 .metaLive { color: var(--color-live); font-weight: 600; }
 .through { display: flex; align-items: center; gap: 14px; }
+.pip { display: flex; flex: none; color: var(--color-gold); }
 .throughTx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.throughH { font-family: var(--font-serif); font-size: 20px; font-weight: 600; line-height: 1.15; }
+.throughH { font-family: var(--font-serif); font-size: 20px; font-weight: 600; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.throughNote { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .throughNote { font-size: 13px; color: var(--color-text-secondary); }
 
 /* ---------- Tie card: two stacked lines ---------- */
