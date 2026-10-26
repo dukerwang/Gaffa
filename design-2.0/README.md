@@ -1505,6 +1505,10 @@ from it for the public login carousel. `admin/*` never faces a manager.
 
 ## Not done yet
 
+- **Cups (`tournaments`) came onto 2.0 on 2026-10-25**: the Trophy Shelf page and a page per
+  cup tie, all colour through tokens (`src/components/cups/`). The approved mockups and their
+  build script are in `design-2.0/cups/`; the spec is
+  `docs/superpowers/specs/2026-10-25-cups-redesign-design.md`.
 - **0 dashboard routes left on 1.0** (`players` is gone, not ported; `standings`, `history`,
   `finance` and `draft` all came off 2026-08-15). `trades` and `admin/*` stay on 1.0
   deliberately — see "What the draft room established". **19** stylesheets still hold raw
@@ -1514,7 +1518,7 @@ from it for the public login carousel. `admin/*` never faces a manager.
   is the six `--rating-*` declarations themselves — those ARE the token definitions — and
   `PlayerCard.module.css`, the small hover-preview card, which was not in port 4's scope and
   still carries 18. The rest sit in pages this project never targeted at all — `admin/*`,
-  `trades`, `team-setup`, `activity`, `inbox`, `tournaments`, `league/create`, the top-level
+  `trades`, `team-setup`, `activity`, `inbox`, `league/create`, the top-level
   `/dashboard` leagues grid, the (auth) forms, `/share`, and shared layout chrome
   (`NotificationBell`, `ChatNavIcon`) — all still on 1.0 tokens, none of them one of the
   fifteen ported routes.
@@ -1537,7 +1541,7 @@ from it for the public login carousel. `admin/*` never faces a manager.
   each file, only **one** (`_home/home.module.css`'s `.pip`, 9px) was actually on a
   2.0-tokenised stylesheet — **fixed 2026-08-17**, to `var(--t-10)`. The other 25 are spread
   across pages this project never targeted — `league.module.css` (shared per-league layout),
-  `activity`, `trades`, `tournaments`, `AuthShowcase`, `NegotiationCard`,
+  `activity`, `trades`, `AuthShowcase`, `NegotiationCard`,
   `DepartureDecisionModal`, `SquadPeek` — all still majority 1.0 tokens by an actual count,
   not per-component debt inside ported routes as previously stated.
 - Radius literals decision 3 was written to kill: 2px ×30, 3px ×24, 5px ×1, 7px ×0. The
