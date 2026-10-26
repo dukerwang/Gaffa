@@ -1,7 +1,7 @@
 'use client';
 
 import NavigationLink from '@/components/ui/NavigationLink';
-import { Tabs } from '@/components/ui';
+import { Icon, Tabs } from '@/components/ui';
 import Trophy from '@/components/trophies/Trophy';
 import Scoreboard from '@/components/gameweeks/Scoreboard';
 import { Lineups } from '@/components/gameweeks/MatchSections';
@@ -28,10 +28,14 @@ export function CupTieView(p: CupTieProps) {
     <div className={`${gw.root} g-page`}>
       {view.state === 'live' && <LiveRefresh leagueId={p.leagueId} />}
       <div className={s.head}>
-        <NavigationLink href={`/league/${p.leagueId}/tournaments?cup=${p.cup.id}`} className={s.back}>
-          <Trophy kind={p.cup.kind} size="pip" height={22} />
-          <span>{p.cup.name} · {p.round.name}</span>
-        </NavigationLink>
+        <h1 className={s.title}>
+          <NavigationLink href={`/league/${p.leagueId}/tournaments?cup=${p.cup.id}`} className={s.back}>
+            <Icon name="chevron-left" size={20} strokeWidth={2.25} className={s.chev} />
+            <Trophy kind={p.cup.kind} size="pip" height={26} />
+            <span className={s.cupName}>{p.cup.name}</span>
+          </NavigationLink>
+          <span className={s.round}>{p.round.name}</span>
+        </h1>
         {p.aggregate && (
           <span className={s.agg}>
             Aggregate <b>{fmt(p.aggregate.a)}</b> – <b>{fmt(p.aggregate.b)}</b>
