@@ -21,7 +21,7 @@ import type { Metas, TeamLite, TieLite } from './types';
  * way scores move during a live gameweek (migrations 103/104). Coalesced, so
  * a sync that touches every row costs one refresh.
  */
-function LiveRefresh({ leagueId, matchupId }: { leagueId: string; matchupId?: string }) {
+export function LiveRefresh({ leagueId, matchupId }: { leagueId: string; matchupId?: string }) {
   const router = useRouter();
   const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
