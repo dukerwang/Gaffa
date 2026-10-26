@@ -28,14 +28,14 @@ export function CupTieView(p: CupTieProps) {
     <div className={`${gw.root} g-page`}>
       {view.state === 'live' && <LiveRefresh leagueId={p.leagueId} />}
       <div className={s.head}>
-        <h1 className={s.title}>
-          <NavigationLink href={`/league/${p.leagueId}/tournaments?cup=${p.cup.id}`} className={s.back}>
-            <Icon name="chevron-left" size={20} strokeWidth={2.25} className={s.chev} />
-            <Trophy kind={p.cup.kind} size="pip" height={26} />
-            <span className={s.cupName}>{p.cup.name}</span>
-          </NavigationLink>
-          <span className={s.round}>{p.round.name}</span>
-        </h1>
+        <NavigationLink href={`/league/${p.leagueId}/tournaments?cup=${p.cup.id}`} className={s.back}>
+          <Icon name="chevron-left" size={20} strokeWidth={2.25} className={s.chev} />
+          <span className={s.tro}><Trophy kind={p.cup.kind} size="pip" height={40} /></span>
+          <div className={s.titleTx}>
+            <h1 className={s.cupName}>{p.cup.name}</h1>
+            <span className={s.round}>{p.round.name}</span>
+          </div>
+        </NavigationLink>
         {p.aggregate && (
           <span className={s.agg}>
             Aggregate <b>{fmt(p.aggregate.a)}</b> – <b>{fmt(p.aggregate.b)}</b>
