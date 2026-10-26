@@ -42,7 +42,7 @@ export function LiveRefresh({ leagueId, matchupId }: { leagueId: string; matchup
   return null;
 }
 
-function useOpen(players: Record<string, Partial<Player>>, gameweek: number) {
+export function useOpen(players: Record<string, Partial<Player>>, gameweek: number) {
   const { openPlayer, openPlayerById, primePlayers } = usePlayerCard();
   useEffect(() => {
     primePlayers(Object.values(players).filter((p) => p?.id) as Player[]);

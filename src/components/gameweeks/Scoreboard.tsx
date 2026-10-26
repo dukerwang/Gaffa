@@ -26,13 +26,27 @@ export interface ScoreboardProps {
   squadHref: string;
   clubHref?: (teamId: string) => string;
   onOpen: (p: PitchPlayer) => void;
+  /** A cup tie: no draw band, and a finished tie is decided by its winner, not the margin. */
+  knockout?: { winnerId: string | null };
 }
 
 const playedFirst = (side: SideView | undefined, live: boolean) =>
   (side?.starters ?? []).filter((p) => !live || p.status !== 'pend').slice().sort((x, y) => y.points - x.points).slice(0, 3);
 
+/** A cup tie can be level on points; it is never drawn. */
+function knockoutVerdict(a: number, b: number, mine: 'A' | 'B' | null, done: boolean, winner: 'A' | 'B' | null): ReactNode {
+  const m = Math.abs(a - b);
+  if (done && winner) {
+    if (mine) return mine === winner ? (m > 0 ? <>Through by <b>{fmt(m)}</b></> : <>Through</>) : (m > 0 ? <>Out by <b>{fmt(m)}</b></> : <>Out</>);
+    return m > 0 ? <b>{fmt(m)}</b> : <>Level</>;
+  }
+  if (m === 0) return <>Level</>;
+  if (mine) return <>{(mine === 'A') === (a > b) ? 'Ahead' : 'Behind'} by <b>{fmt(m)}</b></>;
+  return <>Ahead by <b>{fmt(m)}</b></>;
+}
+
 export default function Scoreboard(props: ScoreboardProps) {
-  const { tie, state, gw, big = false, myTeamId, metas, window: win, deadline, href, lineupHref, squadHref, clubHref, onOpen } = props;
+  const { tie, state, gw, big = false, myTeamId, metas, window: win, deadline, href, lineupHref, squadHref, clubHref, onOpen, knockout } = props;
   const A = tie.a, B = tie.b;
   const vA = tie.view?.a, vB = tie.view?.b;
   const mine: 'A' | 'B' | null = A.id === myTeamId ? 'A' : B?.id === myTeamId ? 'B' : null;
@@ -40,8 +54,13 @@ export default function Scoreboard(props: ScoreboardProps) {
   const live = state === 'live';
   const done = state === 'final' || state === 'provisional';
   const a = tie.scoreA, b = tie.scoreB;
-  const aLose = done && Math.abs(a - b) > DRAW_THRESHOLD && a < b;
-  const bLose = done && Math.abs(a - b) > DRAW_THRESHOLD && b < a;
+  const aLose = knockout
+    ? done && !!knockout.winnerId && knockout.winnerId !== A.id
+    : done && Math.abs(a - b) > DRAW_THRESHOLD && a < b;
+  const bLose = knockout
+    ? done && !!knockout.winnerId && !!B && knockout.winnerId !== B.id
+    : done && Math.abs(a - b) > DRAW_THRESHOLD && b < a;
+  const said = knockout ? knockoutVerdict(a, b, mine, done, knockout.winnerId === A.id ? 'A' : knockout.winnerId && B && knockout.winnerId === B.id ? 'B' : null) : verdict(a, b, mine, done);
 
   const meta = (teamId: string, manager: string | null, side: SideView | undefined) => {
     const m = metas[teamId];
@@ -117,9 +136,9 @@ export default function Scoreboard(props: ScoreboardProps) {
       <div className={s.hxMid}>
         <div className={s.hxFigs}>{fig(a, aLose, mine === 'A')}<span className={s.hxSep} />{fig(b, bLose, mine === 'B')}</div>
         <DarkAxis a={a} b={b} />
-        <span className={s.hxVerdict}>{verdict(a, b, mine, done)}</span>
+        <span className={s.hxVerdict}>{said}</span>
         <div className={s.hxVerdictRow}>
-          <span className={s.hxVerdict}>{verdict(a, b, mine, done)}</span>
+          <span className={s.hxVerdict}>{said}</span>
         </div>
       </div>
     );
