@@ -14,7 +14,8 @@ import x from './skeletons.module.css';
  * panels, the ruled rows), and a bone only where a name, a score or a face will
  * be. That keeps the shape the same at every width and nothing moves when the
  * data lands. Left out because they only show in some states: Round Records,
- * Head-to-Head, and the Still to Play list.
+ * Head-to-Head, and the Still to Play list. The cup tie's loader reuses the
+ * scoreboard, lineups and team sheets.
  */
 
 const pb = x.pb;
@@ -74,7 +75,7 @@ function MatchBar() {
 }
 
 /** The scoreboard on its pitch stripes: the crests, the two figures with the draw-band axis between, and each club's standouts. */
-function Scoreboard({ big = false }: { big?: boolean }) {
+export function Scoreboard({ big = false }: { big?: boolean }) {
   const side = (away: boolean) => (
     <div className={`${gw.hxSide}${away ? ` ${gw.hxAway}` : ''}`}>
       <span className={gw.dOnly}><Skeleton shape="circle" className={pb} width={big ? 68 : 56} height={big ? 68 : 56} /></span>
@@ -278,7 +279,7 @@ function HalfPitch() {
   );
 }
 
-function Lineups() {
+export function Lineups() {
   return (
     <section className={gw.blk}>
       <Head title="Lineups" />
@@ -395,7 +396,7 @@ function Sheet() {
   );
 }
 
-function TeamSheets() {
+export function TeamSheets() {
   return (
     <section className={gw.blk}>
       <Head title="Team Sheets" />
