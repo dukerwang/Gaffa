@@ -496,8 +496,11 @@ a {
   transition: color var(--transition-fast);
 }
 
+/* :where() keeps this at one class's weight, so a component that sets its own
+   link colour (a cup on the shelf, a card title) keeps it on hover instead of
+   turning dark green. */
 @media (hover: hover) and (pointer: fine) {
-  a:hover {
+  :where(a):hover {
     color: var(--color-accent-blue-hover);
   }
 }
