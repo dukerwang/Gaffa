@@ -12,8 +12,8 @@
 .title {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  column-gap: 12px;
+  align-items: center;
+  column-gap: 10px;
   margin: 0;
   min-width: 0;
   font-family: var(--font-serif);
@@ -30,7 +30,6 @@
   margin-left: -4px;
   color: var(--color-text-primary);
   white-space: nowrap;
-  align-self: center;
 }
 .back svg { flex: none; }
 .chev { color: var(--color-text-muted); transition: transform var(--dur-fast) var(--ease-out-strong), color var(--dur-fast) var(--ease-standard); }
@@ -42,7 +41,9 @@
   text-underline-offset: 5px;
   transition: text-decoration-color var(--dur-fast) var(--ease-standard);
 }
-.round { color: var(--color-text-secondary); font-weight: 500; white-space: nowrap; }
+/* Same size and weight as the cup name, so both halves sit on one baseline
+   and read as one heading; only the tone steps down. */
+.round { color: var(--color-text-muted); white-space: nowrap; }
 @media (hover: hover) and (pointer: fine) {
   .back:hover { color: var(--color-text-primary); }
   .back:hover .chev { color: var(--color-text-primary); transform: translateX(-3px); }
