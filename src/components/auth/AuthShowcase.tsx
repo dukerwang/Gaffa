@@ -4,14 +4,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PremiumPlayerCard from '@/components/players/PremiumPlayerCard';
 import PositionBadge from '@/components/players/PositionBadge';
-import type { Player, GranularPosition, TournamentMatchup, Team } from '@/types';
+import type { Player, GranularPosition } from '@/types';
 import { Icon } from '@/components/ui/Icon';
 import {
   TradeCard,
   type TradeRecord,
   type SimplePlayer,
 } from '@/app/(dashboard)/league/[leagueId]/trades/TradesClient';
-import { BracketMatchup } from '@/components/tournaments/BracketMatchup';
+import { TieCard } from '@/components/cups/TieCard';
+import type { TieLine, TieModel } from '@/lib/cups/cupsView';
 import styles from './AuthShowcase.module.css';
 import mp from '@/components/MatchupPitch.module.css';
 
@@ -819,80 +820,33 @@ function StartupDraftVisual() {
 }
 
 /* ============================================================
-   SLIDE — Cups: the real BracketMatchup component
+   SLIDE — Cups: the real TieCard from the Cups page, on pinned demo ties
    ============================================================ */
-function demoTeam(overrides: Partial<Team>): Team {
-  return {
-    id: 'demo-team',
-    league_id: 'demo-league',
-    user_id: 'demo-user',
-    team_name: 'Demo FC',
-    faab_budget: 100,
-    total_points: 0,
-    draft_order: null,
-    abbreviation: null,
-    logo_url: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    ...overrides,
-  };
-}
-
-const DEMO_TEAM_HCF = demoTeam({ id: 'demo-team-b', team_name: 'Half-Court FC', abbreviation: 'HCF' });
-const DEMO_TEAM_VDP = demoTeam({ id: 'demo-team-a', team_name: 'Vardy Party', abbreviation: 'VDP' });
-const DEMO_TEAM_THD = demoTeam({ id: 'demo-team-c', team_name: 'The Hairdryers', abbreviation: 'THD' });
-const DEMO_TEAM_HLW = demoTeam({ id: 'demo-team-d', team_name: 'Holloway Utd', abbreviation: 'HLW' });
-
-const DEMO_CHAMPIONS_MATCHUP: TournamentMatchup = {
-  id: 'demo-champions-qf',
-  round_id: 'demo-round-1',
-  team_a_id: DEMO_TEAM_HCF.id,
-  team_b_id: DEMO_TEAM_VDP.id,
-  team_a_score_leg1: 47.3,
-  team_b_score_leg1: 41.8,
-  team_a_score_leg2: 38.2,
-  team_b_score_leg2: 34.6,
-  winner_id: DEMO_TEAM_HCF.id,
-  decided_by: 'score',
-  next_matchup_id: null,
-  bracket_position: 1,
-  status: 'completed',
-  created_at: new Date().toISOString(),
-  team_a: DEMO_TEAM_HCF,
-  team_b: DEMO_TEAM_VDP,
+const demoLine = (name: string, score: number, won: boolean, mine = false): TieLine => ({
+  club: { id: name, name, crest: null }, label: null, seed: null, score, legs: [score], won, lost: !won, mine, tag: null,
+});
+const DEMO_CHAMPIONS_TIE: TieModel = {
+  id: 'demo-champions-qf', href: null, state: 'done', mine: true, bye: false, decidedLabel: null,
+  a: demoLine('Half-Court FC', 47.3 + 38.2, true, true),
+  b: demoLine('Vardy Party', 41.8 + 34.6, false),
 };
-
-const DEMO_LEAGUE_CUP_MATCHUP: TournamentMatchup = {
-  id: 'demo-league-cup-r16',
-  round_id: 'demo-round-2',
-  team_a_id: DEMO_TEAM_THD.id,
-  team_b_id: DEMO_TEAM_HLW.id,
-  team_a_score_leg1: 42.6,
-  team_b_score_leg1: 58.1,
-  team_a_score_leg2: 0,
-  team_b_score_leg2: 0,
-  winner_id: DEMO_TEAM_HLW.id,
-  decided_by: 'score',
-  next_matchup_id: null,
-  bracket_position: 1,
-  status: 'completed',
-  created_at: new Date().toISOString(),
-  team_a: DEMO_TEAM_THD,
-  team_b: DEMO_TEAM_HLW,
+const DEMO_LEAGUE_CUP_TIE: TieModel = {
+  id: 'demo-league-cup-r16', href: null, state: 'done', mine: false, bye: false, decidedLabel: null,
+  a: demoLine('The Hairdryers', 42.6, false),
+  b: demoLine('Holloway Utd', 58.1, true),
 };
-
 function CupsBracketVisual() {
   return (
     <div className={styles.cupsRealGrid}>
       <div className={styles.cupRealCol}>
         <span className={styles.cupEyebrow}>In-Season Tournament</span>
         <h4 className={styles.cupTitle}>Champions Cup</h4>
-        <BracketMatchup matchup={DEMO_CHAMPIONS_MATCHUP} isTwoLeg myTeamId={DEMO_TEAM_HCF.id} />
+        <TieCard tie={DEMO_CHAMPIONS_TIE} />
       </div>
       <div className={styles.cupRealCol}>
         <span className={styles.cupEyebrow}>Knockout Tournament</span>
         <h4 className={styles.cupTitle}>League Cup</h4>
-        <BracketMatchup matchup={DEMO_LEAGUE_CUP_MATCHUP} isTwoLeg={false} />
+        <TieCard tie={DEMO_LEAGUE_CUP_TIE} />
       </div>
     </div>
   );

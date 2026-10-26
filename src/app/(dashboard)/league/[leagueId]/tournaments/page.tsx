@@ -1,336 +1,57 @@
-import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
-import { Tabs } from '@/components/ui';
-import EmptyState from '@/components/ui/EmptyState';
-import type { Tournament, TournamentRound, TournamentMatchup } from '@/types';
-import { getSeeding } from '@/lib/tournaments/engine';
-import { BracketMatchup } from '@/components/tournaments/BracketMatchup';
-import styles from './tournaments.module.css';
+import { loadCupsPage } from '@/lib/cups/loadCupsPage';
+import { TrophyShelf } from '@/components/cups/TrophyShelf';
+import { NextTie } from '@/components/cups/NextTie';
+import { RoundPager } from '@/components/cups/RoundPager';
+import { LiveRefresh } from '@/components/gameweeks/Views';
+import s from '@/components/cups/cups.module.css';
+
+export const dynamic = 'force-dynamic';
 
 interface Props {
     params: Promise<{ leagueId: string }>;
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function TournamentsPage({ params, searchParams }: Props) {
+export default async function CupsPage({ params, searchParams }: Props) {
     const { leagueId } = await params;
-    const resolvedSearchParams = await searchParams;
+    const { cup } = await searchParams;
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect('/login');
 
-    const admin = createAdminClient();
-
-    // The league, the viewer's membership, its cups and FPL's gameweek share no
-    // inputs, so they go out together. The rounds and their ties follow, each
-    // waiting only on the read before it.
-    const [{ data: league }, { data: member }, { data: tournamentsData }, fplState] = await Promise.all([
-        admin
-            .from('leagues')
-            .select('id, name, created_at')
-            .eq('id', leagueId)
-            .single(),
-        admin
-            .from('teams')
-            .select('id')
-            .eq('league_id', leagueId)
-            .eq('user_id', user.id)
-            .single(),
-        admin
-            .from('tournaments')
-            .select('*')
-            .eq('league_id', leagueId)
-            .order('created_at', { ascending: false }),
-        readFplGameweekState(),
-    ]);
-
-    if (!league) notFound();
-
-    if (!member) redirect('/dashboard');
-
-    let tournaments = (tournamentsData ?? []) as Tournament[];
-    
-    // Rename any fallback old data and sort securely
-    tournaments = tournaments.map(t => {
-        if (t.type === 'primary_cup') t.name = 'Champions Cup';
-        if (t.type === 'consolation_cup') t.name = 'Consolation Cup';
-        return t;
+    const res = await loadCupsPage(createAdminClient(), {
+        leagueId,
+        userId: user.id,
+        selectedCupId: typeof cup === 'string' ? cup : null,
     });
+    if (res.kind === 'notFound') notFound();
+    if (res.kind === 'redirect') redirect(res.to);
 
-    const typeOrder: Record<string, number> = {
-        'secondary_cup': 1,
-        'primary_cup': 2,
-        'consolation_cup': 3
-    };
-    tournaments.sort((a, b) => (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99));
-    
-    if (tournaments.length === 0) {
-        return (
-            <div className={styles.container}>
-                <header className={styles.header}>
-                    <div className={styles.headerContent}>
-                        <div className={styles.headerLeft}>
-                            <h2 className={styles.title}>Cup Competitions</h2>
-                        </div>
-                    </div>
-                </header>
-                <EmptyState>No tournaments have been created yet.</EmptyState>
-            </div>
-        );
-    }
-
-    const selectedCupId = resolvedSearchParams.cup ? String(resolvedSearchParams.cup) : null;
-    let activeTournament = tournaments.find(t => t.id === selectedCupId);
-    
-    if (!activeTournament) {
-        activeTournament = tournaments.find(t => t.status === 'active') || tournaments[0];
-    }
-    const { data: roundsData } = await admin
-        .from('tournament_rounds')
-        .select('*')
-        .eq('tournament_id', activeTournament.id)
-        .order('round_number', { ascending: true });
-
-    const rounds = (roundsData ?? []) as TournamentRound[];
-    const roundIds = rounds.map(r => r.id);
-    let matchups: TournamentMatchup[] = [];
-    
-    if (roundIds.length > 0) {
-        const { data: matchupsData } = await admin
-            .from('tournament_matchups')
-            .select(`
-                *,
-                team_a:teams!tournament_matchups_team_a_id_fkey(id, team_name),
-                team_b:teams!tournament_matchups_team_b_id_fkey(id, team_name),
-                winner:teams!tournament_matchups_winner_id_fkey(id, team_name)
-            `)
-            .in('round_id', roundIds)
-            .order('bracket_position', { ascending: true });
-
-        matchups = (matchupsData ?? []) as TournamentMatchup[];
-    }
-
-    // ── Current FPL State ──
-    const { currentFplGw, isFinished } = fplState;
-
-    // Binary Tree padding logic
-    const roundsWithPairs = rounds.map((round, roundIdx) => {
-        const remainingRounds = rounds.length - roundIdx;
-        const slotsCount = Math.pow(2, remainingRounds - 1);
-        
-        const slots = Array.from({ length: slotsCount }, (_, i) => 
-            matchups.find(m => m.round_id === round.id && m.bracket_position === i) || null
-        );
-
-        const pairs = [];
-        if (slotsCount === 1) {
-            pairs.push([slots[0], null]);
-        } else {
-            for (let i = 0; i < slots.length; i += 2) {
-                pairs.push([slots[i], slots[i+1]]);
-            }
-        }
-
-        return { ...round, pairs, slotsCount };
-    });
-
-    const lastRound = rounds[rounds.length - 1];
-    const isPastFinal = lastRound && (currentFplGw > lastRound.end_gameweek || (currentFplGw === lastRound.end_gameweek && isFinished));
-    
-    // Find live round based on range
-    const liveRound = rounds.find(r => currentFplGw >= r.start_gameweek && currentFplGw <= r.end_gameweek);
-    const displayStatus = (activeTournament.status === 'completed' || isPastFinal) ? 'completed' : 'active';
-    
-    // A round is fundamentally "Live" if the current GW is within its range 
-    // AND it's not the case that we're on the final GW of that round and it's finished.
-    const isLive = liveRound && (currentFplGw < liveRound.end_gameweek || !isFinished);
-
-    const seedMap = new Map<string, number>();
-    if (roundsWithPairs.length > 0) {
-        const firstRound = roundsWithPairs[0];
-        const bracketSize = firstRound.slotsCount * 2;
-        const seeding = getSeeding(bracketSize);
-        
-        const firstRoundMatchups = matchups.filter(m => m.round_id === firstRound.id).sort((a,b) => a.bracket_position - b.bracket_position);
-        
-        firstRoundMatchups.forEach((m) => {
-            if (m.team_a_id) seedMap.set(m.team_a_id, seeding[m.bracket_position * 2]);
-            if (m.team_b_id) seedMap.set(m.team_b_id, seeding[m.bracket_position * 2 + 1]);
-        });
-    }
+    const { model, season, live } = res;
+    const kind = model.shelf.find((x) => x.selected)?.kind ?? 'champions_cup';
 
     return (
-        <div className={styles.container}>
-            <div className={styles.headerSection}>
-                <header className={styles.header}>
-                    <div className={styles.headerContent}>
-                        <div className={styles.headerLeft}>
-                            <h2 className={styles.title}>Cup Competitions</h2>
-                        </div>
-                    </div>
-                </header>
-
-                <div className={styles.tabContainer}>
-                    <Tabs
-                        ariaLabel="Cups"
-                        value={activeTournament?.id ?? ''}
-                        items={tournaments.map(t => ({
-                            value: t.id,
-                            label: t.name,
-                            href: `/league/${leagueId}/tournaments?cup=${t.id}`,
-                        }))}
-                    />
-                </div>
-
-                <div className={styles.infoBar}>
-                    <div className={styles.infoLeft}>
-                        <span className={styles.infoText}>
-                            {activeTournament?.name} 
-                            <span className={styles.divider}>·</span>
-                            {league.name}
-                            <span className={styles.divider}>·</span>
-                            Final: Matchweek {rounds[rounds.length - 1]?.end_gameweek || 'TBD'}
-                        </span>
-                    </div>
-                    {displayStatus === 'active' && isLive && (
-                        <div className={styles.infoRight}>
-                            <span className={styles.livePulseIndicator}></span>
-                            <span className={styles.infoLiveText}>In Progress</span>
-                        </div>
-                    )}
-                    {displayStatus === 'completed' && (
-                        <div className={styles.infoRight}>
-                            <span className={styles.infoLiveText} style={{ color: 'var(--color-text-muted)' }}>Finished</span>
-                        </div>
-                    )}
-                    {displayStatus === 'active' && !isLive && !isPastFinal && (
-                        <div className={styles.infoRight}>
-                            <span className={styles.infoLiveText} style={{ color: 'var(--color-text-muted)' }}>Scheduled</span>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            <section className={styles.bracketSection}>
-                {roundsWithPairs.length === 0 ? (
-                    <EmptyState>Bracket not yet generated.</EmptyState>
-                ) : (
-                    <div className={styles.bracket}>
-                        {roundsWithPairs.map((round, roundIdx) => {
-                            const isFinal = round.slotsCount === 1;
-
-                            return (
-                                <div key={round.id} className={styles.roundColumn}>
-                                    <div className={styles.roundHeader}>
-                                        {currentFplGw >= round.start_gameweek && currentFplGw <= round.end_gameweek && (currentFplGw < round.end_gameweek || !isFinished) && (
-                                            <div className={styles.roundLiveBadgeWrapper}>
-                                                <span className={styles.roundLiveBadge}>Live</span>
-                                            </div>
-                                        )}
-                                        <p className={styles.roundName}>{round.name}</p>
-                                        <p className={styles.roundGw}>MW {round.start_gameweek}{round.end_gameweek !== round.start_gameweek && ` - ${round.end_gameweek}`}</p>
-                                    </div>
-
-                                    <div className={styles.matchupSlots}>
-                                        {round.pairs.map((pair, pairIdx) => {
-                                            const m0 = pair[0];
-                                            const m1 = pair[1];
-                                            
-                                            const myPathTop = m0 && m0.winner_id === member.id && (m0.team_a_id === member.id || m0.team_b_id === member.id);
-                                            const myPathBottom = m1 && m1.winner_id === member.id && (m1.team_a_id === member.id || m1.team_b_id === member.id);
-
-                                            return (
-                                                <div key={pairIdx} className={styles.slotPair}>
-                                                    <div className={styles.slot}>
-                                                        {roundIdx > 0 && <div className={`${styles.connectorIn} ${hasIncomingActiveLeft(m0, member.id) ? styles.connectorActive : ''}`} />}
-                                                        {m0 ? (
-                                                            <div className={styles.matchupWrapper}>
-                                                                <BracketMatchup 
-                                                                    matchup={m0} 
-                                                                    isTwoLeg={round.is_two_leg} 
-                                                                    myTeamId={member.id} 
-                                                                    teamASeed={seedMap.get(m0.team_a_id ?? '')} 
-                                                                    teamBSeed={seedMap.get(m0.team_b_id ?? '')} 
-                                                                />
-                                                            </div>
-                                                        ) : (
-                                                            <div className={styles.matchupPlaceholder} />
-                                                        )}
-                                                    </div>
-
-                                                    {!isFinal && (
-                                                        <div className={styles.slot}>
-                                                            {roundIdx > 0 && <div className={`${styles.connectorIn} ${hasIncomingActiveLeft(m1, member.id) ? styles.connectorActive : ''}`} />}
-                                                            {m1 ? (
-                                                                <div className={styles.matchupWrapper}>
-                                                                    <BracketMatchup 
-                                                                        matchup={m1} 
-                                                                        isTwoLeg={round.is_two_leg} 
-                                                                        myTeamId={member.id} 
-                                                                        teamASeed={seedMap.get(m1.team_a_id ?? '')} 
-                                                                        teamBSeed={seedMap.get(m1.team_b_id ?? '')} 
-                                                                    />
-                                                                </div>
-                                                            ) : (
-                                                                <div className={styles.matchupPlaceholder} />
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    {!isFinal && (
-                                                        <>
-                                                            <div className={`${styles.elbowTop} ${myPathTop ? styles.elbowActive : ''}`} />
-                                                            <div className={`${styles.elbowBottom} ${myPathBottom ? styles.elbowActive : ''}`} />
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </section>
+        <div className="g-page">
+            {live && <LiveRefresh leagueId={leagueId} />}
+            <TrophyShelf items={model.shelf} club={model.club} season={season}>
+                {model.next ? <NextTie next={model.next} kind={kind} /> : null}
+            </TrophyShelf>
+            {model.selected && model.rounds.length > 0 ? (
+                <RoundPager
+                    key={model.selected.id}
+                    rounds={model.rounds}
+                    initial={model.initialRound}
+                    seeded={model.selected.seeded}
+                />
+            ) : (
+                <p className={s.empty}>
+                    {model.selected ? 'The draw for this cup isn’t out yet.' : 'The cups are drawn at matchweek 7, once the table has had time to settle.'}
+                </p>
+            )}
         </div>
     );
-}
-
-function hasIncomingActiveLeft(m: TournamentMatchup | null, myId: string) {
-    if (!m) return false;
-    return (m.team_a_id === myId || m.team_b_id === myId);
-}
-
-/**
- * FPL's current gameweek and whether it has finished, with the page's existing
- * fallbacks: the event marked current, else the latest passed deadline, else
- * GW1 unfinished when FPL is unreachable. A function so it can join the page's
- * first wave of reads.
- */
-async function readFplGameweekState(): Promise<{ currentFplGw: number; isFinished: boolean }> {
-    let currentFplGw = 1;
-    let isFinished = false;
-    try {
-        const { events } = await getBootstrapSlim();
-        const currentEvent = events.find((e) => e.is_current);
-        if (currentEvent) {
-            currentFplGw = currentEvent.id;
-            isFinished = !!currentEvent.finished;
-        } else {
-            // Fallback to deadline check if no event is marked current
-            const now = new Date();
-            for (const ev of events) {
-                if (ev.deadline_time && new Date(ev.deadline_time) <= now) {
-                    currentFplGw = Math.max(currentFplGw, ev.id);
-                }
-            }
-            const fallbackEvent = events.find((e) => e.id === currentFplGw);
-            isFinished = fallbackEvent?.finished ?? false;
-        }
-    } catch { /* FPL unreachable */ }
-    return { currentFplGw, isFinished };
 }

@@ -1,64 +1,60 @@
 import { Skeleton } from '@/components/ui/Skeleton';
-import styles from './tournaments.module.css';
+import s from '@/components/cups/cups.module.css';
 
-/** One tie in the bracket: two team rows, as the real one draws them. */
+/** One tie card's two lines, as the real one draws them. */
 function Tie() {
   return (
-    <div className={styles.slot}>
-      <div className={styles.matchupWrapper}>
-        <div className={styles.matchup}>
-          {[0, 1].map((i) => (
-            <div key={i} className={styles.teamRow}>
-              <Skeleton width="60%" height={16} />
-              <Skeleton width={34} height={16} />
-            </div>
-          ))}
+    <div className={s.tc}>
+      {[0, 1].map((i) => (
+        <div key={i} className={s.tl}>
+          <Skeleton shape="circle" width={24} height={24} />
+          <Skeleton width="60%" height={14} />
+          <span />
         </div>
-      </div>
+      ))}
     </div>
   );
 }
 
 /**
- * The Cups page on its way, in its own container, tab row and bracket grid:
- * a round of four ties, then two, then the final.
+ * The Cups page on its way: the shelf with its three trophy places, then the
+ * draw's strip and a round of ties, in the page's own layout. The labels are
+ * real; only the data is shapes.
  */
 export default function Loading() {
   return (
-    <div className={styles.container} aria-busy="true" aria-label="Loading Cup Competitions">
-      <div className={styles.headerSection}>
-        <header className={styles.header}>
-          <Skeleton width={320} height={44} />
-        </header>
-        <div className={styles.tabContainer}>
-          <div style={{ display: 'flex', gap: 'var(--s5)', height: 40, alignItems: 'center' }}>
-            <Skeleton width={110} height={16} />
-            <Skeleton width={110} height={16} />
-            <Skeleton width={120} height={16} />
+    <div className="g-page" aria-busy="true" aria-label="Loading cups">
+      <section className={s.shelf}>
+        <div className={s.shelfGrid}>
+          <div>
+            <h1 className={s.shelfH}>Cups</h1>
+            <div className={s.cab}>
+              {['Champions', 'League Cup', 'Consolation'].map((name) => (
+                <span key={name} className={s.cabItem}>
+                  <span className={s.tro} style={{ alignItems: 'center' }}>
+                    <Skeleton width={56} height="80%" />
+                  </span>
+                  <span className={s.cabName}>{name}</span>
+                  <Skeleton width={64} height={12} />
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className={s.nextSlot}>
+            <div className={s.next} style={{ height: 156 }} />
           </div>
         </div>
-        <div className={styles.infoBar}>
-          <Skeleton width={260} height={12} />
-        </div>
-      </div>
-
-      <section className={styles.bracketSection}>
-        <div className={styles.bracket}>
-          {[[2, 2], [1, 2], [1, 1]].map(([pairs, perPair], round) => (
-            <div key={round} className={styles.roundColumn}>
-              <div className={styles.roundHeader}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--s1)' }}><Skeleton width={90} height={10} /></div>
-                <div style={{ display: 'flex', justifyContent: 'center' }}><Skeleton width={56} height={13} /></div>
-              </div>
-              <div className={styles.matchupSlots}>
-                {Array.from({ length: pairs }, (_, p) => (
-                  <div key={p} className={styles.slotPair}>
-                    {Array.from({ length: perPair }, (_, t) => <Tie key={t} />)}
-                  </div>
-                ))}
-              </div>
-            </div>
+      </section>
+      <div className={s.afterShelf} />
+      <section className={s.draw}>
+        <div className={s.strip} style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+          {['Quarter-Final', 'Semi-Final', 'Final'].map((name) => (
+            <span key={name} className={s.stripBtn}><b>{name}</b><Skeleton width={36} height={11} /></span>
           ))}
+        </div>
+        <div className={s.stack}>
+          <Tie />
+          <Tie />
         </div>
       </section>
     </div>

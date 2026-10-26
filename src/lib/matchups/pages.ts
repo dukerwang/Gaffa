@@ -6,9 +6,9 @@ import { fetchAllPagesIn } from '@/lib/supabase/pagination';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { loadManagers, loadMatchupContext } from '@/lib/matchups/context';
-import { clubColour, loadMatchupView, matchState, type MatchupRow, type PitchPlayer } from '@/lib/matchups/matchupView';
+import { clubColour, loadMatchupView, matchState, type MatchupRow, type MatchupView, type PitchPlayer } from '@/lib/matchups/matchupView';
 import { formOf, metaFor, resultOf, ribbonFor, tableAfter, type MatchupRowLite } from '@/lib/matchups/roundView';
-import { loadAllResults } from '@/lib/heritage/results';
+import { loadAllResults, type Result } from '@/lib/heritage/results';
 import { headToHead } from '@/lib/heritage/headToHead';
 import type { RoundProps, MatchProps } from '@/components/gameweeks/Views';
 import type { TeamLite, TieLite } from '@/components/gameweeks/types';
@@ -303,48 +303,63 @@ export async function loadMatchPage(
     const deadline = view.state === 'upcoming' && fplStatus.nextGw === gw ? fplStatus.nextDeadline : null;
 
     // Head-to-head, all-time and across every competition, from your side.
-    let h2h: H2HData | null = null;
-    if (view.state !== 'live') {
-        const mineId = B.id === myTeamId ? B.id : A.id;
-        const otherId = mineId === A.id ? B.id : A.id;
-        const all = await loadAllResults(admin, leagueId, ctx.currentSeason).catch(() => []);
-        const hh = headToHead(all, mineId, otherId);
-        const shortSeason = (s: string) => s.replace(/^\d{2}(\d{2})-(\d{2})$/, '$1/$2');
-        const meetings = hh.meetings.map((r, i) => {
-            const isA = r.teamAId === mineId;
-            const my = isA ? r.scoreA : r.scoreB, opp = isA ? r.scoreB : r.scoreA;
-            const stage = r.competition === 'league' && r.gameweek != null ? `GW${r.gameweek}` : r.stage;
-            const label = r.season === ctx.currentSeason ? stage : `${shortSeason(r.season)} ${stage}`;
-            const letter = r.competition === 'league' ? resultOf(my, opp) : (r.winnerId === mineId ? 'W' : 'L');
-            const isThis = r.competition === 'league' && r.season === ctx.currentSeason && r.gameweek === gw;
-            return { key: `${r.season}-${r.competition}-${r.stage}-${i}`, label, my, opp, r: letter as 'W' | 'D' | 'L', isThis };
-        });
-        const next = rowsAll.find((m) => m.gameweek > gw && ((m.team_a_id === mineId && m.team_b_id === otherId) || (m.team_a_id === otherId && m.team_b_id === mineId)));
-        const viewerIn = mineId === myTeamId;
-        let note = '';
-        if (!meetings.length) note = 'First meeting between these two clubs.';
-        else if (meetings.length === 1 && meetings[0].isThis) note = 'The first meeting between these two clubs.';
-        else if (view.state === 'upcoming' && meetings[0]) {
-            const m0 = meetings[0];
-            const d = fmtM(Math.abs(m0.my - m0.opp));
-            const who = viewerIn ? 'You' : names[mineId];
-            note = m0.r === 'W' ? `${who} beat ${names[otherId]} by ${d} last time, ${m0.label}.`
-                : m0.r === 'L' ? `${names[otherId]} beat ${viewerIn ? 'you' : names[mineId]} by ${d} last time, ${m0.label}.`
-                : `${names[mineId]} and ${names[otherId]} drew last time, ${m0.label}.`;
-        }
-        const formUpto = view.state === 'upcoming' ? gw : gw - 1;
-        h2h = {
-            won: hh.won, drawn: hh.drawn, lost: hh.lost,
-            meetings,
-            nextLabel: next ? `GW${next.gameweek}` : null,
-            note,
-            formMine: formOf(rows, mineId, formUpto).slice(-5).map((x) => x.r),
-            formOther: formOf(rows, otherId, formUpto).slice(-5).map((x) => x.r),
-            formLabel: view.state === 'upcoming' ? 'Form' : 'Form Before This Match',
-        };
-    }
+    const h2h = view.state === 'live' ? null : await loadHeadToHead(admin, {
+        leagueId, season: ctx.currentSeason, gw, state: view.state, a: A.id, b: B.id, myTeamId, names, rows: rowsAll, isThisMeeting: (r) => r.competition === 'league' && r.season === ctx.currentSeason && r.gameweek === gw,
+    });
 
     return { leagueId, myTeamId, view, teams: { a: A, b: B }, ties, current, metas, h2h, window, deadline };
 }
 
 const fmtM = (v: number) => v.toFixed(2);
+
+/**
+ * The all-time head-to-head between two clubs, across every competition, from
+ * the viewer's side: the league matchup page and the cup tie page both use it.
+ */
+export async function loadHeadToHead(
+    admin: SupabaseClient,
+    o: {
+        leagueId: string; season: string; gw: number; state: MatchupView['state']; a: string; b: string; myTeamId?: string;
+        names: Record<string, string>; rows: MatchupRow[]; isThisMeeting: (r: Result) => boolean;
+    },
+): Promise<H2HData> {
+    const { leagueId, season, gw, state, myTeamId, names } = o;
+    const rows = o.rows as unknown as MatchupRowLite[];
+    const mineId = o.b === myTeamId ? o.b : o.a;
+    const otherId = mineId === o.a ? o.b : o.a;
+    const all = await loadAllResults(admin, leagueId, season).catch(() => []);
+    const hh = headToHead(all, mineId, otherId);
+    const shortSeason = (s: string) => s.replace(/^\d{2}(\d{2})-(\d{2})$/, '$1/$2');
+    const meetings = hh.meetings.map((r, i) => {
+        const isA = r.teamAId === mineId;
+        const my = isA ? r.scoreA : r.scoreB, opp = isA ? r.scoreB : r.scoreA;
+        const stage = r.competition === 'league' && r.gameweek != null ? `GW${r.gameweek}` : r.stage;
+        const label = r.season === season ? stage : `${shortSeason(r.season)} ${stage}`;
+        const letter = r.competition === 'league' ? resultOf(my, opp) : (r.winnerId === mineId ? 'W' : 'L');
+        const isThis = o.isThisMeeting(r);
+        return { key: `${r.season}-${r.competition}-${r.stage}-${i}`, label, my, opp, r: letter as 'W' | 'D' | 'L', isThis };
+    });
+    const next = o.rows.find((m) => m.gameweek > gw && ((m.team_a_id === mineId && m.team_b_id === otherId) || (m.team_a_id === otherId && m.team_b_id === mineId)));
+    const viewerIn = mineId === myTeamId;
+    let note = '';
+    if (!meetings.length) note = 'First meeting between these two clubs.';
+    else if (meetings.length === 1 && meetings[0].isThis) note = 'The first meeting between these two clubs.';
+    else if (state === 'upcoming' && meetings[0]) {
+        const m0 = meetings[0];
+        const d = fmtM(Math.abs(m0.my - m0.opp));
+        const who = viewerIn ? 'You' : names[mineId];
+        note = m0.r === 'W' ? `${who} beat ${names[otherId]} by ${d} last time, ${m0.label}.`
+            : m0.r === 'L' ? `${names[otherId]} beat ${viewerIn ? 'you' : names[mineId]} by ${d} last time, ${m0.label}.`
+            : `${names[mineId]} and ${names[otherId]} drew last time, ${m0.label}.`;
+    }
+    const formUpto = state === 'upcoming' ? gw : gw - 1;
+    return {
+        won: hh.won, drawn: hh.drawn, lost: hh.lost,
+        meetings,
+        nextLabel: next ? `GW${next.gameweek}` : null,
+        note,
+        formMine: formOf(rows, mineId, formUpto).slice(-5).map((x) => x.r),
+        formOther: formOf(rows, otherId, formUpto).slice(-5).map((x) => x.r),
+        formLabel: state === 'upcoming' ? 'Form' : 'Form Before This Match',
+    };
+}
