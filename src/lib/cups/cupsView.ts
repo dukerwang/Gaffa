@@ -111,6 +111,8 @@ export interface RoundPage {
   when: string;
   live: boolean;
   ties: TieModel[];
+  /** An undrawn round: its ties are pairs of lines in one pool, not real ties. */
+  pool: boolean;
   /** Sentence under an undrawn round. */
   note: string | null;
   prize: { winner: number; runnerUp: number } | null;
@@ -336,6 +338,7 @@ function roundPages(ctx: Ctx): RoundPage[] {
       when: roundWhen(r, ctx.input.deadlines),
       live: roundLive(r, ctx.input.currentGw, ctx.input.currentGwFinished),
       ties: models,
+      pool: !!pool,
       note,
       prize: r.round_number === last ? ctx.input.prizes[ctx.cup.type] ?? null : null,
     };

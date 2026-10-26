@@ -14,7 +14,7 @@ import { buildCupsModel, type CupRow, type CupsModel, type RoundRow, type TieRow
 export type CupsPageResult =
   | { kind: 'notFound' }
   | { kind: 'redirect'; to: string }
-  | { kind: 'ok'; leagueName: string; model: CupsModel; live: boolean };
+  | { kind: 'ok'; leagueName: string; season: string | null; model: CupsModel; live: boolean };
 
 /** FPL's current matchweek and whether it has finished; GW1 unfinished when FPL can't be read. */
 export function fplState(events: FplEventSlim[], now = Date.now()): { currentGw: number; finished: boolean } {
@@ -44,6 +44,7 @@ export async function loadCupsPage(
   // A league keeps last season's cups; the newest of each type is this season's.
   const seen = new Set<string>();
   const cups: CupRow[] = [];
+  const season: string | null = (cupsData ?? [])[0]?.season ?? null;
   for (const c of cupsData ?? []) {
     if (seen.has(c.type)) continue;
     seen.add(c.type);
@@ -105,5 +106,5 @@ export async function loadCupsPage(
     },
     selectedCupId: opts.selectedCupId,
   });
-  return { kind: 'ok', leagueName: league.name, model, live };
+  return { kind: 'ok', leagueName: league.name, season, model, live };
 }
