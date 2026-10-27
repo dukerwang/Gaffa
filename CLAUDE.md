@@ -32,7 +32,11 @@ npm run download-team-logos                           # scripts/download-pl-team
 
 Tests run under **vitest** (`npm test` → `vitest run`). `vitest.config.ts` includes only `src/**/__tests__/**/*.test.ts`; widen that glob when tests land elsewhere. Current coverage: the scoring engine (`src/lib/scoring/__tests__/`), the economy modules (`src/lib/economy/__tests__/`) and the prize curve (`src/lib/offseason/__tests__/`).
 
-**Before declaring work done or pushing commits, run `npm run build` and make sure it passes.** This project has no CI; the build is the only correctness gate besides manual verification. (`.cursor/rules/project-context.mdc`, `.cursorrules`, and `AGENTS.md` encode the same rule.)
+**Before declaring work done or pushing commits, run `npm run build` and make sure it passes.** (`.cursor/rules/project-context.mdc`, `.cursorrules`, and `AGENTS.md` encode the same rule.)
+
+**Before merging a PR, run `/code-review` on the branch.** It reads the diff in a fresh context, with `REVIEW.md` as its checklist. Fix every Important finding or dismiss it with a reason in the PR description; Pre-existing findings don't block the merge. Stop at three rounds: after the first, review only the commits added since, and if Important findings remain after the third, rethink the approach instead of patching again. A PR that touches a higher-risk path in `REVIEW.md` gets `/code-review high`.
+
+Every PR also runs `.github/workflows/pr-checks.yml` (typecheck, lint, vitest, and `scripts/check-data-rules.mjs` on the lines the branch adds), and branch protection on `main` won't merge until it passes. Vercel's preview deployment covers `next build`. `npm run check:data` audits the whole repo; to accept a finding on purpose, put `data-rules-ok: <reason>` in a comment on the line or the line above.
 
 `.claude/launch.json` defines dev servers on ports 3000 / 3010 (`next dev`) and 3005 (`next start`). Another session may already own one — check before starting or killing a server.
 
