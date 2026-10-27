@@ -436,6 +436,20 @@ const n = (v: unknown) => Number(v ?? 0);
  * 10,091, xGC 10,906, bps 10,403, recoveries 9,528, CBI 8,100, xA 7,855,
  * tackles 6,252, xG 5,327, saves 710.
  */
+/* FPL awards a clean sheet for the player's own minutes, not his side's match,
+   so a full-back subbed off at 64' before two late goals keeps his. That is
+   the rule the score follows and it stays, but a bare "clean sheet" printed
+   beside a 0–2 defeat reads as a bug. When the side did concede, say which
+   part of the match he kept it for. Without `team_goals_conceded` (rows synced
+   before it existed) there is no way to tell, so the plain phrase stands. */
+export function cleanSheetPhrase(s: RawStats): string {
+    if (!(n(s.team_goals_conceded) > 0)) return 'clean sheet';
+    const mins = n(s.minutes_played);
+    if (s.started === true && mins > 0 && mins < 90) return `clean sheet until subbed off after ${mins} minutes`;
+    if (s.started === false) return 'clean sheet after coming on';
+    return 'clean sheet while on the pitch';
+}
+
 function evidenceFor(key: PerfGroupKey, s: RawStats, position: GranularPosition): string {
     const goals = n(s.goals), assists = n(s.assists);
     const xg = n(s.expected_goals), xa = n(s.expected_assists);
@@ -500,7 +514,7 @@ function evidenceFor(key: PerfGroupKey, s: RawStats, position: GranularPosition)
 
             const gc = n(s.goals_conceded), xgc = n(s.expected_goals_conceded);
             if (s.clean_sheet) {
-                bits.push('clean sheet');
+                bits.push(cleanSheetPhrase(s));
             } else if (gc > 0 && xgc >= 0.05) {
                 // Which side of expected he finished on is the whole outcome
                 // term, and it cuts both ways.
@@ -525,7 +539,8 @@ function evidenceFor(key: PerfGroupKey, s: RawStats, position: GranularPosition)
         case 'goalsPrevented': {
             const gc = n(s.goals_conceded);
             const xgc = n(s.expected_goals_conceded);
-            const cs = s.clean_sheet ? 'Clean sheet. ' : '';
+            const csText = s.clean_sheet ? cleanSheetPhrase(s) : '';
+            const cs = csText ? `${csText.charAt(0).toUpperCase()}${csText.slice(1)}. ` : '';
             if (xgc < 0.05) return `${cs}${gc} conceded.`;
             return `${cs}${gc === 0 ? 'None' : gc} conceded against ${xgc.toFixed(1)} expected.`;
         }

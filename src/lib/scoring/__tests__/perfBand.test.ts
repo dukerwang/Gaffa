@@ -204,6 +204,38 @@ describe('evidence lines', () => {
         expect(clean).toContain('clean sheet');
     });
 
+    it('says when a clean sheet covered only his minutes', () => {
+        // Hato, Chelsea 0–2 Spurs, 2026-27 GW8: off at 64', both goals after.
+        // FPL keeps his clean sheet; a bare "clean sheet" beside the defeat
+        // read as a scoring bug.
+        const subbedOff = defOf('LB', {
+            fpl_tackles: 4, fpl_cbi: 4, fpl_recoveries: 3, clean_sheet: true,
+            minutes_played: 64, started: true, team_goals_conceded: 2,
+        });
+        expect(subbedOff).toBe(
+            '4 tackles, 4 clearances/blocks/interceptions, 3 recoveries, clean sheet until subbed off after 64 minutes.',
+        );
+        expect(defOf('CB', { fpl_tackles: 1, clean_sheet: true, minutes_played: 62, started: false, team_goals_conceded: 1 }))
+            .toContain('clean sheet after coming on');
+        expect(defOf('CB', { fpl_tackles: 1, clean_sheet: true, minutes_played: 70, team_goals_conceded: 1 }))
+            .toContain('clean sheet while on the pitch');
+    });
+
+    it('keeps the plain phrase when the side kept it too, or when nobody recorded the score', () => {
+        const kept = defOf('LB', { fpl_tackles: 1, clean_sheet: true, minutes_played: 64, started: true, team_goals_conceded: 0 });
+        expect(kept).toContain('clean sheet.');
+        const legacy = defOf('LB', { fpl_tackles: 1, clean_sheet: true, minutes_played: 64, started: true });
+        expect(legacy).toContain('clean sheet.');
+    });
+
+    it('qualifies a keeper\'s partial clean sheet the same way', () => {
+        const line = buildPerformanceGroups(flat(0.5), 'GK', {
+            minutes_played: 70, started: true, clean_sheet: true, goals_conceded: 0,
+            expected_goals_conceded: 0.4, team_goals_conceded: 1,
+        } as RawStats, 0).find((g) => g.key === 'goalsPrevented')!.evidence;
+        expect(line).toBe('Clean sheet until subbed off after 70 minutes. None conceded against 0.4 expected.');
+    });
+
     it('credits a defence that conceded fewer than the chances warranted', () => {
         const line = defOf('CB', { fpl_tackles: 3, goals_conceded: 1, expected_goals_conceded: 2.4 });
         expect(line).toContain('1 conceded, against 2.4 expected');
