@@ -341,6 +341,7 @@ export async function loadClubView(
     pendingDropsRead,
     rosterIds.length && currentGw > 0
       ? admin
+          // data-rules-ok: one club's squad over five gameweeks of one season, a few hundred rows.
           .from('player_stats')
           .select('player_id, gameweek, fantasy_points, stats')
           .eq('season', statsSeason)
@@ -499,6 +500,7 @@ export async function loadClubView(
           .select('id, name, web_name, pl_team, primary_position, photo_url')
           .in('id', depPlayerIds),
         admin
+          // data-rules-ok: only this club's departed players, one row per player per season.
           .from('player_season_clubs')
           .select('player_id, season, club_slug')
           .in('player_id', depPlayerIds),
