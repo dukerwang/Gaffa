@@ -25,6 +25,7 @@ import { calculateMatchRating, mapFplLiveToRawStats } from '@/lib/scoring/engine
 import { calculateTeamScore, loadReferenceStats } from '@/lib/scoring/matchups';
 import { normalizeMatchupLineup } from '@/lib/lineups/normalizeMatchupLineup';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { fetchAllPagesIn } from '@/lib/supabase/pagination';
 import { getCurrentFplSeason, getLatestReferenceStatsSeason } from '@/lib/season/currentSeason';
 import type { GranularPosition, FplLivePlayerStats, RawStats } from '@/types';
 import { NextRequest, NextResponse } from 'next/server';
@@ -151,6 +152,7 @@ export async function POST(req: NextRequest) {
             const { data: hit, error } = await supabase
               .from('player_stats')
               .update(payload)
+              .eq('season', fplSeason)
               .eq('player_id', dbPlayer.id)
               .eq('match_id', fixtureId)
               .eq('gameweek', gameweek)
@@ -163,9 +165,12 @@ export async function POST(req: NextRequest) {
             // (gameweek*1000 + fpl_player_id). Fall back to player+GW match.
             // No IS NULL guard — re-runs must overwrite existing values so
             // engine changes take effect on subsequent backfill passes.
+            // Season-scoped on both paths: fixture ids and gameweek numbers
+            // restart every season, so without it an archived row is rewritten.
             const { error: e2 } = await supabase
               .from('player_stats')
               .update(payload)
+              .eq('season', fplSeason)
               .eq('player_id', dbPlayer.id)
               .eq('gameweek', gameweek);
 
@@ -239,11 +244,29 @@ export async function POST(req: NextRequest) {
           (m.lineup_b as any)?.starters?.forEach((s: any) => playerIds.add(s.player_id));
           (m.lineup_b as any)?.bench?.forEach((b: any) => playerIds.add(b.player_id));
         }
-        const { data: statsRows } = await supabase
-          .from('player_stats')
-          .select('player_id, fantasy_points_v2, stats')
-          .eq('gameweek', gameweek)
-          .in('player_id', Array.from(playerIds));
+        // Scoped to this season: without it, the same gameweek from every
+        // stored season would be folded into these matchups' v2 scores.
+        let statsRows: { player_id: string; fantasy_points_v2: number | null; stats: unknown }[];
+        try {
+          statsRows = await fetchAllPagesIn<{ player_id: string; fantasy_points_v2: number | null; stats: unknown }>(
+            Array.from(playerIds),
+            (chunk, from, to) =>
+              supabase
+                .from('player_stats')
+                .select('player_id, fantasy_points_v2, stats')
+                .eq('season', fplSeason)
+                .eq('gameweek', gameweek)
+                .in('player_id', chunk)
+                .order('id')
+                .range(from, to),
+          );
+        } catch {
+          // A partial read would rescore from half the squads. Skip this
+          // gameweek's matchups and say so in the summary.
+          matchupErrors += gwMatchups.length;
+          summary.push({ gameweek, statsUpdated, matchupsUpdated, statsErrors, matchupErrors });
+          continue;
+        }
 
         const playerRecordV2 = new Map<string, { fixtures: { minutes: number; fantasyPoints: number; stats: RawStats | null }[] }>();
         for (const r of statsRows ?? []) {

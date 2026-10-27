@@ -7,6 +7,7 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getCurrentFplSeason } from '@/lib/season/currentSeason';
 import { calculateMatchRating } from '@/lib/scoring/engine';
 import { consolationFeeds, decideTie } from '@/lib/tournaments/draw';
 import { runDraw, type DrawRound } from '@/lib/tournaments/runDraw';
@@ -26,7 +27,7 @@ async function getRefStats(
     .select('league:leagues(current_season)')
     .eq('id', tournamentId)
     .single();
-  const season = (data?.league as any)?.current_season ?? '2025-26';
+  const season = (data?.league as any)?.current_season ?? (await getCurrentFplSeason());
   const refStats = (await loadReferenceStats(admin, season)) as RefStatsMap;
   return { refStats, season };
 }

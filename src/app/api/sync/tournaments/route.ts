@@ -13,6 +13,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getCurrentFplSeason } from '@/lib/season/currentSeason';
 import { processMatchupsForGameweek } from '@/lib/scoring/matchupProcessor';
 import { createTournament } from '@/lib/tournaments/createTournaments';
 import { executeAdvanceTournament } from '@/lib/tournaments/advanceTournament';
@@ -68,7 +69,7 @@ async function handleCreate(_req: NextRequest, params: URLSearchParams) {
     return NextResponse.json({ error: 'League not found' }, { status: 404 });
   }
 
-  const season = leagueRow.current_season ?? '2025-26';
+  const season = leagueRow.current_season ?? (await getCurrentFplSeason());
   const result = await createTournament(admin, leagueId, type, startGw, season);
 
   if (!result.ok) {

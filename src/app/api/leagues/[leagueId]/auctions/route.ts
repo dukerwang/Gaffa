@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { effectiveSlots } from '@/lib/facilities/facilities';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getCurrentFplSeason, previousSeason as seasonBefore } from '@/lib/season/currentSeason';
 import type { AuctionListing, Player } from '@/types';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import { countBuybackSlots, deriveRosterCapacity } from '@/lib/roster/capacity';
@@ -45,7 +46,7 @@ export async function GET(_req: NextRequest, { params }: Props) {
   const teamIds = (allTeams ?? []).map((t) => t.id);
 
   // Compute bottom-half eligibility from previous season standings archive
-  const previousSeason = league?.previous_season ?? '2025-26';
+  const previousSeason = league?.previous_season ?? seasonBefore(await getCurrentFplSeason());
   const { data: standingsArchive } = await admin
     .from('season_standings_archive')
     .select('team_id, final_rank')
