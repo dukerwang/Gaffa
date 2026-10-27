@@ -465,47 +465,12 @@ function LeagueChatWidgetContent({
       <aside className={styles.widgetContainer} aria-label="League chat overlay">
         {/* Header */}
         <header className={styles.widgetHeader}>
+          {/* The channel tabs below are the navigation, so the header only names the window. */}
           <div className={styles.headerLeft}>
-            {viewMode === 'chat' ? (
-              <button
-                className={styles.headerBackBtn}
-                type="button"
-                onClick={() => setViewMode('channels')}
-                aria-label="View all channels"
-                title="View all channels"
-              >
-                <Icon name="chevron-left" size={16} strokeWidth={2.5} />
-                <span>Chats</span>
-              </button>
-            ) : (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="message-square" size={16} strokeWidth={2} />
-                <span className={styles.headerTitle}>Chats</span>
-              </span>
-            )}
-
-            {viewMode === 'chat' && (
-              <div className={styles.headerTitleWrapper}>
-                {activeTab.type === 'lobby' ? (
-                  <span className={styles.headerTitle}>League Lobby</span>
-                ) : activeTab.type === 'futbolpedia' ? (
-                  <span className={styles.headerTitle}>Futbolpedia</span>
-                ) : (
-                  <>
-                    <span className={styles.channelItemAvatar}>
-                      <CrestBadge
-                        config={teams.find((t) => t.user_id === activeTab.userId)?.crest_config}
-                        teamName={activeTab.teamName}
-                        teamId={teams.find((t) => t.user_id === activeTab.userId)?.id}
-                        size={22}
-                      />
-                    </span>
-                    <span className={styles.headerTitle}>{activeTab.username}</span>
-                    <span className={styles.headerSubtitle}>({activeTab.teamName})</span>
-                  </>
-                )}
-              </div>
-            )}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Icon name="message-square" size={16} strokeWidth={2} />
+              <span className={styles.headerTitle}>Chats</span>
+            </span>
           </div>
 
           <div className={styles.headerRightActions}>
