@@ -25,7 +25,9 @@ import { calculateMatchRating, mapFplLiveToRawStats } from '@/lib/scoring/engine
 import { calculateTeamScore, loadReferenceStats } from '@/lib/scoring/matchups';
 import { normalizeMatchupLineup } from '@/lib/lineups/normalizeMatchupLineup';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { fetchAllPagesIn } from '@/lib/supabase/pagination';
+import { fetchAllPagesIn, fetchAllPagesOrThrow } from '@/lib/supabase/pagination';
+import { startedFixtures } from '@/lib/fixtures/starters';
+import { teamGoalsConceded, type ScoredFixture } from '@/lib/fixtures/goalsConceded';
 import { getCurrentFplSeason, getLatestReferenceStatsSeason } from '@/lib/season/currentSeason';
 import type { GranularPosition, FplLivePlayerStats, RawStats } from '@/types';
 import { NextRequest, NextResponse } from 'next/server';
@@ -33,6 +35,9 @@ import { NextRequest, NextResponse } from 'next/server';
 export const maxDuration = 300;
 
 const FPL_BASE = 'https://fantasy.premierleague.com/api';
+
+/** Match ids below this are real FPL fixture ids; at or above, synthetic placeholders. */
+const SYNTHETIC_MATCH_ID_FLOOR = 1000;
 
 async function fetchCompletedGws(): Promise<number[]> {
   const res = await fetch(`${FPL_BASE}/bootstrap-static/`, {
@@ -54,19 +59,24 @@ async function fetchGwLive(gw: number): Promise<FplLivePlayerStats[]> {
   return (data.elements ?? []) as FplLivePlayerStats[];
 }
 
-async function fetchGwFixtures(gw: number): Promise<Record<number, number[]>> {
+async function fetchGwFixtures(gw: number): Promise<{
+  teamFixtures: Record<number, number[]>;
+  fixtureById: Map<number, ScoredFixture>;
+}> {
   const res = await fetch(`${FPL_BASE}/fixtures/?event=${gw}`, {
     headers: { 'User-Agent': 'FantasyFutbol/1.0' },
     next: { revalidate: 0 },
   });
   if (!res.ok) throw new Error(`fixtures GW${gw} error: ${res.status}`);
   const fixtures = await res.json();
-  const out: Record<number, number[]> = {};
+  const teamFixtures: Record<number, number[]> = {};
+  const fixtureById = new Map<number, ScoredFixture>();
   for (const f of fixtures) {
-    (out[f.team_h] ??= []).push(f.id);
-    (out[f.team_a] ??= []).push(f.id);
+    (teamFixtures[f.team_h] ??= []).push(f.id);
+    (teamFixtures[f.team_a] ??= []).push(f.id);
+    fixtureById.set(f.id, f);
   }
-  return out;
+  return { teamFixtures, fixtureById };
 }
 
 export async function GET(req: NextRequest) { return POST(req); }
@@ -102,11 +112,18 @@ export async function POST(req: NextRequest) {
     matchupErrors: number;
   }[] = [];
 
-  // Pre-load fpl_id → player mapping once (cheap; reused per GW).
-  const { data: allPlayers } = await supabase
-    .from('players')
-    .select('id, fpl_id, pl_team_id, primary_position, secondary_positions')
-    .not('fpl_id', 'is', null);
+  // Pre-load fpl_id → player mapping once (cheap; reused per GW). Paginated:
+  // departed players are kept, so this passes 1,000 rows.
+  const allPlayers = await fetchAllPagesOrThrow<{
+    id: string; fpl_id: number; pl_team_id: number | null; primary_position: string; secondary_positions: string[] | null;
+  }>((from, to) =>
+    supabase
+      .from('players')
+      .select('id, fpl_id, pl_team_id, primary_position, secondary_positions')
+      .not('fpl_id', 'is', null)
+      .order('id')
+      .range(from, to),
+  );
   const playerByFplId = new Map<number, {
     id: string; pl_team_id: number | null; primary_position: string; secondary_positions: string[] | null;
   }>();
@@ -127,7 +144,7 @@ export async function POST(req: NextRequest) {
     // ── 1. player_stats v2 backfill ────────────────────────────────────
     if (doStats) {
       const elements = await fetchGwLive(gameweek);
-      const teamFixtures = await fetchGwFixtures(gameweek);
+      const { teamFixtures, fixtureById } = await fetchGwFixtures(gameweek);
 
       for (let i = 0; i < elements.length; i += 50) {
         const chunk = elements.slice(i, i + 50);
@@ -136,7 +153,20 @@ export async function POST(req: NextRequest) {
           if (!dbPlayer) return;
           const playerFixIds = teamFixtures[dbPlayer.pl_team_id ?? 0] ?? [];
 
-          const writeOne = async (fixtureId: number, rawStats: RawStats) => {
+          // The stats JSON carries more than the engine's inputs. Rebuild the
+          // extra keys the way /api/sync/stats writes them, or this rewrite
+          // drops them: `started` feeds the Lineup Builder's starting XIs and
+          // `team_goals_conceded` the performance block's clean-sheet line.
+          const started = startedFixtures(
+            el.stats.starts,
+            (el.explain ?? []).filter((ex: { fixture: number }) => ex.fixture < SYNTHETIC_MATCH_ID_FLOOR),
+          );
+          const writeOne = async (fixtureId: number, engineStats: RawStats) => {
+            const rawStats: RawStats = {
+              ...engineStats,
+              started: started.has(fixtureId),
+              team_goals_conceded: teamGoalsConceded(fixtureById.get(fixtureId), dbPlayer.pl_team_id),
+            };
             const v2 = calculateMatchRating(
               rawStats,
               dbPlayer.primary_position as GranularPosition,

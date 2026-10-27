@@ -24,10 +24,14 @@ async function getRefStats(
 ): Promise<{ refStats: RefStatsMap; season: string }> {
   const { data } = await admin
     .from('tournaments')
-    .select('league:leagues(current_season)')
+    .select('season, league:leagues(current_season)')
     .eq('id', tournamentId)
     .single();
-  const season = (data?.league as any)?.current_season ?? (await getCurrentFplSeason());
+  // A cup is created with its season, so that is the fallback. FPL's season is
+  // the last resort: after GW38 it already names next season, which has no
+  // reference stats yet.
+  const season =
+    (data?.league as any)?.current_season ?? data?.season ?? (await getCurrentFplSeason());
   const refStats = (await loadReferenceStats(admin, season)) as RefStatsMap;
   return { refStats, season };
 }
