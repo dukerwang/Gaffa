@@ -53,6 +53,9 @@ function readAddedLines(base) {
       const start = Number(m[1]);
       const count = m[2] === undefined ? 1 : Number(m[2]);
       for (let i = 0; i < count; i++) map.get(file).add(start + i);
+      // A pure deletion (`+N,0`) adds nothing, but deleting a `.range()` still
+      // changes the chain around it. Mark the lines either side of the cut.
+      if (count === 0) map.get(file).add(start).add(start + 1);
     }
   }
   return map;
@@ -82,13 +85,19 @@ function report(list, f, lines, line, endLine, rule, msg) {
 function chainFrom(src, index) {
   let depth = 0;
   for (let i = index; i < src.length && i < index + 2500; i++) {
-    // A comma inside a comment is not the end of the statement.
-    if (src[i] === '/' && src[i + 1] === '/') {
+    const c = src[i];
+    // Punctuation inside a string or a comment is not the end of the statement.
+    if (c === "'" || c === '"' || c === '`') {
+      let j = i + 1;
+      while (j < src.length && src[j] !== c) j += src[j] === '\\' ? 2 : 1;
+      i = j;
+      continue;
+    }
+    if (c === '/' && src[i + 1] === '/') {
       const nl = src.indexOf('\n', i);
       i = nl === -1 ? src.length : nl;
       continue;
     }
-    const c = src[i];
     if (c === '(' || c === '[' || c === '{') depth++;
     else if (c === ')' || c === ']' || c === '}') {
       if (depth === 0) return src.slice(index, i);
@@ -102,28 +111,35 @@ function chainFrom(src, index) {
 // PostgREST truncates at 1,000 rows and reports success. These tables are past
 // that size (CLAUDE.md, "Batching & pagination"), so a read with no bound
 // silently returns a prefix. This has bitten sofifa_position_reference and the
-// player sync. Narrow filters (one gameweek, one player, one row) are bounded
-// well under the cap and pass.
+// player sync. Narrow filters (one season's gameweek, one player, one row) are
+// bounded well under the cap and pass.
 const BIG_TABLES = ['player_stats', 'sofifa_position_reference', 'player_season_clubs', 'roster_entries'];
 const BOUNDED = [
-  /\.range\(/, /\.single\(/, /\.maybeSingle\(/, /\.limit\(/,
+  /\.range\(/, /\.single\(/, /\.maybeSingle\(/,
   /head:\s*true/,
   /\.(upsert|insert|update|delete)\(/,
-  /\.eq\(\s*['"](id|player_id|gameweek|team_id|league_id|match_id|fpl_fixture_id)['"]/,
+  /\.eq\(\s*['"](id|player_id|team_id|league_id|match_id|fpl_fixture_id)['"]/,
+  // A limit is a bound only when it is under the cap: PostgREST still stops at
+  // 1,000 rows for `.limit(5000)`.
+  (chain) => [...chain.matchAll(/\.limit\(\s*(\d+)\s*\)/g)].some((m) => Number(m[1]) <= 1000),
 ];
 
 /** Filters that bound one table but not the others. */
 const BOUNDED_FOR = {
+  // One gameweek is ~650 rows per season, so it is a bound only within a season.
+  player_stats: [(chain) => /\.eq\(\s*['"]gameweek['"]/.test(chain) && /\.eq\(\s*['"]season['"]/.test(chain)],
   // One league's clubs hold a few hundred entries; only cross-league reads pass 1,000.
   roster_entries: [/\.in\(\s*['"]team_id['"]/],
 };
+
+const passes = (b, chain) => (typeof b === 'function' ? b(chain) : b.test(chain));
 
 function checkPagination(f, src, lines) {
   const re = new RegExp(`\\.from\\(\\s*['"](${BIG_TABLES.join('|')})['"]\\s*\\)`, 'g');
   for (const m of src.matchAll(re)) {
     const chain = chainFrom(src, m.index);
     if (!/\.select\(/.test(chain)) continue;
-    if ([...BOUNDED, ...(BOUNDED_FOR[m[1]] ?? [])].some((b) => b.test(chain))) continue;
+    if ([...BOUNDED, ...(BOUNDED_FOR[m[1]] ?? [])].some((b) => passes(b, chain))) continue;
     // Wrapped in a paginating helper a few lines up.
     const before = src.slice(Math.max(0, m.index - 400), m.index);
     if (/fetchAllPages(OrThrow|In)?\s*(<[^>]*>)?\s*\(/.test(before)) continue;
@@ -138,8 +154,12 @@ function checkPagination(f, src, lines) {
 // always `undefined === true`, and the dead branch has silently disabled the
 // gameweek lock fix twice.
 function checkFinishedProvisional(f, src, lines) {
-  const re = /\b(e|ev|evt|event|events\[[^\]]*\]|gw|gameweek|currentEvent|nextEvent|current|curr)\??\.finished_provisional\b/g;
-  for (const m of src.matchAll(re)) {
+  // Receiver names that mean an event in this codebase. Generic ones (`current`,
+  // `gw`) also name fixtures, so they stay out.
+  const EV = '(?:e|ev|evt|event|events\\[[^\\]]*\\]|currentEvent|nextEvent|lastEvent)';
+  const read = new RegExp(`\\b${EV}\\??\\.finished_provisional\\b`, 'g');
+  const destructured = new RegExp(`\\{[^{}\\n]*\\bfinished_provisional\\b[^{}\\n]*\\}\\s*=\\s*${EV}\\b`, 'g');
+  for (const m of [...src.matchAll(read), ...src.matchAll(destructured)]) {
     const line = lineOf(src, m.index);
     report(errors, f, lines, line, line, 'finished-provisional-on-event',
       '`finished_provisional` exists only on FPL fixtures, never events. Gate on gameweek_sync_state.final_synced_at instead.');
