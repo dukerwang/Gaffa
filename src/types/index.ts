@@ -347,6 +347,15 @@ export interface RawStats {
    * not backfilled. See src/lib/fixtures/starters.ts.
    */
   started?: boolean;
+  /**
+   * Goals his club conceded in the whole match, whether or not he was on the
+   * pitch for them, from the fixture's final score. FPL's `clean_sheets` only
+   * counts his own minutes, so a defender subbed off before his side conceded
+   * keeps one; the performance block reads this to say so instead of printing
+   * a bare "clean sheet" beside a defeat. Written by the live stats sync;
+   * absent on rows synced before 2026-10-26 unless backfilled.
+   */
+  team_goals_conceded?: number;
 }
 
 export interface DraftPick {

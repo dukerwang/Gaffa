@@ -22,7 +22,7 @@ import { snapshotCurrentFplFixtures } from '@/lib/fixtures/upsertFixtures';
 import { startedFixtures } from '@/lib/fixtures/starters';
 import { syncPlLineups } from '@/lib/fixtures/plLineups';
 import { recomputePositionRanks, type RecomputeResult } from '@/lib/stats/seasonStats';
-import type { GranularPosition, FplLivePlayerStats } from '@/types';
+import type { GranularPosition, FplLivePlayerStats, RawStats } from '@/types';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -209,6 +209,8 @@ async function syncFplLiveRatings(
     event: number | null;
     team_h: number;
     team_a: number;
+    team_h_score: number | null;
+    team_a_score: number | null;
     kickoff_time: string | null;
   }
 
@@ -231,6 +233,19 @@ async function syncFplLiveRatings(
     teamFixtures[f.team_h].push(f.id);
     teamFixtures[f.team_a].push(f.id);
   });
+
+  // What the player's side conceded in the whole match, for the performance
+  // block to tell a partial clean sheet from a real one. `pl_team_id` is a
+  // seasonal FPL id, so it is only compared against this same payload; a
+  // player it doesn't place on either side gets no value rather than a guess.
+  const fixtureById = new Map<number, FplFixtureRaw>(fixtures.map((f: FplFixtureRaw) => [f.id, f]));
+  const teamGoalsConceded = (fixtureId: number, teamId: number | null): number | undefined => {
+    const f = fixtureById.get(fixtureId);
+    if (!f || teamId == null || f.team_h_score == null || f.team_a_score == null) return undefined;
+    if (teamId === f.team_h) return f.team_a_score;
+    if (teamId === f.team_a) return f.team_h_score;
+    return undefined;
+  };
 
   // 4. Bulk lookup players to avoid N+1 queries
   const fplIds = elements.map(el => el.id);
@@ -356,6 +371,11 @@ async function syncFplLiveRatings(
               dbPlayer.primary_position as GranularPosition,
               refStats as any
             );
+            const storedStats: RawStats = {
+              ...rawStats,
+              started: started.has(fixtureId),
+              team_goals_conceded: teamGoalsConceded(fixtureId, dbPlayer.pl_team_id),
+            };
 
             const { error } = await supabase.from('player_stats').upsert(
               {
@@ -363,7 +383,7 @@ async function syncFplLiveRatings(
                 match_id: fixtureId,
                 gameweek,
                 season: fplSeason,
-                stats: { ...rawStats, started: started.has(fixtureId) },
+                stats: storedStats,
                 fantasy_points: v2.fantasyPoints,
                 match_rating: v2.rating,
                 // The explanation, banded, snapshotted alongside the score it
@@ -371,7 +391,7 @@ async function syncFplLiveRatings(
                 perf: buildPerformanceGroups(
                   v2.breakdown,
                   dbPlayer.primary_position as GranularPosition,
-                  rawStats,
+                  storedStats,
                   featExcessFor(rawStats, dbPlayer.primary_position as GranularPosition),
                 ),
               },
