@@ -48,7 +48,8 @@ These have each shipped as bugs. `CLAUDE.md` has the background on each.
   never on FPL's `finished` flag alone. `finished_provisional` exists only on
   fixtures.
 - **Stats rewrites.** Anything that writes `player_stats.stats` wholesale must
-  keep `started` and `ict_imputed`.
+  rebuild the keys `/api/sync/stats` adds beyond the engine's inputs
+  (`started`, `team_goals_conceded`), and every write is scoped to a season.
 - **Caretaker clubs.** `teams.user_id` can be null. Never inner-join `teams` to
   `users`; notifications, trades and loans must handle a club with no manager.
 - **Per-team slot caps.** Academy, IR and loan-out caps come from

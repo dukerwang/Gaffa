@@ -20,6 +20,7 @@ import { resolveAllStalledGameweeks, processMatchupsForGameweek } from '@/lib/sc
 import { getCurrentFplSeason, getLatestReferenceStatsSeason } from '@/lib/season/currentSeason';
 import { snapshotCurrentFplFixtures } from '@/lib/fixtures/upsertFixtures';
 import { startedFixtures } from '@/lib/fixtures/starters';
+import { teamGoalsConceded as goalsConcededIn } from '@/lib/fixtures/goalsConceded';
 import { syncPlLineups } from '@/lib/fixtures/plLineups';
 import { recomputePositionRanks, type RecomputeResult } from '@/lib/stats/seasonStats';
 import type { GranularPosition, FplLivePlayerStats, RawStats } from '@/types';
@@ -234,18 +235,11 @@ async function syncFplLiveRatings(
     teamFixtures[f.team_a].push(f.id);
   });
 
-  // What the player's side conceded in the whole match, for the performance
-  // block to tell a partial clean sheet from a real one. `pl_team_id` is a
-  // seasonal FPL id, so it is only compared against this same payload; a
-  // player it doesn't place on either side gets no value rather than a guess.
+  // What the player's side conceded in the whole match. `pl_team_id` is a
+  // seasonal FPL id, so it is only compared against this same payload.
   const fixtureById = new Map<number, FplFixtureRaw>(fixtures.map((f: FplFixtureRaw) => [f.id, f]));
-  const teamGoalsConceded = (fixtureId: number, teamId: number | null): number | undefined => {
-    const f = fixtureById.get(fixtureId);
-    if (!f || teamId == null || f.team_h_score == null || f.team_a_score == null) return undefined;
-    if (teamId === f.team_h) return f.team_a_score;
-    if (teamId === f.team_a) return f.team_h_score;
-    return undefined;
-  };
+  const teamGoalsConceded = (fixtureId: number, teamId: number | null): number | undefined =>
+    goalsConcededIn(fixtureById.get(fixtureId), teamId);
 
   // 4. Bulk lookup players to avoid N+1 queries
   const fplIds = elements.map(el => el.id);
