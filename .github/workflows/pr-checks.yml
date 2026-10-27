@@ -1,0 +1,49 @@
+name: PR checks
+
+# The blocking checks on every pull request into main. Branch protection
+# requires the `checks` job to pass before a merge.
+#
+# `next build` is not here: Vercel's preview deployment already builds every
+# PR, and running it twice would only spend minutes. ESLint is not here either:
+# the repo carries ~900 existing lint errors, so a lint gate would fail every
+# PR until that debt is paid down.
+#
+# check-data-rules runs in --diff mode, so it judges only the lines this branch
+# adds. The repo's existing findings (`npm run check:data`) don't block a PR.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The data-rules diff needs the merge base with main.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      - name: Data rules (lines this PR adds)
+        run: node scripts/check-data-rules.mjs --diff origin/${{ github.base_ref }}

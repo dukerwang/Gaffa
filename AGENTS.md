@@ -46,6 +46,11 @@ and keep fixtures disposable.
 
 Do not claim a feature is live on Vercel until the build passes.
 
+Before merging, have a reviewer with fresh context read the branch's diff
+against `REVIEW.md` (in Claude Code, `/code-review`). Fix every Important
+finding or dismiss it with a reason in the PR description. Every PR runs
+`.github/workflows/pr-checks.yml`, and `main` won't merge until it passes.
+
 ## Ask before you act
 
 These have consequences that a rerun cannot undo. Get a yes first:
