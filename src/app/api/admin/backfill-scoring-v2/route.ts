@@ -146,6 +146,25 @@ export async function POST(req: NextRequest) {
       const elements = await fetchGwLive(gameweek);
       const { teamFixtures, fixtureById } = await fetchGwFixtures(gameweek);
 
+      // What the sync already stored for each match. `pl_team_id` is the
+      // player's club today, so for a player who has since moved it would
+      // place him on the wrong side of an earlier fixture; the sync's value
+      // was taken while he was still there.
+      const storedConceded = new Map<string, number>();
+      const storedRows = await fetchAllPagesOrThrow<{ player_id: string; match_id: number; conceded: unknown }>(
+        (from, to) =>
+          supabase
+            .from('player_stats')
+            .select('player_id, match_id, conceded:stats->team_goals_conceded')
+            .eq('season', fplSeason)
+            .eq('gameweek', gameweek)
+            .order('id')
+            .range(from, to),
+      );
+      for (const r of storedRows) {
+        if (typeof r.conceded === 'number') storedConceded.set(`${r.player_id}:${r.match_id}`, r.conceded);
+      }
+
       for (let i = 0; i < elements.length; i += 50) {
         const chunk = elements.slice(i, i + 50);
         await Promise.all(chunk.map(async (el) => {
@@ -165,7 +184,9 @@ export async function POST(req: NextRequest) {
             const rawStats: RawStats = {
               ...engineStats,
               started: started.has(fixtureId),
-              team_goals_conceded: teamGoalsConceded(fixtureById.get(fixtureId), dbPlayer.pl_team_id),
+              team_goals_conceded:
+                storedConceded.get(`${dbPlayer.id}:${fixtureId}`) ??
+                teamGoalsConceded(fixtureById.get(fixtureId), dbPlayer.pl_team_id),
             };
             const v2 = calculateMatchRating(
               rawStats,
