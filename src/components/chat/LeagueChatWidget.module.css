@@ -136,37 +136,6 @@
   flex: 1;
 }
 
-.headerBackBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: transparent;
-  border: none;
-  padding: 4px 6px;
-  border-radius: var(--radius-sm, 4px);
-  color: var(--color-text-secondary);
-  font-size: 12px;
-  font-weight: var(--font-semibold, 600);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all var(--transition-fast);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .headerBackBtn:hover {
-    background: var(--color-bg-card-hover);
-    color: var(--color-text-primary);
-  }
-}
-
-.headerTitleWrapper {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2, 8px);
-  min-width: 0;
-  flex: 1;
-}
-
 .headerTitle {
   font-family: var(--font-serif);
   font-size: 14px;
@@ -175,15 +144,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.headerSubtitle {
-  font-size: 11px;
-  color: var(--color-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-left: 2px;
 }
 
 .headerRightActions {
@@ -618,11 +578,6 @@
 
   .headerTitle {
     font-size: 15px;
-  }
-
-  .headerBackBtn {
-    padding: 6px 8px;
-    font-size: 13px;
   }
 
   .messagesFeed {
