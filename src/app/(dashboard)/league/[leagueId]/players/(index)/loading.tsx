@@ -11,7 +11,7 @@ import s from '@/components/skeletons/pageSkeleton.module.css';
  */
 export default function Loading() {
   return (
-    <div className="g-panel" aria-busy="true" aria-label="Loading players">
+    <div className="g-panel" data-route-skeleton aria-busy="true" aria-label="Loading players">
       <div className={`g-spectrum ${styles.spectrum}`} aria-hidden>
         {SPINE.map((p) => (
           <i key={p} style={{ background: POS_COLOR[p] }} />

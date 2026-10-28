@@ -12,7 +12,7 @@ import s from '@/components/cups/cupTie.module.css';
  */
 export default function Loading() {
   return (
-    <div className={`${gw.root} g-page`} aria-busy="true" aria-label="Loading cup tie">
+    <div className={`${gw.root} g-page`} data-route-skeleton aria-busy="true" aria-label="Loading cup tie">
       <div className={s.head}>
         <span className={s.back} aria-hidden="true">
           <Icon name="chevron-left" size={20} strokeWidth={2.25} className={s.chev} />

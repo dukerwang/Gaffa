@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -78,6 +78,17 @@ function isItemActive(
   return prefixesASibling ? pathname === href : pathname.startsWith(href);
 }
 
+function subscribeToDom(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.body, { childList: true, subtree: true });
+  return () => observer.disconnect();
+}
+
+/** Whether a route skeleton (a loading.tsx root marked data-route-skeleton) is on screen. */
+function hasRouteSkeleton() {
+  return document.querySelector('[data-route-skeleton]') !== null;
+}
+
 export default function TopBar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -110,6 +121,12 @@ export default function TopBar() {
   const currentLeague = currentTeam?.league;
   const currentCrestConfig = currentTeam?.crest_config;
   const initials = (username || 'Manager').trim().substring(0, 2).toUpperCase();
+
+  // A route skeleton (loading.tsx) commits the new pathname before the page's
+  // data arrives, so the pathname changing no longer means the page is here.
+  // The bar stays up while any element marked data-route-skeleton is mounted,
+  // and also comes up for one reached without a click (back, a router.push).
+  const skeletonUp = useSyncExternalStore(subscribeToDom, hasRouteSkeleton, () => false);
 
   // Clear loading bar when navigation completes (pathname changed)
   useEffect(() => {
@@ -376,7 +393,7 @@ export default function TopBar() {
 
   return (
     <nav className={styles.topBar}>
-      {isNavigating && <div className={styles.loadingBar} />}
+      {(isNavigating || skeletonUp) && <div className={styles.loadingBar} />}
       <div className={styles.inner}>
         {/* --- Wordmark --- */}
         <Link href={isAuthenticated ? '/dashboard' : '/login'} className={styles.brand} onClick={() => setIsNavigating(true)}>
