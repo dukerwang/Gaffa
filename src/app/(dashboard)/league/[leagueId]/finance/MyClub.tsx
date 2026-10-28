@@ -134,7 +134,7 @@ export default function MyClub({ data }: { data: FinanceData }) {
                     <span className={styles.pips} aria-label={`Match Revenue, GW${revenue.pips[0].gameweek} to GW${revenue.payAfterGw}`}>
                       {revenue.pips.map((p) => (
                         <span key={p.gameweek} className={`${styles.pip} ${p.result ? styles[`pip${p.result}`] : ''}`} title={`GW${p.gameweek}`}>
-                          {p.result ?? ''}
+                          {p.result ?? p.gameweek}
                         </span>
                       ))}
                     </span>
@@ -147,7 +147,7 @@ export default function MyClub({ data }: { data: FinanceData }) {
                     </span>
                   </span>
                   <span className={styles.rowEnd}>
-                    <span className={`${styles.rowFig} ${styles.in}`}>{signed(revenue.earned)}</span>
+                    <span className={`${styles.rowFig} ${revenue.earned > 0 ? styles.in : styles.rowFigQuiet}`}>{signed(revenue.earned)}</span>
                     <span className={styles.rowSub}>so far</span>
                   </span>
                 </li>

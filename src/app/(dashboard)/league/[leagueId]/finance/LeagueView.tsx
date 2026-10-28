@@ -28,7 +28,7 @@ export default function LeagueView({ data }: { data: FinanceData }) {
               <tr>
                 <th className={styles.thClub}>Club</th>
                 <th>Spendable</th>
-                <th>Club Balance</th>
+                <th className={styles.wide}>Club Balance</th>
                 <th>Leading Bids</th>
                 <th className={styles.wide}>Season In</th>
                 <th className={styles.wide}>Season Out</th>
@@ -48,10 +48,10 @@ export default function LeagueView({ data }: { data: FinanceData }) {
                     </span>
                   </td>
                   <td className={styles.figStrong}>{money(c.spendable)}</td>
-                  <td>{money(c.balance)}</td>
+                  <td className={styles.wide}>{money(c.balance)}</td>
                   <td className={c.committed ? styles.out : styles.quiet}>{c.committed ? money(c.committed) : '—'}</td>
-                  <td className={`${styles.wide} ${styles.in}`}>{signed(c.totalIn)}</td>
-                  <td className={`${styles.wide} ${styles.out}`}>{signed(-c.totalOut)}</td>
+                  <td className={`${styles.wide} ${c.totalIn ? styles.in : styles.quiet}`}>{signed(c.totalIn)}</td>
+                  <td className={`${styles.wide} ${c.totalOut ? styles.out : styles.quiet}`}>{signed(-c.totalOut)}</td>
                 </tr>
               ))}
             </tbody>

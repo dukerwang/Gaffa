@@ -16,6 +16,17 @@ describe('rowAmount', () => {
   });
 });
 
+describe('loan fees', () => {
+  it('reads the payer side, written negative, as money out', () => {
+    const ledger = buildLedger({
+      teamId: 'a', currentBalance: 92, clubName: () => '', trades: [],
+      transactions: [tx('1', 'loan_fee', '2026-09-01T00:00:00Z', -8, null, 'Paid loan fee for player')],
+    });
+    expect(ledger.entries[0]).toMatchObject({ direction: 'out', amount: 8, balanceAfter: 92 });
+    expect(ledger.opening).toBe(100);
+  });
+});
+
 describe('buildLedger', () => {
   const clubName = (id: string) => ({ a: 'Club A', b: 'Club B' })[id] ?? '?';
 

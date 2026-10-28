@@ -52,10 +52,15 @@ export default function BalanceChart({ ledger, now, balance }: { ledger: Ledger;
     const grid: number[] = [];
     for (let v = step; v < top; v += step) grid.push(v);
 
-    const faces = points
-      .filter((p) => p.e.direction === 'out' && p.e.player && p.e.category === 'Signings')
-      .sort((a, b) => b.e.amount - a.e.amount)
-      .slice(0, PORTRAITS);
+    // Largest signings first, skipping any that would land on a portrait
+    // already placed: a busy week of auctions otherwise stacks them.
+    const faces: typeof points = [];
+    for (const p of points
+      .filter((q) => q.e.direction === 'out' && q.e.player && q.e.category === 'Signings')
+      .sort((a, b) => b.e.amount - a.e.amount)) {
+      if (faces.length === PORTRAITS) break;
+      if (faces.every((f) => Math.abs(f.px - p.px) > W * 0.12)) faces.push(p);
+    }
 
     return { points, d, area, ticks, grid, y, faces, endY: y(prev) };
   }, [ledger, now, balance]);

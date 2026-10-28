@@ -455,7 +455,7 @@
 .pin {
   position: absolute;
   transform: translate(-50%, calc(-100% - 10px));
-  border-radius: var(--r-round);
+  border-radius: var(--r-control);
   box-shadow: 0 0 0 2px var(--color-bg-card), var(--shadow-sm);
   pointer-events: none;
 }
@@ -711,4 +711,9 @@
   .supply { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .supplyFig:nth-child(3) { border-left: 0; }
   .supplyFig:nth-child(n + 3) { border-top: var(--line); }
+}
+
+@media (max-width: 768px) {
+  .table .thClub,
+  .table .tdClub { width: auto; }
 }

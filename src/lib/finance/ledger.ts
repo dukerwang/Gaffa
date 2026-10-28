@@ -120,15 +120,15 @@ export interface LedgerEntry {
 }
 
 /**
- * A row's money. The auction resolver writes the winning bid to `faab_bid` and
+ * A row's money, signed as it was written (only loan fees are ever negative).
+ * The auction resolver writes the winning bid to `faab_bid` and
  * any severance to `compensation_amount` on the signing row, and writes the
  * same severance again on its own `drop` row, so reading `faab_bid` first and
  * falling back to `compensation_amount` counts each euro once.
  */
 export function rowAmount(row: Pick<TransactionRow, 'faab_bid' | 'compensation_amount'>): number {
-  if (row.faab_bid != null && row.faab_bid > 0) return row.faab_bid;
-  const comp = Number(row.compensation_amount ?? 0);
-  return comp > 0 ? comp : 0;
+  if (row.faab_bid != null && row.faab_bid !== 0) return row.faab_bid;
+  return Number(row.compensation_amount ?? 0);
 }
 
 /** The ledger's second line for a row with no player. */
@@ -181,16 +181,20 @@ export function buildLedger({
   for (const row of transactions) {
     const meta = TX_META[row.type];
     if (!meta) continue;
-    const amount = rowAmount(row);
-    if (amount <= 0) continue;
-    if (meta.supply === 'created') created += amount;
+    const value = rowAmount(row);
+    if (value === 0) continue;
+    // A loan fee is written once per side with the payer's amount negative,
+    // so a negative amount runs against the type's usual direction.
+    const amount = Math.abs(value);
+    const direction: Direction = value > 0 ? meta.direction : meta.direction === 'in' ? 'out' : 'in';
+    if (meta.supply === 'created') created += value;
     raw.push({
       id: row.id,
       at: row.processed_at,
       type: row.type,
       label: labelFor(row, meta),
       category: meta.category,
-      direction: meta.direction,
+      direction,
       amount,
       player: row.player,
       detail: row.player ? null : detailFor(row),
