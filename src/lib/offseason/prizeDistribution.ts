@@ -83,6 +83,14 @@ function ordinalKey(rank: number): string {
   return `season_${getOrdinalSuffix(rank)}`;
 }
 
+/**
+ * The season prize for a place, honouring a per-league override for that rank.
+ * Finance reads it to project a club's prize from where it stands today.
+ */
+export function seasonPrizeFor(rank: number, totalTeams: number, prizeConfig: PrizeConfig | null | undefined): number {
+  return prizeConfig?.[ordinalKey(rank)] ?? computeSeasonPrize(rank, totalTeams);
+}
+
 function ordinalLabel(rank: number): string {
   return `${getOrdinalSuffix(rank)} Place (Regular Season)`;
 }
@@ -113,8 +121,7 @@ export async function buildSeasonPrizes(
     const rank = row.rank ?? 1;
     const key = ordinalKey(rank);
     const label = ordinalLabel(rank);
-    // Per-league config can override any individual rank; otherwise use the curve.
-    const amount = prizeConfig[key] ?? computeSeasonPrize(rank, totalTeams);
+    const amount = seasonPrizeFor(rank, totalTeams, prizeConfig);
 
     entries.push({
       teamId: row.team_id,
