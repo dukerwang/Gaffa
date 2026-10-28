@@ -19,17 +19,29 @@
 .out { color: var(--color-danger); }
 .quiet { color: var(--color-text-muted); }
 
-/* ---------- the shelf ---------- */
+/* ---------- the shelf ----------
+   The dashboard's green, mown in diamonds rather than its straight stripes:
+   one diagonal cut on the shelf, the crossing cut on ::before, each a faint
+   white over the green. Both paint through an outset border-image so they
+   reach the window edges without widening the page. */
 .shelf {
-  --shelf-a: var(--color-topbar);
-  --shelf-b: color-mix(in oklab, var(--color-topbar) 94%, white);
+  --shelf-mow: color-mix(in srgb, white 3.5%, transparent);
   --shelf-ink: var(--color-text-inverse);
   --shelf-soft: color-mix(in oklab, var(--color-text-inverse) 68%, var(--color-topbar));
   position: relative;
+  isolation: isolate;
   margin-top: calc(var(--space-8) * -1);
   padding: var(--s8) 0 128px;
   color: var(--shelf-ink);
-  border-image: repeating-linear-gradient(90deg, var(--shelf-a) 0 36px, var(--shelf-b) 36px 72px) fill 0 / 0 / 0 100vmax;
+  border-image: repeating-linear-gradient(45deg, var(--color-topbar) 0 36px, color-mix(in srgb, var(--color-topbar) 96.5%, white) 36px 72px) fill 0 / 0 / 0 100vmax;
+}
+.shelf::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-image: repeating-linear-gradient(-45deg, transparent 0 36px, var(--shelf-mow) 36px 72px) fill 0 / 0 / 0 100vmax;
 }
 
 .shelfTop {
