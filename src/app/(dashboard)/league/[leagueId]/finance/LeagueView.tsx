@@ -30,8 +30,8 @@ export default function LeagueView({ data }: { data: FinanceData }) {
                 <th>Spendable</th>
                 <th className={styles.wide}>Club Balance</th>
                 <th>Leading Bids</th>
-                <th className={styles.wide}>Season In</th>
-                <th className={styles.wide}>Season Out</th>
+                <th className={styles.wide}>Money In</th>
+                <th className={styles.wide}>Money Out</th>
               </tr>
             </thead>
             <tbody>

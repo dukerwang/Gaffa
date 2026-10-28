@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import Portrait from '@/components/players/Portrait';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import type { Ledger, LedgerEntry } from '@/lib/finance/ledger';
-import { money, shortDate, signed } from './format';
+import { money, monthShort, shortDate, signed } from './format';
 import styles from './finance.module.css';
 
 const W = 640;
@@ -44,7 +44,8 @@ export default function BalanceChart({ ledger, now, balance }: { ledger: Ledger;
     m.setUTCHours(0, 0, 0, 0);
     m.setUTCMonth(m.getUTCMonth() + 1);
     while (m.getTime() < end) {
-      ticks.push({ label: m.toLocaleDateString('en-GB', { month: 'short' }), px: x(m.getTime()) });
+      // Built at midnight UTC on the 1st, which is already that month in UK time.
+      ticks.push({ label: monthShort(m.getTime()), px: x(m.getTime()) });
       m.setUTCMonth(m.getUTCMonth() + 1);
     }
 

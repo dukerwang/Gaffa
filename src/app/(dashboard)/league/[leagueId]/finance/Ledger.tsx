@@ -7,7 +7,7 @@ import Portrait from '@/components/players/Portrait';
 import { usePlayerCard } from '@/components/players/PlayerCardProvider';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import type { Category, Ledger as LedgerData, LedgerEntry } from '@/lib/finance/ledger';
-import { money, monthKey, signed } from './format';
+import { dayOfMonth, money, monthKey, monthShort, signed } from './format';
 import styles from './finance.module.css';
 
 type Filter = 'all' | 'out' | 'in';
@@ -97,8 +97,8 @@ export default function Ledger({ ledger }: { ledger: LedgerData }) {
                 return (
                   <div key={e.id} className={styles.entry}>
                     <span className={styles.entryDay}>
-                      <b>{new Date(e.at).getDate()}</b>
-                      <small>{new Date(e.at).toLocaleDateString('en-GB', { month: 'short' })}</small>
+                      <b>{dayOfMonth(e.at)}</b>
+                      <small>{monthShort(e.at)}</small>
                     </span>
                     {e.player ? (
                       <button type="button" className={styles.entryFace} onClick={() => openPlayerById(e.player!.id)} aria-label={`Open ${e.player.name}`}>

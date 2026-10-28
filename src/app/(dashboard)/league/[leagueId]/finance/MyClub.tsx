@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import NavigationLink from '@/components/ui/NavigationLink';
 import Portrait from '@/components/players/Portrait';
@@ -63,12 +63,7 @@ export default function MyClub({ data }: { data: FinanceData }) {
   const over = me.committed - me.balance;
   const winning = bids.filter((b) => b.winning);
 
-  const due = useMemo(() => {
-    let n = 0;
-    if (revenue) n++;
-    if (prize) n++;
-    return n + listings.length + departures.length;
-  }, [revenue, prize, listings, departures]);
+  const nothingDue = !revenue && !prize && listings.length === 0 && departures.length === 0;
 
   return (
     <>
@@ -124,7 +119,7 @@ export default function MyClub({ data }: { data: FinanceData }) {
             <h2 id="fin-due" className={styles.cardTitle}>Money Due</h2>
             {revenue && <span className={styles.cardFig}><small>Next Payout</small> GW{revenue.payAfterGw}</span>}
           </header>
-          {due === 0 ? (
+          {nothingDue ? (
             <div className={styles.cardEmpty}><p>Nothing due this season.</p></div>
           ) : (
             <ul className={styles.rows}>

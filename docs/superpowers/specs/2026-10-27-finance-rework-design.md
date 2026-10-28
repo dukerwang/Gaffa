@@ -95,5 +95,11 @@ New module `src/lib/finance/`:
 - A season selector. The ledger and the Season chart cover the club's whole
   history, which is one season in every live league; add the selector when a
   league reaches its second.
+- **Redraft resets.** `reset_redraft_league_rpc` sets every balance back to
+  the league budget without writing a `transactions` row, and nothing records
+  when a season started. A redraft league's ledger therefore derives a wrong
+  opening balance after its first reset. Before any redraft league finishes a
+  season, the reset should write a row (or a season-start marker) that the
+  ledger can start from.
 - Writing trade cash into `transactions` at trade time.
 - Any change to how bids are validated or reserved.

@@ -8,6 +8,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { fetchAllPages } from '@/lib/supabase/pagination';
+import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import { DEFAULT_MERIT_RATES, gameweeksInPeriod, MERIT_PERIOD_COUNT, type MatchupResultRow, type MeritRates } from '@/lib/economy/meritPayments';
 import { seasonPrizeFor, type PrizeConfig } from '@/lib/offseason/prizeDistribution';
 import { buildFacilityViews, effectiveSlots, type FacilityView, type TeamSlotOverrides } from '@/lib/facilities/facilities';
@@ -15,9 +16,6 @@ import { isRedraft, leagueFeatures, type LeagueFeatures } from '@/lib/leagues/fe
 import type { CrestConfig } from '@/components/crest/types';
 import { buildLedger, type Ledger, type LedgerPlayer, type TradeCashRow, type TransactionRow } from './ledger';
 import { committedTo, liveBidsFor, matchRevenueOutlook, type AuctionStateRow, type LiveBid, type MatchRevenueOutlook } from './outlook';
-
-const PLAYER_SELECT =
-  'id, name, web_name, primary_position, pl_team, photo_url, photo_version, portrait_head_top_pct, portrait_head_width_pct';
 
 export interface FinanceClub {
   teamId: string;
@@ -91,7 +89,7 @@ export async function loadFinance(admin: SupabaseClient, leagueId: string, userI
     fetchAllPages<TransactionRow & { team_id: string }>((from, to) =>
       admin
         .from('transactions')
-        .select(`id, team_id, type, faab_bid, compensation_amount, notes, processed_at, player:players(${PLAYER_SELECT})`, { count: 'exact' })
+        .select(`id, team_id, type, faab_bid, compensation_amount, notes, processed_at, player:players(${FULL_PLAYER_SELECT})`, { count: 'exact' })
         .eq('league_id', leagueId)
         .order('id', { ascending: true })
         .range(from, to) as unknown as PromiseLike<{ data: (TransactionRow & { team_id: string })[] | null; count: number | null }>,
@@ -107,10 +105,10 @@ export async function loadFinance(admin: SupabaseClient, leagueId: string, userI
       .eq('league_id', leagueId)
       .eq('status', 'live'),
     admin.from('merit_payments').select('period_index').eq('team_id', mine.id).eq('season', season),
-    admin.from('league_standings').select('team_id, rank').eq('league_id', leagueId),
+    admin.from('league_standings').select('team_id, rank, wins, draws, losses').eq('league_id', leagueId),
     admin
       .from('departure_decisions')
-      .select(`id, compensation_offered, decide_by, player:players(${PLAYER_SELECT})`)
+      .select(`id, compensation_offered, decide_by, player:players(${FULL_PLAYER_SELECT})`)
       .eq('team_id', mine.id)
       .eq('status', 'pending'),
     features.facilities
@@ -174,38 +172,37 @@ export async function loadFinance(admin: SupabaseClient, leagueId: string, userI
   const myBids = liveBidsFor(mine.id, auctions);
   const myListingLots = auctions.filter((a) => a.kind === 'listing' && a.seller_team_id === mine.id && (a.bid_count ?? 0) > 0);
   const lotIds = [...new Set([...myBids.map((b) => b.playerId), ...myListingLots.map((a) => a.player_id)])];
-  const playersRes = lotIds.length
-    ? await admin.from('players').select(PLAYER_SELECT).in('id', lotIds)
-    : { data: [] as LedgerPlayer[] };
-  const playerById = new Map(((playersRes.data ?? []) as LedgerPlayer[]).map((p) => [p.id, p]));
 
-  // Match Revenue: the first unpaid period's matchups.
+  // Match Revenue accrues in the first period not yet paid.
   const paidPeriods = new Set(((paidRes.data ?? []) as { period_index: number }[]).map((r) => r.period_index));
-  let revenue: MatchRevenueOutlook | null = null;
-  {
-    let next = 1;
-    while (next <= MERIT_PERIOD_COUNT && paidPeriods.has(next)) next++;
-    if (next <= MERIT_PERIOD_COUNT) {
-      const { data: periodMatchups } = await admin
-        .from('matchups')
-        .select('gameweek, team_a_id, team_b_id, winner_team_id, status')
-        .eq('league_id', leagueId)
-        .in('gameweek', gameweeksInPeriod(next));
-      revenue = matchRevenueOutlook({
-        teamId: mine.id,
-        paidPeriods,
-        matchups: (periodMatchups ?? []) as MatchupResultRow[],
-        rates,
-      });
-    }
-  }
+  let nextPeriod = 1;
+  while (nextPeriod <= MERIT_PERIOD_COUNT && paidPeriods.has(nextPeriod)) nextPeriod++;
 
-  // The season prize, projected from today's place. A redraft league resets
-  // balances every season, so a prize there buys nothing and isn't shown.
-  const standings = (standingsRes.data ?? []) as { team_id: string; rank: number | null }[];
+  const [playersRes, periodRes] = await Promise.all([
+    lotIds.length
+      ? admin.from('players').select(FULL_PLAYER_SELECT).in('id', lotIds)
+      : Promise.resolve({ data: [] as LedgerPlayer[] }),
+    nextPeriod <= MERIT_PERIOD_COUNT
+      ? admin
+          .from('matchups')
+          .select('gameweek, team_a_id, team_b_id, winner_team_id, status')
+          .eq('league_id', leagueId)
+          .in('gameweek', gameweeksInPeriod(nextPeriod))
+      : Promise.resolve({ data: null }),
+  ]);
+  const playerById = new Map(((playersRes.data ?? []) as unknown as LedgerPlayer[]).map((p) => [p.id, p]));
+  const revenue: MatchRevenueOutlook | null = periodRes.data
+    ? matchRevenueOutlook({ teamId: mine.id, paidPeriods, matchups: periodRes.data as MatchupResultRow[], rates })
+    : null;
+
+  // The season prize, projected from today's place once a match has been
+  // played; before that every club ties and the first row would read 1st. A
+  // redraft league resets balances every season, so it shows no prize.
+  const standings = (standingsRes.data ?? []) as { team_id: string; rank: number | null; wins: number | null; draws: number | null; losses: number | null }[];
+  const played = standings.some((s) => (s.wins ?? 0) + (s.draws ?? 0) + (s.losses ?? 0) > 0);
   const myRank = standings.find((s) => s.team_id === mine.id)?.rank ?? null;
   const prize =
-    dynasty && myRank != null && standings.length > 1
+    dynasty && played && myRank != null && standings.length > 1
       ? {
           rank: myRank,
           clubs: standings.length,

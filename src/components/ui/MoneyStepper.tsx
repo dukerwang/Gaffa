@@ -3,6 +3,7 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { Icon } from './Icon';
 import { NumberRoll } from './NumberRoll';
+import { formatMoney } from '@/lib/text/money';
 import styles from './MoneyStepper.module.css';
 
 export interface MoneyStepperProps {
@@ -26,7 +27,6 @@ export interface MoneyStepperProps {
   className?: string;
 }
 
-const formatMoney = (n: number) => `€${Number.isInteger(n) ? n : n.toFixed(1)}m`;
 /** Wait before a held button starts repeating, then repeat faster the longer it is held. */
 const REPEAT_AFTER_MS = 380;
 const REPEAT_START_MS = 110;

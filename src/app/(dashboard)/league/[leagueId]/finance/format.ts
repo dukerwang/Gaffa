@@ -1,8 +1,14 @@
-/** €12m, or €17.6m when the figure isn't whole (Match Revenue, compensation). */
-export function money(n: number): string {
-  const v = Math.round(n * 10) / 10;
-  return Number.isInteger(v) ? `€${v}m` : `€${v.toFixed(1)}m`;
-}
+import { formatMoney } from '@/lib/text/money';
+
+export const money = formatMoney;
+
+/**
+ * Dates read in UK time, Gaffa's matchday clock. A fixed zone also keeps the
+ * server render and the browser agreeing on which day and month a movement
+ * landed in; the viewer's own zone would split a late-evening signing across
+ * a month boundary and fail hydration.
+ */
+const ZONE = 'Europe/London';
 
 /** +€12m / −€12m, with a true minus sign. */
 export function signed(n: number): string {
@@ -11,11 +17,19 @@ export function signed(n: number): string {
 }
 
 export function shortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: ZONE });
 }
 
 export function monthKey(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: ZONE });
+}
+
+export function dayOfMonth(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', timeZone: ZONE });
+}
+
+export function monthShort(iso: string | number): string {
+  return new Date(iso).toLocaleDateString('en-GB', { month: 'short', timeZone: ZONE });
 }
 
 export function ordinal(n: number): string {

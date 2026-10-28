@@ -25,6 +25,17 @@ describe('loan fees', () => {
     expect(ledger.entries[0]).toMatchObject({ direction: 'out', amount: 8, balanceAfter: 92 });
     expect(ledger.opening).toBe(100);
   });
+
+  it('reads every loan movement by its sign, for payer and receiver alike', () => {
+    const rows = [
+      tx('1', 'loan_bonus', '2026-09-02T00:00:00Z', -5),
+      tx('2', 'loan_recall_penalty', '2026-09-03T00:00:00Z', 4),
+      tx('3', 'loan_slot_buyback', '2026-09-04T00:00:00Z', -25),
+    ];
+    const ledger = buildLedger({ teamId: 'a', currentBalance: 74, clubName: () => '', trades: [], transactions: rows });
+    expect(ledger.entries.map((e) => [e.direction, e.amount])).toEqual([['out', 5], ['in', 4], ['out', 25]]);
+    expect(ledger.opening).toBe(100);
+  });
 });
 
 describe('buildLedger', () => {

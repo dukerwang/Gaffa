@@ -64,10 +64,14 @@ export const TX_META: Record<string, TypeMeta> = {
   merit_payment:         { direction: 'in',  label: 'Match Revenue',    category: 'Match Revenue', supply: 'created' },
   solidarity_payment:    { direction: 'in',  label: 'Solidarity',       category: 'Solidarity',    supply: 'moved' },
   sale_proceeds:         { direction: 'in',  label: 'Sale',             category: 'Sales',         supply: 'moved' },
+  // The loan RPCs write each movement signed for the club it belongs to:
+  // positive for the side that receives, negative for the side that pays
+  // (migrations 060, 116, 163). `in` here is the positive reading; the sign
+  // decides each row.
   loan_fee:              { direction: 'in',  label: 'Loan Fee',         category: 'Loans',         supply: 'moved' },
-  loan_bonus:            { direction: 'out', label: 'Loan Bonus',       category: 'Loans',         supply: 'moved' },
-  loan_recall_penalty:   { direction: 'out', label: 'Recall Penalty',   category: 'Loans',         supply: 'moved' },
-  loan_slot_buyback:     { direction: 'out', label: 'Slot Buyback',     category: 'Loans',         supply: 'moved' },
+  loan_bonus:            { direction: 'in',  label: 'Loan Bonus',       category: 'Loans',         supply: 'moved' },
+  loan_recall_penalty:   { direction: 'in',  label: 'Recall Penalty',   category: 'Loans',         supply: 'moved' },
+  loan_slot_buyback:     { direction: 'in',  label: 'Slot Buyback',     category: 'Loans',         supply: 'moved' },
   facility_upgrade:      { direction: 'out', label: 'Facility Upgrade', category: 'Facilities',    supply: 'moved' },
   grant:                 { direction: 'in',  label: 'League Grant',     category: 'Grants',        supply: 'created' },
 };
@@ -120,7 +124,7 @@ export interface LedgerEntry {
 }
 
 /**
- * A row's money, signed as it was written (only loan fees are ever negative).
+ * A row's money, signed as it was written (only the loan types are ever negative).
  * The auction resolver writes the winning bid to `faab_bid` and
  * any severance to `compensation_amount` on the signing row, and writes the
  * same severance again on its own `drop` row, so reading `faab_bid` first and
@@ -183,8 +187,8 @@ export function buildLedger({
     if (!meta) continue;
     const value = rowAmount(row);
     if (value === 0) continue;
-    // A loan fee is written once per side with the payer's amount negative,
-    // so a negative amount runs against the type's usual direction.
+    // Loan rows are written once per side with the payer's amount negative,
+    // so a negative amount runs against the type's positive reading.
     const amount = Math.abs(value);
     const direction: Direction = value > 0 ? meta.direction : meta.direction === 'in' ? 'out' : 'in';
     if (meta.supply === 'created') created += value;
