@@ -23,7 +23,7 @@ function Tie() {
  */
 export default function Loading() {
   return (
-    <div className="g-page" aria-busy="true" aria-label="Loading cups">
+    <div className="g-page" data-route-skeleton aria-busy="true" aria-label="Loading cups">
       <section className={s.shelf}>
         <div className={s.shelfGrid}>
           <div>

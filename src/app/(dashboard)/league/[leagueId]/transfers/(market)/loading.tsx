@@ -14,7 +14,7 @@ const STATS = ['Club Balance', 'Lots live', 'Offers to answer', 'On the board'];
  */
 export default function Loading() {
   return (
-    <div className={styles.page} aria-busy="true" aria-label="Loading the Transfer Market">
+    <div className={styles.page} data-route-skeleton aria-busy="true" aria-label="Loading the Transfer Market">
       <nav className={nav.nav} aria-hidden="true">
         {TABS.map((t, i) => (
           <span key={t} className={`${nav.item} ${i === 0 ? nav.itemActive : ''}`}>

@@ -729,3 +729,10 @@
   .table .thClub,
   .table .tdClub { width: auto; }
 }
+
+/* ---------- loading ---------- */
+/* Bones on the green: the kit's inset grey would read as holes in the pitch. */
+.shelf .shelfBone { background: color-mix(in srgb, white 14%, transparent); }
+.shelf .shelfBone::after { background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, white 12%, transparent) 50%, transparent 100%); }
+.skGap { margin-top: 6px; }
+.skEnd { margin-left: auto; }
