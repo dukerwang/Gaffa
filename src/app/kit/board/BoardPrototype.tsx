@@ -215,7 +215,7 @@ interface Market {
   /** Clubs asking for your player, with what they can pay. */
   asks: { who: MgrKey; budget: number; direct?: boolean }[];
   target?: Target;
-  offer?: number;
+  offer?: Sent;
 }
 
 const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'DM', 'CM', 'AM', 'LW', 'RW', 'ST'];
@@ -227,7 +227,27 @@ type Sheet =
   | { kind: 'who' }
   | { kind: 'target'; who: Person | null; pos?: string; editing?: Target }
   | { kind: 'listing'; who: Person }
-  | { kind: 'hub'; who: Person };
+  | { kind: 'hub'; who: Person }
+  | {
+      kind: 'offer';
+      mode: 'offer' | 'bid';
+      /** One player, or several of yours that could answer the same ask. */
+      players: Person[];
+      counterpart?: MgrKey;
+      /** What the buyer can pay: theirs when you sell, yours when you buy. */
+      budget?: number;
+      stance: Stance[];
+      buying: boolean;
+      /** Where to start when buying: the ask, or ask plus one for a bid. */
+      amount?: number;
+    };
+
+/** An offer you have sent, kept where you sent it from. */
+interface Sent {
+  amount: number;
+  to: MgrKey;
+  who: Person;
+}
 
 /* ---------- small pictures ---------- */
 
@@ -333,7 +353,21 @@ function PriceBar({ budget, ticks }: { budget: number; ticks: number[] }) {
   );
 }
 
-function MoveCard({ m, i, onAct, onOpen }: { m: Move; i: number; onAct: (a: string) => void; onOpen: (p: Person) => void }) {
+function MoveCard({
+  m,
+  i,
+  sent,
+  onAct,
+  onOpen,
+  onWithdraw,
+}: {
+  m: Move;
+  i: number;
+  sent?: Sent;
+  onAct: (a: string) => void;
+  onOpen: (p: Person) => void;
+  onWithdraw: (p: Person) => void;
+}) {
   const first = m.supply.players[0];
   const stack = m.supply.players.length > 1;
   const ground = MGR[m.demand.who].crest.primaryColor;
@@ -393,19 +427,35 @@ function MoveCard({ m, i, onAct, onOpen }: { m: Move; i: number; onAct: (a: stri
         <span className={styles.clip}>{stack ? `${first.name.split(' ').pop()} +${(m.supply.more ?? 0) + m.supply.players.length - 1}` : first.name}</span>
       </span>
       <div className={styles.moveBar}>
-        <PriceBar budget={m.budget} ticks={m.ticks} />
+        <PriceBar budget={m.budget} ticks={sent ? [sent.amount] : m.ticks} />
         <span className={styles.barNums}>
           <b className={styles.numBudget}>€{m.budget}m</b>
-          {!stack && <b className={styles.numPrice}>€{m.ticks[0]}m</b>}
+          {(!stack || sent) && <b className={styles.numPrice}>€{sent ? sent.amount : m.ticks[0]}m</b>}
         </span>
       </div>
-      <div className={styles.moveActions}>
-        {m.actions.map((a, j) => (
-          <Button key={a} variant={j === m.actions.length - 1 ? 'primary' : 'secondary'} size="sm" fullWidth onClick={() => onAct(a)}>
-            {a}
-          </Button>
-        ))}
-      </div>
+      {sent ? (
+        <div className={styles.moveActions}>
+          <span className={styles.moveSent}>
+            <Mgr k="me" size={22} />
+            <Icon name="chevron-right" size={14} />
+            <Mgr k={sent.to} size={22} />
+            <span className={styles.pendingClock}>
+              <Icon name="activity" size={14} />
+            </span>
+          </span>
+          <HoldButton size="sm" onConfirm={() => onWithdraw(sent.who)}>
+            Withdraw
+          </HoldButton>
+        </div>
+      ) : (
+        <div className={styles.moveActions}>
+          {m.actions.map((a, j) => (
+            <Button key={a} variant={j === m.actions.length - 1 ? 'primary' : 'secondary'} size="sm" fullWidth onClick={() => onAct(a)}>
+              {a}
+            </Button>
+          ))}
+        </div>
+      )}
     </article>
   );
 }
@@ -425,7 +475,7 @@ export default function BoardPrototype() {
   const [data, setData] = useState<'full' | 'new'>('full');
   const [targets, setTargets] = useState<Target[]>(TARGETS);
   const [fresh, setFresh] = useState<string | null>(null);
-  const [offers, setOffers] = useState<Record<string, number>>({});
+  const [offers, setOffers] = useState<Record<string, Sent>>({});
   const serial = useRef(0);
   const tilesRef = useRef<HTMLDivElement>(null);
   const isNew = data === 'new';
@@ -468,6 +518,34 @@ export default function BoardPrototype() {
       target: targetOf(p.id),
       offer: offers[p.id],
     };
+  };
+
+  /** Offer and Bid on a Your Move card open the same prefilled sheet; List goes to the listing. */
+  const openOffer = (m: Move, action: string) => {
+    if (action === 'List') return setSheet({ kind: 'listing', who: m.supply.players[0] });
+    const buying = m.demand.who === 'me';
+    setSheet({
+      kind: 'offer',
+      mode: action === 'Bid' ? 'bid' : 'offer',
+      players: m.supply.players,
+      counterpart: buying ? m.supply.owner : m.demand.who,
+      budget: m.budget,
+      stance: m.stance,
+      buying,
+      amount: buying ? m.ticks[0] + (action === 'Bid' ? 1 : 0) : undefined,
+    });
+  };
+
+  const send = (mode: 'offer' | 'bid', p: Person, amount: number, to?: MgrKey) => {
+    setSheet(null);
+    if (mode === 'bid') return toast.success('Bid placed', { description: `${p.name} · €${amount}m` });
+    if (to) setOffers((o) => ({ ...o, [p.id]: { amount, to, who: p } }));
+    toast.success('Offer sent', { description: `${p.name} · €${amount}m` });
+  };
+
+  const withdraw = (p: Person) => {
+    setOffers((o) => Object.fromEntries(Object.entries(o).filter(([id]) => id !== p.id)));
+    toast('Offer withdrawn', { description: p.name });
   };
 
   const toggleTarget = (p: Person) => {
@@ -540,7 +618,15 @@ export default function BoardPrototype() {
             </div>
             <div className={styles.asks}>
               {MOVES.map((m, i) => (
-                <MoveCard key={m.id} m={m} i={i} onAct={(a) => toast(`${a} opened`)} onOpen={(p) => setSheet({ kind: 'hub', who: p })} />
+                <MoveCard
+                  key={m.id}
+                  m={m}
+                  i={i}
+                  sent={m.supply.players.map((p) => offers[p.id]).find(Boolean)}
+                  onAct={(a) => openOffer(m, a)}
+                  onOpen={(p) => setSheet({ kind: 'hub', who: p })}
+                  onWithdraw={withdraw}
+                />
               ))}
             </div>
               </>
@@ -583,7 +669,7 @@ export default function BoardPrototype() {
                     ) : t.who && offers[t.who.id] ? (
                       <span className={`${styles.liveStrip} ${styles.offerStrip}`}>
                         <Icon name="arrow-up" size={14} />
-                        <b>€{offers[t.who.id]}m</b>
+                        <b>€{offers[t.who.id].amount}m</b>
                       </span>
                     ) : (
                       <span className={styles.budget}>€{t.budget}m</span>
@@ -715,7 +801,7 @@ export default function BoardPrototype() {
                       {r.clock ? <span className={`${styles.clock} ${r.left! < 0.2 ? styles.clockUrgent : ''}`}>{r.clock}</span> : <span className={styles.offersOnly}>Offers</span>}
                       {offers[r.who.id] && (
                         <span className={styles.offerPill}>
-                          <Icon name="arrow-up" size={12} />€{offers[r.who.id]}m
+                          <Icon name="arrow-up" size={12} />€{offers[r.who.id].amount}m
                         </span>
                       )}
                     </span>
@@ -810,14 +896,8 @@ export default function BoardPrototype() {
         targeted={(id) => targetOf(id)}
         market={marketOf}
         onStar={toggleTarget}
-        onOffer={(p, n) => {
-          setOffers((o) => ({ ...o, [p.id]: n }));
-          toast.success('Offer sent', { description: `${p.name} · €${n}m` });
-        }}
-        onWithdraw={(p) => {
-          setOffers((o) => Object.fromEntries(Object.entries(o).filter(([id]) => id !== p.id)));
-          toast('Offer withdrawn', { description: p.name });
-        }}
+        onSend={send}
+        onWithdraw={withdraw}
         onTarget={(p) => {
           setSheet(null);
           addTarget(p, p.pos);
@@ -840,7 +920,7 @@ function Sheets({
   targeted,
   market,
   onStar,
-  onOffer,
+  onSend,
   onWithdraw,
   onTarget,
   onRole,
@@ -851,7 +931,7 @@ function Sheets({
   targeted: (personId: string) => Target | undefined;
   market: (p: Person) => Market;
   onStar: (p: Person) => void;
-  onOffer: (p: Person, amount: number) => void;
+  onSend: (mode: 'offer' | 'bid', p: Person, amount: number, to?: MgrKey) => void;
   onWithdraw: (p: Person) => void;
   onTarget: (p: Person) => void;
   onRole: (pos: string) => void;
@@ -860,7 +940,8 @@ function Sheets({
   if (sheet.kind === 'who') return <WhoSheet onClose={onClose} go={go} targeted={targeted} onTarget={onTarget} onRole={onRole} />;
   if (sheet.kind === 'target') return <TargetSheet key={sheet.editing?.id ?? sheet.who?.id ?? sheet.pos ?? 'new'} sheet={sheet} onClose={onClose} />;
   if (sheet.kind === 'listing') return <ListingSheet key={sheet.who.id} who={sheet.who} onClose={onClose} />;
-  return <HubSheet m={market(sheet.who)} onClose={onClose} go={go} onStar={onStar} onOffer={onOffer} onWithdraw={onWithdraw} />;
+  if (sheet.kind === 'offer') return <OfferSheet key={sheet.players.map((p) => p.id).join()} s={sheet} onClose={onClose} onSend={onSend} />;
+  return <HubSheet m={market(sheet.who)} onClose={onClose} go={go} onStar={onStar} onWithdraw={onWithdraw} />;
 }
 
 function Plate({ p, owner, children }: { p: Person; owner?: MgrKey; children?: ReactNode }) {
@@ -1145,14 +1226,12 @@ function HubSheet({
   onClose,
   go,
   onStar,
-  onOffer,
   onWithdraw,
 }: {
   m: Market;
   onClose: () => void;
   go: (s: Sheet) => void;
   onStar: (p: Person) => void;
-  onOffer: (p: Person, amount: number) => void;
   onWithdraw: (p: Person) => void;
 }) {
   const { p } = m;
@@ -1161,8 +1240,24 @@ function HubSheet({
   const canBid = m.free || !!m.listing?.clock;
   const offerAmount = m.listing?.price ?? p.value;
 
+  const offerSheet = (mode: 'offer' | 'bid'): Sheet => ({
+    kind: 'offer',
+    mode,
+    players: [p],
+    counterpart: m.owner,
+    budget: m.target?.budget,
+    stance: m.target?.stance ?? ['cash'],
+    buying: true,
+    amount: mode === 'bid' ? bidAmount : offerAmount,
+  });
+
   const footer = m.mine ? (
     <div className={styles.footer}>
+      {m.offer && (
+        <HoldButton size="sm" onConfirm={() => onWithdraw(p)}>
+          Withdraw
+        </HoldButton>
+      )}
       <Button variant="primary" onClick={() => go({ kind: 'listing', who: p })}>
         {m.listing ? 'Edit Listing' : 'List'}
       </Button>
@@ -1175,19 +1270,13 @@ function HubSheet({
         </HoldButton>
       ) : (
         !m.free && (
-          <Button variant={canBid ? 'secondary' : 'primary'} onClick={() => onOffer(p, offerAmount)}>
+          <Button variant={canBid ? 'secondary' : 'primary'} onClick={() => go(offerSheet('offer'))}>
             Offer €{offerAmount}m
           </Button>
         )
       )}
       {canBid && (
-        <Button
-          variant="primary"
-          onClick={() => {
-            toast.success('Bid placed', { description: `${p.name} · €${bidAmount}m` });
-            onClose();
-          }}
-        >
+        <Button variant="primary" onClick={() => go(offerSheet('bid'))}>
           Bid €{bidAmount}m
         </Button>
       )}
@@ -1286,17 +1375,116 @@ function HubSheet({
         )}
 
         {/* Your offer, still standing: you, then him, then the amount. */}
-        {m.offer && m.owner && (
+        {m.offer && (
           <div className={styles.pending}>
             <Mgr k="me" size={26} />
             <Icon name="chevron-right" size={14} />
-            <Mgr k={m.owner} size={26} />
-            <b className={styles.money}>€{m.offer}m</b>
+            <Mgr k={m.offer.to} size={26} />
+            <b className={styles.money}>€{m.offer.amount}m</b>
             <span className={styles.pendingClock}>
               <Icon name="activity" size={14} />
             </span>
           </div>
         )}
+      </div>
+    </ResponsiveModal>
+  );
+}
+
+/** Offer or Bid, already filled in: the amount, the terms and, when several of yours could answer, the player. One confirm sends it. */
+function OfferSheet({
+  s,
+  onClose,
+  onSend,
+}: {
+  s: Extract<Sheet, { kind: 'offer' }>;
+  onClose: () => void;
+  onSend: (mode: 'offer' | 'bid', p: Person, amount: number, to?: MgrKey) => void;
+}) {
+  const startFor = (p: Person) => (s.buying ? (s.amount ?? p.value) : Math.min(p.value, s.budget ?? p.value));
+  // Several of yours could answer: start on the dearest one the buyer can afford.
+  const best =
+    s.players.length > 1 && s.budget !== undefined
+      ? ([...s.players].filter((p) => p.value <= s.budget!).sort((a, b) => b.value - a.value)[0] ?? [...s.players].sort((a, b) => a.value - b.value)[0])
+      : s.players[0];
+  const [pickId, setPickId] = useState(best.id);
+  const p = s.players.find((x) => x.id === pickId) ?? best;
+  const [amount, setAmount] = useState(startFor(best));
+  const [stance, setStance] = useState<Stance[]>(s.stance);
+  const word = s.mode === 'bid' ? 'Bid' : 'Offer';
+
+  return (
+    <ResponsiveModal
+      open
+      onClose={onClose}
+      title={word}
+      padded
+      footer={
+        <div className={styles.footer}>
+          <Button variant="primary" onClick={() => onSend(s.mode, p, amount, s.counterpart)}>
+            {s.mode === 'bid' ? 'Bid' : 'Send'} €{amount}m
+          </Button>
+        </div>
+      }
+    >
+      <div className={styles.form}>
+        <div className={styles.hubHead}>
+          <div className={styles.plateImg} style={posStyle(p.pos)}>
+            <Cutout p={p} />
+          </div>
+          <div className={styles.plateBody}>
+            <span className={`g-namerow ${styles.plateName}`}>
+              <PositionBadge position={p.pos} size="sm" />
+              <span>{p.name}</span>
+            </span>
+            {s.counterpart && (
+              <span className={styles.offerLink}>
+                <Mgr k="me" size={26} />
+                <Icon name="chevron-right" size={14} />
+                <Mgr k={s.counterpart} size={26} />
+              </span>
+            )}
+          </div>
+        </div>
+
+        {s.players.length > 1 && (
+          <div className={styles.choices} role="radiogroup" aria-label="Player">
+            {s.players.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                role="radio"
+                aria-checked={c.id === p.id}
+                aria-label={c.name}
+                className={`${styles.choice} ${c.id === p.id ? styles.choiceOn : ''}`}
+                onClick={() => {
+                  setPickId(c.id);
+                  setAmount(startFor(c));
+                }}
+              >
+                <span className={styles.choiceFace} style={posStyle(c.pos)}>
+                  <Cutout p={c} />
+                </span>
+                <b className={styles.choiceValue}>€{c.value}m</b>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <MoneyStepper fullWidth label={word} value={amount} onChange={setAmount} min={1} max={300} step={1} />
+
+        {/* What the buyer can pay against the amount: the tick turns red past it. */}
+        {s.budget !== undefined && (
+          <div className={styles.moveBar}>
+            <PriceBar budget={s.budget} ticks={[amount]} />
+            <span className={styles.barNums}>
+              <b className={styles.numBudget}>€{s.budget}m</b>
+              <b className={styles.numPrice}>€{amount}m</b>
+            </span>
+          </div>
+        )}
+
+        {s.mode === 'offer' && <StanceChips value={stance} onChange={setStance} />}
       </div>
     </ResponsiveModal>
   );
