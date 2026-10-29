@@ -111,21 +111,29 @@ const TARGETS: Target[] = [
   { id: 't5', who: null, pos: 'ST', level: 'prospect', budget: 15, stance: ['cash', 'loan'], audience: 'you', state: { kind: 'quiet' } },
 ];
 
-interface Ask {
+/* A Move is where supply meets demand, drawn as two faces joined by a link and
+   one price bar: what the buyer can pay against what the player costs. It is the
+   same picture whether a club wants one of yours or a player you want is listed. */
+interface Move {
   id: string;
-  from: MgrKey;
+  /** Who is asking. A role asks for a position and level; a named ask has neither. */
+  demand: { who: MgrKey; pos?: string; level?: Level };
+  /** What answers it. A stack when several of yours could. */
+  supply: { players: Person[]; more?: number; owner?: MgrKey };
   budget: number;
+  /** Where the price falls on the bar: one tick per player. */
+  ticks: number[];
   stance: Stance[];
+  /** Only the club that owns the player can see it. */
   direct?: boolean;
-  /** Named: the one player of yours they want. Role: what you have to answer it. */
-  named?: Person;
-  role?: { pos: string; level: Level; have: Person[]; more: number };
+  actions: ('List' | 'Offer' | 'Bid')[];
 }
 
-const ASKS: Ask[] = [
-  { id: 'a1', from: 'totten', budget: 95, stance: ['cash'], direct: true, named: P.rice },
-  { id: 'a2', from: 'chelsz', budget: 35, stance: ['cash', 'players'], role: { pos: 'CB', level: 'starter', have: [P.saliba, P.gvardiol, P.colwill], more: 2 } },
-  { id: 'a3', from: 'tea', budget: 20, stance: ['players'], named: P.kroupi },
+const MOVES: Move[] = [
+  { id: 'm1', demand: { who: 'totten' }, supply: { players: [P.rice] }, budget: 95, ticks: [120], stance: ['cash'], direct: true, actions: ['List', 'Offer'] },
+  { id: 'm2', demand: { who: 'chelsz', pos: 'CB', level: 'starter' }, supply: { players: [P.saliba, P.gvardiol, P.colwill], more: 2 }, budget: 65, ticks: [85, 60, 38], stance: ['cash', 'players'], actions: ['Offer'] },
+  { id: 'm3', demand: { who: 'hayden' }, supply: { players: [P.doku] }, budget: 50, ticks: [45], stance: ['players'], actions: ['Offer'] },
+  { id: 'm4', demand: { who: 'me', pos: 'LB', level: 'starter' }, supply: { players: [P.hall], owner: 'chelsz' }, budget: 40, ticks: [24], stance: ['cash'], actions: ['Offer', 'Bid'] },
 ];
 
 interface Listing {
@@ -151,13 +159,15 @@ interface Listed {
   price: number;
   left: number | null;
   clock: string | null;
+  /** Other clubs that have named him as a target. */
+  rivals: MgrKey[];
 }
 
 const BOARD_LISTED: Listed[] = [
-  { id: 'b1', who: P.gabriel, owner: 'pizza', price: 58, left: 0.52, clock: '2d 04h' },
-  { id: 'b2', who: P.saka, owner: 'hayden', price: 120, left: 0.84, clock: '3d 11h' },
-  { id: 'b3', who: P.hall, owner: 'chelsz', price: 24, left: 0.12, clock: '8h' },
-  { id: 'b4', who: P.colwill, owner: 'xabi', price: 38, left: null, clock: null },
+  { id: 'b1', who: P.gabriel, owner: 'pizza', price: 58, left: 0.52, clock: '2d 04h', rivals: ['tea', 'xabi'] },
+  { id: 'b2', who: P.saka, owner: 'hayden', price: 120, left: 0.84, clock: '3d 11h', rivals: ['totten'] },
+  { id: 'b3', who: P.hall, owner: 'chelsz', price: 24, left: 0.12, clock: '8h', rivals: ['me'] },
+  { id: 'b4', who: P.colwill, owner: 'xabi', price: 38, left: null, clock: null, rivals: [] },
 ];
 
 interface Wanted {
@@ -171,10 +181,10 @@ interface Wanted {
 }
 
 const BOARD_WANTED: Wanted[] = [
-  { id: 'w1', from: 'totten', pos: 'DM', level: 'starter', budget: 80, stance: ['cash'] },
-  { id: 'w2', from: 'hayden', who: P.doku, pos: 'LW', budget: 50, stance: ['players'] },
-  { id: 'w3', from: 'xabi', pos: 'ST', level: 'star', budget: 120, stance: ['cash', 'loan'] },
-  { id: 'w4', from: 'tea', pos: 'CB', level: 'prospect', budget: 15, stance: ['cash'] },
+  { id: 'w1', from: 'totten', pos: 'CM', level: 'starter', budget: 80, stance: ['cash'] },
+  { id: 'w2', from: 'hayden', pos: 'RW', level: 'star', budget: 120, stance: ['cash', 'loan'] },
+  { id: 'w3', from: 'xabi', pos: 'GK', level: 'starter', budget: 30, stance: ['cash'] },
+  { id: 'w4', from: 'tea', pos: 'RB', level: 'prospect', budget: 15, stance: ['cash'] },
 ];
 
 const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'DM', 'CM', 'AM', 'LW', 'RW', 'ST'];
@@ -279,6 +289,88 @@ function Pips({ on, total }: { on: number; total: number }) {
   );
 }
 
+/** What the buyer can pay (the fill) against what each player costs (the ticks). */
+function PriceBar({ budget, ticks }: { budget: number; ticks: number[] }) {
+  const max = Math.max(budget, ...ticks) * 1.1;
+  return (
+    <span className={styles.bar} aria-hidden="true">
+      <i className={styles.barFill} style={{ width: `${(budget / max) * 100}%` }} />
+      {ticks.map((t) => (
+        <i key={t} className={`${styles.barTick} ${t > budget ? styles.barOver : ''}`} style={{ left: `${(t / max) * 100}%` }} />
+      ))}
+    </span>
+  );
+}
+
+function MoveCard({ m, i, onAct }: { m: Move; i: number; onAct: (a: string) => void }) {
+  const first = m.supply.players[0];
+  const stack = m.supply.players.length > 1;
+  const ground = MGR[m.demand.who].crest.primaryColor;
+  return (
+    <article className={styles.move} style={{ '--i': i } as CSSProperties}>
+      <div className={styles.pair}>
+        <div className={`${styles.side} ${styles.sideDemand}`} style={{ '--ground': ground } as CSSProperties}>
+          <Mgr k={m.demand.who} size={56} />
+          {m.direct && (
+            <span className={styles.chipTL}>
+              <Icon name="lock" size={12} />
+            </span>
+          )}
+          <span className={styles.chipTR}>
+            <Stances list={m.stance} />
+          </span>
+          {m.demand.pos && (
+            <span className={styles.sideWhat}>
+              <PositionBadge position={m.demand.pos} size="sm" />
+              <Level level={m.demand.level!} />
+            </span>
+          )}
+        </div>
+        <span className={styles.link} aria-hidden="true">
+          <Icon name="repeat" size={16} />
+        </span>
+        <div className={`${styles.side} ${styles.sideSupply}`} style={posStyle(first.pos)}>
+          {stack ? (
+            <>
+              {m.supply.players.map((p, j) => (
+                <span key={p.id} className={styles.stackFace} style={{ left: `${j * 30 - 4}px`, zIndex: 3 - j }}>
+                  <Cutout p={p} />
+                </span>
+              ))}
+              <span className={styles.stackMore}>+{m.supply.more}</span>
+            </>
+          ) : (
+            <Cutout p={first} />
+          )}
+          {m.supply.owner && (
+            <span className={styles.matchCrest} style={{ left: 8, bottom: 8, width: 26, height: 26 }}>
+              <Mgr k={m.supply.owner} size={20} />
+            </span>
+          )}
+        </div>
+      </div>
+      <span className={`g-namerow ${styles.moveName}`}>
+        <PositionBadge position={first.pos} size="sm" />
+        <span className={styles.clip}>{stack ? `${first.name.split(' ').pop()} +${(m.supply.more ?? 0) + m.supply.players.length - 1}` : first.name}</span>
+      </span>
+      <div className={styles.moveBar}>
+        <PriceBar budget={m.budget} ticks={m.ticks} />
+        <span className={styles.barNums}>
+          <b className={styles.numBudget}>€{m.budget}m</b>
+          {!stack && <b className={styles.numPrice}>€{m.ticks[0]}m</b>}
+        </span>
+      </div>
+      <div className={styles.moveActions}>
+        {m.actions.map((a, j) => (
+          <Button key={a} variant={j === m.actions.length - 1 ? 'primary' : 'secondary'} size="sm" fullWidth onClick={() => onAct(a)}>
+            {a}
+          </Button>
+        ))}
+      </div>
+    </article>
+  );
+}
+
 function TimeBar({ left }: { left: number | null }) {
   if (left === null) return null;
   return <span className={`${styles.timeBar} ${left < 0.2 ? styles.timeUrgent : ''}`} style={{ '--p': left } as CSSProperties} aria-hidden="true" />;
@@ -299,7 +391,8 @@ export default function BoardPrototype() {
 
   const listed = BOARD_LISTED.filter((r) => !pos || r.who.pos === pos);
   const wanted = BOARD_WANTED.filter((r) => !pos || r.pos === pos);
-  const countFor = (p: string) => (view === 'listed' ? BOARD_LISTED.filter((r) => r.who.pos === p) : BOARD_WANTED.filter((r) => r.pos === p)).length;
+  const supplyAt = (p: string) => BOARD_LISTED.filter((r) => r.who.pos === p).length;
+  const demandAt = (p: string) => BOARD_WANTED.filter((r) => r.pos === p).length;
 
   return (
     <div className={styles.root}>
@@ -330,61 +423,12 @@ export default function BoardPrototype() {
             </div>
 
             <div className={styles.askHead}>
-              <h2 className={styles.askT}>Wanted From You</h2>
-              <span className={styles.askCount}>{ASKS.length}</span>
+              <h2 className={styles.askT}>Your Move</h2>
+              <span className={styles.askCount}>{MOVES.length}</span>
             </div>
             <div className={styles.asks}>
-              {ASKS.map((a, i) => (
-                <article key={a.id} className={styles.ask} style={{ '--i': i } as CSSProperties}>
-                  <div className={styles.askMain}>
-                    <div className={styles.askPlinth} style={posStyle(a.named?.pos ?? a.role!.pos)}>
-                      {a.named ? (
-                        <Cutout p={a.named} />
-                      ) : (
-                        <>
-                          {a.role!.have.map((p, j) => (
-                            <span key={p.id} className={styles.stackFace} style={{ left: `${j * 26 - 6}px`, zIndex: 3 - j }}>
-                              <Cutout p={p} />
-                            </span>
-                          ))}
-                          <span className={styles.stackMore}>+{a.role!.more}</span>
-                        </>
-                      )}
-                      {a.direct && (
-                        <span className={styles.plinthMark}>
-                          <Icon name="lock" size={12} />
-                        </span>
-                      )}
-                    </div>
-                    <div className={styles.askBody}>
-                      <span className={styles.askFrom}>
-                        <Mgr k={a.from} size={30} />
-                        <span className={styles.askName}>{MGR[a.from].name}</span>
-                      </span>
-                      <span className={styles.askWhat}>
-                        {a.named ? (
-                          <span className={styles.nameRow}>
-                            <PositionBadge position={a.named.pos} size="sm" />
-                            <span className={styles.clip}>{a.named.name}</span>
-                          </span>
-                        ) : (
-                          <span className={styles.nameRow}>
-                            <PositionBadge position={a.role!.pos} size="sm" />
-                            <Level level={a.role!.level} />
-                          </span>
-                        )}
-                      </span>
-                      <span className={styles.askTerms}>
-                        <Money n={a.budget} />
-                        <Stances list={a.stance} />
-                      </span>
-                    </div>
-                  </div>
-                  <div className={styles.askActions}>
-                    {a.named && <Button variant="secondary" size="sm" fullWidth onClick={() => toast('Listed')}>List</Button>}
-                    <Button variant="primary" size="sm" fullWidth onClick={() => toast('Offer opened')}>Offer</Button>
-                  </div>
-                </article>
+              {MOVES.map((m, i) => (
+                <MoveCard key={m.id} m={m} i={i} onAct={(a) => toast(`${a} opened`)} />
               ))}
             </div>
           </div>
@@ -481,19 +525,25 @@ export default function BoardPrototype() {
 
             <div className={styles.rail} role="group" aria-label="Position">
               {POSITIONS.map((p) => {
-                const n = countFor(p);
+                const sup = supplyAt(p);
+                const dem = demandAt(p);
                 return (
                   <button
                     key={p}
                     type="button"
                     className={`${styles.posChip} ${pos === p ? styles.posChipOn : ''}`}
                     style={posStyle(p)}
-                    disabled={n === 0}
+                    disabled={sup + dem === 0}
                     aria-pressed={pos === p}
+                    aria-label={`${p}, ${sup} listed, ${dem} wanted`}
                     onClick={() => setPos(pos === p ? null : p)}
                   >
                     {p}
-                    <b>{n}</b>
+                    {/* Supply and demand at this position, as two bars. */}
+                    <span className={styles.depth} aria-hidden="true">
+                      <i style={{ height: 4 + sup * 6 }} />
+                      <i className={styles.depthWant} style={{ height: 4 + dem * 6 }} />
+                    </span>
                   </button>
                 );
               })}
@@ -513,6 +563,7 @@ export default function BoardPrototype() {
                       <span className={styles.lSub}>
                         <Mgr k={r.owner} size={16} />
                         {MGR[r.owner].short}
+                        {r.rivals.length > 0 && <CrestStack keys={r.rivals} size={20} />}
                       </span>
                     </span>
                     <span className={styles.lEnd}>

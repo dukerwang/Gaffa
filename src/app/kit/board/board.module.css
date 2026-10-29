@@ -107,7 +107,7 @@
   overscroll-behavior-x: contain;
 }
 .asks::-webkit-scrollbar { display: none; }
-.ask {
+.move {
   flex: none;
   width: min(304px, 82vw);
   scroll-snap-align: start;
@@ -124,22 +124,60 @@
   transition: transform var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
 }
 @media (hover: hover) and (pointer: fine) {
-  .ask:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm), var(--shadow-xl); }
+  .move:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm), var(--shadow-xl); }
 }
-.askMain { display: flex; gap: var(--s3); min-width: 0; }
-.askPlinth, .plateImg {
+
+/* Two faces that meet: whoever asks on the left, whatever answers on the right. */
+.pair { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.side {
   position: relative;
-  flex: none;
-  width: 104px;
-  height: 112px;
-  border-radius: 12px;
+  height: 128px;
   overflow: hidden;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+}
+.sideDemand {
+  align-items: center;
+  border-radius: 12px 4px 4px 12px;
+  background: color-mix(in oklab, var(--ground) 70%, black);
+}
+.sideDemand > :first-child { margin-top: -14px; }
+.sideSupply {
+  border-radius: 4px 12px 12px 4px;
   background: color-mix(in oklab, var(--pos, var(--color-text-muted)) 68%, black);
 }
-.stackFace { position: absolute; bottom: 0; width: 66px; display: flex; align-items: flex-end; }
+.sideWhat {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  height: 26px;
+  border-radius: var(--r-pill);
+  background: color-mix(in oklab, black 62%, transparent);
+  backdrop-filter: blur(6px);
+  color: white;
+}
+.link {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  border-radius: var(--r-round);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-md);
+}
+.stackFace { position: absolute; bottom: 0; width: 70px; display: flex; align-items: flex-end; }
 .stackMore {
   position: absolute;
   right: 6px;
@@ -154,44 +192,33 @@
   font-variant-numeric: tabular-nums;
   z-index: 5;
 }
-.plinthMark {
-  position: absolute;
-  left: 6px;
-  top: 6px;
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--r-round);
-  background: color-mix(in oklab, black 70%, transparent);
-  color: white;
-  z-index: 5;
-}
-.askBody { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: var(--s2); }
-.askFrom { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
-.askName {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--t-12);
-  color: var(--color-text-muted);
-}
-.askWhat { display: block; min-width: 0; }
-.askTerms { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
-.askActions { display: flex; gap: var(--s2); }
+.moveName { font-size: var(--t-13); font-weight: 600; min-width: 0; }
+.moveName .clip { font-family: var(--font-serif); font-weight: 700; font-size: var(--t-15); }
+
+/* The price bar: what the buyer can pay (green) against what the player
+   costs (a tick). A tick past the fill is out of reach. */
+.moveBar { display: flex; flex-direction: column; gap: 6px; }
+.bar { position: relative; display: block; height: 10px; border-radius: var(--r-micro); background: var(--color-bg-inset); }
+.barFill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: var(--r-micro); background: var(--color-accent); transform-origin: left; animation: fill 700ms var(--ease-out-strong) both; }
+.barTick { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--color-text-primary); box-shadow: 0 0 0 2px var(--color-bg-card); }
+.barOver { background: var(--color-live); }
+.barNums { display: flex; align-items: center; justify-content: space-between; font-family: var(--font-serif); font-size: var(--t-17); letter-spacing: -0.02em; font-variant-numeric: tabular-nums lining-nums; }
+.barNums b { display: inline-flex; align-items: center; gap: 6px; }
+.numBudget::before { content: ''; width: 10px; height: 10px; border-radius: var(--r-micro); background: var(--color-accent); }
+.numPrice::before { content: ''; width: 3px; height: 14px; border-radius: 2px; background: var(--color-text-primary); }
+.moveActions { display: flex; gap: var(--s2); }
 
 /* ---------- layout below the shelf ---------- */
 .cols { display: flex; flex-direction: column; gap: var(--s10); margin-top: var(--s2); }
 @media (min-width: 900px) {
   .asks {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     margin-inline: 0;
     padding-inline: 0;
     overflow: visible;
   }
-  .ask { width: auto; }
+  .move { width: auto; }
   .cols {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 360px;
@@ -501,9 +528,9 @@ button.lrow { cursor: pointer; }
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 var(--s3);
+  gap: 5px;
+  height: 36px;
+  padding: 0 10px;
   border: 0;
   border-radius: var(--r-control);
   background: color-mix(in oklab, var(--pos) 14%, var(--color-bg-card));
@@ -514,10 +541,12 @@ button.lrow { cursor: pointer; }
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
 }
-.posChip b { font-weight: 700; font-size: var(--t-12); font-variant-numeric: tabular-nums; opacity: 0.8; }
+/* Supply and demand at a position: a solid bar and a hollow one. */
+.depth { display: inline-flex; align-items: flex-end; gap: 3px; height: 22px; }
+.depth i { width: 6px; border-radius: 1px; background: currentColor; }
+.depth i.depthWant { background: none; box-shadow: none; border: 1.5px solid currentColor; }
 .posChip:disabled { opacity: 0.35; cursor: default; }
 .posChipOn { background: var(--pos); color: var(--color-text-inverse); }
-.posChipOn b { opacity: 1; }
 .posChip:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .empty { margin: 0; padding: var(--s8) var(--s4); display: grid; place-items: center; }
 .rail + .rows { margin-top: var(--s3); }
@@ -530,7 +559,18 @@ button.lrow { cursor: pointer; }
 .form { display: flex; flex-direction: column; gap: var(--s5); }
 .sheetPos { margin: 0; }
 .plate { display: flex; align-items: stretch; gap: var(--s4); }
-.plate .plateImg { width: 96px; height: 112px; }
+.plateImg {
+  position: relative;
+  flex: none;
+  width: 96px;
+  height: 112px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: color-mix(in oklab, var(--pos, var(--color-text-muted)) 68%, black);
+}
 .plateBody { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: var(--s2); }
 .plateName { font-family: var(--font-serif); font-weight: 700; font-size: var(--t-20); letter-spacing: -0.02em; }
 .plateSub { display: flex; align-items: center; gap: var(--s2); font-size: var(--t-13); color: var(--color-text-secondary); }
@@ -652,7 +692,7 @@ button.lrow { cursor: pointer; }
 @keyframes ring { 50% { outline-color: color-mix(in oklab, var(--color-accent) 30%, transparent); } }
 @keyframes fill { from { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) {
-  .ask, .tile, .timeBar { animation: none; }
+  .move, .tile, .timeBar, .barFill { animation: none; }
   .liveDot, .tileMatch .plinth { animation: none; }
-  .ask, .plinth { transition: none; }
+  .move, .plinth { transition: none; }
 }
