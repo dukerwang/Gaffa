@@ -51,6 +51,10 @@ export interface HubRealWorldForm {
   /** Share of appearances that were starts — role, independent of fitness. */
   startRate: number | null;
   goalContributions: number;
+  goals: number;
+  assists: number;
+  /** Matches kept clean while on the pitch. Meaningful for GK, defenders and DM. */
+  cleanSheets: number;
   xgiPer90: number | null;
   /**
    * Percentile within his own position group, or null for goalkeepers and
@@ -191,13 +195,17 @@ export async function loadPlayerHub(
   // The real-world panel follows the same season the ledger is showing, so the
   // two layers never describe different years on one screen.
   let minutes = 0;
-  let goalContributions = 0;
+  let goals = 0;
+  let assists = 0;
+  let cleanSheets = 0;
   let xgi = 0;
   for (const row of allStatRows) {
     if (row.season !== season) continue;
     const st = (row.stats ?? {}) as Record<string, unknown>;
     minutes += Number(st.minutes_played ?? 0);
-    goalContributions += Number(st.goals ?? 0) + Number(st.assists ?? 0);
+    goals += Number(st.goals ?? 0);
+    assists += Number(st.assists ?? 0);
+    cleanSheets += Number(st.clean_sheets ?? 0) > 0 ? 1 : 0;
     xgi += Number(st.expected_goals ?? 0) + Number(st.expected_assists ?? 0);
   }
 
@@ -213,7 +221,10 @@ export async function loadPlayerHub(
             seasonSample && seasonSample.appearances > 0
               ? seasonSample.starts / seasonSample.appearances
               : null,
-          goalContributions,
+          goalContributions: goals + assists,
+          goals,
+          assists,
+          cleanSheets,
           xgiPer90: (xgi * 90) / minutes,
           xgiPercentile: rankable ? (inputs?.xgi_percentile ?? null) : null,
           setPieces: report?.set_pieces ?? [],
@@ -283,7 +294,7 @@ export async function loadScoutingProfile(
   );
 
   const totals = (s: string) => {
-    let minutes = 0, appearances = 0, starts = 0, contributions = 0, xgi = 0;
+    let minutes = 0, appearances = 0, starts = 0, goals = 0, assists = 0, cleanSheets = 0, xgi = 0;
     for (const row of statRows) {
       if (row.season !== s) continue;
       const st = row.stats ?? {};
@@ -294,10 +305,12 @@ export async function loadScoutingProfile(
       // A start is 60+ minutes, as loadFacetInputs counts it: no season of
       // player_stats records the start itself.
       if (mins >= 60) starts += 1;
-      contributions += Number(st.goals ?? 0) + Number(st.assists ?? 0);
+      goals += Number(st.goals ?? 0);
+      assists += Number(st.assists ?? 0);
+      if (mins > 0 && Number(st.clean_sheets ?? 0) > 0) cleanSheets += 1;
       xgi += Number(st.expected_goals ?? 0) + Number(st.expected_assists ?? 0);
     }
-    return { minutes, appearances, starts, contributions, xgi };
+    return { minutes, appearances, starts, goals, assists, cleanSheets, xgi };
   };
 
   // The hub's rule (loadFacetInputs): rank on the current season once it has
@@ -317,7 +330,10 @@ export async function loadScoutingProfile(
           starts: t.starts,
           appearances: t.appearances,
           startRate: t.appearances > 0 ? t.starts / t.appearances : null,
-          goalContributions: t.contributions,
+          goalContributions: t.goals + t.assists,
+          goals: t.goals,
+          assists: t.assists,
+          cleanSheets: t.cleanSheets,
           xgiPer90: (t.xgi * 90) / t.minutes,
           xgiPercentile: rankable ? percentile : null,
           setPieces: report?.set_pieces ?? [],

@@ -285,7 +285,7 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isDimmed, isEmp
                 }
             }}
             style={isLocked ? { opacity: 0.7 } : undefined}
-            title={isLocked ? 'Match started (Locked) — click to view' : isInvalid ? 'Player is not eligible for this position' : 'Tap to swap · tap the name for his card'}
+            title={isLocked ? 'Match started (Locked) — click to view' : isInvalid ? 'Player is not eligible for this position' : 'Tap to swap · tap the nameplate for his card'}
         >
             {/* The lot-size portrait, with the club on its crest chip. The node
                 used to carry a three-letter club abbreviation as a line of text
@@ -319,19 +319,23 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isDimmed, isEmp
                 <NodeBadge cell={scoreCell(status, points, projected)} />
             </span>
 
-            <div className={chipCls}>
+            {/* The whole nameplate opens the card, not just the glyphs of the
+                name. The name alone was a 12px-tall target inside a
+                swap-arming button, so a click a pixel off it armed the swap
+                instead and the card seemed to open at random. */}
+            <div
+                className={chipCls}
+                onClick={player && onViewDetails ? (e) => {
+                    e.stopPropagation();
+                    onViewDetails();
+                } : undefined}
+                title={player ? `${pitchFullName(player)} — tap the nameplate for his card` : undefined}
+            >
                 <div className={styles.nodeChipBody}>
                     {player ? (
                         <>
                             <span
                                 className={`${styles.nodePlayerNameCenter} ${displayName(player).length > 12 ? styles.nodeNameLong : ''} ${isInvalid ? styles.nodeNameInvalid : ''}`}
-                                onClick={(e) => {
-                                    if (onViewDetails) {
-                                        e.stopPropagation();
-                                        onViewDetails();
-                                    }
-                                }}
-                                title={`${pitchFullName(player)} — tap the name for his card`}
                             >
                                 {displayName(player)}
                             </span>
