@@ -18,66 +18,55 @@ Use one of these words in the Stage column.
 
 | Feature | Stage | Where the code lives | Waiting on |
 |---|---|---|---|
-| Targets and the Board (Listings rework) | Backend built, UI prototype only | `feat/heritage-targets-projections`, `claude/inspiring-dewdney-fdb56c`, `docs/board-spec`, `docs/targets-handoff` | See "Targets and the Board" |
-| Matchups redesign | Built, not shipped | `release/2026-10-09` (local only, never pushed) | Push the release branch and merge it |
-| October update (front page, changelog, perf) | Built, not shipped | `release/2026-10-09`, `feat/public-home` (PR #31) | Same as matchups |
+| Targets and the Board (Listings rework) | Backend built, UI not started, design not final | PR #90 (`worktree-targets-board`); old UI on `claude/inspiring-dewdney-fdb56c` for reference only | A design pass. See "Targets and the Board" |
+| Matchups redesign | Shipped 2026-10-24 | `main` (PR #89) | Follow-ups below |
+| October update (front page, changelog, perf) | Shipped 2026-10-24 | `main` (PR #89) | Follow-ups below |
 | League Home revamp | Built, not merged | `design/league-home-revamp` | Decide whether it's still wanted |
-| Cups page | Not started | None | A 2.0 port, with Finance |
+| Cups page | One phone fix shipped; the 2.0 port not started | `main` (PR #88) | A 2.0 port, with Finance |
 | Finance page | Not started | None | A 2.0 port, with Cups |
 | Gaffa Kit adoption | Shipped in batches | `main` (PRs #59, #67, #78, #80 and the `claude/kit-*` branches) | More batches as needed |
 
 ## Targets and the Board
 
-**Backend.** Migrations `153_player_targets`, `154_fill_targets_on_acquisition` and `155_target_role`, the targets API routes, matching, limits and notifications are on `feat/heritage-targets-projections` and `claude/inspiring-dewdney-fdb56c`. Neither branch is in `main`. Migration numbers 153 and 154 are now used on `main` by other migrations, so renumber these before they land. Check every branch for the highest number first (see "Rules for working", rule 6).
+**Backend.** Done, in PR #90: the `player_targets` table, role levels, direct visibility, the targets API, matching, notifications and the route tests. The migrations were renumbered from 153 to 155 and 158 to 179 to 182, because `main` is at 178. The live database already has all of it, applied by hand under the old numbers, with no rows. Don't run the new files against it.
 
-**UI.** Not built. The handoff note, `docs/superpowers/plans/2026-09-10-targets-handoff.md` on `docs/targets-handoff`, says Tasks 7 (UI) and 9 (guide and verification) haven't started.
+**UI.** Not started. The plan is `docs/superpowers/plans/2026-10-24-board-ui.md`. The older UI on `claude/inspiring-dewdney-fdb56c` predates the Board spec and is reference only.
 
-**Design.** On 2026-09-22 you merged Listings and Targets into one tab, the Board. The spec is `docs/superpowers/specs/2026-09-22-transfer-board-design.md` on `docs/board-spec`. It supersedes the page structure of the original Targets spec but keeps its data model, matching and notification rules. The latest prototype is the Market page in the Board's design language, committed on `docs/board-spec` (2026-09-23).
+**Design.** On 2026-09-22 Listings and Targets became one tab, the Board (spec: `docs/superpowers/specs/2026-09-22-transfer-board-design.md`). On 2026-10-24 Duke said nothing about Targets is final, so the prototypes (the Targets C canvas, and the Market prototype on `docs/board-spec`) are a starting point, not the spec. A design pass comes before any Board UI.
 
-**Open decisions:**
+**Open decisions:** what is still unsettled in the design; the tab name ("Board" is a placeholder); whether redraft leagues, which have no listings, get the Board; and what a direct target does when the player's club is a Caretaker.
 
-1. The name "Board" is a placeholder.
-2. The direct-visibility change needs a migration that widens the `visibility` check, and an RLS policy test against two accounts.
-3. The original Targets spec still says "profile" where the code says "role". Update the spec to match the code.
-
-**Unrecoverable work.** Two stashes on `feat/heritage-targets-projections` hold changes that aren't on any branch. Inspect them with `git stash show -p` before anyone drops them. The third stash is a backup from 2026-09-13 labelled "Do not pop"; the same work is on `backup/main-folder-wip-2026-09-13`.
+**Unrecoverable work.** `stash@{3}` (Futbolpedia outlook infra) and `stash@{4}` (scratch files and a duplicate migration 121) are not backed up anywhere. The two Targets stashes are saved as patches on `backup/stash-diffs-2026-10-24`.
 
 ## Matchups redesign and the October update
 
-PR #40 merged the matchups redesign, and PR #41 reverted it on `main` on 2026-10-12. The redesign is restored on `release/2026-10-09`. It also carries the public front page, the October changelog, one fixed example per front-page section, and the player-card and bootstrap perf work.
+PR #40 merged the matchups redesign, PR #41 reverted it on 2026-10-12, and PR #89 restored it on 2026-10-24 together with the public front page, the October changelog, and the player-card and bootstrap perf work. Review fixes made on the way: pitch-stripe scoreboard, swipeable Lineups, bench rows that expand, a Club Balance menu that opens on click only, and a gameweek selector on the kit `Picker`.
 
-On 2026-10-24 the branch was pushed and `main` was merged into it. Typecheck, tests and the build pass, and the public front page was checked on the Vercel preview. The signed-in dashboard and the matchups pages have not been checked in a browser by anyone but you.
-
-Do next: review the preview signed in, settle the follow-ups below, then open the PR into `main`.
-
-Follow-ups for this release:
+Follow-ups:
 
 - **Login carousel.** `AuthShowcase` still draws the old matchup pitch: it imports `MatchupPitch.module.css`, and the component it copied is gone. Update it to the redesigned matchups and the new front page. Until then the carousel shows the previous design.
-- **Matchup scoreboard background.** Settled on 2026-10-24: one fixed background (`.hx` in `gw.module.css`), the pitch's mown stripes in `--color-pitch` and `--color-pitch-band`, the same greens as the lineups beneath it. Duke chose it from three options (cream panel, warm ink, pitch stripes) after a club-colour blend, a near-black ink and a deep green each failed. The crests carry the clubs' colours. Awaiting Duke's review in the browser. The club-colour blend turned warm colours to mustard and maroon. `clubColour()` in `matchupView.ts` is still computed but no longer used by the scoreboard.
+- **Matchup scoreboard background.** Settled on 2026-10-24: one fixed background (`.hx` in `gw.module.css`), the pitch's mown stripes in `--color-pitch` and `--color-pitch-band`. Duke chose it from three options after a club-colour blend, a near-black ink and a deep green each failed. The crests carry the clubs' colours. `clubColour()` in `matchupView.ts` is still computed but no longer used by the scoreboard.
+- **A brief slider-like flash** on League Home and Matchups was not reproduced. The Club Balance hover menu was the likely cause and now opens on click only. If it persists in a normal browser window, it is the loading bar or skeleton, or the pane resizing.
 
 ## Home page
 
-Three separate pieces:
-
-- **League Home revamp**: `design/league-home-revamp`, one commit (2026-09-16). Not in `main`.
-- **Public front page**: PR #31 is open. The work is also on `release/2026-10-09`.
-- **Matchweek stepper and fixtures grouped by day**: merged.
+- **League Home revamp**: `design/league-home-revamp`, one commit (2026-09-16), pushed but not in `main`. Undecided.
+- **Public front page**: shipped (PR #89).
+- **Matchweek stepper and fixtures grouped by day**: shipped.
 
 ## Open pull requests
 
 | PR | Title | Note |
 |---|---|---|
-| #56 | Fix phone game log, lineup portrait crop and long names | Ready to merge |
-| #42 | Preview any worktree in the Browser pane | Preview tooling |
-| #31 | Public front page at / | Same work as the release branch |
-| #1, #4, #5 | Cursor drafts (AGENTS.md, Futbolpedia chat) | Stale since September. Close or merge |
+| #90 | Targets backend and the Board UI plan | One check pending when opened |
+| #42 | Preview any worktree in the Browser pane | Preview tooling, mergeable, undecided |
 
 ## Cleanup debt
 
-- About 40 worktrees under `.claude/worktrees/`, a dozen for work that has already merged.
-- Six worktrees in `/private/tmp/gaffa-worktrees` are marked prunable. Run `git worktree prune`.
+- About 11 worktrees remain, all for unmerged work: Targets, League Home, scoring V3, FC27 sweep, preview tooling and similar.
 - `feat/scoring-v3` is 16 commits ahead of `main`. Scoring V3 is on hold; see the project memory.
-- `worktree-lineup-builder-ratings` (7 commits ahead) is the blue ratings ramp.
+- `worktree-lineup-builder-ratings` (7 commits ahead) is the blue ratings ramp. Check whether it already shipped through another branch.
+- Roughly 40 sessions with no PR are still unarchived. Some are probably finished.
 
 ## Rules for working
 
