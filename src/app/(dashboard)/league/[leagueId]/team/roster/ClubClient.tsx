@@ -17,6 +17,7 @@ import ClubFacilities from '@/components/facilities/ClubFacilities';
 import HeldList from './HeldList';
 import DepartureDecisionModal, { type DecisionRequest } from '@/components/teams/DepartureDecisionModal';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
+import { fetchBack } from '@/lib/players/cardCache';
 import {
   money, ageOf, overallScores, squadTotals,
   avgForm, seasonPts, ppgOf, valueOf, countdown,
@@ -274,6 +275,14 @@ export default function ClubClient({
     setInspectorOpen(true);
   }
 
+  // The card's right-hand figures come from the game log, a slow server call.
+  // Start it as soon as a player is selected (including the initial one) so it
+  // runs alongside the Inspector's render; repeat selections hit the cache.
+  useEffect(() => {
+    const entry = entries.find((e) => e.id === selectedId);
+    if (entry) void fetchBack(entry.playerId, leagueId);
+  }, [selectedId, entries, leagueId]);
+
   useEffect(() => {
     try {
       const v = localStorage.getItem('gaffa:club-view') ?? localStorage.getItem('club-view');
@@ -519,6 +528,7 @@ export default function ClubClient({
             />
           )}
           <Inspector
+            key={selected?.id ?? 'none'}
             entry={selected}
             teamId={teamId}
             leagueId={leagueId}

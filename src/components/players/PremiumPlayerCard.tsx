@@ -235,9 +235,19 @@ export default function PremiumPlayerCard({
 
   // ── Game log for the window's figures: the caller's, or the current season's ─
   const selfFetch = backProp === undefined && !staticOnly;
-  const [ownBack, setOwnBack] = useState<CardBack | null>(() =>
-    selfFetch ? getCachedBack(player.id, leagueId) : null,
-  );
+  // Tagged with the player it belongs to: a card that stays mounted while the
+  // caller swaps players (the club Inspector) must never show the previous
+  // player's figures while the new log loads.
+  const [ownBackState, setOwnBack] = useState<{ id: string; back: CardBack | null }>(() => ({
+    id: player.id,
+    back: selfFetch ? getCachedBack(player.id, leagueId) : null,
+  }));
+  const ownBack =
+    ownBackState.id === player.id
+      ? ownBackState.back
+      : selfFetch
+        ? getCachedBack(player.id, leagueId)
+        : null;
   const back = backProp !== undefined ? backProp : ownBack;
 
   // ── Photo: fixed slot, cascades through FPL's two cut-outs before initials,
@@ -313,7 +323,7 @@ export default function PremiumPlayerCard({
 
     if (selfFetch && !getCachedBack(player.id, leagueId)) {
       fetchBack(player.id, leagueId).then((data) => {
-        if (active && data) setOwnBack(data);
+        if (active && data) setOwnBack({ id: player.id, back: data });
       });
     }
 
