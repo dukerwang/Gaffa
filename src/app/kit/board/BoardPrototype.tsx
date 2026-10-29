@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   Button,
   HoldButton,
   Icon,
+  IconButton,
   MoneyStepper,
   NumberRoll,
   ResponsiveModal,
@@ -185,6 +186,16 @@ const BOARD_WANTED: Wanted[] = [
   { id: 'w2', from: 'hayden', pos: 'RW', level: 'star', budget: 120, stance: ['cash', 'loan'] },
   { id: 'w3', from: 'xabi', pos: 'GK', level: 'starter', budget: 30, stance: ['cash'] },
   { id: 'w4', from: 'tea', pos: 'RB', level: 'prospect', budget: 15, stance: ['cash'] },
+];
+
+/** Who owns a player the league can target; free agents have no owner. */
+const OWNER_OF: Record<string, MgrKey> = { gabriel: 'pizza', haaland: 'hayden', wirtz: 'tea', saka: 'hayden', hall: 'chelsz', colwill: 'xabi' };
+
+/** Positions where your squad is thin, read from the squad rather than asked for. */
+const GAPS: { pos: string; have: Person[] }[] = [
+  { pos: 'RB', have: [] },
+  { pos: 'LW', have: [P.doku] },
+  { pos: 'CM', have: [] },
 ];
 
 const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'DM', 'CM', 'AM', 'LW', 'RW', 'ST'];
@@ -383,6 +394,35 @@ export default function BoardPrototype() {
   const [view, setView] = useState<'listed' | 'wanted'>('listed');
   const [pos, setPos] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [data, setData] = useState<'full' | 'new'>('full');
+  const [targets, setTargets] = useState<Target[]>(TARGETS);
+  const [fresh, setFresh] = useState<string | null>(null);
+  const serial = useRef(0);
+  const tilesRef = useRef<HTMLDivElement>(null);
+  const isNew = data === 'new';
+
+  const applyData = (d: 'full' | 'new') => {
+    setData(d);
+    setTargets(d === 'new' ? [] : TARGETS);
+  };
+
+  /** One tap: a target with sensible defaults, undoable, refined later by tapping its tile. */
+  const addTarget = (who: Person | null, pos: string) => {
+    const id = `n${++serial.current}`;
+    const t: Target = who
+      ? { id, who, pos: who.pos, budget: who.value, stance: ['cash'], audience: 'you', owner: OWNER_OF[who.id], state: { kind: 'quiet' } }
+      : { id, who: null, pos, level: 'starter', budget: 40, stance: ['cash'], audience: 'league', state: { kind: 'quiet' } };
+    setTargets((l) => [t, ...l]);
+    setFresh(id);
+    tilesRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
+    window.setTimeout(() => setFresh((f) => (f === id ? null : f)), 1800);
+    toast(who ? who.name : `${pos} Starter`, {
+      description: `€${t.budget}m`,
+      action: { label: 'Undo', onClick: () => setTargets((l) => l.filter((x) => x.id !== id)) },
+    });
+  };
+  const targetOf = (personId: string) => targets.find((t) => t.who?.id === personId);
+  const gaps = GAPS.filter((g) => !targets.some((t) => !t.who && t.pos === g.pos)).slice(0, isNew ? 3 : 2);
 
   const applyTheme = (t: 'light' | 'dark') => {
     setTheme(t);
@@ -407,11 +447,27 @@ export default function BoardPrototype() {
             { value: 'dark', label: 'Dark' },
           ]}
         />
+        <SegmentedControl
+          size="sm"
+          ariaLabel="Squad"
+          value={data}
+          onChange={applyData}
+          options={[
+            { value: 'full', label: 'Full' },
+            { value: 'new', label: 'New' },
+          ]}
+        />
+      </div>
+
+      <div className={styles.fab}>
+        <Button variant="primary" onClick={() => setSheet({ kind: 'who' })}>
+          <span className={styles.btnIn}><Icon name="plus" size={16} />Add</span>
+        </Button>
       </div>
 
       <div className={styles.page}>
         {/* The anchor field: the green shelf, with what is waiting on you resting on its edge. */}
-        <div className={styles.top}>
+        <div className={`${styles.top} ${isNew ? styles.topQuiet : ''}`}>
           <div className={styles.shelfBg} aria-hidden="true" />
           <div className={styles.shelfIn}>
             <div className={styles.mast}>
@@ -422,6 +478,8 @@ export default function BoardPrototype() {
               </span>
             </div>
 
+            {!isNew && (
+              <>
             <div className={styles.askHead}>
               <h2 className={styles.askT}>Your Move</h2>
               <span className={styles.askCount}>{MOVES.length}</span>
@@ -431,6 +489,8 @@ export default function BoardPrototype() {
                 <MoveCard key={m.id} m={m} i={i} onAct={(a) => toast(`${a} opened`)} />
               ))}
             </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -439,18 +499,15 @@ export default function BoardPrototype() {
             <div className={styles.head}>
               <h2 id="h-targets" className={styles.headT}>Your Targets</h2>
               <div className={styles.headEnd}>
-                <Pips on={TARGETS.length} total={10} />
-                <Button size="sm" variant="primary" onClick={() => setSheet({ kind: 'who' })}>
-                  <span className={styles.btnIn}><Icon name="plus" size={14} />Add</span>
-                </Button>
+                <Pips on={targets.length} total={10} />
               </div>
             </div>
-            <div className={styles.tiles}>
-              {TARGETS.map((t, i) => (
+            <div className={styles.tiles} ref={tilesRef}>
+              {targets.map((t, i) => (
                 <button
                   key={t.id}
                   type="button"
-                  className={`${styles.tile} ${t.state.kind === 'match' ? styles.tileMatch : ''}`}
+                  className={`${styles.tile} ${t.state.kind === 'match' ? styles.tileMatch : ''} ${fresh === t.id ? styles.tileNew : ''}`}
                   style={{ '--i': i } as CSSProperties}
                   onClick={() => setSheet({ kind: 'target', who: t.who, pos: t.pos, editing: t })}
                   aria-label={t.who ? t.who.name : `${t.pos} ${LEVEL_NAME[t.level!]}`}
@@ -496,6 +553,34 @@ export default function BoardPrototype() {
                     ) : (
                       LEVEL_NAME[t.level!]
                     )}
+                  </span>
+                </button>
+              ))}
+              {gaps.map((g, i) => (
+                <button
+                  key={g.pos}
+                  type="button"
+                  className={`${styles.tile} ${styles.gap}`}
+                  style={{ '--i': targets.length + i } as CSSProperties}
+                  onClick={() => addTarget(null, g.pos)}
+                  aria-label={`Target a ${g.pos}`}
+                >
+                  <span className={styles.gapPlinth} style={posStyle(g.pos)}>
+                    <span className={styles.gapPos}>{g.pos}</span>
+                    {/* The squad at this position: who you have, and the empty place. */}
+                    <span className={styles.gapDepth}>
+                      {g.have.map((p) => (
+                        <span key={p.id} className={styles.gapFace}>
+                          <Portrait photoUrl={String(p.code)} name={p.name} club={null} size="xxs" headTopPct={null} headWidthPct={null} photoVersion={null} />
+                        </span>
+                      ))}
+                      <span className={styles.gapSlot}>
+                        <Icon name="plus" size={16} />
+                      </span>
+                    </span>
+                  </span>
+                  <span className={`g-namerow ${styles.tileName}`}>
+                    <PositionBadge position={g.pos} size="sm" />
                   </span>
                 </button>
               ))}
@@ -570,6 +655,21 @@ export default function BoardPrototype() {
                       <Money n={r.price} />
                       {r.clock ? <span className={`${styles.clock} ${r.left! < 0.2 ? styles.clockUrgent : ''}`}>{r.clock}</span> : <span className={styles.offersOnly}>Offers</span>}
                     </span>
+                    <span className={styles.star}>
+                      <IconButton
+                        label={targetOf(r.who.id) ? 'Edit Target' : 'Target'}
+                        variant="ghost"
+                        size="md"
+                        aria-pressed={!!targetOf(r.who.id)}
+                        className={targetOf(r.who.id) ? styles.starOn : ''}
+                        icon={<Icon name="star" size={18} fill={targetOf(r.who.id) ? 'currentColor' : 'none'} />}
+                        onClick={() => {
+                          const t = targetOf(r.who.id);
+                          if (t) setSheet({ kind: 'target', who: t.who, pos: t.pos, editing: t });
+                          else addTarget(r.who, r.who.pos);
+                        }}
+                      />
+                    </span>
                     <span className={styles.lActions}>
                       <Button size="sm" variant="secondary">Offer</Button>
                       {r.clock && <Button size="sm" variant="primary">Bid</Button>}
@@ -610,14 +710,10 @@ export default function BoardPrototype() {
             </div>
           </section>
 
+          {!isNew && (
           <section className={styles.listings} aria-labelledby="h-listings">
             <div className={styles.head}>
               <h2 id="h-listings" className={styles.headT}>Your Listings</h2>
-              <div className={styles.headEnd}>
-                <Button size="sm" variant="primary" onClick={() => setSheet({ kind: 'listing', who: P.havertz })}>
-                  <span className={styles.btnIn}><Icon name="plus" size={14} />Add</span>
-                </Button>
-              </div>
             </div>
             <div className={styles.rows}>
               {LISTINGS.map((l) => (
@@ -639,19 +735,47 @@ export default function BoardPrototype() {
               ))}
             </div>
           </section>
+          )}
         </div>
       </div>
 
-      <Sheets sheet={sheet} onClose={() => setSheet(null)} go={setSheet} />
+      <Sheets
+        sheet={sheet}
+        onClose={() => setSheet(null)}
+        go={setSheet}
+        targeted={(id) => targetOf(id)}
+        onTarget={(p) => {
+          setSheet(null);
+          addTarget(p, p.pos);
+        }}
+        onRole={(pos) => {
+          setSheet(null);
+          addTarget(null, pos);
+        }}
+      />
     </div>
   );
 }
 
 /* ---------- the sheets ---------- */
 
-function Sheets({ sheet, onClose, go }: { sheet: Sheet; onClose: () => void; go: (s: Sheet) => void }) {
+function Sheets({
+  sheet,
+  onClose,
+  go,
+  targeted,
+  onTarget,
+  onRole,
+}: {
+  sheet: Sheet;
+  onClose: () => void;
+  go: (s: Sheet) => void;
+  targeted: (personId: string) => Target | undefined;
+  onTarget: (p: Person) => void;
+  onRole: (pos: string) => void;
+}) {
   if (!sheet) return null;
-  if (sheet.kind === 'who') return <WhoSheet onClose={onClose} go={go} />;
+  if (sheet.kind === 'who') return <WhoSheet onClose={onClose} go={go} targeted={targeted} onTarget={onTarget} onRole={onRole} />;
   if (sheet.kind === 'target') return <TargetSheet key={sheet.editing?.id ?? sheet.who?.id ?? sheet.pos ?? 'new'} sheet={sheet} onClose={onClose} />;
   if (sheet.kind === 'listing') return <ListingSheet key={sheet.who.id} who={sheet.who} onClose={onClose} />;
   return <ListedSheet item={sheet.item} onClose={onClose} />;
@@ -700,7 +824,19 @@ function PosPicker({ value, onChange }: { value: string; onChange: (p: string) =
   );
 }
 
-function WhoSheet({ onClose, go }: { onClose: () => void; go: (s: Sheet) => void }) {
+function WhoSheet({
+  onClose,
+  go,
+  targeted,
+  onTarget,
+  onRole,
+}: {
+  onClose: () => void;
+  go: (s: Sheet) => void;
+  targeted: (personId: string) => Target | undefined;
+  onTarget: (p: Person) => void;
+  onRole: (pos: string) => void;
+}) {
   const [q, setQ] = useState('');
   const squad = [P.havertz, P.doku];
   const others: { p: Person; owner: MgrKey }[] = [
@@ -712,7 +848,8 @@ function WhoSheet({ onClose, go }: { onClose: () => void; go: (s: Sheet) => void
   const free = [P.kroupi];
   const match = (p: Person) => !q.trim() || `${p.name} ${p.club}`.toLowerCase().includes(q.trim().toLowerCase());
 
-  const row = (p: Person, end: ReactNode, onPick: () => void) => (
+  /** `mark` says what a tap does: add at once (plus), open (chevron) or already added (tick). */
+  const row = (p: Person, end: ReactNode, mark: 'add' | 'open' | 'done', onPick: () => void) => (
     <button key={p.id} type="button" className={styles.pick} onClick={onPick}>
       <Portrait photoUrl={String(p.code)} name={p.name} club={p.club} size="sm" headTopPct={null} headWidthPct={null} photoVersion={null} />
       <span className={`g-namerow ${styles.pickName}`}>
@@ -722,6 +859,9 @@ function WhoSheet({ onClose, go }: { onClose: () => void; go: (s: Sheet) => void
       <span className={styles.pickEnd}>
         {end}
         <Money n={p.value} className={styles.pickValue} />
+        <span className={`${styles.pickMark} ${mark === 'add' ? styles.markAdd : mark === 'done' ? styles.markDone : ''}`}>
+          <Icon name={mark === 'add' ? 'plus' : mark === 'done' ? 'check' : 'chevron-right'} size={16} />
+        </span>
       </span>
     </button>
   );
@@ -733,11 +873,17 @@ function WhoSheet({ onClose, go }: { onClose: () => void; go: (s: Sheet) => void
           <Icon name="search" size={16} />
           <input className={styles.input} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search Players" autoFocus aria-label="Search players" />
         </label>
-        <PosPicker value="" onChange={(p) => go({ kind: 'target', who: null, pos: p })} />
+        <PosPicker value="" onChange={onRole} />
         <div className={styles.pickList}>
-          {squad.filter(match).map((p) => row(p, <Mgr k="me" size={20} />, () => go({ kind: 'listing', who: p })))}
-          {others.filter((o) => match(o.p)).map((o) => row(o.p, <Mgr k={o.owner} size={20} />, () => go({ kind: 'target', who: o.p })))}
-          {free.filter(match).map((p) => row(p, <span className={styles.freeTag}>Free</span>, () => go({ kind: 'target', who: p })))}
+          {squad.filter(match).map((p) => row(p, <Mgr k="me" size={20} />, 'open', () => go({ kind: 'listing', who: p })))}
+          {others.filter((o) => match(o.p)).map((o) => {
+            const t = targeted(o.p.id);
+            return row(o.p, <Mgr k={o.owner} size={20} />, t ? 'done' : 'add', () => (t ? go({ kind: 'target', who: t.who, pos: t.pos, editing: t }) : onTarget(o.p)));
+          })}
+          {free.filter(match).map((p) => {
+            const t = targeted(p.id);
+            return row(p, <span className={styles.freeTag}>Free</span>, t ? 'done' : 'add', () => (t ? go({ kind: 'target', who: t.who, pos: t.pos, editing: t }) : onTarget(p)));
+          })}
         </div>
       </div>
     </ResponsiveModal>

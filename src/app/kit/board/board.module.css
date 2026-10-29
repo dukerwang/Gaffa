@@ -22,13 +22,26 @@
 }
 .themeSwitch {
   position: fixed;
-  right: var(--s3);
+  left: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
   bottom: calc(var(--s3) + env(safe-area-inset-bottom));
   z-index: 40;
   padding: var(--s1);
   border-radius: var(--r-shell);
   background: var(--color-bg-card);
   box-shadow: var(--shadow-md);
+}
+
+/* The one Add: always in reach, opens the one composer. */
+.fab {
+  position: fixed;
+  right: var(--s4);
+  bottom: calc(var(--s4) + env(safe-area-inset-bottom));
+  z-index: 40;
+  border-radius: var(--r-control);
+  box-shadow: var(--shadow-lg);
 }
 
 /* ---------- the shelf ---------- */
@@ -692,7 +705,69 @@ button.lrow { cursor: pointer; }
 @keyframes ring { 50% { outline-color: color-mix(in oklab, var(--color-accent) 30%, transparent); } }
 @keyframes fill { from { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) {
-  .move, .tile, .timeBar, .barFill { animation: none; }
+  .move, .tile, .timeBar, .barFill, .tileNew .plinth { animation: none; }
   .liveDot, .tileMatch .plinth { animation: none; }
   .move, .plinth { transition: none; }
 }
+
+/* ---------- one-tap target ---------- */
+.topQuiet { --overlap: 0px; padding-bottom: var(--s8); }
+
+/* The tile you just added settles in and holds a ring for a moment. */
+.tileNew .plinth { animation: arrive 1.6s var(--ease-out-strong) both; }
+@keyframes arrive {
+  0% { transform: scale(0.94); outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  30% { transform: scale(1); outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  100% { outline: 2px solid transparent; outline-offset: 2px; }
+}
+
+/* A gap read from the squad: the position, who you have there, the empty place. */
+.gapPlinth {
+  position: relative;
+  height: 164px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s3) var(--s2) var(--s3);
+  background: color-mix(in oklab, var(--pos) 13%, var(--color-bg-card));
+  color: var(--pos-line, var(--pos));
+  transition: transform var(--dur-base) var(--ease-standard), background var(--dur-base) var(--ease-standard);
+}
+@media (min-width: 900px) { .gapPlinth { height: 190px; border-radius: 14px; } }
+@media (hover: hover) and (pointer: fine) {
+  .gap:hover .gapPlinth { transform: translateY(-2px); background: color-mix(in oklab, var(--pos) 20%, var(--color-bg-card)); }
+}
+.gapPos {
+  margin-top: var(--s3);
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 52px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  opacity: 0.55;
+}
+.gapDepth { display: flex; align-items: center; justify-content: center; gap: var(--s2); }
+.gapFace { display: block; border-radius: var(--r-control); overflow: hidden; }
+.gapSlot {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-round);
+  background: var(--pos-line, var(--pos));
+  color: var(--color-bg-card);
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.gap:active .gapSlot { transform: scale(0.92); }
+
+/* Target from the board with one tap; the star is the state. */
+.star { position: relative; z-index: 2; flex: none; margin: 0 calc(var(--s2) * -1) 0 calc(var(--s1) * -1); }
+.starOn { color: var(--color-accent-ink); }
+
+/* What a tap on a search row does: add at once, open, or already added. */
+.pickMark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--r-round); color: var(--color-text-muted); }
+.markAdd { background: var(--color-accent-dim); color: var(--color-accent-ink); }
+.markDone { color: var(--color-accent-ink); }
