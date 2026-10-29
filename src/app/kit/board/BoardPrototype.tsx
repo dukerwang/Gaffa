@@ -198,6 +198,26 @@ const GAPS: { pos: string; have: Person[] }[] = [
   { pos: 'CM', have: [] },
 ];
 
+/** The players in your squad, for the hub. */
+const MINE = new Set(['havertz', 'doku', 'rice']);
+
+/** Everything the market knows about one player, whichever mechanism it came through. */
+interface Market {
+  p: Person;
+  mine: boolean;
+  free: boolean;
+  /** The other club that owns him. */
+  owner?: MgrKey;
+  listing?: { price: number; left: number | null; clock: string | null };
+  /** Clubs that have named him as a target (for your own player: who is interested). */
+  rivals: MgrKey[];
+  lead?: MgrKey;
+  /** Clubs asking for your player, with what they can pay. */
+  asks: { who: MgrKey; budget: number; direct?: boolean }[];
+  target?: Target;
+  offer?: number;
+}
+
 const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'DM', 'CM', 'AM', 'LW', 'RW', 'ST'];
 const posVar = (pos: string) => `var(--color-pos-${pos.toLowerCase()})`;
 const posStyle = (pos: string) => ({ '--pos': posVar(pos), '--pos-line': `var(--color-pos-${pos.toLowerCase()}-line)` }) as CSSProperties;
@@ -207,7 +227,7 @@ type Sheet =
   | { kind: 'who' }
   | { kind: 'target'; who: Person | null; pos?: string; editing?: Target }
   | { kind: 'listing'; who: Person }
-  | { kind: 'listed'; item: Listed };
+  | { kind: 'hub'; who: Person };
 
 /* ---------- small pictures ---------- */
 
@@ -313,7 +333,7 @@ function PriceBar({ budget, ticks }: { budget: number; ticks: number[] }) {
   );
 }
 
-function MoveCard({ m, i, onAct }: { m: Move; i: number; onAct: (a: string) => void }) {
+function MoveCard({ m, i, onAct, onOpen }: { m: Move; i: number; onAct: (a: string) => void; onOpen: (p: Person) => void }) {
   const first = m.supply.players[0];
   const stack = m.supply.players.length > 1;
   const ground = MGR[m.demand.who].crest.primaryColor;
@@ -340,7 +360,15 @@ function MoveCard({ m, i, onAct }: { m: Move; i: number; onAct: (a: string) => v
         <span className={styles.link} aria-hidden="true">
           <Icon name="repeat" size={16} />
         </span>
-        <div className={`${styles.side} ${styles.sideSupply}`} style={posStyle(first.pos)}>
+        <div
+          className={`${styles.side} ${styles.sideSupply} ${stack ? '' : styles.sideOpen}`}
+          style={posStyle(first.pos)}
+          role={stack ? undefined : 'button'}
+          tabIndex={stack ? undefined : 0}
+          aria-label={stack ? undefined : first.name}
+          onClick={stack ? undefined : () => onOpen(first)}
+          onKeyDown={stack ? undefined : (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(first); } }}
+        >
           {stack ? (
             <>
               {m.supply.players.map((p, j) => (
@@ -397,6 +425,7 @@ export default function BoardPrototype() {
   const [data, setData] = useState<'full' | 'new'>('full');
   const [targets, setTargets] = useState<Target[]>(TARGETS);
   const [fresh, setFresh] = useState<string | null>(null);
+  const [offers, setOffers] = useState<Record<string, number>>({});
   const serial = useRef(0);
   const tilesRef = useRef<HTMLDivElement>(null);
   const isNew = data === 'new';
@@ -422,6 +451,31 @@ export default function BoardPrototype() {
     });
   };
   const targetOf = (personId: string) => targets.find((t) => t.who?.id === personId);
+
+  const marketOf = (p: Person): Market => {
+    const row = BOARD_LISTED.find((r) => r.who.id === p.id);
+    const mine = MINE.has(p.id);
+    const own = LISTINGS.find((l) => l.who.id === p.id);
+    return {
+      p,
+      mine,
+      free: p.id === 'kroupi',
+      owner: mine ? undefined : (row?.owner ?? OWNER_OF[p.id]),
+      listing: row ? { price: row.price, left: row.left, clock: row.clock } : own ? { price: own.price, left: own.left, clock: own.clock } : undefined,
+      rivals: row ? row.rivals : (own?.interest ?? []),
+      lead: own?.lead,
+      asks: MOVES.filter((m) => m.demand.who !== 'me' && m.supply.players.length === 1 && m.supply.players[0].id === p.id).map((m) => ({ who: m.demand.who, budget: m.budget, direct: m.direct })),
+      target: targetOf(p.id),
+      offer: offers[p.id],
+    };
+  };
+
+  const toggleTarget = (p: Person) => {
+    const t = targetOf(p.id);
+    if (!t) return addTarget(p, p.pos);
+    setTargets((l) => l.filter((x) => x.id !== t.id));
+    toast('Target removed', { description: p.name, action: { label: 'Undo', onClick: () => setTargets((l) => [t, ...l]) } });
+  };
   const gaps = GAPS.filter((g) => !targets.some((t) => !t.who && t.pos === g.pos)).slice(0, isNew ? 3 : 2);
 
   const applyTheme = (t: 'light' | 'dark') => {
@@ -486,7 +540,7 @@ export default function BoardPrototype() {
             </div>
             <div className={styles.asks}>
               {MOVES.map((m, i) => (
-                <MoveCard key={m.id} m={m} i={i} onAct={(a) => toast(`${a} opened`)} />
+                <MoveCard key={m.id} m={m} i={i} onAct={(a) => toast(`${a} opened`)} onOpen={(p) => setSheet({ kind: 'hub', who: p })} />
               ))}
             </div>
               </>
@@ -509,7 +563,7 @@ export default function BoardPrototype() {
                   type="button"
                   className={`${styles.tile} ${t.state.kind === 'match' ? styles.tileMatch : ''} ${fresh === t.id ? styles.tileNew : ''}`}
                   style={{ '--i': i } as CSSProperties}
-                  onClick={() => setSheet({ kind: 'target', who: t.who, pos: t.pos, editing: t })}
+                  onClick={() => setSheet(t.who ? { kind: 'hub', who: t.who } : { kind: 'target', who: null, pos: t.pos, editing: t })}
                   aria-label={t.who ? t.who.name : `${t.pos} ${LEVEL_NAME[t.level!]}`}
                 >
                   <span className={styles.plinth} style={posStyle(t.pos)}>
@@ -525,6 +579,11 @@ export default function BoardPrototype() {
                         <i className={styles.liveDot} />
                         <b>€{t.state.bid}m</b>
                         <span>{t.state.left}</span>
+                      </span>
+                    ) : t.who && offers[t.who.id] ? (
+                      <span className={`${styles.liveStrip} ${styles.offerStrip}`}>
+                        <Icon name="arrow-up" size={14} />
+                        <b>€{offers[t.who.id]}m</b>
                       </span>
                     ) : (
                       <span className={styles.budget}>€{t.budget}m</span>
@@ -638,7 +697,7 @@ export default function BoardPrototype() {
               {view === 'listed' &&
                 listed.map((r) => (
                   <div key={r.id} className={styles.lrow}>
-                    <button type="button" className={styles.rowHit} aria-label={r.who.name} onClick={() => setSheet({ kind: 'listed', item: r })} />
+                    <button type="button" className={styles.rowHit} aria-label={r.who.name} onClick={() => setSheet({ kind: 'hub', who: r.who })} />
                     <Portrait photoUrl={String(r.who.code)} name={r.who.name} club={r.who.club} size="sm" headTopPct={null} headWidthPct={null} photoVersion={null} />
                     <span className={styles.lBody}>
                       <span className={`g-namerow ${styles.lName}`}>
@@ -654,6 +713,11 @@ export default function BoardPrototype() {
                     <span className={styles.lEnd}>
                       <Money n={r.price} />
                       {r.clock ? <span className={`${styles.clock} ${r.left! < 0.2 ? styles.clockUrgent : ''}`}>{r.clock}</span> : <span className={styles.offersOnly}>Offers</span>}
+                      {offers[r.who.id] && (
+                        <span className={styles.offerPill}>
+                          <Icon name="arrow-up" size={12} />€{offers[r.who.id]}m
+                        </span>
+                      )}
                     </span>
                     <span className={styles.star}>
                       <IconButton
@@ -717,7 +781,7 @@ export default function BoardPrototype() {
             </div>
             <div className={styles.rows}>
               {LISTINGS.map((l) => (
-                <button key={l.id} type="button" className={styles.lrow} onClick={() => setSheet({ kind: 'listing', who: l.who })}>
+                <button key={l.id} type="button" className={styles.lrow} onClick={() => setSheet({ kind: 'hub', who: l.who })}>
                   <Portrait photoUrl={String(l.who.code)} name={l.who.name} club={l.who.club} size="sm" headTopPct={null} headWidthPct={null} photoVersion={null} />
                   <span className={styles.lBody}>
                     <span className={`g-namerow ${styles.lName}`}>
@@ -744,6 +808,16 @@ export default function BoardPrototype() {
         onClose={() => setSheet(null)}
         go={setSheet}
         targeted={(id) => targetOf(id)}
+        market={marketOf}
+        onStar={toggleTarget}
+        onOffer={(p, n) => {
+          setOffers((o) => ({ ...o, [p.id]: n }));
+          toast.success('Offer sent', { description: `${p.name} · €${n}m` });
+        }}
+        onWithdraw={(p) => {
+          setOffers((o) => Object.fromEntries(Object.entries(o).filter(([id]) => id !== p.id)));
+          toast('Offer withdrawn', { description: p.name });
+        }}
         onTarget={(p) => {
           setSheet(null);
           addTarget(p, p.pos);
@@ -764,6 +838,10 @@ function Sheets({
   onClose,
   go,
   targeted,
+  market,
+  onStar,
+  onOffer,
+  onWithdraw,
   onTarget,
   onRole,
 }: {
@@ -771,6 +849,10 @@ function Sheets({
   onClose: () => void;
   go: (s: Sheet) => void;
   targeted: (personId: string) => Target | undefined;
+  market: (p: Person) => Market;
+  onStar: (p: Person) => void;
+  onOffer: (p: Person, amount: number) => void;
+  onWithdraw: (p: Person) => void;
   onTarget: (p: Person) => void;
   onRole: (pos: string) => void;
 }) {
@@ -778,7 +860,7 @@ function Sheets({
   if (sheet.kind === 'who') return <WhoSheet onClose={onClose} go={go} targeted={targeted} onTarget={onTarget} onRole={onRole} />;
   if (sheet.kind === 'target') return <TargetSheet key={sheet.editing?.id ?? sheet.who?.id ?? sheet.pos ?? 'new'} sheet={sheet} onClose={onClose} />;
   if (sheet.kind === 'listing') return <ListingSheet key={sheet.who.id} who={sheet.who} onClose={onClose} />;
-  return <ListedSheet item={sheet.item} onClose={onClose} />;
+  return <HubSheet m={market(sheet.who)} onClose={onClose} go={go} onStar={onStar} onOffer={onOffer} onWithdraw={onWithdraw} />;
 }
 
 function Plate({ p, owner, children }: { p: Person; owner?: MgrKey; children?: ReactNode }) {
@@ -1057,35 +1139,164 @@ function ListingSheet({ who, onClose }: { who: Person; onClose: () => void }) {
   );
 }
 
-function ListedSheet({ item, onClose }: { item: Listed; onClose: () => void }) {
+/** The player as the hub: every way into him, as one picture, with the actions that fit his state. */
+function HubSheet({
+  m,
+  onClose,
+  go,
+  onStar,
+  onOffer,
+  onWithdraw,
+}: {
+  m: Market;
+  onClose: () => void;
+  go: (s: Sheet) => void;
+  onStar: (p: Person) => void;
+  onOffer: (p: Person, amount: number) => void;
+  onWithdraw: (p: Person) => void;
+}) {
+  const { p } = m;
+  const price = m.listing?.price ?? p.value;
+  const bidAmount = m.free ? Math.round(p.value * 0.6) : (m.listing?.price ?? 0) + 1;
+  const canBid = m.free || !!m.listing?.clock;
+  const offerAmount = m.listing?.price ?? p.value;
+
+  const footer = m.mine ? (
+    <div className={styles.footer}>
+      <Button variant="primary" onClick={() => go({ kind: 'listing', who: p })}>
+        {m.listing ? 'Edit Listing' : 'List'}
+      </Button>
+    </div>
+  ) : (
+    <div className={styles.footer}>
+      {m.offer ? (
+        <HoldButton size="sm" onConfirm={() => onWithdraw(p)}>
+          Withdraw
+        </HoldButton>
+      ) : (
+        !m.free && (
+          <Button variant={canBid ? 'secondary' : 'primary'} onClick={() => onOffer(p, offerAmount)}>
+            Offer €{offerAmount}m
+          </Button>
+        )
+      )}
+      {canBid && (
+        <Button
+          variant="primary"
+          onClick={() => {
+            toast.success('Bid placed', { description: `${p.name} · €${bidAmount}m` });
+            onClose();
+          }}
+        >
+          Bid €{bidAmount}m
+        </Button>
+      )}
+    </div>
+  );
+
   return (
-    <ResponsiveModal
-      open
-      onClose={onClose}
-      title={item.who.name}
-      padded
-      footer={
-        <div className={styles.footer}>
-          <Button variant="secondary" onClick={() => { toast('Offer opened'); onClose(); }}>Offer</Button>
-          {item.clock && (
-            <Button variant="primary" onClick={() => { toast('Bid opened'); onClose(); }}>
-              Bid €{item.price + 1}m
-            </Button>
-          )}
-        </div>
-      }
-    >
+    <ResponsiveModal open onClose={onClose} title={p.name} padded footer={footer}>
       <div className={styles.form}>
-        <Plate p={item.who} owner={item.owner} />
-        <div className={styles.listedFoot}>
-          <Money n={item.price} className={styles.bigMoney} />
-          {item.clock && (
-            <span className={styles.listedClock}>
-              <span className={`${styles.clock} ${item.left! < 0.2 ? styles.clockUrgent : ''}`}>{item.clock}</span>
-              <TimeBar left={item.left} />
+        <div className={styles.hubHead}>
+          <div className={styles.plateImg} style={posStyle(p.pos)}>
+            <Cutout p={p} />
+          </div>
+          <div className={styles.plateBody}>
+            <span className={`g-namerow ${styles.plateName}`}>
+              <PositionBadge position={p.pos} size="sm" />
+              {m.owner && <Mgr k={m.owner} size={22} />}
+              {m.free && <span className={styles.freeTag}>Free</span>}
+            </span>
+            <span className={styles.plateSub}>
+              <ClubBadge club={p.club} size={16} />
+              {p.club}
+            </span>
+            {!m.listing && <Money n={p.value} className={styles.plateValue} />}
+          </div>
+          {!m.mine && (
+            <span className={styles.hubStar}>
+              <IconButton
+                label={m.target ? 'Remove Target' : 'Target'}
+                variant="ghost"
+                aria-pressed={!!m.target}
+                className={m.target ? styles.starOn : ''}
+                icon={<Icon name="star" size={20} fill={m.target ? 'currentColor' : 'none'} />}
+                onClick={() => onStar(p)}
+              />
             </span>
           )}
         </div>
+
+        {m.listing && (
+          <div className={styles.listedFoot}>
+            <Money n={m.listing.price} className={styles.bigMoney} />
+            {m.listing.clock ? (
+              <span className={styles.listedClock}>
+                <span className={`${styles.clock} ${m.listing.left! < 0.2 ? styles.clockUrgent : ''}`}>{m.listing.clock}</span>
+                <TimeBar left={m.listing.left} />
+              </span>
+            ) : (
+              <span className={styles.offersOnly}>Offers</span>
+            )}
+          </div>
+        )}
+
+        {/* Who else is after him: the same star as the target button, then their crests. */}
+        {m.rivals.some((k) => k !== 'me') && (
+          <div className={styles.hubRow}>
+            <Icon name="star" size={16} />
+            <CrestStack keys={m.rivals.filter((k) => k !== 'me')} size={28} lead={m.lead} />
+          </div>
+        )}
+
+        {/* Clubs asking for your player: their crest, and what they can pay against what he is worth. */}
+        {m.asks.map((a) => (
+          <div key={a.who} className={styles.stake}>
+            <Mgr k={a.who} size={28} />
+            <div className={styles.stakeBar}>
+              <PriceBar budget={a.budget} ticks={[p.value]} />
+              <span className={styles.barNums}>
+                <b className={styles.numBudget}>€{a.budget}m</b>
+                <b className={styles.numPrice}>€{p.value}m</b>
+              </span>
+            </div>
+            {a.direct && <Icon name="lock" size={14} />}
+          </div>
+        ))}
+
+        {/* Your own target: what you can pay against what he costs, and the way to change it. */}
+        {m.target && (
+          <div className={styles.stake}>
+            <Mgr k="me" size={28} />
+            <div className={styles.stakeBar}>
+              <PriceBar budget={m.target.budget} ticks={[price]} />
+              <span className={styles.barNums}>
+                <b className={styles.numBudget}>€{m.target.budget}m</b>
+                <b className={styles.numPrice}>€{price}m</b>
+              </span>
+            </div>
+            <Stances list={m.target.stance} />
+            <IconButton
+              label="Edit Target"
+              variant="ghost"
+              icon={<Icon name="settings" size={18} />}
+              onClick={() => go({ kind: 'target', who: p, pos: p.pos, editing: m.target })}
+            />
+          </div>
+        )}
+
+        {/* Your offer, still standing: you, then him, then the amount. */}
+        {m.offer && m.owner && (
+          <div className={styles.pending}>
+            <Mgr k="me" size={26} />
+            <Icon name="chevron-right" size={14} />
+            <Mgr k={m.owner} size={26} />
+            <b className={styles.money}>€{m.offer}m</b>
+            <span className={styles.pendingClock}>
+              <Icon name="activity" size={14} />
+            </span>
+          </div>
+        )}
       </div>
     </ResponsiveModal>
   );

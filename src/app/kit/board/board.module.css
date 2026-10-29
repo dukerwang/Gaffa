@@ -491,9 +491,9 @@ button.lrow { cursor: pointer; }
 }
 .lActions { display: none; gap: var(--s2); flex: none; }
 .rowHit { position: absolute; inset: 0; border: 0; background: none; cursor: pointer; z-index: 1; }
+.rowHit:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
 @media (min-width: 640px) {
-  .board .lActions { display: flex; }
-  .board .rowHit { display: none; }
+  .board .lActions { display: flex; position: relative; z-index: 2; }
 }
 @media (min-width: 640px) and (max-width: 899px) {
   .board .lEnd { margin-left: auto; }
@@ -706,6 +706,7 @@ button.lrow { cursor: pointer; }
 @keyframes fill { from { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) {
   .move, .tile, .timeBar, .barFill, .tileNew .plinth { animation: none; }
+  .pendingClock { animation: none; }
   .liveDot, .tileMatch .plinth { animation: none; }
   .move, .plinth { transition: none; }
 }
@@ -771,3 +772,41 @@ button.lrow { cursor: pointer; }
 .pickMark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--r-round); color: var(--color-text-muted); }
 .markAdd { background: var(--color-accent-dim); color: var(--color-accent-ink); }
 .markDone { color: var(--color-accent-ink); }
+
+/* ---------- the player as the hub ---------- */
+.hubHead { position: relative; display: flex; align-items: stretch; gap: var(--s4); padding-right: 40px; }
+.hubStar { position: absolute; right: -8px; top: -8px; }
+.hubRow { display: flex; align-items: center; gap: var(--s3); color: var(--color-text-muted); }
+.stake { display: flex; align-items: center; gap: var(--s3); color: var(--color-text-muted); }
+.stakeBar { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; color: var(--color-text-primary); }
+.pending {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-shell);
+  background: var(--color-accent-dim);
+  color: var(--color-accent-ink);
+}
+.pending .money { margin-left: var(--s2); }
+.pendingClock { margin-left: auto; display: grid; place-items: center; animation: live 1.6s ease-in-out infinite; }
+
+/* An offer you have sent stays where you sent it from. */
+.offerPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: var(--r-control);
+  background: var(--color-accent-dim);
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: var(--t-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent-ink);
+}
+.offerStrip { background: color-mix(in oklab, var(--color-accent) 78%, black); }
+.offerStrip b { margin-right: auto; }
+
+.sideOpen { cursor: pointer; }
+.sideOpen:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
