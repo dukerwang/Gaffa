@@ -134,19 +134,19 @@ export default function PlayerCardScouting({ playerId, leagueId, season, isCurre
             <span className={styles.date}>{seasonLabel(form.season)} · {form.appearances} apps</span>
           </div>
           <div className={styles.grid}>
-            <div className={styles.stat}>
-              <b>{form.startRate == null ? '—' : `${Math.round(form.startRate * 100)}%`}</b>
-              <span>Start Rate</span>
-            </div>
-            <div className={styles.stat}>
-              <b>{form.xgiPer90 == null ? '—' : form.xgiPer90.toFixed(2)}</b>
-              <span>xGI per 90</span>
-            </div>
-            <div className={styles.stat}>
-              <b>{form.setPieces.length > 0 ? form.setPieces.length : '—'}</b>
-              <span>Set-Piece Duties</span>
-            </div>
+            <Stat value={form.startRate == null ? '—' : `${Math.round(form.startRate * 100)}%`} label="Start Rate" />
+            <Stat value={form.minutes.toLocaleString('en-GB')} label="Minutes" />
+            <Stat value={form.xgiPer90 == null ? '—' : form.xgiPer90.toFixed(2)} label="xGI per 90" />
+            <Stat value={String(form.goals)} label="Goals" />
+            <Stat value={String(form.assists)} label="Assists" />
+            {form.cleanSheets > 0 && <Stat value={String(form.cleanSheets)} label="Clean Sheets" />}
           </div>
+          {form.setPieces.length > 0 && (
+            <p className={styles.duties}>
+              <span>Set Pieces</span>
+              <b>{form.setPieces.map((d) => humanise(String(d))).join(', ')}</b>
+            </p>
+          )}
           {form.xgiPercentile != null && (
             <div className={styles.pct}>
               <div className={styles.pctHead}>
@@ -160,6 +160,15 @@ export default function PlayerCardScouting({ playerId, leagueId, season, isCurre
           )}
         </section>
       )}
+    </div>
+  );
+}
+
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className={styles.stat}>
+      <b>{value}</b>
+      <span>{label}</span>
     </div>
   );
 }
