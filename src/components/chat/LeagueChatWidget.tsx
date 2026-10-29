@@ -61,6 +61,7 @@ function LeagueChatWidgetContent({
   isOpen,
   isMinimized,
   activeTab,
+  view: viewMode,
   viewerClub,
   unreadSummary,
   openChat,
@@ -68,6 +69,7 @@ function LeagueChatWidgetContent({
   minimizeChat,
   restoreChat,
   setActiveTab,
+  setView: setViewMode,
   setViewerClub,
   setUnreadSummary,
 }: ReturnType<typeof useLeagueChat> & NonNullable<ReturnType<typeof useLeagueChat>>) {
@@ -81,7 +83,6 @@ function LeagueChatWidgetContent({
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUsername, setCurrentUsername] = useState<string>('Manager');
   const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'chat' | 'channels'>('chat');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
@@ -290,16 +291,9 @@ function LeagueChatWidgetContent({
     }
   }, [messages, activeTab, isOpen, isMinimized, viewMode]);
 
-  // Switch to chat thread view whenever activeTab changes (e.g. from OpponentCard "Message @manager" or DM selection)
+  // Mark the open conversation as read, never a channel only listed.
   useEffect(() => {
-    if (activeTab) {
-      setViewMode('chat');
-    }
-  }, [activeTab]);
-
-  // Mark active tab as read when open
-  useEffect(() => {
-    if (!isOpen || isMinimized) return;
+    if (!isOpen || isMinimized || viewMode !== 'chat') return;
 
     if (activeTab.type === 'dm') {
       setUnreadSummary((prev) => ({
@@ -311,7 +305,7 @@ function LeagueChatWidgetContent({
       setUnreadSummary((prev) => ({ ...prev, lobbyUnread: false }));
       markRead(null);
     }
-  }, [activeTab, isOpen, isMinimized, markRead, setUnreadSummary]);
+  }, [activeTab, isOpen, isMinimized, viewMode, markRead, setUnreadSummary]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
