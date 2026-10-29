@@ -291,9 +291,9 @@ function LeagueChatWidgetContent({
     }
   }, [messages, activeTab, isOpen, isMinimized, viewMode]);
 
-  // Mark active tab as read when open
+  // Mark the open conversation as read, never a channel only listed.
   useEffect(() => {
-    if (!isOpen || isMinimized) return;
+    if (!isOpen || isMinimized || viewMode !== 'chat') return;
 
     if (activeTab.type === 'dm') {
       setUnreadSummary((prev) => ({
@@ -305,7 +305,7 @@ function LeagueChatWidgetContent({
       setUnreadSummary((prev) => ({ ...prev, lobbyUnread: false }));
       markRead(null);
     }
-  }, [activeTab, isOpen, isMinimized, markRead, setUnreadSummary]);
+  }, [activeTab, isOpen, isMinimized, viewMode, markRead, setUnreadSummary]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
