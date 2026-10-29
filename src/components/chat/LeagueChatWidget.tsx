@@ -61,6 +61,7 @@ function LeagueChatWidgetContent({
   isOpen,
   isMinimized,
   activeTab,
+  view: viewMode,
   viewerClub,
   unreadSummary,
   openChat,
@@ -68,6 +69,7 @@ function LeagueChatWidgetContent({
   minimizeChat,
   restoreChat,
   setActiveTab,
+  setView: setViewMode,
   setViewerClub,
   setUnreadSummary,
 }: ReturnType<typeof useLeagueChat> & NonNullable<ReturnType<typeof useLeagueChat>>) {
@@ -81,7 +83,6 @@ function LeagueChatWidgetContent({
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUsername, setCurrentUsername] = useState<string>('Manager');
   const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'chat' | 'channels'>('chat');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
@@ -289,13 +290,6 @@ function LeagueChatWidgetContent({
       scrollToBottom('smooth');
     }
   }, [messages, activeTab, isOpen, isMinimized, viewMode]);
-
-  // Switch to chat thread view whenever activeTab changes (e.g. from OpponentCard "Message @manager" or DM selection)
-  useEffect(() => {
-    if (activeTab) {
-      setViewMode('chat');
-    }
-  }, [activeTab]);
 
   // Mark active tab as read when open
   useEffect(() => {
