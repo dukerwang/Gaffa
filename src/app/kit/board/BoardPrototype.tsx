@@ -10,6 +10,7 @@ import {
   NumberRoll,
   ResponsiveModal,
   SegmentedControl,
+  Select,
   toast,
 } from '@/components/ui';
 import Portrait from '@/components/players/Portrait';
@@ -56,6 +57,8 @@ const P: Record<string, Person> = {
   colwill: { id: 'colwill', name: 'Levi Colwill', pos: 'CB', club: 'Chelsea', value: 38, code: 460028 },
   saliba: { id: 'saliba', name: 'William Saliba', pos: 'CB', club: 'Arsenal', value: 85, code: 462424 },
   hall: { id: 'hall', name: 'Lewis Hall', pos: 'LB', club: 'Newcastle', value: 24, code: 487838 },
+  mainoo: { id: 'mainoo', name: 'Kobbie Mainoo', pos: 'CM', club: 'Man Utd', value: 30, code: 516895 },
+  gibbs: { id: 'gibbs', name: 'Morgan Gibbs-White', pos: 'AM', club: 'Nottingham Forest', value: 40, code: 222531 },
   saka: { id: 'saka', name: 'Bukayo Saka', pos: 'RW', club: 'Arsenal', value: 130, code: 223340 },
 };
 
@@ -153,8 +156,14 @@ const LISTINGS: Listing[] = [
   { id: 'l2', who: P.doku, price: 45, left: null, clock: null, interest: ['hayden'] },
 ];
 
+interface Bid {
+  who: MgrKey;
+  amount: number;
+}
+
 interface Listed {
   id: string;
+  bids: Bid[];
   who: Person;
   owner: MgrKey;
   price: number;
@@ -165,11 +174,59 @@ interface Listed {
 }
 
 const BOARD_LISTED: Listed[] = [
-  { id: 'b1', who: P.gabriel, owner: 'pizza', price: 58, left: 0.52, clock: '2d 04h', rivals: ['tea', 'xabi'] },
-  { id: 'b2', who: P.saka, owner: 'hayden', price: 120, left: 0.84, clock: '3d 11h', rivals: ['totten'] },
-  { id: 'b3', who: P.hall, owner: 'chelsz', price: 24, left: 0.12, clock: '8h', rivals: ['me'] },
-  { id: 'b4', who: P.colwill, owner: 'xabi', price: 38, left: null, clock: null, rivals: [] },
+  { id: 'b1', who: P.gabriel, owner: 'pizza', price: 58, left: 0.52, clock: '2d 04h', rivals: ['tea', 'xabi'], bids: [{ who: 'tea', amount: 58 }, { who: 'xabi', amount: 54 }] },
+  { id: 'b2', who: P.saka, owner: 'hayden', price: 120, left: 0.84, clock: '3d 11h', rivals: ['totten'], bids: [] },
+  { id: 'b3', who: P.hall, owner: 'chelsz', price: 24, left: 0.12, clock: '8h', rivals: ['me'], bids: [{ who: 'hayden', amount: 24 }] },
+  { id: 'b4', who: P.colwill, owner: 'xabi', price: 38, left: null, clock: null, rivals: [], bids: [] },
 ];
+
+/** A free agent: unowned, so he is only on the stream while he is under auction or when you look for him. */
+interface Free {
+  id: string;
+  who: Person;
+  /** Recent form, as a rating. */
+  form: number;
+  price?: number;
+  left: number | null;
+  clock: string | null;
+  bids: Bid[];
+}
+
+const FREE: Free[] = [
+  { id: 'f1', who: P.kroupi, form: 7.4, price: 9, left: 0.18, clock: '5h', bids: [{ who: 'totten', amount: 9 }, { who: 'tea', amount: 8 }] },
+  { id: 'f2', who: P.mainoo, form: 6.9, left: null, clock: null, bids: [] },
+  { id: 'f3', who: P.gibbs, form: 7.1, left: null, clock: null, bids: [] },
+];
+const FREE_IDS = new Set(FREE.map((f) => f.who.id));
+const floorOf = (p: Person) => Math.round(p.value * 0.6);
+
+/** A trade with another club: what you give, what you get, and the cash either way. */
+interface Deal {
+  id: string;
+  with: MgrKey;
+  /** In needs your answer; out is waiting on theirs. */
+  dir: 'in' | 'out';
+  give: Person[];
+  get: Person[];
+  /** Positive when you pay, negative when you receive. */
+  cash: number;
+}
+
+const DEALS: Deal[] = [
+  { id: 'd1', with: 'tea', dir: 'in', give: [P.havertz], get: [P.wirtz], cash: -20 },
+  { id: 'd2', with: 'hayden', dir: 'out', give: [P.doku], get: [], cash: -45 },
+];
+
+/** Hours left from a clock like "2d 04h"; things with no clock sort after the ones that have one. */
+const hoursOf = (clock: string | null) => {
+  if (!clock) return 1e4;
+  const d = /(\d+)d/.exec(clock);
+  const h = /(\d+)h/.exec(clock);
+  return (d ? Number(d[1]) * 24 : 0) + (h ? Number(h[1]) : 0);
+};
+
+type Kind = 'all' | 'listed' | 'free' | 'wanted' | 'deals';
+type Sort = 'form' | 'value' | 'name';
 
 interface Wanted {
   id: string;
@@ -208,7 +265,7 @@ interface Market {
   free: boolean;
   /** The other club that owns him. */
   owner?: MgrKey;
-  listing?: { price: number; left: number | null; clock: string | null };
+  listing?: { price: number; left: number | null; clock: string | null; bids?: Bid[] };
   /** Clubs that have named him as a target (for your own player: who is interested). */
   rivals: MgrKey[];
   lead?: MgrKey;
@@ -244,6 +301,7 @@ type Sheet =
 
 /** An offer you have sent, kept where you sent it from. */
 interface Sent {
+  buying: boolean;
   amount: number;
   to: MgrKey;
   who: Person;
@@ -460,6 +518,20 @@ function MoveCard({
   );
 }
 
+/** Players on one side of a deal, lapping over one another; cash alone is a coin. */
+function FaceStack({ people }: { people: Person[] }) {
+  if (people.length === 0) return <span className={styles.coin}>{GLYPH.cash}</span>;
+  return (
+    <span className={styles.faceStack}>
+      {people.map((p, i) => (
+        <span key={p.id} className={styles.faceItem} style={{ zIndex: people.length - i }}>
+          <Portrait photoUrl={String(p.code)} name={p.name} club={null} size="xxs" headTopPct={null} headWidthPct={null} photoVersion={null} />
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function TimeBar({ left }: { left: number | null }) {
   if (left === null) return null;
   return <span className={`${styles.timeBar} ${left < 0.2 ? styles.timeUrgent : ''}`} style={{ '--p': left } as CSSProperties} aria-hidden="true" />;
@@ -469,7 +541,8 @@ function TimeBar({ left }: { left: number | null }) {
 
 export default function BoardPrototype() {
   const [sheet, setSheet] = useState<Sheet>(null);
-  const [view, setView] = useState<'listed' | 'wanted'>('listed');
+  const [kind, setKind] = useState<Kind>('all');
+  const [sort, setSort] = useState<Sort>('form');
   const [pos, setPos] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [data, setData] = useState<'full' | 'new'>('full');
@@ -506,13 +579,14 @@ export default function BoardPrototype() {
     const row = BOARD_LISTED.find((r) => r.who.id === p.id);
     const mine = MINE.has(p.id);
     const own = LISTINGS.find((l) => l.who.id === p.id);
+    const fa = FREE.find((f) => f.who.id === p.id);
     return {
       p,
       mine,
-      free: p.id === 'kroupi',
+      free: FREE_IDS.has(p.id),
       owner: mine ? undefined : (row?.owner ?? OWNER_OF[p.id]),
-      listing: row ? { price: row.price, left: row.left, clock: row.clock } : own ? { price: own.price, left: own.left, clock: own.clock } : undefined,
-      rivals: row ? row.rivals : (own?.interest ?? []),
+      listing: row ? { price: row.price, left: row.left, clock: row.clock, bids: row.bids } : fa ? { price: fa.price ?? floorOf(p), left: fa.left, clock: fa.clock, bids: fa.bids } : own ? { price: own.price, left: own.left, clock: own.clock } : undefined,
+      rivals: row ? row.rivals : fa ? fa.bids.map((b) => b.who) : (own?.interest ?? []),
       lead: own?.lead,
       asks: MOVES.filter((m) => m.demand.who !== 'me' && m.supply.players.length === 1 && m.supply.players[0].id === p.id).map((m) => ({ who: m.demand.who, budget: m.budget, direct: m.direct })),
       target: targetOf(p.id),
@@ -536,10 +610,10 @@ export default function BoardPrototype() {
     });
   };
 
-  const send = (mode: 'offer' | 'bid', p: Person, amount: number, to?: MgrKey) => {
+  const send = (mode: 'offer' | 'bid', p: Person, amount: number, to?: MgrKey, buying = false) => {
     setSheet(null);
     if (mode === 'bid') return toast.success('Bid placed', { description: `${p.name} · €${amount}m` });
-    if (to) setOffers((o) => ({ ...o, [p.id]: { amount, to, who: p } }));
+    if (to) setOffers((o) => ({ ...o, [p.id]: { amount, to, who: p, buying } }));
     toast.success('Offer sent', { description: `${p.name} · €${amount}m` });
   };
 
@@ -561,10 +635,39 @@ export default function BoardPrototype() {
     document.documentElement.dataset.theme = t;
   };
 
-  const listed = BOARD_LISTED.filter((r) => !pos || r.who.pos === pos);
-  const wanted = BOARD_WANTED.filter((r) => !pos || r.pos === pos);
-  const supplyAt = (p: string) => BOARD_LISTED.filter((r) => r.who.pos === p).length;
+  const here = (p: string) => !pos || p === pos;
+  const supplyAt = (p: string) => BOARD_LISTED.filter((r) => r.who.pos === p).length + FREE.filter((f) => f.who.pos === p).length;
   const demandAt = (p: string) => BOARD_WANTED.filter((r) => r.pos === p).length;
+
+  /** Offers you have sent are deals too: the same business, seen from the desk. */
+  const deals: Deal[] = isNew
+    ? []
+    : [
+        ...DEALS,
+        ...Object.values(offers).map((o): Deal => ({
+          id: `o-${o.who.id}`,
+          with: o.to,
+          dir: 'out',
+          give: o.buying ? [] : [o.who],
+          get: o.buying ? [o.who] : [],
+          cash: o.buying ? o.amount : -o.amount,
+        })),
+      ];
+
+  type Item = { key: string; hrs: number; node: 'listed' | 'free' | 'wanted'; i: number };
+  const listedItems: Item[] = BOARD_LISTED.map((r, i) => ({ key: r.id, hrs: hoursOf(r.clock), node: 'listed' as const, i })).filter((x) => here(BOARD_LISTED[x.i].who.pos));
+  const liveFree: Item[] = FREE.map((f, i) => ({ key: f.id, hrs: hoursOf(f.clock), node: 'free' as const, i })).filter((x) => FREE[x.i].clock && here(FREE[x.i].who.pos));
+  const wantedItems: Item[] = BOARD_WANTED.map((w, i) => ({ key: w.id, hrs: 3e4, node: 'wanted' as const, i })).filter((x) => here(BOARD_WANTED[x.i].pos));
+  const freeItems: Item[] = [...FREE]
+    .map((f, i) => ({ f, i }))
+    .filter(({ f }) => here(f.who.pos))
+    .sort((a, b) => (sort === 'form' ? b.f.form - a.f.form : sort === 'value' ? b.f.who.value - a.f.who.value : a.f.who.name.localeCompare(b.f.who.name)))
+    .map(({ f, i }) => ({ key: f.id, hrs: 0, node: 'free' as const, i }));
+  const stream: Item[] =
+    kind === 'listed' ? [...listedItems].sort((a, b) => a.hrs - b.hrs)
+    : kind === 'free' ? freeItems
+    : kind === 'wanted' ? wantedItems
+    : [...listedItems, ...liveFree, ...wantedItems].sort((a, b) => a.hrs - b.hrs);
 
   return (
     <div className={styles.root}>
@@ -735,126 +838,194 @@ export default function BoardPrototype() {
           <section className={styles.board} aria-labelledby="h-board">
             <div className={styles.head}>
               <h2 id="h-board" className={styles.headT}>The Board</h2>
-              <div className={styles.headEnd}>
-                <SegmentedControl
-                  variant="ink"
-                  size="sm"
-                  ariaLabel="Board view"
-                  value={view}
-                  onChange={(v) => {
-                    setView(v);
-                    setPos(null);
-                  }}
-                  options={[
-                    { value: 'listed', label: 'Listed' },
-                    { value: 'wanted', label: 'Wanted' },
-                  ]}
-                />
-              </div>
+              {kind === 'free' && (
+                <div className={styles.headEnd}>
+                  <Select
+                    size="sm"
+                    ariaLabel="Sort"
+                    value={sort}
+                    onChange={(v) => setSort(v as Sort)}
+                    items={[
+                      { value: 'form', label: 'Form' },
+                      { value: 'value', label: 'Value' },
+                      { value: 'name', label: 'Name' },
+                    ]}
+                  />
+                </div>
+              )}
             </div>
 
-            <div className={styles.rail} role="group" aria-label="Position">
-              {POSITIONS.map((p) => {
-                const sup = supplyAt(p);
-                const dem = demandAt(p);
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    className={`${styles.posChip} ${pos === p ? styles.posChipOn : ''}`}
-                    style={posStyle(p)}
-                    disabled={sup + dem === 0}
-                    aria-pressed={pos === p}
-                    aria-label={`${p}, ${sup} listed, ${dem} wanted`}
-                    onClick={() => setPos(pos === p ? null : p)}
-                  >
-                    {p}
-                    {/* Supply and demand at this position, as two bars. */}
-                    <span className={styles.depth} aria-hidden="true">
-                      <i style={{ height: 4 + sup * 6 }} />
-                      <i className={styles.depthWant} style={{ height: 4 + dem * 6 }} />
-                    </span>
-                  </button>
-                );
-              })}
+            {/* One stream. What kind of post it is, is a filter, not a place. */}
+            <div className={styles.kinds}>
+              <SegmentedControl
+                fullWidth
+                size="sm"
+                ariaLabel="Kind"
+                value={kind}
+                onChange={(v) => setKind(v as Kind)}
+                options={[
+                  { value: 'all', label: 'All' },
+                  { value: 'listed', label: 'Listed' },
+                  { value: 'free', label: 'Free' },
+                  { value: 'wanted', label: 'Wanted' },
+                  { value: 'deals', label: 'Deals' },
+                ]}
+              />
             </div>
+
+            {kind !== 'deals' && (
+              <div className={styles.rail} role="group" aria-label="Position">
+                {POSITIONS.map((p) => {
+                  const sup = supplyAt(p);
+                  const dem = demandAt(p);
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      className={`${styles.posChip} ${pos === p ? styles.posChipOn : ''}`}
+                      style={posStyle(p)}
+                      disabled={sup + dem === 0}
+                      aria-pressed={pos === p}
+                      aria-label={`${p}, ${sup} for sale, ${dem} wanted`}
+                      onClick={() => setPos(pos === p ? null : p)}
+                    >
+                      {p}
+                      {/* Supply and demand at this position, as two bars. */}
+                      <span className={styles.depth} aria-hidden="true">
+                        <i style={{ height: 4 + sup * 6 }} />
+                        <i className={styles.depthWant} style={{ height: 4 + dem * 6 }} />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             <div className={styles.rows}>
-              {view === 'listed' &&
-                listed.map((r) => (
-                  <div key={r.id} className={styles.lrow}>
-                    <button type="button" className={styles.rowHit} aria-label={r.who.name} onClick={() => setSheet({ kind: 'hub', who: r.who })} />
-                    <Portrait photoUrl={String(r.who.code)} name={r.who.name} club={r.who.club} size="sm" headTopPct={null} headWidthPct={null} photoVersion={null} />
-                    <span className={styles.lBody}>
-                      <span className={`g-namerow ${styles.lName}`}>
-                        <PositionBadge position={r.who.pos} size="sm" />
-                        <span className={styles.clip}>{r.who.name}</span>
+              {kind !== 'deals' &&
+                stream.map((it) => {
+                  if (it.node === 'wanted') {
+                    const r = BOARD_WANTED[it.i];
+                    return (
+                      <div key={it.key} className={styles.wrow}>
+                        <Mgr k={r.from} size={34} />
+                        <Icon name="chevron-right" size={14} className={styles.wArrow} />
+                        {r.who ? (
+                          <Portrait photoUrl={String(r.who.code)} name={r.who.name} club={null} size="sm" headTopPct={null} headWidthPct={null} photoVersion={null} />
+                        ) : (
+                          <span className={styles.posTile} style={posStyle(r.pos)}>{r.pos}</span>
+                        )}
+                        <span className={styles.lBody}>
+                          <span className={`g-namerow ${styles.lName}`}>
+                            <PositionBadge position={r.pos} size="sm" />
+                            {r.who ? <span className={styles.clip}>{r.who.name}</span> : <Level level={r.level!} />}
+                          </span>
+                          <span className={styles.lSub}>{MGR[r.from].short}</span>
+                        </span>
+                        <span className={styles.lEnd}>
+                          <Money n={r.budget} />
+                          <Stances list={r.stance} />
+                        </span>
+                      </div>
+                    );
+                  }
+                  const free = it.node === 'free';
+                  const r = free ? null : BOARD_LISTED[it.i];
+                  const f = free ? FREE[it.i] : null;
+                  const who = (r?.who ?? f!.who) as Person;
+                  const clock = r ? r.clock : f!.clock;
+                  const left = r ? r.left : f!.left;
+                  const price = r ? r.price : (f!.price ?? floorOf(who));
+                  const crests = r ? r.rivals : f!.bids.map((b) => b.who);
+                  return (
+                    <div key={it.key} className={styles.lrow}>
+                      <button type="button" className={styles.rowHit} aria-label={who.name} onClick={() => setSheet({ kind: 'hub', who })} />
+                      <Portrait photoUrl={String(who.code)} name={who.name} club={who.club} size="sm" headTopPct={null} headWidthPct={null} photoVersion={null} />
+                      <span className={styles.lBody}>
+                        <span className={`g-namerow ${styles.lName}`}>
+                          <PositionBadge position={who.pos} size="sm" />
+                          <span className={styles.clip}>{who.name}</span>
+                        </span>
+                        <span className={styles.lSub}>
+                          {r ? (
+                            <>
+                              <Mgr k={r.owner} size={16} />
+                              {MGR[r.owner].short}
+                            </>
+                          ) : (
+                            <>
+                              <span className={styles.freeTag}>Free</span>
+                              <span className={styles.rate}>{f!.form.toFixed(1)}</span>
+                            </>
+                          )}
+                          {crests.length > 0 && <CrestStack keys={crests} size={20} />}
+                        </span>
                       </span>
-                      <span className={styles.lSub}>
-                        <Mgr k={r.owner} size={16} />
-                        {MGR[r.owner].short}
-                        {r.rivals.length > 0 && <CrestStack keys={r.rivals} size={20} />}
+                      <span className={styles.lEnd}>
+                        <Money n={price} />
+                        {clock ? <span className={`${styles.clock} ${left! < 0.2 ? styles.clockUrgent : ''}`}>{clock}</span> : !free && <span className={styles.offersOnly}>Offers</span>}
+                        {offers[who.id] && (
+                          <span className={styles.offerPill}>
+                            <Icon name="arrow-up" size={12} />€{offers[who.id].amount}m
+                          </span>
+                        )}
                       </span>
+                      <span className={styles.star}>
+                        <IconButton
+                          label={targetOf(who.id) ? 'Edit Target' : 'Target'}
+                          variant="ghost"
+                          size="md"
+                          aria-pressed={!!targetOf(who.id)}
+                          className={targetOf(who.id) ? styles.starOn : ''}
+                          icon={<Icon name="star" size={18} fill={targetOf(who.id) ? 'currentColor' : 'none'} />}
+                          onClick={() => {
+                            const t = targetOf(who.id);
+                            if (t) setSheet({ kind: 'target', who: t.who, pos: t.pos, editing: t });
+                            else addTarget(who, who.pos);
+                          }}
+                        />
+                      </span>
+                      <span className={styles.lActions}>
+                        {!free && <Button size="sm" variant="secondary">Offer</Button>}
+                        {(free || clock) && <Button size="sm" variant="primary">Bid</Button>}
+                      </span>
+                      <TimeBar left={left} />
+                    </div>
+                  );
+                })}
+
+              {kind === 'deals' &&
+                deals.map((d) => (
+                  <div key={d.id} className={`${styles.deal} ${d.dir === 'in' ? styles.dealIn : ''}`}>
+                    <Mgr k={d.with} size={34} />
+                    <span className={styles.dealAssets}>
+                      <FaceStack people={d.give} />
+                      <Icon name="repeat" size={14} />
+                      <FaceStack people={d.get} />
                     </span>
                     <span className={styles.lEnd}>
-                      <Money n={r.price} />
-                      {r.clock ? <span className={`${styles.clock} ${r.left! < 0.2 ? styles.clockUrgent : ''}`}>{r.clock}</span> : <span className={styles.offersOnly}>Offers</span>}
-                      {offers[r.who.id] && (
-                        <span className={styles.offerPill}>
-                          <Icon name="arrow-up" size={12} />€{offers[r.who.id].amount}m
+                      {d.cash !== 0 && (
+                        <span className={styles.cash}>
+                          <Icon name={d.cash > 0 ? 'arrow-up' : 'arrow-down'} size={14} />
+                          <Money n={Math.abs(d.cash)} />
                         </span>
                       )}
-                    </span>
-                    <span className={styles.star}>
-                      <IconButton
-                        label={targetOf(r.who.id) ? 'Edit Target' : 'Target'}
-                        variant="ghost"
-                        size="md"
-                        aria-pressed={!!targetOf(r.who.id)}
-                        className={targetOf(r.who.id) ? styles.starOn : ''}
-                        icon={<Icon name="star" size={18} fill={targetOf(r.who.id) ? 'currentColor' : 'none'} />}
-                        onClick={() => {
-                          const t = targetOf(r.who.id);
-                          if (t) setSheet({ kind: 'target', who: t.who, pos: t.pos, editing: t });
-                          else addTarget(r.who, r.who.pos);
-                        }}
-                      />
-                    </span>
-                    <span className={styles.lActions}>
-                      <Button size="sm" variant="secondary">Offer</Button>
-                      {r.clock && <Button size="sm" variant="primary">Bid</Button>}
-                    </span>
-                    <TimeBar left={r.left} />
-                  </div>
-                ))}
-
-              {view === 'wanted' &&
-                wanted.map((r) => (
-                  <div key={r.id} className={styles.wrow}>
-                    <Mgr k={r.from} size={34} />
-                    <Icon name="chevron-right" size={14} className={styles.wArrow} />
-                    {r.who ? (
-                      <Portrait photoUrl={String(r.who.code)} name={r.who.name} club={null} size="sm" headTopPct={null} headWidthPct={null} photoVersion={null} />
-                    ) : (
-                      <span className={styles.posTile} style={posStyle(r.pos)}>{r.pos}</span>
-                    )}
-                    <span className={styles.lBody}>
-                      <span className={`g-namerow ${styles.lName}`}>
-                        <PositionBadge position={r.pos} size="sm" />
-                        {r.who ? <span className={styles.clip}>{r.who.name}</span> : <Level level={r.level!} />}
+                      <span className={d.dir === 'in' ? styles.dealNeeds : styles.pendingClock}>
+                        <Icon name={d.dir === 'in' ? 'bell' : 'activity'} size={14} />
                       </span>
-                      <span className={styles.lSub}>{MGR[r.from].short}</span>
                     </span>
-                    <span className={styles.lEnd}>
-                      <Money n={r.budget} />
-                      <Stances list={r.stance} />
-                    </span>
+                    {d.dir === 'in' && (
+                      <span className={styles.dealActions}>
+                        <Button size="sm" variant="secondary" fullWidth onClick={() => toast('Declined')}>Decline</Button>
+                        <Button size="sm" variant="primary" fullWidth onClick={() => toast.success('Accepted')}>Accept</Button>
+                      </span>
+                    )}
                   </div>
                 ))}
 
-              {((view === 'listed' && listed.length === 0) || (view === 'wanted' && wanted.length === 0)) && (
+              {((kind !== 'deals' && stream.length === 0) || (kind === 'deals' && deals.length === 0)) && (
                 <p className={styles.empty}>
-                  <PositionBadge position={pos} size="md" />
+                  <Icon name={kind === 'deals' ? 'repeat' : 'search'} size={20} />
                 </p>
               )}
             </div>
@@ -931,7 +1102,7 @@ function Sheets({
   targeted: (personId: string) => Target | undefined;
   market: (p: Person) => Market;
   onStar: (p: Person) => void;
-  onSend: (mode: 'offer' | 'bid', p: Person, amount: number, to?: MgrKey) => void;
+  onSend: (mode: 'offer' | 'bid', p: Person, amount: number, to?: MgrKey, buying?: boolean) => void;
   onWithdraw: (p: Person) => void;
   onTarget: (p: Person) => void;
   onRole: (pos: string) => void;
@@ -1008,7 +1179,7 @@ function WhoSheet({
     { p: P.wirtz, owner: 'tea' },
     { p: P.saka, owner: 'hayden' },
   ];
-  const free = [P.kroupi];
+  const free = FREE.map((f) => f.who);
   const match = (p: Person) => !q.trim() || `${p.name} ${p.club}`.toLowerCase().includes(q.trim().toLowerCase());
 
   /** `mark` says what a tap does: add at once (plus), open (chevron) or already added (tick). */
@@ -1106,7 +1277,7 @@ function AudiencePicker({ value, onChange, owner }: { value: Audience; onChange:
 function TargetSheet({ sheet, onClose }: { sheet: Extract<Sheet, { kind: 'target' }>; onClose: () => void }) {
   const { who, editing } = sheet;
   const isRole = !who;
-  const free = !!who && who.id === 'kroupi';
+  const free = !!who && FREE_IDS.has(who.id);
   const owner = editing?.owner ?? (who && !free ? ({ gabriel: 'pizza', haaland: 'hayden', wirtz: 'tea' } as Record<string, MgrKey>)[who.id] : undefined);
 
   const [audience, setAudience] = useState<Audience>(editing?.audience ?? (isRole ? 'league' : 'you'));
@@ -1236,7 +1407,7 @@ function HubSheet({
 }) {
   const { p } = m;
   const price = m.listing?.price ?? p.value;
-  const bidAmount = m.free ? Math.round(p.value * 0.6) : (m.listing?.price ?? 0) + 1;
+  const bidAmount = m.free && !m.listing?.clock ? floorOf(p) : (m.listing?.price ?? 0) + 1;
   const canBid = m.free || !!m.listing?.clock;
   const offerAmount = m.listing?.price ?? p.value;
 
@@ -1325,13 +1496,25 @@ function HubSheet({
                 <TimeBar left={m.listing.left} />
               </span>
             ) : (
-              <span className={styles.offersOnly}>Offers</span>
+              !m.free && <span className={styles.offersOnly}>Offers</span>
             )}
           </div>
         )}
 
+        {/* The bid history: newest and highest first. */}
+        {m.listing?.bids && m.listing.bids.length > 0 && (
+          <div className={styles.ladder}>
+            {m.listing.bids.map((b, i) => (
+              <span key={`${b.who}-${b.amount}`} className={`${styles.rung} ${i === 0 ? styles.rungTop : ''}`}>
+                <Mgr k={b.who} size={22} />
+                <b className={styles.money}>€{b.amount}m</b>
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Who else is after him: the same star as the target button, then their crests. */}
-        {m.rivals.some((k) => k !== 'me') && (
+        {!m.listing?.bids?.length && m.rivals.some((k) => k !== 'me') && (
           <div className={styles.hubRow}>
             <Icon name="star" size={16} />
             <CrestStack keys={m.rivals.filter((k) => k !== 'me')} size={28} lead={m.lead} />
@@ -1399,7 +1582,7 @@ function OfferSheet({
 }: {
   s: Extract<Sheet, { kind: 'offer' }>;
   onClose: () => void;
-  onSend: (mode: 'offer' | 'bid', p: Person, amount: number, to?: MgrKey) => void;
+  onSend: (mode: 'offer' | 'bid', p: Person, amount: number, to?: MgrKey, buying?: boolean) => void;
 }) {
   const startFor = (p: Person) => (s.buying ? (s.amount ?? p.value) : Math.min(p.value, s.budget ?? p.value));
   // Several of yours could answer: start on the dearest one the buyer can afford.
@@ -1421,7 +1604,7 @@ function OfferSheet({
       padded
       footer={
         <div className={styles.footer}>
-          <Button variant="primary" onClick={() => onSend(s.mode, p, amount, s.counterpart)}>
+          <Button variant="primary" onClick={() => onSend(s.mode, p, amount, s.counterpart, s.buying)}>
             {s.mode === 'bid' ? 'Bid' : 'Send'} €{amount}m
           </Button>
         </div>
