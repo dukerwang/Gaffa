@@ -9,6 +9,18 @@
 
 import type { CardBack, CardGamelogEntry } from './cardCache';
 
+/**
+ * Whether a fixture is still ahead. FPL's `finished` flag is not the test: it
+ * stays false for hours after full time while the post-match review runs, so a
+ * game already played reads as upcoming. A fixture with no kickoff time yet
+ * (not scheduled) is still ahead.
+ */
+export function yetToKickOff(kickoff: string | null | undefined, now: number = Date.now()): boolean {
+  if (!kickoff) return true;
+  const t = Date.parse(kickoff);
+  return Number.isNaN(t) || t > now;
+}
+
 export interface SeasonFigure {
   value: string;
   label: string;
