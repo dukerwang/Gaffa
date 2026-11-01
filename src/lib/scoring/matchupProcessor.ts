@@ -280,6 +280,18 @@ export async function processMatchupsForGameweek(
             updatePayload.winner_team_id = winnerId;
         }
 
+        // A live pass that moves nothing (same scores, still live, no lineup
+        // correction) skips the write. The sync calls this every five minutes
+        // and each update is a new row version plus a Realtime broadcast.
+        const unchangedLive =
+            !finished &&
+            m.status === 'live' &&
+            Number(m.score_a) === scoreA &&
+            Number(m.score_b) === scoreB &&
+            updatePayload.lineup_a === undefined &&
+            updatePayload.lineup_b === undefined;
+        if (unchangedLive) continue;
+
         const { error } = await admin
             .from('matchups')
             .update(updatePayload)
