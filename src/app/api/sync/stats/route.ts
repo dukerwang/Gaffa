@@ -520,10 +520,10 @@ async function syncFplLiveRatings(
     console.warn('PL match lineups not synced:', err);
   }
 
-  // Everything in this block is derived from player_stats, so when the tick
-  // wrote nothing it would recompute exactly what the previous tick left
-  // behind. An idle tick (between matches, or once a match's stats have
-  // settled) skips it. The post-lockdown pass and an explicit ?gw= re-sync
+  // Totals, form and ranks are derived from player_stats alone, so when the
+  // tick wrote nothing they would recompute exactly what the previous tick
+  // left behind. An idle tick (between matches, or once a match's stats have
+  // settled) skips them. The post-lockdown pass and an explicit ?gw= re-sync
   // always refresh, so a refresh that failed heals on the next change or at
   // the final pass.
   const refreshDerived = wroteAnything || isFinished || force;
@@ -544,17 +544,21 @@ async function syncFplLiveRatings(
       // A rank refresh failing must not lose the stats that were just written.
       console.error('recomputePositionRanks failed:', err);
     }
+  }
 
-    // Eagerly recompute this gameweek's matchup totals so Realtime subscribers
-    // (LiveMatchupCard, matchup detail pages) see fresh scores on the sync's own
-    // schedule instead of waiting for someone to load a page. `finished=false`
-    // — this is a live-pass update, not the final lock-in, which stays exactly
-    // where it already was: resolveAllStalledGameweeks below.
-    try {
-      await processMatchupsForGameweek(gameweek, false);
-    } catch (err) {
-      console.error('processMatchupsForGameweek (live pass) failed:', err);
-    }
+  // Eagerly recompute this gameweek's matchup totals so Realtime subscribers
+  // (LiveMatchupCard, matchup detail pages) see fresh scores on the sync's own
+  // schedule instead of waiting for someone to load a page. `finished=false`
+  // — this is a live-pass update, not the final lock-in, which stays exactly
+  // where it already was: resolveAllStalledGameweeks below.
+  //
+  // Runs every tick, even an idle one: team scores also depend on which clubs
+  // have finished (auto-subs), which changes with the clock rather than with
+  // any player_stats row. It only writes a matchup whose score moved.
+  try {
+    await processMatchupsForGameweek(gameweek, false);
+  } catch (err) {
+    console.error('processMatchupsForGameweek (live pass) failed:', err);
   }
 
   // Mark the post-lockdown pass BEFORE resolving. resolveAllStalledGameweeks
