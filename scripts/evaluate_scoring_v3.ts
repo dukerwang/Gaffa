@@ -264,6 +264,8 @@ async function main() {
   const perApp = {} as Record<string, Record<StepKey, number[]>>;
   // Starts: FPL doesn't record who started, so 60+ minutes stands in for it.
   const perStart = {} as Record<string, Record<StepKey, number[]>>;
+  // Agreement with FotMob's own match rating, 60+ minutes (see printAgreement).
+  const agreement: { pos: GranularPosition; fotmob: number; ours: Record<StepKey, number> }[] = [];
   for (const r of apps) {
     const pos = r.players.primary_position as GranularPosition;
     const meta = playerMeta.get(r.player_id)!;
@@ -282,8 +284,14 @@ async function main() {
     perApp[pos] ??= Object.fromEntries(STEPS.map((s) => [s.key, []])) as unknown as Record<StepKey, number[]>;
     const gcGroup = GC_GROUP[pos];
     const gcKey = Math.min(r.stats.goals_conceded ?? 0, 3);
+    const fotmobRating = fotmob.get(`${r.player_id}:${r.match_id}`)?.stats['FotMob rating']?.value;
+    const agreeRow = r.stats.minutes_played >= 60 && typeof fotmobRating === 'number'
+      ? { pos, fotmob: fotmobRating, ours: {} as Record<StepKey, number> } : null;
+    if (agreeRow) agreement.push(agreeRow);
     for (const step of STEPS) {
-      const pts = calculateMatchRating(statsFor(r, step), pos, refs[step.key], pos, step.options).fantasyPoints;
+      const result = calculateMatchRating(statsFor(r, step), pos, refs[step.key], pos, step.options);
+      const pts = result.fantasyPoints;
+      if (agreeRow) agreeRow.ours[step.key] = result.rating;
       line.pts[step.key] += pts;
       perApp[pos][step.key].push(pts);
       if (r.stats.minutes_played >= 60) ((perStart[pos] ??= {} as Record<StepKey, number[]>)[step.key] ??= []).push(pts);
@@ -330,6 +338,7 @@ async function main() {
   console.log('\nPoints per start (60+ min) by position');
   console.log('pos  starts' + STEPS.map((s) => s.key.padStart(8)).join(''));
   for (const p of positions) console.log(`${p.pos.padEnd(4)} ${String(p.starts).padStart(6)}` + STEPS.map((s) => (p.startPpg as any)[s.key].toFixed(2).padStart(8)).join(''));
+  printAgreement(agreement);
   console.log('\nMean points by goals conceded, 80+ minutes');
   console.log('group gc ' + STEPS.map((s) => s.key.padStart(8)).join(''));
   const gcTable = Object.entries(gcAgg).flatMap(([group, byGc]) => Object.entries(byGc).map(([gc, bySteps]) => ({
@@ -349,6 +358,95 @@ async function main() {
       STEPS.map((s) => `${l.pts[s.key].toFixed(0).padStart(5)} #${String(l.rank[s.key]).padEnd(4)}`).join(' ') + `  lbp/90 ${l.lbp90}  aerial net/90 ${l.aerial90}`);
   }
   console.log(`\nWrote ${board.length} players to ${out}`);
+}
+
+/** Spearman rank correlation. */
+function spearman(x: number[], y: number[]): number {
+  const rank = (a: number[]) => {
+    const idx = a.map((v, i) => [v, i] as const).sort((p, q) => p[0] - q[0]);
+    const r = new Array<number>(a.length);
+    for (let i = 0; i < idx.length;) {
+      let j = i; while (j + 1 < idx.length && idx[j + 1][0] === idx[i][0]) j++;
+      for (let k = i; k <= j; k++) r[idx[k][1]] = (i + j) / 2;
+      i = j + 1;
+    }
+    return r;
+  };
+  const rx = rank(x), ry = rank(y), n = x.length, mx = mean(rx), my = mean(ry);
+  let sxy = 0, sxx = 0, syy = 0;
+  for (let i = 0; i < n; i++) { sxy += (rx[i] - mx) * (ry[i] - my); sxx += (rx[i] - mx) ** 2; syy += (ry[i] - my) ** 2; }
+  return sxy / Math.sqrt(sxx * syy);
+}
+
+/**
+ * The no-regression gate. FotMob's rating is an independent judgement of each
+ * performance, so a change should not make Gaffa's rating agree with it less,
+ * at any position. Three views:
+ *  - Spearman per position: does the change keep good games above bad ones?
+ *  - Spearman pooled: does it keep positions on one scale with each other?
+ *  - Changed appearances: for the games a step actually moves (rating moved
+ *    by 0.01+ against the step before), the gap between Gaffa's percentile
+ *    and FotMob's within the position, before and after. A whole-season
+ *    correlation barely notices a rule that touches 1% of games; this does.
+ * FotMob is a benchmark, not a target. Its rating is a model with its own
+ * blind spots, and Gaffa aims to do better than it where FotMob and SofaScore
+ * are unreliable. So a step is never tuned to agree, and a step that agrees
+ * less somewhere either goes back or names the reason it disagrees on
+ * purpose. The bootstrap interval is a rough guide to noise (resampling
+ * duplicates appearances, which adds ties), not a test.
+ */
+function printAgreement(rows: { pos: GranularPosition; fotmob: number; ours: Record<StepKey, number> }[]) {
+  console.log(`\nAgreement with FotMob rating (Spearman), ${rows.length} appearances of 60+ minutes`);
+  console.log('pos      n' + STEPS.map((s) => s.key.padStart(8)).join(''));
+  for (const pos of [...POSITIONS, 'all' as const]) {
+    const sub = pos === 'all' ? rows : rows.filter((r) => r.pos === pos);
+    if (sub.length < 30) continue;
+    console.log(`${pos.padEnd(4)} ${String(sub.length).padStart(5)}` + STEPS.map((s) => spearman(sub.map((r) => r.ours[s.key]), sub.map((r) => r.fotmob)).toFixed(3).padStart(8)).join(''));
+  }
+  // Each step against the one before, per position: the change in Spearman
+  // with a 95% bootstrap interval (300 resamples of appearances, paired).
+  // ▼ = significantly less agreement, ▲ = significantly more, · = within noise.
+  console.log('\nChange in agreement against the step before (x1000), 95% bootstrap interval');
+  console.log('pos  ' + STEPS.slice(1).map((s) => s.key.padStart(20)).join(''));
+  let seed = 1;
+  const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+  for (const pos of [...POSITIONS, 'all' as const]) {
+    const sub = pos === 'all' ? rows : rows.filter((r) => r.pos === pos);
+    if (sub.length < 30) continue;
+    const cells = STEPS.slice(1).map((step, i) => {
+      const prev = STEPS[i].key, cur = step.key;
+      const d = (rs: typeof sub) => spearman(rs.map((r) => r.ours[cur]), rs.map((r) => r.fotmob)) - spearman(rs.map((r) => r.ours[prev]), rs.map((r) => r.fotmob));
+      const point = d(sub);
+      if (sub.every((r) => r.ours[cur] === r.ours[prev])) return '0'.padStart(20);
+      const boots = Array.from({ length: 300 }, () => d(Array.from({ length: sub.length }, () => sub[Math.floor(rand() * sub.length)]))).sort((a, b) => a - b);
+      const lo = boots[7], hi = boots[292];
+      const mark = hi < 0 ? '▼' : lo > 0 ? '▲' : '·';
+      return `${mark}${(1000 * point).toFixed(1)} [${(1000 * lo).toFixed(1)},${(1000 * hi).toFixed(1)}]`.padStart(20);
+    });
+    console.log(`${pos.padEnd(4)} ${cells.join('')}`);
+  }
+  // Percentile within position, per step and for FotMob.
+  const pct = (vals: number[]) => {
+    const sorted = [...vals].sort((a, b) => a - b);
+    return (x: number) => { let lo = 0, hi = sorted.length; while (lo < hi) { const m = (lo + hi) >> 1; if (sorted[m] < x) lo = m + 1; else hi = m; } return lo / sorted.length; };
+  };
+  const byPos = new Map<GranularPosition, typeof rows>();
+  for (const r of rows) byPos.set(r.pos, [...(byPos.get(r.pos) ?? []), r]);
+  console.log('\nChanged appearances: gap between Gaffa and FotMob percentile within position, before -> after');
+  for (let i = 1; i < STEPS.length; i++) {
+    const prev = STEPS[i - 1].key, cur = STEPS[i].key;
+    let n = 0, before = 0, after = 0, closer = 0, further = 0;
+    for (const sub of byPos.values()) {
+      const fm = pct(sub.map((r) => r.fotmob)), p0 = pct(sub.map((r) => r.ours[prev])), p1 = pct(sub.map((r) => r.ours[cur]));
+      for (const r of sub) {
+        if (Math.abs(r.ours[cur] - r.ours[prev]) < 0.01) continue;
+        const g0 = Math.abs(p0(r.ours[prev]) - fm(r.fotmob)), g1 = Math.abs(p1(r.ours[cur]) - fm(r.fotmob));
+        n++; before += g0; after += g1;
+        if (g1 < g0 - 0.005) closer++; else if (g1 > g0 + 0.005) further++;
+      }
+    }
+    console.log(`${cur.padEnd(7)} ${String(n).padStart(5)} changed   gap ${(100 * before / (n || 1)).toFixed(1)} -> ${(100 * after / (n || 1)).toFixed(1)} pct points   closer ${closer}, further ${further}`);
+  }
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
