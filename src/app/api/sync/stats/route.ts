@@ -377,11 +377,9 @@ async function syncFplLiveRatings(
             };
 
             const mapped = mapFplLiveToRawStats(fixtureFplStats);
-            const rawStats = withEngineFields(
-              ictAbsent ? applyIctImputation(mapped, dbPlayer.primary_position) : mapped,
-              el.id,
-              fixtureId,
-            );
+            // FotMob fields first: imputation reads a V3 row's penalties.
+            const withFields = withEngineFields(mapped, el.id, fixtureId);
+            const rawStats = ictAbsent ? applyIctImputation(withFields, dbPlayer.primary_position) : withFields;
             // The engine scores the row as V2 or V3 from rawStats.engine_version.
             const v2 = calculateMatchRating(
               rawStats,

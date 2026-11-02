@@ -1,7 +1,7 @@
 /**
  * Dry run of the V3 stats sync for one finished gameweek. Writes nothing.
  *
- *   node_modules/.bin/tsx scripts/dry_run_v3_gameweek.ts --gw=5 [--season=2026-27]
+ *   node_modules/.bin/tsx scripts/dry_run_v3_gameweek.ts --gw=5 [--season=2026-27] [--player=Palmer]
  *
  * Rebuilds each appearance from FPL's live payload the way /api/sync/stats
  * does, then:
@@ -9,6 +9,11 @@
  *      which checks this rebuild matches what the sync actually wrote;
  *   2. adds the FotMob fields through the sync's own functions
  *      (fetchGameweekEnrichment, withV3Fields) and scores it as V3.
+ *
+ * Before the gameweek's lockdown FPL withholds ICT, and the rebuild imputes it
+ * as the sync does: V2 from FPL's stats alone, V3 after the FotMob fields.
+ * --player prints that player's components under V2, V3 with penalties left
+ * in, and V3.
  *
  * Only the season's current gameweeks can be checked: FPL's live endpoint
  * serves the current season.
@@ -18,6 +23,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { calculateMatchRating, mapFplLiveToRawStats } from '../src/lib/scoring/engine';
 import { loadReferenceStats } from '../src/lib/scoring/matchups';
 import { appearanceKey, fetchGameweekEnrichment, withV3Fields } from '../src/lib/fotmob/gameweekEnrichment';
+import { applyIctImputation, isIctBlockAbsent } from '../src/lib/scoring/ictImputation';
 import { slugMapFromBootstrapTeams } from '../src/lib/clubs/registry';
 import type { GranularPosition } from '../src/types';
 import { fetchAll } from './lib/fetchAll';
@@ -30,6 +36,7 @@ process.env.VITEST = '1'; // loadReferenceStats: read the table directly instead
 const arg = (k: string) => process.argv.find((a) => a.startsWith(`--${k}=`))?.split('=')[1];
 const gameweek = Number(arg('gw'));
 const season = arg('season') ?? '2026-27';
+const playerName = arg('player')?.toLowerCase();
 const FPL = 'https://fantasy.premierleague.com/api';
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
@@ -49,6 +56,10 @@ async function main() {
   const info = new Map<number, { code: number; et: 1 | 2 | 3 | 4 }>(boot.elements.map((e: any) => [e.id, { code: e.code, et: e.element_type }]));
   const slugOf = slugMapFromBootstrapTeams(boot.teams);
 
+  const ictAbsent = isIctBlockAbsent((live.elements as any[]).map((el) => ({
+    minutes: el.stats.minutes ?? 0, ictIndex: parseFloat(el.stats.ict_index) || 0,
+  })));
+  if (ictAbsent) console.log('ICT withheld (before lockdown): imputing as the sync does');
   const t0 = Date.now();
   const enrichment = await fetchGameweekEnrichment(season, (fixtures as any[]).map((f) => ({
     fplFixtureId: f.id, homeSlug: slugOf.get(f.team_h) ?? '', awaySlug: slugOf.get(f.team_a) ?? '',
@@ -87,7 +98,8 @@ async function main() {
         defensive_contribution: Math.round((el.stats.defensive_contribution ?? 0) * ratio),
       });
       const pos = p.primary_position as GranularPosition;
-      const v2 = calculateMatchRating(raw, pos, refStats as any).fantasyPoints;
+      const v2Stats = ictAbsent ? applyIctImputation(raw, pos) : raw;
+      const v2 = calculateMatchRating(v2Stats, pos, refStats as any).fantasyPoints;
       const key = `${p.id}:${ex.fixture}`;
       if (storedPts.has(key)) {
         compared++;
@@ -97,8 +109,23 @@ async function main() {
       const i = info.get(el.id);
       const fotmob = i ? enrichment.byAppearance.get(appearanceKey(ex.fixture, i.code)) : undefined;
       if (!fotmob) missing++;
-      const v3 = calculateMatchRating(withV3Fields(raw, i?.et, fotmob), pos, refStats as any).fantasyPoints;
+      const withFields = withV3Fields(raw, i?.et, fotmob);
+      const v3Stats = ictAbsent ? applyIctImputation(withFields, pos) : withFields;
+      const v3 = calculateMatchRating(v3Stats, pos, refStats as any).fantasyPoints;
       rows.push({ name: p.web_name, pos, min: mins, v2, v3 });
+      if (playerName && p.web_name.toLowerCase() === playerName) {
+        const runs: [string, any, object | undefined][] = [
+          ['V2', v2Stats, undefined],
+          // Penalties left in: imputed from the V2 inputs, scored without the rule.
+          ['V3, penalties left in', ictAbsent ? { ...applyIctImputation(raw, pos), ...withFields, ict_imputed: true, influence: v2Stats.influence, creativity: v2Stats.creativity, threat: v2Stats.threat } : withFields, { penaltiesOnce: false }],
+          ['V3', v3Stats, undefined],
+        ];
+        for (const [label, st, options] of runs) {
+          const r = calculateMatchRating(st, pos, refStats as any, undefined, options as any);
+          console.log(`${p.web_name} fixture ${ex.fixture} ${label}: rating ${r.rating.toFixed(2)}, points ${r.fantasyPoints.toFixed(2)}`);
+          for (const b of r.breakdown) console.log(`  ${b.key.padEnd(17)} ${b.score.toFixed(2)}  ${b.detail ?? ''}`);
+        }
+      }
     }
   }
   console.log(`Rebuilt V2 matches stored points for ${v2Match}/${compared} appearances${v2Diffs.length ? `; e.g. ${v2Diffs.join('; ')}` : ''}`);

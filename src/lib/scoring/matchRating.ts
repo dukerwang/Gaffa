@@ -90,6 +90,41 @@ const BPS_PER_PENALTY_GOAL = 12;
 const BPS_PER_ASSIST = 9;
 
 /**
+ * V3 counts a penalty once for the player who takes it. A scored penalty is a
+ * goal in Goal Involvement; a missed one costs BPS (-6, plus -3 for the missed
+ * big chance) in Match Impact. V2 also counted the kick in two more places,
+ * whatever its outcome:
+ *
+ * - Threat: FPL's Threat credits the kick as a shot. Over 2025-26's 92
+ *   penalties, regressing Threat on non-penalty xG and shots, open-play goals,
+ *   penalty goals and misses gives about 16 per penalty, scored or missed, so
+ *   a miss raised Threat (scratch/v3_pen/measure_penalty_ict.ts).
+ * - Finishing: goals minus xG, where a penalty is about 0.79 xG (Opta's value,
+ *   the same for every kick in FotMob's 2025-26 data). A scored penalty read
+ *   as +0.21 over xG and a miss as -0.79, on top of the miss's BPS.
+ *
+ * V3 judges Threat and Finishing on open play only: Threat less 16 per penalty
+ * taken, and non-penalty goals against non-penalty xG.
+ */
+export const PENALTY_XG = 0.79;
+export const PENALTY_THREAT = 16;
+
+/** Penalties taken in a V3 row: scored (FotMob) plus missed or saved (FPL). V2 rows read 0. */
+export function penaltiesTaken(stats: RawStats, options?: EngineOptions): { scored: number; missed: number } {
+    if (stats.engine_version !== 'v3' || options?.penaltiesOnce === false) return { scored: 0, missed: 0 };
+    return {
+        scored: Math.min(Math.max(stats.penalty_goals ?? 0, 0), stats.goals),
+        missed: Math.max(stats.penalties_missed ?? 0, 0),
+    };
+}
+
+/** Threat's raw input: FPL's Threat, less the penalties a V3 row took. */
+export function threatRawInput(stats: RawStats, options?: EngineOptions): number {
+    const { scored, missed } = penaltiesTaken(stats, options);
+    return Math.max(0, (stats.threat ?? 0) - PENALTY_THREAT * (scored + missed));
+}
+
+/**
  * V3 adds line-breaking passes to Match Impact at the rate FPL's BPS pays for
  * clearances, blocks and interceptions in 2026-27: 1 per 3. Breaking an
  * opponent's line with the ball counts the same as breaking up their play
@@ -134,6 +169,8 @@ export interface EngineOptions {
     substituteScaling?: boolean;
     /** false scores a V3 row against the references passed in, not v3ReferenceStats.json. */
     v3References?: boolean;
+    /** false leaves penalties in Threat and Finishing, as V2 does (see PENALTY_THREAT). */
+    penaltiesOnce?: boolean;
 }
 
 /**
@@ -440,11 +477,12 @@ function computeComponentScores(
         z: creaZ,
     };
 
-    // 4. Threat
-    const thr = stats.threat ?? 0;
+    // 4. Threat (V3: open play only, see PENALTY_THREAT)
+    const thr = threatRawInput(stats, options);
+    const pens = penaltiesTaken(stats, options);
     const threat: ComponentResult = {
         score: sigmoidNormalize(thr, volRef('threat').median, volRef('threat').stddev),
-        detail: `${thr.toFixed(1)}`,
+        detail: pens.scored + pens.missed > 0 ? `${thr.toFixed(1)} (penalties out)` : `${thr.toFixed(1)}`,
     };
 
     // 5. Defensive Score
@@ -500,9 +538,10 @@ function computeComponentScores(
         detail: goalParts.length > 0 ? goalParts.join(', ') : 'No goals or assists',
     };
 
-    const xg = stats.expected_goals ?? 0;
+    // V3: non-penalty goals against non-penalty xG (see PENALTY_XG).
+    const xg = Math.max(0, (stats.expected_goals ?? 0) - PENALTY_XG * (pens.scored + pens.missed));
     const xa = stats.expected_assists ?? 0;
-    const xgOutperf = g - xg;
+    const xgOutperf = (g - pens.scored) - xg;
     const xaOutperf = a - xa;
     const finInput = xgOutperf + (xaOutperf * 0.5);
 
@@ -510,7 +549,7 @@ function computeComponentScores(
     // 3× wider than V1's (0.15), massively deflating clinical strikers like Haaland.
     const finishing: ComponentResult = {
         score: sigmoidNormalize(finInput, GLOBAL_FINISHING_MEDIAN, GLOBAL_FINISHING_STDDEV),
-        detail: `${xgOutperf >= 0 ? '+' : ''}${xgOutperf.toFixed(2)} vs xG, ${xaOutperf >= 0 ? '+' : ''}${xaOutperf.toFixed(2)} vs xA`,
+        detail: `${xgOutperf >= 0 ? '+' : ''}${xgOutperf.toFixed(2)} vs ${pens.scored + pens.missed > 0 ? 'non-penalty ' : ''}xG, ${xaOutperf >= 0 ? '+' : ''}${xaOutperf.toFixed(2)} vs xA`,
     };
 
     // 9. Save Score (GK-only — non-GKs get a neutral 0.5)

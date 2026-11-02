@@ -40,7 +40,8 @@
 
 import coefficients from './ictImputation.json';
 import { extractFeatures, FEATURE_COUNT, POSITION_GROUP } from './ictFeatures';
-import type { GranularPosition } from '@/types';
+import { PENALTY_THREAT, PENALTY_XG, penaltiesTaken } from './matchRating';
+import type { GranularPosition, RawStats } from '@/types';
 
 export type IctTarget = 'influence' | 'creativity' | 'threat';
 
@@ -100,6 +101,23 @@ export function applyIctImputation<T extends Record<string, any>>(
     if ((Number(stats.minutes_played) || 0) <= 0) return stats;
     const est = imputeIct(stats, position);
     if (!est) return stats;
+    // The model reads a penalty through xG, which credits about 0.79 x 36 = 29
+    // Threat for an attacking midfielder's kick against FPL's real 16. When a
+    // V3 row knows its penalties, Threat is estimated from open play alone and
+    // FPL's 16 per penalty added back, so the row carries what FPL would
+    // publish and the engine takes penalties out the same way as for real
+    // figures (threatRawInput).
+    const { scored, missed } = penaltiesTaken(stats as unknown as RawStats);
+    if (scored + missed > 0) {
+        const openPlay = imputeIct({
+            ...stats,
+            goals: (Number(stats.goals) || 0) - scored,
+            penalties_missed: 0,
+            expected_goals: Math.max(0, (Number(stats.expected_goals) || 0) - PENALTY_XG * (scored + missed)),
+            bps: (Number(stats.bps) || 0) - 12 * scored + 6 * missed,
+        }, position);
+        if (openPlay) est.threat = Math.round((openPlay.threat + PENALTY_THREAT * (scored + missed)) * 10) / 10;
+    }
     return {
         ...stats,
         influence: est.influence,

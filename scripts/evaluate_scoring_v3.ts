@@ -35,6 +35,7 @@ import {
   type EngineOptions,
   fallbackElementType,
   matchImpactRawInput,
+  threatRawInput,
 } from '../src/lib/scoring/matchRating';
 import { CLUB_BY_SLUG, clubByFplCode } from '../src/lib/clubs/registry';
 import type { GranularPosition, RawStats, ReferenceStats } from '../src/types';
@@ -52,8 +53,8 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'csbps';
-type Component = 'match_impact' | 'defensive';
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'csbps';
+type Component = 'match_impact' | 'defensive' | 'threat';
 /** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
 interface Step {
   key: StepKey; label: string; version: 'v2' | 'v3'; fields: (keyof RawStats)[]; recompute: Component[];
@@ -64,18 +65,28 @@ interface Step {
 }
 const STEPS: Step[] = [
   { key: 'v2', label: 'V2', version: 'v2', fields: [], recompute: [] },
-  { key: 'goal', label: 'Goal BPS fix', version: 'v3', fields: ['penalty_goals'], recompute: ['match_impact'], options: { substituteScaling: false, v3References: false } },
+  { key: 'goal', label: 'Goal BPS fix', version: 'v3', fields: ['penalty_goals'], recompute: ['match_impact'], options: { substituteScaling: false, v3References: false, penaltiesOnce: false } },
   {
     key: 'lbp', label: '+ Line-breaking passes', version: 'v3', fields: ['penalty_goals', 'line_breaking_passes'],
-    recompute: ['match_impact'], options: { substituteScaling: false, v3References: false },
+    recompute: ['match_impact'], options: { substituteScaling: false, v3References: false, penaltiesOnce: false },
   },
   {
     key: 'aerial', label: '+ Net aerial duels', version: 'v3',
     fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
-    options: { substituteScaling: false, v3References: false },
+    options: { substituteScaling: false, v3References: false, penaltiesOnce: false },
   },
   {
     key: 'subs', label: '+ Substitute scoring', version: 'v3',
+    fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
+    options: { v3References: false, penaltiesOnce: false },
+  },
+  {
+    // Penalties out of Threat and Finishing (PENALTY_THREAT, PENALTY_XG). Threat
+    // keeps V2's references: 92 kicks in a season barely move a position's
+    // typical match, and recomputing them would instead swap in this script's
+    // method (the threat table shows the gap) and, at AM, a median that jumps
+    // between tied values, raising every AM's Threat.
+    key: 'pen', label: '+ Penalties counted once', version: 'v3',
     fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
     options: { v3References: false },
   },
@@ -179,6 +190,7 @@ async function main() {
   const rawInput: Record<Component, (s: RawStats, pos: GranularPosition, o?: EngineOptions) => number> = {
     match_impact: (st, pos, o) => matchImpactRawInput(st, pos, o),
     defensive: (st, pos) => defensiveRawInput(st, pos, pos).defensiveRaw,
+    threat: (st, _pos, o) => threatRawInput(st, o),
   };
   const refs = {} as Record<StepKey, RefMap>;
   // The last adopted (non-experimental) step is V3 as it stands; --write-v3-refs saves its references.
@@ -186,7 +198,7 @@ async function main() {
   const recomputedFor: Partial<Record<StepKey, Set<string>>> = {};
   const refSample: Record<string, { n: number; ties: number; below: number }> = {};
   for (const step of STEPS) refs[step.key] = JSON.parse(JSON.stringify(v2Ref));
-  for (const comp of ['match_impact', 'defensive'] as Component[]) {
+  for (const comp of ['match_impact', 'defensive', 'threat'] as Component[]) {
     console.log(`\n${comp} reference, median / stddev (V2 as stored, then recomputed per step; * = input unchanged, stored V2 kept)`);
     console.log('pos ' + ['stored', ...STEPS.map((s) => s.key)].map((h) => h.padStart(15)).join(''));
     for (const pos of POSITIONS) {
