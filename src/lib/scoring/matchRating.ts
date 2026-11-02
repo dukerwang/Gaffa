@@ -105,6 +105,12 @@ const BPS_PER_ASSIST = 9;
  *
  * V3 judges Threat and Finishing on open play only: Threat less 16 per penalty
  * taken, and non-penalty goals against non-penalty xG.
+ *
+ * This disagrees with FotMob on purpose. FotMob ranks a penalty scorer's game
+ * about as highly as any scorer's (86th percentile of his position in 2025-26;
+ * V2 had 83rd, this rule 79th). Duke, 2026-11-02: penalties "should still
+ * matter for sure", but not "as much as non-penalty goals". On missed
+ * penalties the rule agrees with FotMob slightly better than V2.
  */
 export const PENALTY_XG = 0.79;
 export const PENALTY_THREAT = 16;
