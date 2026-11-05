@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Icon } from '@/components/ui/Icon';
 import { Tooltip } from '@/components/ui/Tooltip';
-import { IconButton, Tabs } from '@/components/ui';
+import { IconButton } from '@/components/ui';
 import iconButton from '@/components/ui/IconButton.module.css';
 import FormattedText from '@/components/ui/FormattedText';
 import CrestBadge from '@/components/crest/CrestBadge';
@@ -459,12 +459,39 @@ function LeagueChatWidgetContent({
       <aside className={styles.widgetContainer} aria-label="League chat overlay">
         {/* Header */}
         <header className={styles.widgetHeader}>
-          {/* The channel tabs below are the navigation, so the header only names the window. */}
+          {/* The channel list is home; a conversation names itself and leads back to it. */}
           <div className={styles.headerLeft}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <Icon name="message-square" size={16} strokeWidth={2} />
-              <span className={styles.headerTitle}>Chats</span>
-            </span>
+            {viewMode === 'chat' ? (
+              <>
+                <IconButton
+                  label="All Chats"
+                  icon={<Icon name="chevron-left" size={18} strokeWidth={2.25} />}
+                  onClick={() => setViewMode('channels')}
+                />
+                {activeTab.type === 'dm' && (
+                  <span className={styles.channelItemAvatar}>
+                    <CrestBadge
+                      config={teams.find((t) => t.user_id === activeTab.userId)?.crest_config}
+                      teamName={activeTab.teamName}
+                      teamId={teams.find((t) => t.user_id === activeTab.userId)?.id}
+                      size={22}
+                    />
+                  </span>
+                )}
+                <span className={styles.headerTitle}>
+                  {activeTab.type === 'lobby'
+                    ? 'League Lobby'
+                    : activeTab.type === 'futbolpedia'
+                      ? 'Futbolpedia'
+                      : activeTab.username}
+                </span>
+              </>
+            ) : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Icon name="message-square" size={16} strokeWidth={2} />
+                <span className={styles.headerTitle}>Chats</span>
+              </span>
+            )}
           </div>
 
           <div className={styles.headerRightActions}>
@@ -484,34 +511,6 @@ function LeagueChatWidgetContent({
           </div>
         </header>
 
-        {/* Channel tabs, in a chat. Direct Messages opens the list of managers. */}
-        {viewMode === 'chat' && (
-          <div className={styles.channelTabBar}>
-            <Tabs
-              ariaLabel="Chat channels"
-              idBase="league-chat"
-              className={styles.channelTabs}
-              value={activeTab.type}
-              onChange={(t) => {
-                if (t === 'dm') setViewMode('channels');
-                else setActiveTab({ type: t });
-              }}
-              items={[
-                {
-                  value: 'lobby' as const,
-                  label: 'Lobby',
-                  unread: unreadSummary.lobbyUnread && activeTab.type !== 'lobby',
-                },
-                ...(askClub ? [{ value: 'futbolpedia' as const, label: 'Futbolpedia' }] : []),
-                {
-                  value: 'dm' as const,
-                  label: activeTab.type === 'dm' ? `@${activeTab.username}` : 'Direct Messages',
-                  unread: unreadSummary.dmUnreadPeerIds.length > 0,
-                },
-              ]}
-            />
-          </div>
-        )}
 
         {askClub && (
           <div
