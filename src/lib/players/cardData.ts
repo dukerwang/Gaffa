@@ -29,6 +29,7 @@ import {
 import { getClubFixtureLog, type ClubFixtureLog } from '@/lib/fixtures/lockout';
 import { loadReferenceStats } from '@/lib/scoring/matchups';
 import { resolveClub } from '@/lib/clubs/registry';
+import { yetToKickOff } from './cardSeason';
 import { getBootstrapSlim, type FplTeamSlim } from '@/lib/fpl/bootstrapSlim';
 import {
   buildPerformanceGroups,
@@ -788,6 +789,8 @@ export async function fetchPlayerBack(
     let gamelog: GamelogEntry[] = [];
     let historyFetched = false;
     let histData: any = null;
+    // Stat rows that a row of FPL's own history already accounts for.
+    const claimedHistoryStats = new Set<any>();
 
     if (summary) {
       histData = summary;
@@ -808,6 +811,7 @@ export async function fetchPlayerBack(
           result = `${isWin ? 'W' : isLoss ? 'L' : 'D'} ${h.team_h_score}-${h.team_a_score}`;
         }
 
+        if (dbEntry) claimedHistoryStats.add(dbEntry);
         return {
           gameweek: h.round,
           opponent: h.was_home ? `${opponent} (H)` : `${opponent} (A)`,
@@ -821,49 +825,63 @@ export async function fetchPlayerBack(
       });
     }
 
-    if (!historyFetched) {
-      gamelog = stats.map((s) => {
-        const mid = Number(s.match_id);
-        const f = fixtureMap.get(mid);
-        let opponent = 'Unknown';
-        let result = '';
-        let isHome = false;
+    // A row of ours becomes a log entry from its own fixture. Used for the whole
+    // log when FPL's history could not be read, and for the rows FPL's history
+    // has not caught up with: a match in progress, or finished but not yet
+    // marked so, has stats in our table long before FPL lists it. Its figures
+    // are provisional (imputed until the post-lockdown pass) but they belong in
+    // the log now and are overwritten in place as the sync refines them.
+    const entryFromStatsRow = (s: any): GamelogEntry => {
+      const mid = Number(s.match_id);
+      const f = fixtureMap.get(mid);
+      let opponent = 'Unknown';
+      let result = '';
+      let isHome = false;
 
-        if (f) {
-          isHome = f.team_h === dbPlayer.pl_team_id;
-          const oppId = isHome ? f.team_a : f.team_h;
-          opponent = teamMap.get(oppId)?.short ?? 'UNK';
-          if (f.finished) {
-            const isWin = isHome ? f.team_h_score > f.team_a_score : f.team_a_score > f.team_h_score;
-            const isLoss = isHome
-              ? f.team_h_score < f.team_a_score
-              : f.team_a_score < f.team_h_score;
-            result = `${isWin ? 'W' : isLoss ? 'L' : 'D'} ${f.team_h_score}-${f.team_a_score}`;
-          }
-        } else if (mid > 1000) {
-          // Synthetic match id — a DNP row with no real fixture attached.
-          const gwFixtures = Array.from(fixtureMap.values()).filter(
-            (fix) =>
-              fix.event === s.gameweek &&
-              (fix.team_h === dbPlayer.pl_team_id || fix.team_a === dbPlayer.pl_team_id),
-          );
-          if (gwFixtures.length > 0) {
-            isHome = gwFixtures[0].team_h === dbPlayer.pl_team_id;
-            const oppId = isHome ? gwFixtures[0].team_a : gwFixtures[0].team_h;
-            opponent = teamMap.get(oppId)?.short ?? 'UNK';
-          }
+      if (f) {
+        isHome = f.team_h === dbPlayer.pl_team_id;
+        const oppId = isHome ? f.team_a : f.team_h;
+        opponent = teamMap.get(oppId)?.short ?? 'UNK';
+        if (f.team_h_score != null && f.team_a_score != null && (f.finished || f.started)) {
+          const isWin = isHome ? f.team_h_score > f.team_a_score : f.team_a_score > f.team_h_score;
+          const isLoss = isHome
+            ? f.team_h_score < f.team_a_score
+            : f.team_a_score < f.team_h_score;
+          result = `${isWin ? 'W' : isLoss ? 'L' : 'D'} ${f.team_h_score}-${f.team_a_score}`;
         }
+      } else if (mid > 1000) {
+        // Synthetic match id — a DNP row with no real fixture attached.
+        const gwFixtures = Array.from(fixtureMap.values()).filter(
+          (fix) =>
+            fix.event === s.gameweek &&
+            (fix.team_h === dbPlayer.pl_team_id || fix.team_a === dbPlayer.pl_team_id),
+        );
+        if (gwFixtures.length > 0) {
+          isHome = gwFixtures[0].team_h === dbPlayer.pl_team_id;
+          const oppId = isHome ? gwFixtures[0].team_a : gwFixtures[0].team_h;
+          opponent = teamMap.get(oppId)?.short ?? 'UNK';
+        }
+      }
 
-        return {
-          gameweek: s.gameweek,
-          opponent: opponent !== 'Unknown' ? `${opponent} (${isHome ? 'H' : 'A'})` : opponent,
-          result,
-          isDNP: Number(s.stats?.minutes_played ?? 0) <= 0,
-          fantasy_points: Number(s.fantasy_points),
-          match_rating: s.match_rating != null ? Number(s.match_rating) : null,
-          stats: s.stats,
-        };
-      });
+      return {
+        gameweek: s.gameweek,
+        opponent: opponent !== 'Unknown' ? `${opponent} (${isHome ? 'H' : 'A'})` : opponent,
+        result,
+        isDNP: Number(s.stats?.minutes_played ?? 0) <= 0,
+        fantasy_points: Number(s.fantasy_points),
+        match_rating: s.match_rating != null ? Number(s.match_rating) : null,
+        stats: s.stats,
+      };
+    };
+
+    if (!historyFetched) {
+      gamelog = stats.map(entryFromStatsRow);
+    } else {
+      for (const s of stats) {
+        if (claimedHistoryStats.has(s)) continue;
+        if (Number(s.stats?.minutes_played ?? 0) <= 0) continue;
+        gamelog.push(entryFromStatsRow(s));
+      }
     }
 
     // Upcoming fixture for the player's club (at least one week ahead).
@@ -874,7 +892,7 @@ export async function fetchPlayerBack(
     } | null = null;
 
     if (histData) {
-      const nextFpl = (histData.fixtures ?? []).find((f: any) => !f.finished);
+      const nextFpl = (histData.fixtures ?? []).find((f: any) => !f.finished && yetToKickOff(f.kickoff_time));
       if (nextFpl && nextFpl.event != null) {
         const isHome = nextFpl.is_home;
         const oppId = isHome ? nextFpl.team_a : nextFpl.team_h;
@@ -889,7 +907,7 @@ export async function fetchPlayerBack(
 
     if (!upcomingFixture && dbPlayer.pl_team_id) {
       const upcomingFix = Array.from(fixtureMap.values())
-        .filter((f: any) => !f.finished && (f.team_h === dbPlayer.pl_team_id || f.team_a === dbPlayer.pl_team_id))
+        .filter((f: any) => !f.finished && yetToKickOff(f.kickoff_time) && (f.team_h === dbPlayer.pl_team_id || f.team_a === dbPlayer.pl_team_id))
         .sort((a: any, b: any) => (a.event ?? 0) - (b.event ?? 0) || new Date(a.kickoff_time).getTime() - new Date(b.kickoff_time).getTime())[0];
       if (upcomingFix && upcomingFix.event != null) {
         const isHome = upcomingFix.team_h === dbPlayer.pl_team_id;
@@ -911,6 +929,7 @@ export async function fetchPlayerBack(
           .select('gameweek, home_club, away_club, kickoff_time')
           .eq('season', season.targetSeason)
           .eq('finished', false)
+          .gt('kickoff_time', new Date().toISOString())
           .or(`home_club.eq.${club.slug},away_club.eq.${club.slug}`)
           .order('kickoff_time', { ascending: true })
           .limit(1)
