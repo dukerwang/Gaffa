@@ -105,7 +105,7 @@ Not yet defined from performing copy. Constraints that exist today: Google Devel
 **Never use (and why):** see Words to avoid.
 
 ## Proof Points
-**Metrics (2026-11-07):** 2 live leagues, 12 manager slots held by 8 unique people, both on 2026-27. 7 of 12 memberships active on 2026-11-07; none quiet for more than a month. GW1 and later gameweeks scored and banked. No public usage figures yet.
+**Metrics (2026-11-07):** 2 live leagues, 12 manager slots held by 8 unique people, both on 2026-27. On 2026-11-07, 4 of 8 people visited in the past 7 days and 4 hadn't been seen for more than 14 days. GW1 and later gameweeks scored and banked. No public usage figures yet.
 **Customers:** None named.
 **Testimonials:** None captured.
 **Value themes:**
