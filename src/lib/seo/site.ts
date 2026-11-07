@@ -18,18 +18,11 @@ export const SITE = {
 
 /**
  * Routes a search engine can reach without an account, in sitemap order.
- * The 2025-26 stats archive is listed, not the live-season table: the archive
- * is precomputed and cheap to serve, while the live table queries the database
- * on every request.
+ * /share/stats is left out on purpose (Duke, 2026-11-07): its assist and goal
+ * counts come from FPL, which sometimes records events the league doesn't
+ * officially credit, so it isn't ready to be promoted.
  */
-export const PUBLIC_PATHS = [
-  '/',
-  '/guide',
-  '/lineup-builder',
-  '/share/stats?season=2025-26',
-  '/privacy',
-  '/terms',
-] as const;
+export const PUBLIC_PATHS = ['/', '/guide', '/lineup-builder', '/privacy', '/terms'] as const;
 
 /** Routes that need a session or are internal. Kept out of search results. */
 export const PRIVATE_PATHS = [
