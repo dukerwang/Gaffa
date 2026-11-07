@@ -105,6 +105,7 @@ Success measure: draft completion and first-lineup rate for new leagues, from th
 
 Content that proves the pitch without describing mechanics:
 
+- **The season ledger:** the 2025-26 top 30 by Gaffa points, shown with position. Duke's proof for "scores that match what you watched" is the results themselves: the best players of last season sit at the top regardless of position, and the home page's Top Rated often matches what he sees on the pitch. A data check on 2026-11-07 found the top 30 (players with 20 or more rated appearances) spans nine positions: 6 RW, 5 ST, 5 CB, 4 DM, 3 AM, 3 CM, 2 LWB, 1 RWB, 1 LB, and no goalkeeper. Don't use FotMob as proof. Before publishing: check where goalkeepers rank, and take each player's club from `player_season_clubs` for 2025-26, not from `players.pl_team`, which holds today's club.
 - **Rating vs points:** a defender FPL scored at 2 and Gaffa rated among the week's best, with the match context. Pinned famous players only.
 - **Transfer stories:** a real Premier League arrival and what the Gaffa auction paid for him.
 - **Cup drama:** a bracket tie broken by best individual performer.

@@ -1,6 +1,6 @@
 # Product Marketing Context
 
-**Document version:** v3 (draft; positioning corrected after Duke's answers)
+**Document version:** v4 (draft; proof point corrected)
 **Last updated:** 2026-11-07
 
 Items marked **[Duke]** are gaps only you can fill. Nothing here is a customer quote unless it is in quotation marks and attributed.
@@ -62,7 +62,7 @@ Also true:
 - True dynasty: one draft, ever.
 - Depth on demand, for example the graph view on the players page. Simple by default.
 - Open auction economy where part of every fee recirculates to the league.
-**How we do it differently:** Sigmoid rating against position-specific medians, calibrated to match consensus match ratings.
+**How we do it differently:** Sigmoid rating against position-specific medians, so a player is judged against what his role is expected to produce.
 **Why that's better:** Scores that match what you watched; a market that behaves like football's.
 **Why customers choose us:** **[Duke]** Unknown. Interviews and polls got little response; learn from behavior in the database and a one-line ask to the most engaged managers.
 
@@ -123,7 +123,7 @@ Draft from Duke's recorded complaints and rules (`docs/DECISIONS.md`), not from 
 
 | Theme | Proof |
 |-------|-------|
-| Realistic scoring | Ratings calibrated to consensus (FotMob agreement gate per position). Needs a publishable comparison. |
+| Realistic scoring | The results themselves, not another site's ratings. Duke: 2025-26's best players sit at the top regardless of position, and this season's Top Rated on the home page often matches what he watches. Data check 2026-11-07: the top 30 by points among players with 20+ rated appearances spans nine positions (6 RW, 5 ST, 5 CB, 4 DM, 3 AM, 3 CM, 2 LWB, 1 RWB, 1 LB) with no goalkeeper. Needs a published ledger; never cite FotMob as proof. |
 | Real transfer market | Auto-auction on any Premier League arrival of £50m or more. Needs a pinned example with famous players. |
 | Cups | Three parallel knockouts. Needs a pinned example. |
 
@@ -147,6 +147,7 @@ Draft from Duke's recorded complaints and rules (`docs/DECISIONS.md`), not from 
 
 ## Changelog
 *Newest first.*
+- v4 (2026-11-07) — Proof for realistic scoring is the season results themselves, not FotMob agreement (Duke: FotMob isn't always reliable); added the 2025-26 positional spread.
 - v3 (2026-11-07) — Corrected after Duke's answers: ownership is familiar from other fantasy sports, not the differentiator; the three differentiators are scoring, real-market transfers and cups; audience widened to football fans; depth on demand; filled a draft Brand Voice from Duke's recorded rules.
 - v2 (2026-11-07) — Repositioned around exclusive ownership and the friend league (was "second game to FPL"); redraft recast as the easy entry; business model set to no monetization; open leagues noted as planned.
 - v1 (2026-11-07) — Initial draft from README, docs/DECISIONS.md, memory notes and a database count of leagues. Gaps marked **[Duke]**.
