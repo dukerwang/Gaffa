@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { computeFunnel, emailLooksLikeTest, isTestLeagueName, weekStart, type FunnelInput } from '../funnel';
+import {
+  computeFunnel,
+  emailLooksLikeTest,
+  isTestLeagueName,
+  usernameLooksRandom,
+  weekStart,
+  type FunnelInput,
+} from '../funnel';
 
 const NOW = new Date('2026-11-07T12:00:00Z');
 const SINCE = new Date('2026-07-01T00:00:00Z');
@@ -36,6 +43,22 @@ describe('test detection', () => {
   });
 });
 
+describe('usernameLooksRandom', () => {
+  it('flags long all-letter names with capitals scattered through them', () => {
+    // Invented strings with the same shape as the scripted ones; no real account names belong in a test.
+    expect(usernameLooksRandom('kQzMtBrXwLpVnDsHaYe')).toBe(true);
+    expect(usernameLooksRandom('rTbWqKjNdFxGvCmZsLuPyHa')).toBe(true);
+  });
+
+  it('leaves ordinary handles alone', () => {
+    expect(usernameLooksRandom('jordan2025')).toBe(false);
+    expect(usernameLooksRandom('sam.smith0820')).toBe(false);
+    expect(usernameLooksRandom('ChelseaFanForLife')).toBe(false);
+    expect(usernameLooksRandom('matchdaymilitia')).toBe(false);
+    expect(usernameLooksRandom(null)).toBe(false);
+  });
+});
+
 describe('computeFunnel', () => {
   const input: FunnelInput = {
     users: [
@@ -66,7 +89,7 @@ describe('computeFunnel', () => {
   const result = computeFunnel(input, { now: NOW, since: SINCE });
 
   it('leaves test accounts and test leagues out and reports how many', () => {
-    expect(result.excluded).toEqual({ testLeagues: 1, testUsers: 2 });
+    expect(result.excluded).toEqual({ testLeagues: 1, testUsers: 2, likelyAutomated: 0 });
   });
 
   it('counts accounts stage by stage', () => {
@@ -99,6 +122,23 @@ describe('computeFunnel', () => {
     expect(weekStart('2026-11-07T12:00:00Z')).toBe('2026-11-02'); // a Saturday
     expect(weekStart('2026-11-02T00:00:00Z')).toBe('2026-11-02');
     expect(weekStart('2026-11-08T23:59:00Z')).toBe('2026-11-02'); // a Sunday
+  });
+
+  it('sets aside likely-automated signups but never someone in a real league', () => {
+    const withBots: FunnelInput = {
+      ...input,
+      users: [
+        ...input.users,
+        { ...user('bot1'), looksAutomated: true },
+        { ...user('bot2'), looksAutomated: true },
+        { ...user('bot-in-league'), looksAutomated: true },
+      ],
+      members: [...input.members, member('half-full', 'bot-in-league')],
+    };
+    const r = computeFunnel(withBots, { now: NOW, since: SINCE });
+    expect(r.excluded.likelyAutomated).toBe(2);
+    expect(r.accounts[0].count).toBe(4); // a, b, c, and the bot who is in a league
+    expect(r.neverJoined).toBe(1);
   });
 
   it('handles an empty database', () => {

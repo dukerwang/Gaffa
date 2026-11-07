@@ -13,6 +13,8 @@ export interface FunnelUser {
   createdAt: string;
   /** Set by the caller from the email address. Never stored here. */
   looksLikeTest: boolean;
+  /** Set by the caller from the username (see usernameLooksRandom). Ignored for anyone in a real league. */
+  looksAutomated?: boolean;
 }
 
 export interface FunnelLeague {
@@ -59,7 +61,7 @@ export interface Stage {
 
 export interface FunnelResult {
   window: { since: string; now: string };
-  excluded: { testLeagues: number; testUsers: number };
+  excluded: { testLeagues: number; testUsers: number; likelyAutomated: number };
   accounts: Stage[];
   leagues: Stage[];
   timing: {
@@ -84,6 +86,18 @@ export function isTestLeagueName(name: string): boolean {
 /** An email that belongs to a test account. Plus-addressing alone isn't one: real people use it. */
 export function emailLooksLikeTest(email: string | null | undefined): boolean {
   return !!email && /(test|e2e|example\.com|mailinator)/i.test(email);
+}
+
+/**
+ * A username that looks typed by a script: 14 or more letters only, with a lot
+ * of capitals scattered through it ("kQzMtBrXwLpVnDsHaYe"). People who use
+ * CamelCase have far fewer capitals. A guess, so the report shows the count it
+ * set aside and anyone in a real league is always kept.
+ */
+export function usernameLooksRandom(username: string | null | undefined): boolean {
+  if (!username || !/^[A-Za-z]{14,}$/.test(username)) return false;
+  const upper = (username.match(/[A-Z]/g) ?? []).length;
+  return upper >= 5 && upper / username.length >= 0.3;
 }
 
 function median(values: number[]): number | null {
@@ -139,7 +153,9 @@ export function computeFunnel(input: FunnelInput, options: FunnelOptions): Funne
     const all = allLeaguesByUser.get(u.id);
     return !!all && all.size > 0 && [...all].every((id) => testLeagueIds.has(id));
   };
-  const realUsers = input.users.filter((u) => !isTestUser(u));
+  const isAutomated = (u: FunnelUser) => !!u.looksAutomated && !leaguesByUser.has(u.id);
+  const nonTest = input.users.filter((u) => !isTestUser(u));
+  const realUsers = nonTest.filter((u) => !isAutomated(u));
   const usersInWindow = realUsers.filter((u) => new Date(u.createdAt).getTime() >= since);
 
   const isFull = (leagueId: string) => {
@@ -196,7 +212,8 @@ export function computeFunnel(input: FunnelInput, options: FunnelOptions): Funne
     window: { since: options.since.toISOString().slice(0, 10), now: options.now.toISOString().slice(0, 10) },
     excluded: {
       testLeagues: testLeagueIds.size,
-      testUsers: input.users.length - realUsers.length,
+      testUsers: input.users.length - nonTest.length,
+      likelyAutomated: nonTest.length - realUsers.length,
     },
     accounts: stages([
       { label: 'Signed up', count: usersInWindow.length },

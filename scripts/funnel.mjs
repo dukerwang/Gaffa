@@ -11,12 +11,12 @@
  *   node --no-warnings scripts/funnel.mjs --since 2026-09-01
  *   node --no-warnings scripts/funnel.mjs --json
  *
- * Prints counts only. Never prints emails, user ids or league names.
+ * Prints counts only. Never prints emails, usernames, user ids or league names.
  * (Stage definitions live in src/lib/growth/funnel.ts, with tests.)
  */
 import { createClient } from '@supabase/supabase-js';
 import { existsSync, readFileSync } from 'node:fs';
-import { computeFunnel, emailLooksLikeTest } from '../src/lib/growth/funnel.ts';
+import { computeFunnel, emailLooksLikeTest, usernameLooksRandom } from '../src/lib/growth/funnel.ts';
 
 function loadEnv() {
   const candidates = [
@@ -70,7 +70,7 @@ async function fetchAll(build, orderCol) {
 }
 
 const [users, leagues, members, picks] = await Promise.all([
-  fetchAll(() => admin.from('users').select('id, email, created_at'), 'id'),
+  fetchAll(() => admin.from('users').select('id, email, username, created_at'), 'id'),
   fetchAll(() => admin.from('leagues').select('id, name, max_teams, status, created_at'), 'id'),
   fetchAll(() => admin.from('league_members').select('league_id, user_id, joined_at, last_active_at'), 'joined_at'),
   fetchAll(() => admin.from('draft_picks').select('id, league_id, picked_at'), 'id'),
@@ -78,7 +78,12 @@ const [users, leagues, members, picks] = await Promise.all([
 
 const result = computeFunnel(
   {
-    users: users.map((u) => ({ id: u.id, createdAt: u.created_at, looksLikeTest: emailLooksLikeTest(u.email) })),
+    users: users.map((u) => ({
+      id: u.id,
+      createdAt: u.created_at,
+      looksLikeTest: emailLooksLikeTest(u.email),
+      looksAutomated: usernameLooksRandom(u.username),
+    })),
     leagues: leagues.map((l) => ({
       id: l.id,
       name: l.name,
@@ -113,6 +118,7 @@ const days = (d) => (d == null ? 'n/a' : `${d.toFixed(1)} days`);
 
 console.log(`\nGrowth funnel, since ${result.window.since} (as of ${result.window.now})`);
 console.log(`Left out as test data: ${result.excluded.testLeagues} leagues, ${result.excluded.testUsers} accounts`);
+console.log(`Set aside as likely automated (random-looking username, in no league): ${result.excluded.likelyAutomated} accounts`);
 print('Accounts', result.accounts);
 console.log(`  Signed up and never joined or created a league: ${result.neverJoined}`);
 console.log('\n  Signups by week (never joined a league / signed up)');
