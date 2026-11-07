@@ -16,8 +16,20 @@ export const SITE = {
   logoPath: '/apple-icon.png',
 } as const;
 
-/** Routes a search engine can reach without an account, in sitemap order. */
-export const PUBLIC_PATHS = ['/', '/guide', '/lineup-builder', '/privacy', '/terms'] as const;
+/**
+ * Routes a search engine can reach without an account, in sitemap order.
+ * The 2025-26 stats archive is listed, not the live-season table: the archive
+ * is precomputed and cheap to serve, while the live table queries the database
+ * on every request.
+ */
+export const PUBLIC_PATHS = [
+  '/',
+  '/guide',
+  '/lineup-builder',
+  '/share/stats?season=2025-26',
+  '/privacy',
+  '/terms',
+] as const;
 
 /** Routes that need a session or are internal. Kept out of search results. */
 export const PRIVATE_PATHS = [
