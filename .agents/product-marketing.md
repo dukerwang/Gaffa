@@ -59,7 +59,7 @@ Not B2B. Two roles inside a league:
 - Open auction economy where part of every fee recirculates to the league.
 **How we do it differently:** Sigmoid rating against position-specific medians, calibrated to match consensus match ratings.
 **Why that's better:** Scores that match what you watched; a market that behaves like football's.
-**Why customers choose us:** **[Duke]** Needs interviews with the alpha managers.
+**Why customers choose us:** **[Duke]** Unknown. Interviews and polls got little response; learn from behavior in the database and a one-line ask to the most engaged managers.
 
 ## Objections
 | Objection | Response |
@@ -74,10 +74,10 @@ Not B2B. Two roles inside a league:
 **Push:** Everyone owning the same players; scores that don't match the match; no real market.
 **Pull:** Owning your roster, a league with friends, "realistic" scoring, trophies, a transfer market that follows real news.
 **Habit:** FPL is free, familiar and where everyone is; the group chat is already there.
-**Anxiety:** Learning a new ruleset; friends won't join; it's new and unproven (about 12 managers across two leagues as of 2026-11-07).
+**Anxiety:** Learning a new ruleset; friends won't join; it's new and unproven (8 unique people across two leagues as of 2026-11-07).
 
 ## Customer Language
-**How they describe the problem:** **[Duke]** None captured yet. Interview the 12 alpha managers and mine r/FantasyPL.
+**How they describe the problem:** **[Duke]** None captured yet. Mine r/FantasyPL and competitor reviews; skip interviews.
 **How they describe us:** **[Duke]** None captured yet.
 **Founder's words (2026-09-29):** "the most 'realistic' fantasy football game" and scores "that match what you watched."
 **Words to use:** realistic, Club Balance, transfer, cup, role, manager, league.
@@ -105,7 +105,7 @@ Not yet defined from performing copy. Constraints that exist today: Google Devel
 **Never use (and why):** see Words to avoid.
 
 ## Proof Points
-**Metrics (2026-11-07):** 2 live leagues, 12 human managers, both on 2026-27. GW1 and later gameweeks scored and banked. No public usage figures yet.
+**Metrics (2026-11-07):** 2 live leagues, 12 manager slots held by 8 unique people, both on 2026-27. 7 of 12 memberships active on 2026-11-07; none quiet for more than a month. GW1 and later gameweeks scored and banked. No public usage figures yet.
 **Customers:** None named.
 **Testimonials:** None captured.
 **Value themes:**

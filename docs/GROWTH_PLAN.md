@@ -4,7 +4,7 @@
 
 ## Where Gaffa stands
 
-Two live leagues, 12 human managers, three months in. Everything else in the database is test data. Gaffa has not yet shown that managers stay, that a league survives a season, or that a commissioner starts a second league. Growth work before that is proven wastes the one launch window that matters.
+Two live leagues with 12 manager slots but 8 unique people (some play in both), three months in. On 2026-11-07, 7 of the 12 memberships were active that day and the quietest was last active on 2026-10-07, so nobody has gone dark for a month. That is a thin but real retention signal. Everything else in the database is test data. Gaffa has not yet shown that managers stay, that a league survives a season, or that a commissioner starts a second league. Growth work before that is proven wastes the one launch window that matters.
 
 The competitor that sets the frame is Fantasy Premier League, with roughly 13 million managers in 2025/26 (third-party figure, not official). Those managers are the addressable pool, and the pitch to them is a different kind of game, not a smaller version of FPL.
 
@@ -23,7 +23,7 @@ The competitor that sets the frame is Fantasy Premier League, with roughly 13 mi
 ## Stages
 
 ### Stage 0: Foundations (now to end of November)
-1. **Interview all 12 alpha managers** (`customer-research`). Fill Customer Language, Objections and Why Customers Choose Us in the context doc. Highest value for lowest cost.
+1. **Learn from behavior, not surveys.** Duke's polls got a couple of responses and people are busy, so don't plan around interviews or forms. The database already holds the answers: who sets lineups each gameweek, who bids and trades, who returns after a quiet week, and when each person last visited. Pull that into a weekly query (a script in `scratch/`, no Vercel cost). Add two zero-effort asks only: a one-line message to the 2 or 3 most active managers ("what made you join?"), and any thing they already say in the group chat that Duke is willing to share. Use `customer-research` for mining public sources (r/FantasyPL, reviews of competitors) to fill Customer Language and Objections, since those need no one's time.
 2. **Instrument the funnel.** Track league created, invite sent, invite accepted, league full, draft completed, lineup set per gameweek, second-season return. Without these, no later stage can be judged.
 3. **Check the infrastructure ceiling.** Supabase free tier allows 200 concurrent Realtime connections and Vercel Hobby allows 1M invocations a month. Estimate the league count at which each breaks, and set a trigger to upgrade before it does. Vercel Hobby also restricts commercial use, which matters the moment there is any revenue or paid promotion.
 4. **Run a rights check before public promotion.** The game uses Premier League club names and badges, and its data comes from the FPL API plus scrapers for SoFIFA and Transfermarkt that block cloud IPs. Both are fine for a private beta and riskier with visibility. A short legal read is cheap compared with a takedown after a launch.
@@ -49,7 +49,7 @@ Authenticity matters: Duke doesn't play FPL, and that community notices. The alp
 
 - **Creator leagues.** Give 5 to 10 mid-size FPL YouTubers, podcasters and streamers a free league with their audience. A live auction or draft is watchable content for them, and every viewer who joins is already in the target group. Use `community-marketing` and `social` for outreach.
 - **Reddit and X, by hand.** r/FantasyPL and FPL X. Share receipts (below), not links. One commissioner per post is the goal.
-- **Friends of friends.** Each alpha manager gets an invite kit to start one more league.
+- **Friends of friends.** Offer the 2 or 3 most engaged managers a ready-to-send invite message and a one-tap way to start a second league. Don't ask the rest; with 8 unique people, the pool is small and the engaged few matter most.
 - **Commissioner kit.** A one-page "run your Gaffa league" guide, a shareable rules summary, and a pre-written invite message for a WhatsApp group.
 
 ### Stage 2: The summer launch (June to August 2027)
@@ -105,7 +105,7 @@ North star: leagues where at least 80% of managers set a lineup this gameweek.
 ## Skills, in order of use
 
 1. `product-marketing`: finish the context doc.
-2. `customer-research`: alpha-manager interviews.
+2. `customer-research`: public-source mining (no interviews required).
 3. `copywriting` / `copy-editing`: front page and invite copy (in-app copy follows `gaffa-ui-copy`).
 4. `community-marketing` and `social`: creator leagues, Reddit, X.
 5. `content-strategy`: receipts calendar.
@@ -119,8 +119,8 @@ Skills in the repo's banned list (`industrial-brutalist-ui`, `high-end-visual-de
 Answered 2026-11-07: open leagues yes but later; no monetization; mid-season starts should work.
 
 Answered 2026-11-07 round two:
-- **Target (40 leagues by August 2027):** unknown. Treat all numbers in this plan as hypotheses and set targets after the alpha interviews and the first month of funnel data.
-- **Weekly hours:** unknown. Rough estimate, not a commitment: the 12 interviews take about 6 hours in total; creator and Reddit outreach is typically a few hours a week once the list exists; the receipts content is the larger cost if done weekly.
+- **Target (40 leagues by August 2027):** unknown. Treat all numbers in this plan as hypotheses and set targets after the first month of funnel data.
+- **Weekly hours:** unknown. Rough estimate, not a commitment: the weekly activity query is a one-time setup of an hour or two; creator and Reddit outreach is typically a few hours a week once the list exists; the receipts content is the larger cost if done weekly.
 - **Latest start date:** undecided; see the research and options under Stage 0.
 - **Channels:** Reddit, X, YouTube; see Stage 1.
 
