@@ -10,9 +10,9 @@
 export const SITE = {
   name: 'Gaffa',
   url: 'https://www.gaffa.live',
-  title: 'Gaffa · Draft and Own Your Premier League Players',
+  title: 'Gaffa · Fantasy Football That Scores What You Watched',
   description:
-    'Draft and own your Premier League players in a league with friends. Scores match what you watched, transfers follow real moves, four trophies a season.',
+    'Fantasy football that scores what you watched. Draft your squad, bid for real-life Premier League transfers, and compete for four trophies a season.',
   logoPath: '/apple-icon.png',
 } as const;
 
