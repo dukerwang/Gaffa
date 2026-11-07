@@ -28,12 +28,24 @@ The competitor that sets the frame is Fantasy Premier League, with roughly 13 mi
 3. **Check the infrastructure ceiling.** Supabase free tier allows 200 concurrent Realtime connections and Vercel Hobby allows 1M invocations a month. Estimate the league count at which each breaks, and set a trigger to upgrade before it does. Vercel Hobby also restricts commercial use, which matters the moment there is any revenue or paid promotion.
 4. **Run a rights check before public promotion.** The game uses Premier League club names and badges, and its data comes from the FPL API plus scrapers for SoFIFA and Transfermarkt that block cloud IPs. Both are fine for a private beta and riskier with visibility. A short legal read is cheap compared with a takedown after a launch.
 5. **Set a latest start date for new leagues.** Today there is no limit. Reading `src/lib/schedule/insertMatchups.ts`: the schedule begins at the next gameweek when the draft finishes and is skipped only after gameweek 38. A league that finishes drafting at gameweek 37 would get a two-week partial round-robin, and cups are created whenever the season is past gameweek 7, so they likely can't finish either. I haven't tested this. Decide a cutoff (or a "starts next season" path) and enforce it at league creation and at draft completion, with a clear message.
+
+   What other games do (web search, 2026-11-07; sources are thin and mostly third-party): FPL has no limit on joining, and a mini-league scores from the gameweek it was created. Sleeper's own guide for mid-season switchers says to create a new league and score from the current week, with optional backfill of past weeks. Fantrax leaves deadlines to each commissioner. One fantasy-football site gives a rule of thumb of about four weeks into the season. I found no hard cutoff on any platform. Those games can allow any start because a league has no round-robin or cup bracket to complete; Gaffa does, so the answer has to be Gaffa's own. Options to weigh, not a recommendation from research:
+   - **Dynasty:** allow any start, because the league carries into next season, but create the schedule and cups only if enough gameweeks remain.
+   - **Redraft:** set a cutoff, such as a minimum of 8 gameweeks remaining, because the league resets at season end.
+   - **After the cutoff:** hold the league in a pre-season state until the next season opens.
 6. **Finish the public front page** (PR #31) with fixed, famous-player examples, and lead it with ownership. Use `copywriting` for the draft and the `gaffa-ui-copy` rules for anything in the app.
 
 ### Stage 1: Seed 10 leagues (December to May 2027)
 Goal: 10 live leagues, 80% of managers setting a lineup each gameweek, at least 3 commissioners starting a second league. Mid-season starts are supported; promote redraft as the entry point.
 
 Finding the first users is the bottleneck, so spend most of the effort here on reach. Each channel below tests one question: where do FPL players who like owning their players hang out?
+
+Starting list (Duke: Reddit, X, YouTube; he doesn't play FPL, so these are from what he's seen):
+- **Reddit:** r/FantasyPL, roughly 750,000 to 850,000 members depending on the tracker. Read its self-promotion rules before posting anything; I haven't checked them.
+- **YouTube and podcasts:** a 2022 guide names FPL Focal, FPL Mate, FPL Tips, FPL Trybe, FPL Harry and Net That Haul; podcasts include Let's Talk FPL, FPL Therapy and the Fantasy Football Scoutcast. That list is old and I found no reliable subscriber counts, so rebuild it from live YouTube search before outreach.
+- **X:** FPL accounts and creators. Build the list the same way.
+
+Authenticity matters: Duke doesn't play FPL, and that community notices. The alpha managers who do play it are better voices on these channels than the founder, and a creator will respond to a free league more readily than to a pitch.
 
 - **Creator leagues.** Give 5 to 10 mid-size FPL YouTubers, podcasters and streamers a free league with their audience. A live auction or draft is watchable content for them, and every viewer who joins is already in the target group. Use `community-marketing` and `social` for outreach.
 - **Reddit and X, by hand.** r/FantasyPL and FPL X. Share receipts (below), not links. One commissioner per post is the goal.
@@ -106,7 +118,10 @@ Skills in the repo's banned list (`industrial-brutalist-ui`, `high-end-visual-de
 
 Answered 2026-11-07: open leagues yes but later; no monetization; mid-season starts should work.
 
-1. Target by August 2027, and is 40 leagues right?
-2. Hours per week you can give to marketing?
-3. Latest start date for a new league: which gameweek, and what happens after it (wait for next season, or a shortened format)?
-4. Where do you already know FPL players congregate (subreddits, Discords, creators you follow)? That seeds the Stage 1 channel list.
+Answered 2026-11-07 round two:
+- **Target (40 leagues by August 2027):** unknown. Treat all numbers in this plan as hypotheses and set targets after the alpha interviews and the first month of funnel data.
+- **Weekly hours:** unknown. Rough estimate, not a commitment: the 12 interviews take about 6 hours in total; creator and Reddit outreach is typically a few hours a week once the list exists; the receipts content is the larger cost if done weekly.
+- **Latest start date:** undecided; see the research and options under Stage 0.
+- **Channels:** Reddit, X, YouTube; see Stage 1.
+
+Still open: the cutoff rule, and which of the three channels to test first.
