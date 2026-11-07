@@ -1,14 +1,15 @@
 import type { MetadataRoute } from 'next';
+import { PRIVATE_PATHS, SITE } from '@/lib/seo/site';
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/privacy', '/terms', '/guide', '/help', '/share/'],
-        disallow: ['/api/', '/league/', '/admin/', '/dashboard/', '/settings/'],
+        allow: '/',
+        disallow: [...PRIVATE_PATHS],
       },
     ],
-    sitemap: 'https://gaffa.live/sitemap.xml',
+    sitemap: `${SITE.url}/sitemap.xml`,
   };
 }

@@ -2,7 +2,8 @@ import Link from 'next/link';
 import styles from './terms.module.css';
 
 export const metadata = {
-  title: 'Terms of Service · Gaffa',
+  title: 'Terms of Service',
+  alternates: { canonical: '/terms' },
   description: 'Terms of Service and terms of use for the Gaffa fantasy football application.',
 };
 

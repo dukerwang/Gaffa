@@ -56,6 +56,18 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  // A signed-in manager has no use for the public front page, which is served
+  // from cache to everyone else (see src/app/page.tsx). Redirecting here, ahead
+  // of the cache, is what lets that page skip its own session check. The
+  // refreshed session cookies ride along on the redirect.
+  if (user && pathname === '/') {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/dashboard';
+    const redirect = NextResponse.redirect(redirectUrl);
+    supabaseResponse.cookies.getAll().forEach((c) => redirect.cookies.set(c));
+    return redirect;
+  }
+
   // Redirect authenticated users away from auth pages
   if (user && isAuthRoute) {
     const redirectUrl = request.nextUrl.clone();
@@ -112,6 +124,10 @@ export const config = {
     // "manifest"> tag, and the service worker registration) regardless of
     // auth state, so gating them behind login silently breaks PWA install
     // and push registration for anyone not already logged in.
-    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw-push.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    //
+    // robots.txt and sitemap.xml are the same case for search engines: while
+    // they went through this proxy, a signed-out crawler was redirected to the
+    // login page for both, so it never saw the rules or the sitemap.
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|sw-push.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
