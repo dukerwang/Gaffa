@@ -66,6 +66,39 @@ Summer is the window: FPL registration opens, the transfer window is the loudest
 - **Comparison pages** (`competitors`): "Gaffa vs FPL," "FPL dynasty alternative," "soccer dynasty fantasy." Research each competitor properly first.
 - Target: 300 leagues by the end of 2027-28.
 
+## Opening pages, SEO and in-app help
+
+Audit of `main` on 2026-11-07 (code read only; I haven't loaded the live pages or run Lighthouse):
+
+**What exists.** A public home at `/` ([page.tsx](src/app/page.tsx), [PublicHome.tsx](src/components/home/PublicHome.tsx)) with Top Rated, Transfer Wire, Match Ratings and Four Trophies sections; a public `/guide` rendered from `docs/USER_GUIDE.md`; public share pages and the Lineup Builder; `robots.ts`, `sitemap.ts`, one static Open Graph image, and per-page metadata on share pages.
+
+**Gaps, in order of effort:**
+
+1. **The hero doesn't say what you now lead with.** It reads "Players score the way their match went. Win players at open auction…" and never mentions owning your players in a league with friends.
+2. **Metadata contradicts itself.** The root layout's description is mechanics-first ("granular tactical positions… a scoring engine") with the title "Gaffa — Dynasty Fantasy Football", while the home page uses "Gaffa · Fantasy Football, Played Like the Real Thing". Open Graph and Twitter cards inherit the layout's version. Gaffa also isn't only dynasty now; redraft is the easy entry.
+3. **No structured data.** Nothing in `src` emits JSON-LD.
+4. **The sitemap lists four URLs and stamps every one `lastModified: now` on each request**, which tells crawlers everything changes constantly. `robots.ts` allows `/help`, which redirects signed-out visitors to login.
+5. **The home page is `force-dynamic`** and calls the FPL API plus the showcase loader on every anonymous request, crawlers and bots included. On Vercel Hobby that spends invocations and CPU for content that is identical for every signed-out visitor. A short revalidation window, with the signed-in redirect moved into the proxy, would cut it. Needs care, since it changes how the page renders.
+6. **The only rules content is one long page** (`/guide`, about 645 lines of markdown, also `force-dynamic`). That's one URL for search and for AI answers to cite. Splitting it into topic pages ("How a Fantasy Football Auction Works," "Dynasty vs Redraft," "How Gaffa Scores Players") is the biggest SEO gain and feeds `ai-seo`. It's also the most work.
+7. **No comparison pages or player pages** (Stage 3 in this plan).
+
+**Suggested order:**
+- **A. Technical fixes, no visual change:** one consistent title and description in the ownership voice, correct Open Graph cards, `Organization` and `WebSite` JSON-LD, a truthful sitemap, drop `/help` from robots, and cache the anonymous home page. Low risk; do first.
+- **B. Hero and section copy** with ownership up front. Words need Duke's approval (use `copywriting`, then the `gaffa-ui-copy` rules). Per DESIGN.md and past feedback, prototype any layout change before porting it.
+- **C. Split the guide into crawlable topic pages**, each with its own metadata and a link into the app.
+- **D. Interactive help** (below).
+
+### Interactive help
+
+Nothing exists today: no onboarding or tutorial code, and Help is two links (Guide and Updates). Proposal, each piece small and independent:
+
+- **Lineups: guided mode on the public Lineup Builder.** It already works without an account, so a "how to set a lineup" walkthrough there doubles as marketing and as onboarding. Steps: pick a formation, place a player, see why a bench centre-back can't cover a left-back slot.
+- **Transfers: a scripted mini auction on a public page.** One pinned example with a famous player, runs entirely in the browser with no API calls (no Vercel cost), shows the open auction, the Scout's Fee and the solidarity payment. Follows the "one fixed example per feature" and "show, don't tell" rules.
+- **In-app hints on the real pages.** First-visit hints for the first lineup, the first bid and the first trade offer, shown only when relevant and dismissed once, following the existing rule that economy reminders are conditional and dismiss-once.
+- **Later:** a practice league with Caretaker opponents. Heavy; only if the first three don't move draft completion.
+
+Success measure: draft completion and first-lineup rate for new leagues, from the funnel instrumentation in Stage 0. Build prototypes in Claude Design first and port them faithfully.
+
 ## Content engine: receipts
 
 Content that proves the pitch without describing mechanics:
