@@ -239,7 +239,11 @@ const summary = {
 };
 
 if (args.json) {
-  const scrub = ({ userId, ...rest }) => rest;
+  const scrub = (row) => {
+    const copy = { ...row };
+    delete copy.userId; // never emit user ids
+    return copy;
+  };
   console.log(JSON.stringify({ summary, people: peopleRows, teams: teamRows.map(scrub) }, null, 2));
   process.exit(0);
 }
