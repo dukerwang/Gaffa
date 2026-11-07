@@ -10,11 +10,13 @@ The competitor that sets the frame is Fantasy Premier League, with roughly 13 mi
 
 ## Strategy
 
-**Position as fantasy football the way American fantasy sports work.** Duke's view (2026-11-07): Gaffa gives soccer the experience of fantasy American football or basketball, where you draft and own your players in a league with your friends. In FPL everyone can own the same player, which Duke finds lame. The wedge is exclusive ownership: nobody else in your league has your player. Global rank is a different product; Gaffa is about the league. Don't frame Gaffa as a "second game" or as only for "the long game."
+**The audience is football fans, whether or not they play FPL.** Duke (2026-11-07): FPL players should try Gaffa because it's better; people who watch football but skip fantasy should try it because it's the most realistic, true-to-life fantasy football; and even people who don't watch soccer but play fantasy football or basketball should try it, because it's the closest soccer gets to that experience. Start with football fans and FPL players; the US fantasy crowd is a second door.
 
-**Two doors in.** Redraft is the easy-barrier entry: a draft every season, no auction economy to learn. Dynasty is the deeper game for people who stay. Marketing leads with ownership and the league, and sends newcomers to redraft first.
+**Three things set Gaffa apart, and ownership isn't one of them.** Duke picked these as the distinguishing features: scores that match what you watched, transfers tied to real Premier League moves, and cups. Owning your players is how most fantasy sports already work; only soccer's biggest game doesn't do it. Use ownership as the familiar part (reassurance for US fantasy players, contrast for FPL players), never as the headline difference. An earlier version of this plan led with it; that was a misreading.
 
-**Lead with realism and ownership.** Pillars in Duke's order of enthusiasm: transfers tied to real Premier League moves, scoring that matches what you watched, cups. Ownership is the headline difference from FPL; realism is the proof. Never claim "first."
+**Depth is optional, never required.** Gaffa shouldn't feel like a stats tool, but people who want data should be able to reach it (the players page has a graph view). Simple by default, depth on demand. Duke's own taste runs toward complexity, and he knows the average user prefers the easy version, so marketing speaks to the casual fan first. Redraft is the simple door; dynasty is for people who stay.
+
+**Lead with realism.** The pitch is the most realistic fantasy football game. Pillars: scoring, transfers, cups. Never claim "first."
 
 **Users first, money second.** No monetization intent. Nothing in this plan depends on revenue.
 
@@ -33,12 +35,12 @@ The competitor that sets the frame is Fantasy Premier League, with roughly 13 mi
    - **Dynasty:** allow any start, because the league carries into next season, but create the schedule and cups only if enough gameweeks remain.
    - **Redraft:** set a cutoff, such as a minimum of 8 gameweeks remaining, because the league resets at season end.
    - **After the cutoff:** hold the league in a pre-season state until the next season opens.
-6. **Finish the public front page** (PR #31) with fixed, famous-player examples, and lead it with ownership. Use `copywriting` for the draft and the `gaffa-ui-copy` rules for anything in the app.
+6. **Finish the public front page** (PR #31) with fixed, famous-player examples, and lead it with realism. Use `copywriting` for the draft and the `gaffa-ui-copy` rules for anything in the app.
 
 ### Stage 1: Seed 10 leagues (December to May 2027)
 Goal: 10 live leagues, 80% of managers setting a lineup each gameweek, at least 3 commissioners starting a second league. Mid-season starts are supported; promote redraft as the entry point.
 
-Finding the first users is the bottleneck, so spend most of the effort here on reach. Each channel below tests one question: where do FPL players who like owning their players hang out?
+Finding the first users is the bottleneck, so spend most of the effort here on reach. Each channel below tests one question: where do football fans, and FPL players in particular, hang out?
 
 Starting list (Duke: Reddit, X, YouTube; he doesn't play FPL, so these are from what he's seen):
 - **Reddit:** r/FantasyPL, roughly 750,000 to 850,000 members depending on the tracker. Read its self-promotion rules before posting anything; I haven't checked them.
@@ -74,7 +76,7 @@ Audit of `main` on 2026-11-07 (code read only; I haven't loaded the live pages o
 
 **Gaps, in order of effort:**
 
-1. **The hero doesn't say what you now lead with.** It reads "Players score the way their match went. Win players at open auction…" and never mentions owning your players in a league with friends.
+1. **The hero is close to the pitch already.** "Fantasy football, played like the real thing" with a line on scoring, the transfer market and four trophies matches the three things Duke says set Gaffa apart. The open question is wording: whether it speaks to a football fan who has never played fantasy, and whether it reads like a person wrote it. Draft variants for Duke to react to rather than rewriting in place.
 2. **Metadata contradicts itself.** The root layout's description is mechanics-first ("granular tactical positions… a scoring engine") with the title "Gaffa — Dynasty Fantasy Football", while the home page uses "Gaffa · Fantasy Football, Played Like the Real Thing". Open Graph and Twitter cards inherit the layout's version. Gaffa also isn't only dynasty now; redraft is the easy entry.
 3. **No structured data.** Nothing in `src` emits JSON-LD.
 4. **The sitemap lists four URLs and stamps every one `lastModified: now` on each request**, which tells crawlers everything changes constantly. `robots.ts` allows `/help`, which redirects signed-out visitors to login.
@@ -83,8 +85,8 @@ Audit of `main` on 2026-11-07 (code read only; I haven't loaded the live pages o
 7. **No comparison pages or player pages** (Stage 3 in this plan).
 
 **Suggested order:**
-- **A. Technical fixes, no visual change:** one consistent title and description in the ownership voice, correct Open Graph cards, `Organization` and `WebSite` JSON-LD, a truthful sitemap, drop `/help` from robots, and cache the anonymous home page. Low risk; do first.
-- **B. Hero and section copy** with ownership up front. Words need Duke's approval (use `copywriting`, then the `gaffa-ui-copy` rules). Per DESIGN.md and past feedback, prototype any layout change before porting it.
+- **A. Technical fixes, no visual change:** one consistent title and description, correct Open Graph cards, `Organization` and `WebSite` JSON-LD, a truthful sitemap, drop `/help` from robots, and cache the anonymous home page. Low risk; do first.
+- **B. Hero and section copy.** Words need Duke's approval (use `copywriting`, then the `gaffa-ui-copy` rules). Per DESIGN.md and past feedback, prototype any layout change before porting it.
 - **C. Split the guide into crawlable topic pages**, each with its own metadata and a link into the app.
 - **D. Interactive help** (below).
 
