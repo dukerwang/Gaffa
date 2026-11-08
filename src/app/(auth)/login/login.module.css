@@ -92,10 +92,11 @@
 }
 
 .brandName {
+  font-family: var(--font-serif);
   font-weight: var(--font-bold);
   font-size: var(--text-lg);
   color: var(--color-text-primary);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
