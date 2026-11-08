@@ -1,16 +1,17 @@
 /**
- * Re-draws a league's cups that were seeded before there was anything to seed
- * from (see seeding.ts), so long as no tie has been played.
+ * Re-draws a league's cups that were seeded from the wrong table (see
+ * seeding.ts), so long as no tie has been played.
  *
  * A cup is rebuilt, not edited: it is deleted (rounds and ties cascade) and
- * createTournament makes it again from the current table, which also places
- * the bye clubs and tells every manager about the redraw. Nothing that has
- * been played is ever touched; a cup with a played tie or a drawn later round
- * is left exactly as it is.
+ * createTournament makes it again from the seeding table, which also places
+ * the bye clubs. It sends no notice when `silent`; announceFirstRound sends
+ * one later, once the wording is agreed. Nothing that has been played is ever
+ * touched; a cup with a played tie or a drawn later round is left exactly as
+ * it is.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createTournament } from '@/lib/tournaments/createTournaments';
-import { loadArchiveRanks, loadStandings, orderForSeeding } from '@/lib/tournaments/seeding';
+import { loadArchiveRanks, loadSeedTable, orderForSeeding } from '@/lib/tournaments/seeding';
 import type { TournamentType } from '@/types';
 
 export type ReseedOutcome =
@@ -52,16 +53,16 @@ export async function reseedUnplayedCups(
   admin: SupabaseClient,
   leagueId: string,
   season: string,
-  opts: { dryRun?: boolean } = {},
+  opts: { dryRun?: boolean; silent?: boolean } = {},
 ): Promise<ReseedOutcome[]> {
-  const [archiveRanks, standings, { data: teams }, { data: cups }] = await Promise.all([
+  const [archiveRanks, { data: teams }, { data: cups }] = await Promise.all([
     loadArchiveRanks(admin, leagueId),
-    loadStandings(admin, leagueId),
     admin.from('teams').select('id, team_name').eq('league_id', leagueId),
     admin.from('tournaments').select('id, type').eq('league_id', leagueId).eq('season', season),
   ]);
 
-  const { basis } = orderForSeeding(teams ?? [], archiveRanks, standings);
+  const seedTable = await loadSeedTable(admin, leagueId, teams ?? []);
+  const { basis } = orderForSeeding(teams ?? [], archiveRanks, seedTable);
   if (basis === 'none') {
     return (cups ?? []).map((c) => ({ type: c.type as TournamentType, status: 'kept', reason: 'no table to seed from yet' }));
   }
@@ -92,7 +93,7 @@ export async function reseedUnplayedCups(
 
     const { error } = await admin.from('tournaments').delete().eq('id', cup.id);
     if (error) throw new Error(`Could not remove ${type} for reseeding: ${error.message}`);
-    const made = await createTournament(admin, leagueId, type, 1, season, { corrected: true });
+    const made = await createTournament(admin, leagueId, type, 1, season, { corrected: true, silent: opts.silent });
     if (!made.ok || made.skipped || !made.tournament_id) {
       throw new Error(`${type} was removed but not rebuilt: ${made.error ?? 'skipped'}. Run createTournament for it.`);
     }

@@ -3,7 +3,6 @@ import { insertMatchups } from './insertMatchups';
 import { createAllTournaments } from '@/lib/tournaments/createTournaments';
 import { hasCupSeedBasis } from '@/lib/tournaments/seeding';
 import { getCurrentFplSeason } from '@/lib/season/currentSeason';
-import { resolveCurrentGw } from '@/lib/season/currentGameweek';
 
 export interface SeasonScaffoldResult {
   matchupsCreated: boolean;
@@ -63,7 +62,7 @@ export async function ensureSeasonScaffold(
       .eq('league_id', leagueId)
       .eq('season', resolvedSeason);
     const seedingReady =
-      (cupCount ?? 0) < 3 && (await hasCupSeedBasis(admin, leagueId, await resolveCurrentGw()));
+      (cupCount ?? 0) < 3 && (await hasCupSeedBasis(admin, leagueId));
 
     if (seedingReady) {
       const cupResult = await createAllTournaments(admin, leagueId, resolvedSeason);

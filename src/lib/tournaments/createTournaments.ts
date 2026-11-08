@@ -15,7 +15,12 @@ import {
   buildRoundSpecs,
   type SeedEntry,
 } from '@/lib/tournaments/engine';
-import { loadArchiveRanks, loadStandings, orderForSeeding } from '@/lib/tournaments/seeding';
+import {
+  INAUGURAL_SEASON_CUP_SEED_GW,
+  loadArchiveRanks,
+  loadSeedTable,
+  orderForSeeding,
+} from '@/lib/tournaments/seeding';
 import type { DrawnTie } from '@/lib/tournaments/draw';
 import { notifyDraw } from '@/lib/tournaments/runDraw';
 import { createNotification } from '@/lib/notifications/createNotification';
@@ -46,7 +51,8 @@ interface CreateAllTournamentsResult {
  * @param startGw   - The first gameweek that should be included (usually 1 for new season)
  * @param season    - The season string to tag the tournament with (e.g. '2026-27')
  * @param opts      - `corrected`: this replaces a bracket that was seeded wrongly,
- *                    and the managers' notices say so
+ *                    and the managers' notices say so. `silent`: send no notices;
+ *                    announceFirstRound sends them later.
  */
 export async function createTournament(
   admin: SupabaseClient,
@@ -54,7 +60,7 @@ export async function createTournament(
   type: TournamentType,
   startGw: number,
   season: string,
-  opts: { corrected?: boolean } = {},
+  opts: { corrected?: boolean; silent?: boolean } = {},
 ): Promise<CreateTournamentResult> {
   // --- Idempotency check ---
   const { data: existingTournament } = await admin
@@ -83,19 +89,19 @@ export async function createTournament(
     return { ok: false, error: 'Need at least 4 teams in the league' };
   }
 
-  // Seed from last season's archived table, else the current one once clubs
-  // have played. With neither, any seed would be alphabetical (see seeding.ts),
-  // so no bracket is made yet.
-  const [archiveRanks, standings] = await Promise.all([
+  // Seed from last season's archived table, else from this season's table
+  // after gameweek 7. With neither, any seed would be arbitrary (see
+  // seeding.ts), so no bracket is made yet.
+  const [archiveRanks, seedTable] = await Promise.all([
     loadArchiveRanks(admin, leagueId),
-    loadStandings(admin, leagueId),
+    loadSeedTable(admin, leagueId, allTeams),
   ]);
-  const { basis, ordered: orderedTeams } = orderForSeeding(allTeams, archiveRanks, standings);
+  const { basis, ordered: orderedTeams } = orderForSeeding(allTeams, archiveRanks, seedTable);
   if (basis === 'none') {
     return {
       ok: true,
       skipped: true,
-      error: `Skipped: ${type} has nothing to seed from yet (no archived table, no games played)`,
+      error: `Skipped: ${type} has nothing to seed from yet (no archived table, gameweek ${INAUGURAL_SEASON_CUP_SEED_GW} not finished)`,
     };
   }
 
@@ -269,31 +275,12 @@ export async function createTournament(
 
   // 7. Tell each manager who they drew. Later rounds are announced by runDraw
   // (League Cup) or follow from the bracket (Champions Cup).
-  try {
-    const ties: DrawnTie[] = [];
-    for (let i = 0; i < bracketSlots.length; i += 2) {
-      const [a, b] = [bracketSlots[i], bracketSlots[i + 1]];
-      if (a && b) ties.push({ a, b });
-      else if (a || b) ties.push({ a: (a ?? b) as string, b: null });
+  if (!opts.silent) {
+    try {
+      await announceFirstRound(admin, tournament.id, { corrected: opts.corrected });
+    } catch (err) {
+      console.error(`[createTournament] Failed to send ${type} draw notifications:`, err);
     }
-    await notifyDraw(
-      admin,
-      createNotification,
-      { league_id: leagueId, name: names[type] },
-      {
-        id: rounds[0].id,
-        tournament_id: tournament.id,
-        name: rounds[0].name,
-        round_number: rounds[0].round_number,
-        start_gameweek: rounds[0].start_gameweek,
-        end_gameweek: rounds[0].end_gameweek,
-        is_two_leg: rounds[0].is_two_leg,
-      },
-      ties,
-      { corrected: opts.corrected },
-    );
-  } catch (err) {
-    console.error(`[createTournament] Failed to send ${type} draw notifications:`, err);
   }
 
   return {
@@ -304,6 +291,42 @@ export async function createTournament(
     byes: bracketSize - seeds.length,
     rounds: rounds.length,
   };
+}
+
+/**
+ * Tells each manager in a cup's first round who they play, or that they have a
+ * bye. Reads the bracket as stored, so it announces whatever is there now.
+ */
+export async function announceFirstRound(
+  admin: SupabaseClient,
+  tournamentId: string,
+  opts: { corrected?: boolean } = {},
+): Promise<void> {
+  const { data: tournament } = await admin
+    .from('tournaments')
+    .select('id, league_id, name')
+    .eq('id', tournamentId)
+    .single();
+  const { data: round } = await admin
+    .from('tournament_rounds')
+    .select('id, tournament_id, name, round_number, start_gameweek, end_gameweek, is_two_leg')
+    .eq('tournament_id', tournamentId)
+    .eq('round_number', 1)
+    .single();
+  if (!tournament || !round) return;
+
+  const { data: slots } = await admin
+    .from('tournament_matchups')
+    .select('team_a_id, team_b_id')
+    .eq('round_id', round.id)
+    .order('bracket_position', { ascending: true });
+
+  const ties: DrawnTie[] = [];
+  for (const { team_a_id: a, team_b_id: b } of slots ?? []) {
+    if (a && b) ties.push({ a, b });
+    else if (a || b) ties.push({ a: (a ?? b) as string, b: null });
+  }
+  await notifyDraw(admin, createNotification, tournament, round, ties, opts);
 }
 
 /**

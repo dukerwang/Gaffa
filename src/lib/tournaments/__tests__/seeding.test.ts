@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { orderForSeeding } from '../seeding';
+import { orderForSeeding, tableThrough } from '../seeding';
 import { isUnplayed } from '../reseedCups';
 
 // Dynasty Dragoon on 2026-08-21: six clubs, nobody had played, so the table
@@ -16,9 +16,8 @@ const table = (rows: [string, number, number][]) =>
   new Map(rows.map(([id, rank, played]) => [id, { rank, played }]));
 
 describe('orderForSeeding', () => {
-  it('refuses to seed a table nobody has played in', () => {
-    const level = table(dragoon.map((t, i) => [t.id, i + 1, 0]));
-    expect(orderForSeeding(dragoon, new Map(), level).basis).toBe('none');
+  it('refuses to seed without an archive or a table', () => {
+    expect(orderForSeeding(dragoon, new Map(), new Map()).basis).toBe('none');
   });
 
   it('seeds from the table once clubs have played', () => {
@@ -58,5 +57,29 @@ describe('isUnplayed', () => {
 
   it('is played once a later round has been drawn', () => {
     expect(isUnplayed([bye, live], [{ drawn_at: null }, { drawn_at: '2027-02-01' }])).toBe(false);
+  });
+});
+
+describe('tableThrough', () => {
+  const t = [{ id: 'a', team_name: 'A' }, { id: 'b', team_name: 'B' }, { id: 'c', team_name: 'C' }];
+  const fm = (gameweek: number, a: string, b: string, sa: number, sb: number) =>
+    ({ gameweek, team_a_id: a, team_b_id: b, score_a: sa, score_b: sb });
+
+  it('is empty until the seeding gameweek has finished', () => {
+    expect(tableThrough([fm(6, 'a', 'b', 90, 80)], t, 7).size).toBe(0);
+  });
+
+  it('ignores gameweeks after the seeding gameweek', () => {
+    const table = tableThrough([fm(7, 'a', 'b', 120, 100), fm(8, 'b', 'a', 900, 100)], t, 7);
+    expect(table.get('a')?.rank).toBe(1);
+    expect(table.get('b')?.rank).toBe(3);
+  });
+
+  it('scores a margin inside the draw band as a draw, and breaks ties on goal difference', () => {
+    // a v b: 105-100 is a draw (1 point each). c has no game, so 0 points.
+    const table = tableThrough([fm(7, 'a', 'b', 105, 100)], t, 7);
+    expect(table.get('a')).toEqual({ rank: 1, played: 1 });
+    expect(table.get('b')).toEqual({ rank: 2, played: 1 });
+    expect(table.get('c')).toEqual({ rank: 3, played: 0 });
   });
 });
