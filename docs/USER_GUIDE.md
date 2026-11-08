@@ -290,7 +290,7 @@ It solves a real problem with league-only fantasy football, too: by March, half 
 **You don't set a separate cup lineup.** Your gameweek score is calculated once from your one XI, and that same score counts for your league match *and* any cup tie you have that week. One team, one performance, multiple competitions — exactly as a real squad plays a midweek cup game with the players it has.
 
 - **Brackets are seeded on league position** in the standard pattern (1 v 16, 8 v 9, 5 v 12 …), and **byes go to the top seeds**. Finishing high in the table is worth something beyond the table.
-- **In a league's first season, brackets are seeded at gameweek 7**, not at the draft. Seeding before anyone has played makes the seeds and byes arbitrary. A league with a previous season seeds immediately from its archived standings.
+- **In a league's first season, brackets are seeded at gameweek 7**, not at the draft. Seeding before anyone has played makes the seeds and byes arbitrary. A league with a previous season seeds immediately from its archived standings. Whenever a bracket or a drawn round is made, every manager gets a notification with their opponent, or their bye.
 - Some rounds are **two-legged**, decided on **aggregate** across both gameweeks.
 - **There are no draws in a cup.** The league's 10-point draw band doesn't apply — somebody has to advance.
 - **Level ties are settled by your best individual performer.** If the scores are equal, the club whose highest-scoring single player outscored the other's goes through.

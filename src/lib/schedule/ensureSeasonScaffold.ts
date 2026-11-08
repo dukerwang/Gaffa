@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { insertMatchups } from './insertMatchups';
-import { createAllTournaments, getPreviousSeason } from '@/lib/tournaments/createTournaments';
+import { createAllTournaments } from '@/lib/tournaments/createTournaments';
+import { hasCupSeedBasis } from '@/lib/tournaments/seeding';
 import { getCurrentFplSeason } from '@/lib/season/currentSeason';
 import { resolveCurrentGw } from '@/lib/season/currentGameweek';
 
@@ -9,17 +10,13 @@ export interface SeasonScaffoldResult {
   tournamentsCreated: boolean;
 }
 
-// A league with no previous season has nothing but pre-season standings to
-// seed cups from, so seeding is arbitrary (and byes doubly so) if generated
-// at draft time. Waiting until real form exists fixes that; a league with a
-// previous season seeds from its archived final standings instead, which are
-// meaningful immediately, so only the inaugural season needs the delay.
-const INAUGURAL_SEASON_CUP_SEED_GW = 7;
-
 /**
  * Creates everything a league needs once its draft completes: the
  * head-to-head schedule immediately, and all three cup brackets once seeding
- * is meaningful (see `INAUGURAL_SEASON_CUP_SEED_GW` above).
+ * is meaningful. A league with an archived table seeds from it straight away;
+ * a first-season league waits until `INAUGURAL_SEASON_CUP_SEED_GW`, because
+ * before anyone has played every club is level and the draw is alphabetical
+ * (src/lib/tournaments/seeding.ts).
  *
  * Why this exists as one call. The two generators used to be invoked
  * separately, and `draft/pick` only ever called `insertMatchups`. A draft that
@@ -58,9 +55,15 @@ export async function ensureSeasonScaffold(
 
   try {
     const resolvedSeason = season ?? (await getCurrentFplSeason());
-    const previousSeason = await getPreviousSeason(admin, leagueId);
+    // The common case on a page load is that the cups already exist; check
+    // that first, since the seeding gate reads the league table.
+    const { count: cupCount } = await admin
+      .from('tournaments')
+      .select('id', { count: 'exact', head: true })
+      .eq('league_id', leagueId)
+      .eq('season', resolvedSeason);
     const seedingReady =
-      previousSeason != null || (await resolveCurrentGw()) >= INAUGURAL_SEASON_CUP_SEED_GW;
+      (cupCount ?? 0) < 3 && (await hasCupSeedBasis(admin, leagueId, await resolveCurrentGw()));
 
     if (seedingReady) {
       const cupResult = await createAllTournaments(admin, leagueId, resolvedSeason);

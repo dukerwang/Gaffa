@@ -15,6 +15,10 @@ import {
   buildRoundSpecs,
   type SeedEntry,
 } from '@/lib/tournaments/engine';
+import { loadArchiveRanks, loadStandings, orderForSeeding } from '@/lib/tournaments/seeding';
+import type { DrawnTie } from '@/lib/tournaments/draw';
+import { notifyDraw } from '@/lib/tournaments/runDraw';
+import { createNotification } from '@/lib/notifications/createNotification';
 import type { TournamentType } from '@/types';
 
 export interface CreateTournamentResult {
@@ -41,6 +45,8 @@ interface CreateAllTournamentsResult {
  * @param type      - 'primary_cup' | 'secondary_cup' | 'consolation_cup'
  * @param startGw   - The first gameweek that should be included (usually 1 for new season)
  * @param season    - The season string to tag the tournament with (e.g. '2026-27')
+ * @param opts      - `corrected`: this replaces a bracket that was seeded wrongly,
+ *                    and the managers' notices say so
  */
 export async function createTournament(
   admin: SupabaseClient,
@@ -48,6 +54,7 @@ export async function createTournament(
   type: TournamentType,
   startGw: number,
   season: string,
+  opts: { corrected?: boolean } = {},
 ): Promise<CreateTournamentResult> {
   // --- Idempotency check ---
   const { data: existingTournament } = await admin
@@ -76,32 +83,21 @@ export async function createTournament(
     return { ok: false, error: 'Need at least 4 teams in the league' };
   }
 
-  // Seed by archived standings (previous season) → current standings fallback
-  const previousSeason = await getPreviousSeason(admin, leagueId);
-  const { data: prevStats } = previousSeason
-    ? await admin
-        .from('season_standings_archive')
-        .select('team_id, final_rank')
-        .eq('league_id', leagueId)
-        .eq('season', previousSeason)
-        .in('team_id', allTeams.map((t) => t.id))
-    : { data: null };
-
-  const { data: currentStandings } = await admin
-    .from('league_standings')
-    .select('team_id, rank')
-    .eq('league_id', leagueId);
-
-  const orderedTeams = [...allTeams].sort((a, b) => {
-    if (prevStats && prevStats.length > 0) {
-      const rankA = prevStats.find((s: any) => s.team_id === a.id)?.final_rank ?? 999;
-      const rankB = prevStats.find((s: any) => s.team_id === b.id)?.final_rank ?? 999;
-      return rankA - rankB;
-    }
-    const rankA = currentStandings?.find((s: any) => s.team_id === a.id)?.rank ?? 999;
-    const rankB = currentStandings?.find((s: any) => s.team_id === b.id)?.rank ?? 999;
-    return rankA - rankB;
-  });
+  // Seed from last season's archived table, else the current one once clubs
+  // have played. With neither, any seed would be alphabetical (see seeding.ts),
+  // so no bracket is made yet.
+  const [archiveRanks, standings] = await Promise.all([
+    loadArchiveRanks(admin, leagueId),
+    loadStandings(admin, leagueId),
+  ]);
+  const { basis, ordered: orderedTeams } = orderForSeeding(allTeams, archiveRanks, standings);
+  if (basis === 'none') {
+    return {
+      ok: true,
+      skipped: true,
+      error: `Skipped: ${type} has nothing to seed from yet (no archived table, no games played)`,
+    };
+  }
 
   // Filter eligible teams by tournament type & league size
   let eligible = orderedTeams;
@@ -271,6 +267,35 @@ export async function createTournament(
   // 6. Activate tournament
   await admin.from('tournaments').update({ status: 'active' }).eq('id', tournament.id);
 
+  // 7. Tell each manager who they drew. Later rounds are announced by runDraw
+  // (League Cup) or follow from the bracket (Champions Cup).
+  try {
+    const ties: DrawnTie[] = [];
+    for (let i = 0; i < bracketSlots.length; i += 2) {
+      const [a, b] = [bracketSlots[i], bracketSlots[i + 1]];
+      if (a && b) ties.push({ a, b });
+      else if (a || b) ties.push({ a: (a ?? b) as string, b: null });
+    }
+    await notifyDraw(
+      admin,
+      createNotification,
+      { league_id: leagueId, name: names[type] },
+      {
+        id: rounds[0].id,
+        tournament_id: tournament.id,
+        name: rounds[0].name,
+        round_number: rounds[0].round_number,
+        start_gameweek: rounds[0].start_gameweek,
+        end_gameweek: rounds[0].end_gameweek,
+        is_two_leg: rounds[0].is_two_leg,
+      },
+      ties,
+      { corrected: opts.corrected },
+    );
+  } catch (err) {
+    console.error(`[createTournament] Failed to send ${type} draw notifications:`, err);
+  }
+
   return {
     ok: true,
     tournament_id: tournament.id,
@@ -310,18 +335,6 @@ export async function createAllTournaments(
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-
-export async function getPreviousSeason(
-  admin: SupabaseClient,
-  leagueId: string,
-): Promise<string | null> {
-  const { data } = await admin
-    .from('leagues')
-    .select('previous_season')
-    .eq('id', leagueId)
-    .single();
-  return (data as any)?.previous_season ?? null;
-}
 
 async function advanceWinner(
   admin: SupabaseClient,

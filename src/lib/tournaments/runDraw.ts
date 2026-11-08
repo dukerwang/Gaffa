@@ -84,14 +84,21 @@ export async function runDraw(
   return { applied: true, ties: drawn };
 }
 
-async function notifyDraw(
+/**
+ * Tells each manager in `drawn` who they play, or that they have a bye. Also
+ * announces a cup's seeded first round (createTournament), where `corrected`
+ * marks the replacement for a bracket that was seeded before anyone had played.
+ */
+export async function notifyDraw(
   admin: SupabaseClient,
   notify: Notify,
   tournament: { league_id: string; name: string },
   round: DrawRound,
   drawn: DrawnTie[],
+  opts: { corrected?: boolean } = {},
 ) {
   const ids = drawn.flatMap((t) => [t.a, t.b]).filter((id): id is string => !!id);
+  if (ids.length === 0) return;
   const { data: teams } = await admin.from('teams').select('id, user_id, team_name').in('id', ids);
   const byId = new Map((teams ?? []).map((t) => [t.id as string, t]));
   const stage = round.name.toLowerCase();
@@ -104,14 +111,17 @@ async function notifyDraw(
     for (const [mine, other] of sides) {
       const team = byId.get(mine);
       if (!team) continue;
-      const content = other
-        ? `**${tournament.name}** ${stage} draw: you play **${byId.get(other)?.team_name ?? 'your opponent'}** ${when}.`
-        : `**${tournament.name}** ${stage} draw: you have a bye to the ${nextStage}.`;
+      const result = other
+        ? `you play **${byId.get(other)?.team_name ?? 'your opponent'}** ${when}.`
+        : `you have a bye to the ${nextStage}.`;
+      const content = opts.corrected
+        ? `**${tournament.name}** ${stage} redraw: ${result} The first draw was made before any games were played, so this one is seeded from the table.`
+        : `**${tournament.name}** ${stage} draw: ${result}`;
       await notify(admin, {
         kind: 'matchdays',
         leagueId: tournament.league_id,
         userId: (team.user_id as string | null) ?? null,
-        title: `${tournament.name} Draw`,
+        title: `${tournament.name} ${opts.corrected ? 'Redraw' : 'Draw'}`,
         content,
         url,
         tag: `cup-draw:${round.id}:${mine}`,
