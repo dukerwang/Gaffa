@@ -1,7 +1,21 @@
 .section { margin-bottom: var(--space-10); }
 
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s3); }
+
+.reset {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent-ink);
+  font-size: var(--t-13);
+  font-weight: 600;
+  cursor: pointer;
+}
+.reset:disabled { color: var(--color-text-muted); cursor: default; }
+
 .heading {
-  margin: 0 0 var(--s3);
+  margin: 0;
   font-family: var(--font-serif);
   font-size: var(--t-20);
   font-weight: 600;

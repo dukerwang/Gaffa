@@ -45,3 +45,12 @@ export function markSeen(chapter: { id: string; version: number }) {
 export function turnOffAutoStart() {
   write({ ...read(), off: true });
 }
+
+/** Back to a fresh start: every chapter shows once more, even after Skip All. */
+export function resetWalkthroughs() {
+  try {
+    window.localStorage.removeItem(KEY);
+  } catch {
+    // Nothing stored means nothing to reset.
+  }
+}
