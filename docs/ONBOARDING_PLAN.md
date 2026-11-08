@@ -23,7 +23,7 @@ The first prototype was a playable fake auction. Duke (2026-11-08): "it doesn't 
 | The Close | Barcola's real timeline: 72h minimum, last bid at about 74h, closed 2 hours later |
 | Overnight | Nothing closes between 23:00 and midday (`civilSettleFor`) |
 
-Left out for simplicity, and still in the guide: the uncontested weekend lot under €20m that settles at 06:45, and Transfer Day in redraft leagues, which needs its own timing step if a redraft league opens this chapter.
+Left out for simplicity, and still in the guide: the uncontested weekend lot under €20m that settles at 06:45. A redraft league sees a single Transfer Day step instead of these four.
 
 ## Build notes
 
