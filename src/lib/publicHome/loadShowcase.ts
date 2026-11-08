@@ -295,7 +295,9 @@ async function fetchShowcase(): Promise<Showcase> {
 }
 
 // The examples are settled records, so a day between refreshes is plenty.
-const getCachedShowcase = unstable_cache(fetchShowcase, ['public-showcase-examples-v2'], { revalidate: 86_400 });
+// Bump the version whenever Showcase changes shape. The cache outlives a deploy,
+// so the new code would otherwise read yesterday's object and crash on what's missing.
+const getCachedShowcase = unstable_cache(fetchShowcase, ['public-showcase-examples-v3'], { revalidate: 86_400 });
 
 export async function loadShowcase(): Promise<Showcase> {
   if (process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST)) return fetchShowcase();
