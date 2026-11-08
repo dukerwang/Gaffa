@@ -29,6 +29,9 @@ In order of cost:
 5. **The docs say something the code doesn't.** `docs/USER_GUIDE.md` and
    `CLAUDE.md` quote exact numbers. A change to one of those numbers must
    update the guide in the same PR.
+   The walkthroughs in `src/lib/walkthroughs/chapters.ts` explain pages in
+   words: a PR that changes what a page does must update its chapter and bump
+   the chapter's `version`, so managers see the new one.
 
 Everything else, including how the code reads, is secondary.
 

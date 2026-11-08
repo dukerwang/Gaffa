@@ -1,0 +1,36 @@
+.rows { display: grid; gap: 7px; }
+.row { display: grid; grid-template-columns: 96px minmax(0, 1fr) 34px; align-items: center; gap: 10px; font-size: var(--t-13); color: var(--color-text-secondary); }
+.rowLabel { white-space: nowrap; }
+.track { display: block; height: 14px; border-radius: 3px; background: var(--color-bg-inset); overflow: hidden; }
+.track i { display: block; height: 100%; background: var(--color-border-strong); }
+.rowValue { text-align: right; font-family: var(--font-serif); font-size: var(--t-15); font-weight: 700; color: var(--color-text-primary); font-variant-numeric: tabular-nums lining-nums; }
+.row[data-on] { color: var(--color-text-primary); font-weight: 600; }
+.row[data-on] .track i { background: var(--color-accent); }
+.note { margin-top: var(--s2); display: flex; align-items: center; gap: var(--s3); font-size: var(--t-13); color: var(--color-text-secondary); }
+.note b { color: var(--color-text-primary); font-weight: 600; }
+
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.step { min-width: 0; text-align: center; }
+.well { height: 104px; display: flex; align-items: flex-end; border-radius: 6px; background: var(--color-bg-inset); overflow: hidden; }
+.bar { width: 100%; min-height: 28px; display: grid; place-items: center; background: var(--color-accent); color: var(--color-on-accent); }
+.bar b { font-family: var(--font-serif); font-size: var(--t-17); font-weight: 700; }
+.stepLabel { display: block; margin-top: 6px; font-size: var(--t-12); color: var(--color-text-secondary); white-space: nowrap; }
+
+.svgLabel { font-family: var(--font-label); font-size: 12px; font-weight: 600; fill: var(--color-text-secondary); }
+.svgStrong { font-family: var(--font-serif); font-size: 15px; font-weight: 700; fill: var(--color-text-primary); }
+.svgAxis { font-family: var(--font-label); font-size: 12px; fill: var(--color-text-muted); }
+
+.key { margin-top: var(--s1); display: flex; gap: var(--s4); font-size: var(--t-12); color: var(--color-text-secondary); white-space: nowrap; }
+.key span { display: inline-flex; align-items: center; gap: 6px; }
+.key i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; }
+
+.dayBar { position: relative; height: 26px; border-radius: 5px; background: var(--color-green-300); overflow: hidden; }
+.dayBar i { position: absolute; top: 0; bottom: 0; background: var(--color-text-secondary); }
+.dayBar b { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--color-bg-card); }
+.dayLabels { position: relative; height: 22px; margin-top: 5px; font-size: var(--t-12); color: var(--color-text-muted); }
+.dayLabels span { position: absolute; top: 0; white-space: nowrap; }
+.dayLabels strong { color: var(--color-text-primary); font-weight: 600; }
+
+@media (max-width: 640px) {
+  .row { grid-template-columns: 88px minmax(0, 1fr) 34px; }
+}

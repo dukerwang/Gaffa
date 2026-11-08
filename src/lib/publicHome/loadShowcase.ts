@@ -60,6 +60,8 @@ export interface ShowcaseArrival {
   openingBid: number | null;
   /** Every bid's amount, oldest first. */
   bidAmounts: number[];
+  /** Hours after the first bid that each bid landed. */
+  bidHours: number[];
   /** How many clubs bid. Counted, never named. */
   clubs: number;
 }
@@ -258,6 +260,7 @@ async function loadArrival(admin: AdminClient): Promise<ShowcaseArrival | null> 
     bids: Number(row.bid_count ?? 0),
     openingBid: history.length ? Number(history[0].amount) : null,
     bidAmounts: history.map((b) => Number(b.amount)),
+    bidHours: history.map((b) => (new Date(b.at).getTime() - new Date(history[0].at).getTime()) / 3_600_000),
     clubs: new Set(history.map((b) => b.team_id)).size,
   };
 }

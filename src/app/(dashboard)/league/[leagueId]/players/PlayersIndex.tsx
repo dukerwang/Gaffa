@@ -282,6 +282,7 @@ export default function PlayersIndex({
             />
           )}
 
+          <div data-tour="players-views">
           <SegmentedControl<'cards' | 'table' | 'explorer'>
             variant="ink"
             ariaLabel="View"
@@ -296,6 +297,7 @@ export default function PlayersIndex({
               { value: 'explorer', label: 'Explorer' },
             ]}
           />
+          </div>
         </div>
       </header>
     </>
@@ -355,7 +357,7 @@ export default function PlayersIndex({
     <div className="g-panel">
       {header}
 
-      <div className={styles.tools}>
+      <div className={styles.tools} data-tour="players-tools">
         <input
           className={styles.input}
           placeholder="Search player or club…"

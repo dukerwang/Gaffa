@@ -1,0 +1,129 @@
+/* The walkthrough, ported from the approved prototype (Claude Design,
+   "Walkthroughs", 2026-11-08). */
+
+.root { position: fixed; inset: 0; z-index: 1200; pointer-events: none; }
+
+.spot {
+  position: fixed;
+  border-radius: 12px;
+  box-shadow: 0 0 0 200vmax rgba(14, 16, 12, 0.58), 0 0 0 2px #fff;
+  transition:
+    left var(--dur-base) var(--ease-standard),
+    top var(--dur-base) var(--ease-standard),
+    width var(--dur-base) var(--ease-standard),
+    height var(--dur-base) var(--ease-standard);
+}
+
+.scrim { position: fixed; inset: 0; background: rgba(14, 16, 12, 0.58); }
+.shield { position: fixed; inset: 0; pointer-events: auto; }
+
+.layer { position: fixed; inset: 0; pointer-events: none; }
+.layerCentred { display: grid; place-items: center; padding: var(--s6); }
+
+.card {
+  position: fixed;
+  width: 348px;
+  max-width: calc(100vw - 32px);
+  padding: var(--s4) 18px 14px;
+  border-radius: 14px;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-xl);
+  pointer-events: auto;
+  outline: none;
+  animation: enter var(--dur-base) var(--ease-standard) both;
+}
+
+.layerCentred .card { position: static; }
+.cardWide { width: 540px; max-width: 100%; }
+
+@keyframes enter {
+  from { opacity: 0; transform: translateY(6px) scale(0.985); }
+}
+
+.head { display: flex; align-items: center; gap: 10px; }
+
+.mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--color-topbar);
+  color: #fff;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-20);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+
+.close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-right: -6px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.diagram { margin-top: var(--s4); }
+
+.body {
+  margin: var(--s3) 0 0;
+  font-size: var(--t-15);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  text-wrap: pretty;
+}
+
+.foot { margin-top: 14px; display: flex; align-items: center; gap: var(--s2); }
+.ticks { flex: 1; min-width: 0; display: flex; gap: 3px; }
+.ticks i { flex: 1; max-width: 14px; height: 3px; border-radius: 2px; background: var(--color-border); }
+.ticks i[data-on] { background: var(--color-accent); }
+
+.btn {
+  min-height: 40px;
+  padding: 0 var(--s4);
+  border: 0;
+  border-radius: 8px;
+  font-family: var(--font-label);
+  font-size: var(--t-15);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.go { background: var(--color-accent); color: var(--color-on-accent); }
+.ghost { background: transparent; color: var(--color-text-primary); box-shadow: inset 0 0 0 1px var(--color-border-strong); }
+
+@media (max-width: 640px) {
+  .layer, .layerCentred { display: flex; align-items: flex-end; padding: 0; }
+  .card, .cardWide, .layerCentred .card {
+    position: static;
+    width: 100%;
+    max-width: none;
+    border-radius: 16px 16px 0 0;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    max-height: 80dvh;
+    overflow-y: auto;
+  }
+  .btn { min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card { animation: none; }
+  .spot { transition: none; }
+}

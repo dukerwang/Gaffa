@@ -32,7 +32,7 @@ export default function FinanceClient({ data }: { data: FinanceData }) {
             <h1 className={styles.title}>Finance</h1>
             <span className={styles.club}>{me.name}</span>
           </div>
-          <div className={styles.shelfSwitch}>
+          <div className={styles.shelfSwitch} data-tour="fin-view">
             <SegmentedControl<View>
               variant="ink"
               ariaLabel="Finance view"
@@ -46,7 +46,7 @@ export default function FinanceClient({ data }: { data: FinanceData }) {
           </div>
         </div>
 
-        <div className={styles.hero}>
+        <div className={styles.hero} data-tour="fin-hero">
           <div className={styles.spend}>
             <span className={styles.shelfKey}>Spendable</span>
             <span className={`${styles.spendFig} ${over ? styles.spendOver : ''}`}>

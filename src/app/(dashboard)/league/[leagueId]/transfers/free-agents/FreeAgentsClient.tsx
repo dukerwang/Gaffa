@@ -248,7 +248,7 @@ export default function FreeAgentsClient({
         </section>
       )}
 
-      <div className={styles.tools}>
+      <div className={styles.tools} data-tour="fa-tools">
         <input
           className={styles.input}
           placeholder="Search every unowned player…"
@@ -302,9 +302,10 @@ export default function FreeAgentsClient({
             </tr>
           </thead>
           <tbody className={loading ? styles.loading : ''}>
-            {rows.map((p) => (
+            {rows.map((p, i) => (
               <tr
                 key={p.id}
+                data-tour={i === 0 ? 'fa-row' : undefined}
                 className="g-row"
                 style={{ '--pf': `var(--color-pos-${String(p.primary_position).toLowerCase()})` } as React.CSSProperties}
               >

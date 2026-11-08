@@ -21,7 +21,7 @@ export default async function LeagueHelpPage({ params }: Props) {
   const admin = createAdminClient();
   const { data: league } = await admin
     .from('leagues')
-    .select('id, commissioner_id')
+    .select('id, commissioner_id, is_dynasty')
     .eq('id', leagueId)
     .single();
 
@@ -38,5 +38,5 @@ export default async function LeagueHelpPage({ params }: Props) {
     redirect('/dashboard');
   }
 
-  return <HelpClient leagueId={leagueId} />;
+  return <HelpClient leagueId={leagueId} isDynasty={league.is_dynasty !== false} />;
 }

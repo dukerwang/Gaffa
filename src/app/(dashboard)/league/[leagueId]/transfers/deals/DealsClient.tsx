@@ -455,7 +455,7 @@ export default function DealsClient({
       <div className={styles.body}>
         <main className={styles.main}>
           {/* A listing is an advertisement, never the only route in. */}
-          <div className={styles.proposeBar}>
+          <div className={styles.proposeBar} data-tour="deals-propose">
             <span className={styles.proposeText}>
               <b>Start something.</b> You don&rsquo;t need a listing — propose on any player in the league.
             </span>

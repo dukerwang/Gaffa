@@ -58,7 +58,7 @@ export default function Ledger({ ledger }: { ledger: LedgerData }) {
   }, [shown]);
 
   return (
-    <section className={styles.section} aria-labelledby="fin-ledger">
+    <section className={styles.section} aria-labelledby="fin-ledger" data-tour="fin-ledger">
       <div className={styles.sectionHd}>
         <h2 id="fin-ledger" className={styles.sectionTitle}>Ledger</h2>
         <SegmentedControl<Filter>

@@ -23,7 +23,7 @@ export function TrophyShelf({
 }) {
   return (
     <>
-      <section className={s.shelf} aria-labelledby="cups-title">
+      <section className={s.shelf} aria-labelledby="cups-title" data-tour="cups-shelf">
         <div className={s.shelfGrid}>
           <div>
             <h1 id="cups-title" className={s.shelfH}>Cups</h1>

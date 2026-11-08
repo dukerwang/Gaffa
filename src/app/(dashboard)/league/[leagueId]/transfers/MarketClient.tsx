@@ -282,7 +282,7 @@ export default function MarketClient({
           {/* ── New transfers ───────────────────────────── */}
           {model.newTransfers.length > 0 && (
             <>
-              <div className={`${styles.sect} ${styles.sectSpaced}`}>
+              <div className={`${styles.sect} ${styles.sectSpaced}`} data-tour="market-new">
                 <h2 className={styles.sectTitle}>New Transfers</h2>
                 <span className={styles.sectHint}>arrived in the last week, not yet on the market</span>
                 <NavigationLink href={`/league/${leagueId}/transfers/free-agents`} className={styles.sectMore}>
@@ -420,7 +420,7 @@ export default function MarketClient({
         </main>
 
         {/* ── The Wire ──────────────────────────────────── */}
-        <aside className={styles.rail}>
+        <aside className={styles.rail} data-tour="market-wire">
           <div className={styles.railHead}>
             <h2 className={styles.railTitle}>The Wire</h2>
             <span className={styles.railLive}>● Live</span>

@@ -156,6 +156,9 @@ All frontend UI copy, microcopy, error messages, documentation, and agent respon
 - **Name things, don’t narrate them**: a heading is the name of the thing beneath it, not a caption about it. "Title-Winning XI", not "The XI That Won It"; "League & Cups", not "How It Splits"; "Previous Meetings", not "Every Meeting".
 - **Vocabulary**: "FAAB" is internal vocabulary only (`faab_budget`), but all UI text, error messages, and emails say **"Club Balance"** (or "budget"), formatted as `€{n}m`. Never render it as a spent/remaining usage meter. Leagues cycle indefinitely; they are never "completed".
 
+### Walkthroughs
+Each main league page has a chapter in `src/lib/walkthroughs/chapters.ts`: short steps that spotlight part of the real page, started once by `WalkthroughHost` the first time a manager opens that page after the draft (browser storage, no requests), and replayable from Help. A step names a `data-tour` attribute on the page. `src/lib/walkthroughs/__tests__/chapters.test.ts` fails if an anchor or route disappears, but it can't tell whether the words still fit: **when you change what a page does, update its chapter and bump its `version`** so managers see the new one. Take figures from the constants that enforce the rule (`DECAY_BANDS`, the `TIER_*` floors, `DRAW_THRESHOLD`), never retype them.
+
 ### Agent skills policy
 - **Recommended skills**:
   - `emil-design-eng`: Implements §4.A of `DESIGN.md` (button press physics, modal/drawer transitions, origin-aware popovers, snappy <250ms threshold).

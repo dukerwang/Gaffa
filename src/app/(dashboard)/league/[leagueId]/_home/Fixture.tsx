@@ -57,7 +57,7 @@ export default function Fixture({ model }: { model: HomeModel }) {
   const secondaryLabel = model.secondaryKind === 'preview' ? 'Up next' : 'Last week';
 
   return (
-    <section className={styles.hero} aria-label="Your fixture">
+    <section className={styles.hero} aria-label="Your fixture" data-tour="home-fixture">
       {hasSecondary && (
         <div className={styles.heroTabs} role="tablist" aria-label="Switch fixture">
           <button

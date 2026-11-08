@@ -89,7 +89,7 @@ export function GameweekBar({ leagueId, gw, gameweeks, ribbon, record, state, wi
     : <>{state === 'live' ? 'Live' : state === 'final' ? 'Final' : 'Provisional'} · <Local>{() => weekendRange(win.first, win.last)}</Local></>;
 
   return (
-    <nav className={s.gwb} aria-label="Gameweeks">
+    <nav className={s.gwb} aria-label="Gameweeks" data-tour="gw-bar">
       <span className={`${s.gwbName} ${s.dOnly}`}>Gameweeks</span>
       <span className={`${s.gwbStep} ${s.dOnly}`}>
         <IconButton variant="secondary" label="Previous Gameweek" icon={<Glyph k="left" size={18} />} disabled={prev == null} onClick={() => prev != null && go(prev)} />

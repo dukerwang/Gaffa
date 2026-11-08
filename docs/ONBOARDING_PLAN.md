@@ -1,6 +1,6 @@
 # Walkthroughs and the Barcola Example
 
-**Status:** Proposal for Duke, revised 2026-11-08 after he saw the first prototype. Nothing here is built. Prototype: Claude Design project `a374f0d1-ef30-4e18-8345-68b69adeab26`, file `Walkthroughs.dc.html`.
+**Status:** Prototype approved by Duke 2026-11-08 ("this is cool! i like this"); built on `feat/walkthroughs`. Chapters cover League Home, Lineups, My Club, Gameweeks, Transfer Market, Auctions, Free Agency, Listings, Deals, Players, Cups and Finance. Prototype: Claude Design project `a374f0d1-ef30-4e18-8345-68b69adeab26`, file `Walkthroughs.dc.html`.
 
 ## What changed
 
@@ -31,7 +31,7 @@ Left out for simplicity, and still in the guide: the uncontested weekend lot und
 - Seen state goes in `localStorage`, so a first visit can offer the chapter once and dismiss once.
 - The Barcola panel uses figures the front page already loads (`loadShowcase.ts`: value, winning bid, bid amounts, bid and club counts). PSG isn't in that data and would be a pinned constant.
 - Don't rebuild the pitch or player card. Spotlights target shipped elements through a `data-tour` attribute.
-- Chapters still to write after the Transfer Market is approved: My Club, Lineups, Cups.
+- A chapter starts the first time a manager opens its page after the draft (Duke, 2026-11-08). Skip All turns that off; Help still replays any chapter.
 
 ## How to tell if it works
 
