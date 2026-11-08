@@ -1,6 +1,6 @@
 # Walkthroughs and the Barcola Example
 
-**Status:** Prototype approved by Duke 2026-11-08 ("this is cool! i like this"); built on `feat/walkthroughs`. Chapters cover League Home, Lineups, My Club, Gameweeks, Transfer Market, Auctions, Free Agency, Listings, Deals, Players, Cups and Finance. Prototype: Claude Design project `a374f0d1-ef30-4e18-8345-68b69adeab26`, file `Walkthroughs.dc.html`.
+**Status:** Prototype approved by Duke 2026-11-08 ("this is cool! i like this"); built on `feat/walkthroughs`. Chapters cover League Home, Lineups, My Club, Gameweeks, Transfer Market, Auctions, Free Agency, Deals, Players, Cups and Finance. Prototype: Claude Design project `a374f0d1-ef30-4e18-8345-68b69adeab26`, file `Walkthroughs.dc.html`.
 
 ## What changed
 

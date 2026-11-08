@@ -403,7 +403,7 @@ export default function TopBar() {
 
         {/* --- Page Navigation (only when in a league) --- */}
         {currentLeagueId && (
-          <div className={styles.pageNav} ref={pageNavRef}>
+          <div className={styles.pageNav} ref={pageNavRef} data-tour="nav-main">
             {/* Home (standalone) */}
             <div className={styles.navItem}>
               <Link
@@ -509,7 +509,7 @@ export default function TopBar() {
         <div className={styles.rightSection}>
           {/* Club Balance */}
           {currentLeagueId && currentTeam && (
-            <div className={styles.balanceContainer}>
+            <div className={styles.balanceContainer} data-tour="nav-balance">
               <button
                 ref={setBalanceAnchor}
                 type="button"

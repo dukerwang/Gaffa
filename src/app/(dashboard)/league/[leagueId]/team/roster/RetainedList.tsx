@@ -35,7 +35,7 @@ export default function RetainedList({
   const groupCount = [pending, retained, onLoan].filter((g) => g.length > 0).length;
 
   return (
-    <section className={`${styles.panel} ${styles.retained} g-panel`}>
+    <section className={`${styles.panel} ${styles.retained} g-panel`} data-tour="club-retained">
       <div className={styles.panelHead}>
         <h2 className={styles.panelTitle}>Retained List</h2>
         <span className="g-label">{slots.used} / {slots.total} slots</span>

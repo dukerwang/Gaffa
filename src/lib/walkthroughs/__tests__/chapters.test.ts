@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { AUCTION_TIMING_STEPS, CHAPTERS, chapterForPath, isPostDraft, stepsForFormat } from '../chapters';
+import { AUCTION_TIMING_STEPS, CHAPTERS, FIGURES, chapterForPath, isPostDraft, stepsForFormat } from '../chapters';
 
 const SRC = path.resolve(__dirname, '../../..');
 const LEAGUE_APP = path.join(SRC, 'app/(dashboard)/league/[leagueId]');
@@ -38,6 +38,17 @@ describe('walkthrough chapters', () => {
     expect(CHAPTERS.filter((c) => !routeExists(c.route)).map((c) => c.id)).toEqual([]);
   });
 
+  it('quotes the figures the rules actually use', () => {
+    const read = (f: string) => readFileSync(path.join(SRC, f), 'utf8');
+    const num = (f: string, re: RegExp) => Number(re.exec(read(f))?.[1]);
+    expect(num('lib/offseason/seasonKickoff.ts', /AUCTION_THRESHOLD = ([\d.]+)/)).toBe(FIGURES.arrivalAuctionMin);
+    expect(num('lib/auction/leagueAuctionSettings.ts', /DEFAULT_BID_FLOOR = ([\d.]+)/) * 100).toBeCloseTo(FIGURES.bidFloorPct);
+    expect(num('lib/transfers/compensation.ts', /COMPENSATION_RATE = ([\d.]+)/) * 100).toBeCloseTo(FIGURES.compensationPct);
+    expect(num('lib/roster/executeDrop.ts', /marketValue \* ([\d.]+)/) * 100).toBeCloseTo(FIGURES.severancePct);
+    expect(num('lib/roster/executeDrop.ts', /Math\.max\((\d+), Math\.floor\(marketValue/)).toBe(FIGURES.severanceMin);
+    expect(num('lib/economy/meritPayments.ts', /MERIT_PERIOD_LENGTH = (\d+)/)).toBe(FIGURES.meritPeriod);
+  });
+
   it('gives each chapter a unique id and route', () => {
     expect(new Set(CHAPTERS.map((c) => c.id)).size).toBe(CHAPTERS.length);
     expect(new Set(CHAPTERS.map((c) => c.route)).size).toBe(CHAPTERS.length);
@@ -56,7 +67,7 @@ describe('walkthrough chapters', () => {
     expect(chapterForPath('/league/x', 'x', 'dynasty')?.id).toBe('home');
     expect(chapterForPath('/league/x/transfers/auctions', 'x', 'dynasty')?.id).toBe('auctions');
     expect(chapterForPath('/league/x/matchups/abc', 'x', 'dynasty')).toBeNull();
-    expect(chapterForPath('/league/x/transfers/listings', 'x', 'redraft')).toBeNull();
+    expect(chapterForPath('/league/x/transfers/listings', 'x', 'dynasty')).toBeNull();
     expect(chapterForPath('/league/y', 'x', 'dynasty')).toBeNull();
   });
 

@@ -114,7 +114,7 @@ export default function MyClub({ data }: { data: FinanceData }) {
         </section>
 
         {/* ── Money Due ── */}
-        <section className={styles.card} aria-labelledby="fin-due">
+        <section className={styles.card} aria-labelledby="fin-due" data-tour="fin-due">
           <header className={styles.cardHd}>
             <h2 id="fin-due" className={styles.cardTitle}>Money Due</h2>
             {revenue && <span className={styles.cardFig}><small>Next Payout</small> GW{revenue.payAfterGw}</span>}

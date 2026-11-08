@@ -2375,6 +2375,7 @@ export default function PitchUI({
                     selected states had already drifted apart. One row class
                     serves all four now. */}
                 <div
+                    data-tour="lineup-rail"
                     className={styles.sidebarCol}
                     data-squad-open={squadOpen ? 'true' : 'false'}
                     style={isPhone ? {
@@ -2394,6 +2395,7 @@ export default function PitchUI({
                         legible without opening anything. */}
                     <motion.button
                         type="button"
+                        data-tour="lineup-handle"
                         className={styles.squadHandle}
                         onPanStart={isPhone ? handleSquadPanStart : undefined}
                         onPan={isPhone ? handleSquadPan : undefined}

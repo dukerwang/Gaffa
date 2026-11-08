@@ -274,7 +274,7 @@ export default function ListingsClient({
             onChange={setSort}
             items={SORTS.map((s) => ({ value: s.key, label: `Sort: ${s.label}` }))}
           />
-          <button type="button" className={styles.cta} data-tour="list-cta" onClick={() => setEditing('new')}>
+          <button type="button" className={styles.cta} onClick={() => setEditing('new')}>
             + List a player
           </button>
         </div>
@@ -304,7 +304,7 @@ export default function ListingsClient({
             : 'No listing matches those filters.'}
         </EmptyState>
       ) : (
-        <div className={styles.grid} data-tour="list-board">
+        <div className={styles.grid}>
           {visible.map((l) => (
             <ListingCard
               key={l.id}

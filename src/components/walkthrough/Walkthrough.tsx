@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/ui/Icon';
 import type { WalkthroughStep } from '@/lib/walkthroughs/chapters';
-import { TimingDiagramView } from './TimingDiagrams';
+import { DiagramView } from './TimingDiagrams';
 import styles from './Walkthrough.module.css';
 
 interface Props {
@@ -32,6 +32,11 @@ function sameBox(a: Box | null, b: Box) {
   return !!a && Math.abs(a.left - b.left) < 0.5 && Math.abs(a.top - b.top) < 0.5 && Math.abs(a.width - b.width) < 0.5 && Math.abs(a.height - b.height) < 0.5;
 }
 
+function stepAvailable(step: WalkthroughStep, phone: boolean) {
+  if ((step.desktopOnly && phone) || (step.phoneOnly && !phone)) return false;
+  return !step.at || !!step.fallback || !!findTarget(step.at);
+}
+
 export function findTarget(at: string): HTMLElement | null {
   const el = document.querySelector<HTMLElement>(`[data-tour="${at}"]`);
   if (!el) return null;
@@ -45,12 +50,18 @@ export function findTarget(at: string): HTMLElement | null {
  * while it's open.
  */
 export default function Walkthrough({ steps, onExit, onSkipAll }: Props) {
-  const [index, setIndex] = useState(0);
+  const [phone, setPhone] = useState(() => window.matchMedia(PHONE).matches);
+  // Availability is read when a step is reached, not up front: a page's rows
+  // can arrive after the walkthrough has started.
+  const [index, setIndex] = useState(() => Math.max(0, steps.findIndex((s) => stepAvailable(s, window.matchMedia(PHONE).matches))));
   const [spot, setSpot] = useState<Box | null>(null);
-  const [phone, setPhone] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const step = steps[Math.min(index, steps.length - 1)];
-  const last = index >= steps.length - 1;
+  const nextIndex = steps.findIndex((s, i) => i > index && stepAvailable(s, phone));
+  const prevIndex = steps.reduce((found, s, i) => (i < index && stepAvailable(s, phone) ? i : found), -1);
+  const last = nextIndex < 0;
+  const targetMissing = !!step.at && !findTarget(step.at);
+  const diagram = step.diagram ?? (targetMissing && step.fallback !== true ? step.fallback : undefined);
 
   useEffect(() => {
     const mq = window.matchMedia(PHONE);
@@ -108,7 +119,7 @@ export default function Walkthrough({ steps, onExit, onSkipAll }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [finish]);
 
-  const shownSpot = step.at ? spot : null;
+  const shownSpot = step.at && !targetMissing ? spot : null;
   const centred = !shownSpot;
   let cardStyle: CSSProperties | undefined;
   if (shownSpot && !phone) {
@@ -129,7 +140,7 @@ export default function Walkthrough({ steps, onExit, onSkipAll }: Props) {
         <div
           key={index}
           ref={cardRef}
-          className={step.diagram ? `${styles.card} ${styles.cardWide}` : styles.card}
+          className={diagram ? `${styles.card} ${styles.cardWide}` : styles.card}
           style={cardStyle}
           role="dialog"
           aria-modal="true"
@@ -143,18 +154,18 @@ export default function Walkthrough({ steps, onExit, onSkipAll }: Props) {
               <Icon name="x" size={16} strokeWidth={2} />
             </button>
           </div>
-          {step.diagram && <div className={styles.diagram}><TimingDiagramView diagram={step.diagram} /></div>}
+          {diagram && <div className={styles.diagram}><DiagramView diagram={diagram} /></div>}
           <p className={styles.body}>{step.body}</p>
           <div className={styles.foot}>
             <div className={styles.ticks} aria-hidden="true">
               {steps.map((s, i) => <i key={`${s.title}-${i}`} data-on={i <= index || undefined} />)}
             </div>
-            {index > 0 ? (
-              <button type="button" className={`${styles.btn} ${styles.ghost}`} onClick={() => setIndex(index - 1)}>Back</button>
+            {prevIndex >= 0 ? (
+              <button type="button" className={`${styles.btn} ${styles.ghost}`} onClick={() => setIndex(prevIndex)}>Back</button>
             ) : onSkipAll ? (
               <button type="button" className={`${styles.btn} ${styles.ghost}`} onClick={onSkipAll}>Skip All</button>
             ) : null}
-            <button type="button" className={`${styles.btn} ${styles.go}`} onClick={() => (last ? finish() : setIndex(index + 1))}>
+            <button type="button" className={`${styles.btn} ${styles.go}`} onClick={() => (last ? finish() : setIndex(nextIndex))}>
               {last ? 'Done' : 'Next'}
             </button>
           </div>

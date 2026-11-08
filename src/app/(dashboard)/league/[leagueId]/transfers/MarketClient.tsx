@@ -185,7 +185,7 @@ export default function MarketClient({
       <div className={styles.body}>
         <main className={styles.main}>
           {/* ── Closing now ─────────────────────────────── */}
-          <div className={styles.sect}>
+          <div className={styles.sect} data-tour="market-closing">
             <h2 className={styles.sectTitle}>
               Closing Now <AuctionTimingHelp />
             </h2>
@@ -391,7 +391,7 @@ export default function MarketClient({
           </div>
 
           {/* ── Schedule ────────────────────────────────── */}
-          <div className={`${styles.sect} ${styles.sectSpaced}`}>
+          <div className={`${styles.sect} ${styles.sectSpaced}`} data-tour="market-deadlines">
             <h2 className={styles.sectTitle}>Deadlines</h2>
             <span className={styles.sectHint}>next seven days</span>
           </div>

@@ -31,6 +31,38 @@
 .dayLabels span { position: absolute; top: 0; white-space: nowrap; }
 .dayLabels strong { color: var(--color-text-primary); font-weight: 600; }
 
+.lot { display: grid; grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); padding: var(--s2); border-radius: var(--r-shell); background: var(--color-bg-card-alt); box-shadow: inset 0 0 0 1px var(--color-border-subtle); }
+.lotId { min-width: 0; display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+.lotName { display: inline-flex; align-items: center; gap: var(--s2); font-family: var(--font-serif); font-size: var(--t-15); font-weight: 700; white-space: nowrap; }
+.lotTag { padding: 0 var(--s1); border-radius: var(--r-micro); border: 1px dashed currentColor; color: var(--color-text-muted); font-family: var(--font-label); font-size: var(--t-10); font-weight: 700; letter-spacing: 0.1em; line-height: 15px; text-transform: uppercase; white-space: nowrap; }
+.lotCell { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: var(--s1) var(--s2); border-radius: 6px; }
+.lotCell[data-on] { box-shadow: 0 0 0 2px var(--color-accent); }
+.lotKey { font-family: var(--font-label); font-size: var(--t-10); letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-muted); white-space: nowrap; }
+.lotMoney { font-family: var(--font-mono); font-size: var(--t-15); font-weight: 700; }
+.lotClock { font-family: var(--font-mono); font-size: var(--t-13); font-weight: 700; color: var(--color-text-secondary); white-space: nowrap; }
+.lotBid { padding: var(--s2) var(--s3); border-radius: var(--r-control); background: var(--color-accent); color: var(--color-on-accent); font-family: var(--font-label); font-size: var(--t-11); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.lotBid[data-on] { box-shadow: 0 0 0 2px var(--color-bg-card), 0 0 0 4px var(--color-accent); }
+
+.choiceWho { display: flex; align-items: center; gap: var(--s3); font-size: var(--t-13); color: var(--color-text-secondary); }
+.choiceWho b { color: var(--color-text-primary); font-weight: 600; }
+.choiceGrid { margin-top: var(--s4); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+.option { display: flex; flex-direction: column; gap: 4px; padding: var(--s3); border-radius: var(--r-shell); background: var(--color-bg-card-alt); box-shadow: inset 0 0 0 1px var(--color-border-subtle); }
+.optionName { font-family: var(--font-label); font-size: var(--t-12); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-muted); }
+.optionFig { font-family: var(--font-serif); font-size: var(--t-25); font-weight: 700; letter-spacing: -0.02em; color: var(--color-text-primary); }
+.optionText { font-size: var(--t-13); line-height: 1.4; color: var(--color-text-secondary); }
+
+.splitBar { display: flex; gap: 2px; height: 16px; }
+.splitBar i { background: var(--color-bg-inset); border-radius: 4px 0 0 4px; }
+.splitBar b { background: var(--color-green-300); }
+.splitBar b[data-alt] { background: var(--color-accent); border-radius: 0 4px 4px 0; }
+.splitKey { margin-top: var(--s2); display: flex; justify-content: space-between; gap: var(--s3); font-size: var(--t-12); color: var(--color-text-secondary); white-space: nowrap; }
+.splitKey strong { font-family: var(--font-serif); font-size: var(--t-15); font-weight: 700; color: var(--color-text-primary); }
+
 @media (max-width: 640px) {
+  .lot { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .lotId { grid-column: 2 / -1; }
+  .lotCell:nth-of-type(2) { grid-column: 1 / span 2; grid-row: 2; }
+  .lotCell:nth-of-type(3) { grid-column: 3; grid-row: 2; }
+  .lotBid { grid-column: 4; grid-row: 2; }
   .row { grid-template-columns: 88px minmax(0, 1fr) 34px; }
 }

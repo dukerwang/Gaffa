@@ -19,17 +19,13 @@ interface Props {
   isDynasty: boolean;
 }
 
-/** How long a page gets to render its anchors before the chapter gives up for this visit. */
-const WAIT_MS = 6000;
-const POLL_MS = 200;
+/** A slow page shouldn't lose its walkthrough, so the wait is generous. It only reads the DOM. */
+const WAIT_MS = 60_000;
+const POLL_MS = 250;
 
-/** Steps whose part of the page exists right now: phones and empty states hide some. */
-function availableSteps(steps: WalkthroughStep[]) {
-  return steps.filter((s) => !s.at || findTarget(s.at));
-}
-
+/** Another dialog on screen goes first. */
 function blockedByAnotherLayer() {
-  return !!document.querySelector('[aria-modal="true"], [data-route-skeleton]');
+  return [...document.querySelectorAll<HTMLElement>('[aria-modal="true"]')].some((el) => el.getClientRects().length > 0);
 }
 
 /**
@@ -53,12 +49,13 @@ export default function WalkthroughHost({ leagueId, status, isDynasty }: Props) 
     const started = Date.now();
     let timer = 0;
     const check = () => {
-      const ready = !blockedByAnotherLayer() && (forced || !chapter.requires || findTarget(chapter.requires));
-      const available = ready ? availableSteps(steps) : [];
-      const spotlit = available.some((s) => s.at);
-      if (ready && available.length > 0 && spotlit) {
+      const ready =
+        !blockedByAnotherLayer() &&
+        (forced || !chapter.requires || findTarget(chapter.requires)) &&
+        steps.some((s) => s.at && findTarget(s.at));
+      if (ready) {
         if (forced) window.history.replaceState(null, '', pathname);
-        setActive({ chapter, steps: available, pathname });
+        setActive({ chapter, steps, pathname });
         return;
       }
       if (Date.now() - started < WAIT_MS) timer = window.setTimeout(check, POLL_MS);

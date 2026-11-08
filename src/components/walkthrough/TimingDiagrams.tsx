@@ -12,7 +12,8 @@ import {
   TIER_3_MAX_MV,
   TIER_4_FLOOR_MS,
 } from '@/lib/auction/timer';
-import type { TimingDiagram } from '@/lib/walkthroughs/chapters';
+import { FIGURES, SCOUT_PCT, SOLIDARITY_PCT, type Diagram } from '@/lib/walkthroughs/chapters';
+import PositionBadge from '@/components/players/PositionBadge';
 import s from './TimingDiagrams.module.css';
 
 const HOUR = 3_600_000;
@@ -128,9 +129,83 @@ function Overnight() {
   );
 }
 
-export function TimingDiagramView({ diagram }: { diagram: TimingDiagram }) {
-  if (diagram === 'lengths') return <Lengths />;
-  if (diagram === 'countdown') return <Countdown />;
-  if (diagram === 'close') return <Close />;
-  return <Overnight />;
+/** A pinned lot, for when the board has none live. */
+function SampleLot({ on }: { on: 'standing' | 'bid' | 'closes' }) {
+  return (
+    <div className={s.lot}>
+      <Portrait size="sm" photoUrl={BARCOLA_PHOTO} name="Bradley Barcola" club="Liverpool" />
+      <div className={s.lotId}>
+        <span className={s.lotName}><PositionBadge position="LW" size="sm" /> B. Barcola</span>
+        <span className={s.lotTag}>Free Agent</span>
+      </div>
+      <div className={s.lotCell} data-on={on === 'standing' || undefined}>
+        <span className={s.lotKey}>Standing Bid</span>
+        <span className={s.lotMoney}>€71m</span>
+      </div>
+      <div className={s.lotCell} data-on={on === 'closes' || undefined}>
+        <span className={s.lotKey}>Closes</span>
+        <span className={s.lotClock}>2d 03:14</span>
+      </div>
+      <span className={s.lotBid} data-on={on === 'bid' || undefined}>Bid</span>
+    </div>
+  );
+}
+
+const RODRI_PHOTO = 'https://resources.premierleague.com/premierleague25/photos/players/110x140/220566.png';
+const RODRI_VALUE = 60;
+
+function ReleaseRetain() {
+  return (
+    <div className={s.choice}>
+      <div className={s.choiceWho}>
+        <Portrait size="sm" photoUrl={RODRI_PHOTO} name="Rodri" club="Man City" />
+        <span>Rodri, valued <b>€{RODRI_VALUE}m</b>, leaves Manchester City</span>
+      </div>
+      <div className={s.choiceGrid}>
+        <div className={s.option}>
+          <span className={s.optionName}>Release</span>
+          <span className={s.optionFig}>+€{Math.round((RODRI_VALUE * FIGURES.compensationPct) / 100)}m</span>
+          <span className={s.optionText}>{FIGURES.compensationPct}% of his value now. If he ever returns, you can’t bid on him.</span>
+        </div>
+        <div className={s.option}>
+          <span className={s.optionName}>Retain</span>
+          <span className={s.optionFig}>€0</span>
+          <span className={s.optionText}>He’s yours again the moment he returns, with no auction. Uses a retained slot.</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeeSplit() {
+  const shared = SOLIDARITY_PCT - SCOUT_PCT;
+  const gone = 100 - SOLIDARITY_PCT;
+  return (
+    <div>
+      <div className={s.splitBar} aria-hidden="true">
+        <i style={{ flex: gone }} />
+        <b style={{ flex: SCOUT_PCT }} />
+        <b style={{ flex: shared }} data-alt />
+      </div>
+      <div className={s.splitKey}>
+        <span><strong>{gone}%</strong> Leaves the Game</span>
+        <span><strong>{SCOUT_PCT}%</strong> Scout</span>
+        <span><strong>{shared}%</strong> Other Clubs</span>
+      </div>
+    </div>
+  );
+}
+
+export function DiagramView({ diagram }: { diagram: Diagram }) {
+  switch (diagram) {
+    case 'lengths': return <Lengths />;
+    case 'countdown': return <Countdown />;
+    case 'close': return <Close />;
+    case 'overnight': return <Overnight />;
+    case 'lot-standing': return <SampleLot on="standing" />;
+    case 'lot-bid': return <SampleLot on="bid" />;
+    case 'lot-closes': return <SampleLot on="closes" />;
+    case 'release-retain': return <ReleaseRetain />;
+    case 'fee-split': return <FeeSplit />;
+  }
 }
