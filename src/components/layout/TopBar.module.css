@@ -907,3 +907,6 @@
   border-color: var(--color-border);
   color: var(--color-text-primary);
 }
+
+/* Where the page's walkthrough button lands. */
+.walkthroughSlot { display: contents; }

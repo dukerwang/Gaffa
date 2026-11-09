@@ -99,6 +99,13 @@ export default function TopBar() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Page sheets that stand above the content, like the lineup's squad slider,
+  // hide themselves while the menu is open.
+  useEffect(() => {
+    document.documentElement.toggleAttribute('data-nav-open', mobileMenuOpen);
+    return () => document.documentElement.removeAttribute('data-nav-open');
+  }, [mobileMenuOpen]);
   const [balanceDropdownOpen, setBalanceDropdownOpen] = useState(false);
   const [leagueBalances, setLeagueBalances] = useState<LeagueTeamBalance[]>([]);
   const [leagueBalancesLoading, setLeagueBalancesLoading] = useState(false);
@@ -602,6 +609,8 @@ export default function TopBar() {
             </div>
           )}
 
+          {currentLeagueId && <span id="walkthrough-slot" className={styles.walkthroughSlot} />}
+
           {/* Persistent League Chat */}
           {currentLeagueId && (
             <ChatNavIcon
@@ -758,6 +767,7 @@ export default function TopBar() {
           {currentLeagueId && (
             <button
               className={styles.menuToggle}
+              data-tour="nav-menu"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               type="button"
               aria-label="Toggle navigation menu"

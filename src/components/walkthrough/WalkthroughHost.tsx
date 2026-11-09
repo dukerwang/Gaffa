@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { Icon } from '@/components/ui/Icon';
+import topBarStyles from '@/components/layout/TopBar.module.css';
 import {
   chapterForPath,
   isPostDraft,
@@ -37,7 +40,22 @@ export default function WalkthroughHost({ leagueId, status, isDynasty }: Props) 
   const pathname = usePathname();
   const tour = useSearchParams().get('tour');
   const [active, setActive] = useState<{ chapter: Chapter; steps: WalkthroughStep[]; pathname: string } | null>(null);
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
   const format: LeagueFormat = isDynasty ? 'dynasty' : 'redraft';
+  const pageChapter = isPostDraft(status) ? chapterForPath(pathname, leagueId, format) : null;
+
+  // The top bar is rendered by the layout above this one.
+  useEffect(() => {
+    let tries = 0;
+    let timer = 0;
+    const find = () => {
+      const el = document.getElementById('walkthrough-slot');
+      if (el) setSlot(el);
+      else if (tries++ < 40) timer = window.setTimeout(find, POLL_MS);
+    };
+    timer = window.setTimeout(find, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const chapter = chapterForPath(pathname, leagueId, format);
@@ -64,10 +82,29 @@ export default function WalkthroughHost({ leagueId, status, isDynasty }: Props) 
     return () => window.clearTimeout(timer);
   }, [pathname, tour, leagueId, status, format]);
 
+  const replay =
+    pageChapter && slot
+      ? createPortal(
+          <button
+            type="button"
+            className={topBarStyles.iconBtn}
+            aria-label="Page Walkthrough"
+            title="Page Walkthrough"
+            data-tour="nav-help"
+            onClick={() => setActive({ chapter: pageChapter, steps: stepsForFormat(pageChapter.steps, format), pathname })}
+          >
+            <Icon name="help-circle" size={18} strokeWidth={1.75} />
+          </button>,
+          slot,
+        )
+      : null;
+
   // A walkthrough belongs to the page it started on.
-  if (!active || active.pathname !== pathname) return null;
+  if (!active || active.pathname !== pathname) return replay;
 
   return (
+    <>
+      {replay}
     <Walkthrough
       steps={active.steps}
       onExit={() => {
@@ -80,5 +117,6 @@ export default function WalkthroughHost({ leagueId, status, isDynasty }: Props) 
         setActive(null);
       }}
     />
+    </>
   );
 }

@@ -47,6 +47,9 @@
   .tile:hover { background: var(--color-bg-elevated); color: var(--color-text-primary); }
 }
 
+/* Eleven chapters: the last tile takes the row's spare cell. */
+.tile:last-child { grid-column: span 2; }
+
 .name {
   font-family: var(--font-serif);
   font-size: var(--t-17);

@@ -51,6 +51,10 @@
 .optionFig { font-family: var(--font-serif); font-size: var(--t-25); font-weight: 700; letter-spacing: -0.02em; color: var(--color-text-primary); }
 .optionText { font-size: var(--t-13); line-height: 1.4; color: var(--color-text-secondary); }
 
+.cardSample { display: flex; align-items: center; gap: var(--s4); }
+.cardName { font-family: var(--font-serif); font-size: var(--t-20); font-weight: 700; letter-spacing: -0.015em; color: var(--color-text-primary); }
+.cardPositions { margin-top: var(--s2); display: flex; gap: var(--s2); }
+
 .splitBar { display: flex; gap: 2px; height: 16px; }
 .splitBar i { background: var(--color-bg-inset); border-radius: 4px 0 0 4px; }
 .splitBar b { background: var(--color-green-300); }

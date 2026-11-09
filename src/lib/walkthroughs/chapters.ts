@@ -15,6 +15,7 @@
 import { DRAW_THRESHOLD } from '@/lib/scoring/drawBand';
 import { DEFAULT_SCOUT_SHARE, DEFAULT_SOLIDARITY_SHARE } from '@/lib/economy/solidarity';
 import { BENCH_DEPTH_BONUS_LABEL } from '@/types';
+import type { PinnedKey } from './players';
 
 export type LeagueFormat = 'dynasty' | 'redraft';
 export type Diagram =
@@ -26,7 +27,8 @@ export type Diagram =
   | 'lot-bid'
   | 'lot-closes'
   | 'release-retain'
-  | 'fee-split';
+  | 'fee-split'
+  | 'player-card';
 
 export interface WalkthroughStep {
   /** The `data-tour` value to spotlight. Absent: a centred card. */
@@ -53,8 +55,8 @@ export interface Chapter {
   /** The page must have this anchor before the chapter starts on its own. */
   requires?: string;
   only?: LeagueFormat;
-  /** A pinned player for the Help tile: the FPL photo code. Absent: the trophy. */
-  photoCode?: number;
+  /** The face on the Help tile. Absent: the trophy. */
+  player?: PinnedKey;
   steps: WalkthroughStep[];
 }
 
@@ -85,10 +87,13 @@ export const CHAPTERS: Chapter[] = [
     id: 'home',
     title: 'League Home',
     route: '',
-    version: 2,
-    photoCode: 462424,
+    version: 3,
+    requires: 'home-standings',
+    player: 'saliba',
     steps: [
       { at: 'nav-main', title: 'Getting Around', body: 'Squad has your lineup and club. League has the table and every player. Fixtures has gameweeks and cups. Transfers is the market.' },
+      { at: 'nav-menu', title: 'Getting Around', body: 'Everything is in here: your lineup and club, the table, every player, gameweeks, cups and the market.' },
+      { at: 'nav-help', title: 'Page Walkthrough', body: 'Press this on any page to go through its walkthrough again.' },
       { at: 'nav-balance', title: 'Club Balance', body: 'Your money for signings. It carries over every season. Press it to compare every club.', redraftBody: 'Your money for signings this season. Press it to compare every club.' },
       { at: 'home-alerts', title: 'Alerts', body: 'Anything that needs you, soonest first.' },
       { at: 'home-fixture', title: 'This Week', body: `Your match this gameweek, moving as the real games play. Finish within ${DRAW_THRESHOLD} points and it’s a draw.` },
@@ -101,12 +106,13 @@ export const CHAPTERS: Chapter[] = [
     id: 'lineup',
     title: 'Lineups',
     route: '/team',
-    version: 2,
-    photoCode: 226597,
+    version: 3,
+    player: 'gabriel',
     steps: [
       { at: 'lineup-formation', title: 'Formation', body: 'Choose a shape. The pitch changes to match it.' },
       { at: 'lineup-pitch', title: 'Swap Players', body: 'Press a player, then press where he should go. Every legal move lights up: another slot, the bench or a reserve.' },
       { at: 'lineup-pitch', title: 'Positions', body: 'A player can only fill a position he’s listed for, so a centre-back can’t cover left-back.' },
+      { diagram: 'player-card', title: 'Player Card', body: 'Press a player’s name to open his card. It’s where you’ll find every position he can play, and most pages only show his main one.' },
       { at: 'lineup-rail', title: 'Reserves, Academy and IR', body: 'Everyone outside your matchday squad. Press a reserve to bring him in, or press a starter and then Academy or Injured Reserve to move him there.', redraftBody: 'Everyone outside your matchday squad. Press a reserve to bring him in, or press a starter and then Injured Reserve to move him there.', desktopOnly: true },
       { at: 'lineup-handle', title: 'Reserves, Academy and IR', body: 'Pull this up to see everyone outside your matchday squad. Press a reserve to bring him in, or press a starter and then Academy or Injured Reserve to move him there.', redraftBody: 'Pull this up to see everyone outside your matchday squad. Press a reserve to bring him in, or press a starter and then Injured Reserve to move him there.', phoneOnly: true },
       { at: 'lineup-bench', title: 'Bench', body: 'If a starter doesn’t play, Gaffa tries your bench in order: DEF, MID, ATT, FLEX. The sub has to be listed for the position he’s covering.' },
@@ -120,13 +126,14 @@ export const CHAPTERS: Chapter[] = [
     id: 'club',
     title: 'My Club',
     route: '/team/roster',
-    version: 2,
-    photoCode: 184029,
+    version: 3,
+    player: 'odegaard',
     steps: [
       { at: 'club-figures', title: 'Your Club', body: 'Club Balance, squad value and your season so far.' },
       { at: 'club-facilities', title: 'Club Facilities', body: 'Buy extra Academy, IR and Loans Out slots. Each one is yours for good.', only: 'dynasty' },
       { at: 'club-toolbar', title: 'Squad Views', body: 'See your squad on the pitch, as a depth chart or as a table.' },
       { at: 'club-squad', title: 'Your Squad', body: 'Press any player to see what you can do with him.' },
+      { diagram: 'player-card', title: 'Player Card', body: 'Each player’s card lists every position he can play. Most pages only show his main one, so check here when you’re building your squad.' },
       { at: 'club-inspector', title: 'Player Options', body: 'List him for transfer, place him on IR, send him to the Academy or drop him. What’s offered depends on his age and fitness.', redraftBody: 'Place him on IR or drop him. IR is offered when he’s injured, doubtful or suspended.', fallback: true },
       { title: 'Drops', body: `Dropping a player costs ${FIGURES.severancePct}% of his value, at least €${FIGURES.severanceMin}m, and sends him to auction.`, only: 'dynasty' },
       { title: 'Academy', body: 'Young prospects wait here, outside your squad limit. When one ages out, promote him to make room for new ones.', only: 'dynasty' },
@@ -141,7 +148,7 @@ export const CHAPTERS: Chapter[] = [
     title: 'Gameweeks',
     route: '/matchups',
     version: 2,
-    photoCode: 223340,
+    player: 'saka',
     steps: [
       { at: 'gw-bar', title: 'Gameweeks', body: 'Move between weeks here, past and future.' },
       { at: 'gw-scoreboard', title: 'Your Match', body: `Your score is your XI’s points, plus ${BENCH_DEPTH_BONUS_LABEL} of what your unused subs scored. Finish within ${DRAW_THRESHOLD} points and it’s a draw.` },
@@ -154,7 +161,7 @@ export const CHAPTERS: Chapter[] = [
     title: 'Transfer Market',
     route: '/transfers',
     version: 2,
-    photoCode: 482616,
+    player: 'barcola',
     steps: [
       { at: 'market-nav', title: 'Transfer Market', body: 'This page is the overview. Each way to sign a player has its own page here.' },
       { title: 'Real Transfers', body: `When a player joins the Premier League, he appears in Gaffa. Worth €${FIGURES.arrivalAuctionMin}m or more, he goes to auction in every league.` },
@@ -170,7 +177,7 @@ export const CHAPTERS: Chapter[] = [
     title: 'Auctions',
     route: '/transfers/auctions',
     version: 2,
-    photoCode: 232413,
+    player: 'eze',
     steps: [
       { at: 'auction-board', title: 'The Board', body: 'Every player up for sale, free agents and listed players alike, sits here. Everyone can see every bid.', redraftBody: 'Every free agent with a bid on him sits here. Everyone can see every bid.' },
       { at: 'auction-standing', fallback: 'lot-standing', title: 'Standing Bid', body: 'The highest bid so far, and who made it.' },
@@ -188,13 +195,14 @@ export const CHAPTERS: Chapter[] = [
     id: 'free-agents',
     title: 'Free Agency',
     route: '/transfers/free-agents',
-    version: 2,
+    version: 3,
     requires: 'fa-row',
-    photoCode: 244850,
+    player: 'rogers',
     steps: [
       { at: 'fa-tools', title: 'Find a Player', body: 'Search and sort every player nobody owns.' },
       { at: 'fa-row', title: 'Open an Auction', body: `Bid at least ${FIGURES.bidFloorPct}% of his value to open his auction.`, redraftBody: 'Bid on any free agent. Every bid settles together on Transfer Day.' },
       { at: 'fa-row', title: 'Scout’s Fee', body: `Open an auction and you earn ${SCOUT_PCT}% of the winning bid, even if someone else signs him.`, only: 'dynasty' },
+      { diagram: 'player-card', title: 'Player Card', body: 'Press a player’s name to open his card. It’s where you’ll find every position he can play, and most pages only show his main one.' },
       { title: 'New Arrivals', body: 'A new arrival can’t be bid on until he has a market value, usually within a day.', only: 'dynasty' },
     ],
   },
@@ -203,7 +211,7 @@ export const CHAPTERS: Chapter[] = [
     title: 'Deals',
     route: '/transfers/deals',
     version: 2,
-    photoCode: 475168,
+    player: 'joaoPedro',
     steps: [
       { at: 'deals-offer', title: 'Make an Offer', body: 'Any mix of your players and Club Balance for any of theirs, listed or not.', redraftBody: 'Propose a trade with any club in the league.' },
       { at: 'deals-loan', title: 'Loans', body: 'Request borrows one of theirs. Propose lends one of yours. A loan runs 4 to 16 gameweeks, for a fee and an optional performance bonus.', only: 'dynasty' },
@@ -216,12 +224,12 @@ export const CHAPTERS: Chapter[] = [
     id: 'players',
     title: 'Players',
     route: '/players',
-    version: 2,
-    photoCode: 244851,
+    version: 3,
+    player: 'palmer',
     steps: [
       { at: 'players-tools', title: 'Find a Player', body: 'Search and filter every player in the game.' },
       { at: 'players-views', title: 'Views', body: 'Browse cards, read the full table, or compare players in the Explorer.' },
-      { title: 'Player Card', body: 'Press any player to open his card, with his ratings, his form and who owns him.' },
+      { diagram: 'player-card', title: 'Player Card', body: 'Press any player to open his card: his ratings, his form, who owns him and every position he can play. Most pages only show his main one.' },
     ],
   },
   {
@@ -244,7 +252,7 @@ export const CHAPTERS: Chapter[] = [
     title: 'Finance',
     route: '/finance',
     version: 2,
-    photoCode: 226597,
+    player: 'haaland',
     steps: [
       { at: 'fin-hero', title: 'Spendable', body: 'Your Club Balance, less what your live bids would cost if they all won.' },
       { at: 'fin-view', title: 'My Club and League', body: 'Switch to see every club’s money.' },

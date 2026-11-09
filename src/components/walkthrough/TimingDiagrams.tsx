@@ -13,11 +13,11 @@ import {
   TIER_4_FLOOR_MS,
 } from '@/lib/auction/timer';
 import { FIGURES, SCOUT_PCT, SOLIDARITY_PCT, type Diagram } from '@/lib/walkthroughs/chapters';
+import { PINNED } from '@/lib/walkthroughs/players';
 import PositionBadge from '@/components/players/PositionBadge';
 import s from './TimingDiagrams.module.css';
 
 const HOUR = 3_600_000;
-const BARCOLA_PHOTO = 'https://resources.premierleague.com/premierleague25/photos/players/110x140/482616.png';
 /** The real auction: hours after its first bid that each of its 26 bids landed. */
 const BARCOLA_BID_HOURS = [0, 4.23, 4.67, 11.7, 25.47, 25.49, 34.36, 39.42, 46.35, 46.36, 46.84, 46.85, 46.86, 50.02, 50.42, 50.51, 50.51, 50.54, 50.55, 55.66, 56.35, 65.19, 68.91, 71.05, 73.5, 74.47];
 const BARCOLA_MIN_HOURS = 72;
@@ -54,7 +54,7 @@ function Lengths() {
         </div>
       ))}
       <div className={s.note}>
-        <Portrait size="sm" photoUrl={BARCOLA_PHOTO} name="Bradley Barcola" club="Liverpool" />
+        <Portrait size="sm" {...PINNED.barcola} />
         <span><b>Barcola</b>, valued €90m, stayed open at least {longest} hours.</span>
       </div>
     </div>
@@ -133,7 +133,7 @@ function Overnight() {
 function SampleLot({ on }: { on: 'standing' | 'bid' | 'closes' }) {
   return (
     <div className={s.lot}>
-      <Portrait size="sm" photoUrl={BARCOLA_PHOTO} name="Bradley Barcola" club="Liverpool" />
+      <Portrait size="sm" {...PINNED.barcola} />
       <div className={s.lotId}>
         <span className={s.lotName}><PositionBadge position="LW" size="sm" /> B. Barcola</span>
         <span className={s.lotTag}>Free Agent</span>
@@ -151,14 +151,13 @@ function SampleLot({ on }: { on: 'standing' | 'bid' | 'closes' }) {
   );
 }
 
-const RODRI_PHOTO = 'https://resources.premierleague.com/premierleague25/photos/players/110x140/220566.png';
 const RODRI_VALUE = 60;
 
 function ReleaseRetain() {
   return (
     <div className={s.choice}>
       <div className={s.choiceWho}>
-        <Portrait size="sm" photoUrl={RODRI_PHOTO} name="Rodri" club="Man City" />
+        <Portrait size="sm" {...PINNED.rodri} />
         <span>Rodri, valued <b>€{RODRI_VALUE}m</b>, leaves Manchester City</span>
       </div>
       <div className={s.choiceGrid}>
@@ -196,6 +195,21 @@ function FeeSplit() {
   );
 }
 
+function PlayerCardSample() {
+  return (
+    <div className={s.cardSample}>
+      <Portrait size="md" {...PINNED.odegaard} />
+      <div>
+        <div className={s.cardName}>{PINNED.odegaard.name}</div>
+        <div className={s.cardPositions}>
+          <PositionBadge position="CM" size="md" />
+          <PositionBadge position="AM" size="md" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DiagramView({ diagram }: { diagram: Diagram }) {
   switch (diagram) {
     case 'lengths': return <Lengths />;
@@ -207,5 +221,6 @@ export function DiagramView({ diagram }: { diagram: Diagram }) {
     case 'lot-closes': return <SampleLot on="closes" />;
     case 'release-retain': return <ReleaseRetain />;
     case 'fee-split': return <FeeSplit />;
+    case 'player-card': return <PlayerCardSample />;
   }
 }
