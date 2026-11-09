@@ -1,7 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { insertMatchups } from './insertMatchups';
-import { createAllTournaments } from '@/lib/tournaments/createTournaments';
-import { hasCupSeedBasis } from '@/lib/tournaments/seeding';
+import { drawDueCupsForLeague } from '@/lib/tournaments/drawDueCups';
 import { getCurrentFplSeason } from '@/lib/season/currentSeason';
 
 export interface SeasonScaffoldResult {
@@ -11,25 +10,24 @@ export interface SeasonScaffoldResult {
 
 /**
  * Creates everything a league needs once its draft completes: the
- * head-to-head schedule immediately, and all three cup brackets once seeding
- * is meaningful. A league with an archived table seeds from it straight away;
- * a first-season league waits until `INAUGURAL_SEASON_CUP_SEED_GW`, because
- * before anyone has played every club is level and the draw is alphabetical
- * (src/lib/tournaments/seeding.ts).
+ * head-to-head schedule immediately, and any cup that has come due.
  *
- * Why this exists as one call. The two generators used to be invoked
- * separately, and `draft/pick` only ever called `insertMatchups`. A draft that
- * ended on a manual final pick therefore produced a league with a schedule and
- * no cups — and the page-load backfills nested `createAllTournaments` inside an
+ * Cups are not made at kickoff. Each is drawn after the last gameweek before
+ * its first round, from the finished table (src/lib/tournaments/seeding.ts), so
+ * right after a draft this makes no cups and a later call makes the ones that
+ * are due. The resolve cron does the same sweep for every league; this is the
+ * safety net for a league the cron has not reached.
+ *
+ * Why the schedule and the cups sit behind one call. The two generators used to
+ * be invoked separately, and `draft/pick` only ever called `insertMatchups`. A
+ * draft that ended on a manual final pick therefore produced a league with a
+ * schedule and no cups, and the page-load backfills only ran the cups inside an
  * "are there zero matchups?" branch, so once the schedule existed the cups could
- * never be created by any path. Two leagues in production are still in that
- * state. Keeping both generators behind one function is what stops the pair
- * drifting apart again.
+ * never be created by any path.
  *
  * Safe to call on every load for an active league: `insertMatchups` skips when
- * the league already has matchups, `createTournament` skips per
- * (league, type, season), and an inaugural-season league below the GW
- * threshold skips cup creation entirely — each a cheap no-op.
+ * the league already has matchups, and a league with nothing due costs three
+ * small queries.
  *
  * Failures are logged, never thrown — a cup that can't be built must not take
  * down the page or the pick that triggered it. Each generator is attempted
@@ -54,22 +52,8 @@ export async function ensureSeasonScaffold(
 
   try {
     const resolvedSeason = season ?? (await getCurrentFplSeason());
-    // The common case on a page load is that the cups already exist; check
-    // that first, since the seeding gate reads the league table.
-    const { count: cupCount } = await admin
-      .from('tournaments')
-      .select('id', { count: 'exact', head: true })
-      .eq('league_id', leagueId)
-      .eq('season', resolvedSeason);
-    const seedingReady =
-      (cupCount ?? 0) < 3 && (await hasCupSeedBasis(admin, leagueId));
-
-    if (seedingReady) {
-      const cupResult = await createAllTournaments(admin, leagueId, resolvedSeason);
-      result.tournamentsCreated = cupResult.tournamentsCreated.some(
-        (r) => r.ok && !r.skipped,
-      );
-    }
+    const drawn = await drawDueCupsForLeague(admin, leagueId, resolvedSeason);
+    result.tournamentsCreated = drawn.length > 0;
   } catch (err) {
     console.error(`[ensureSeasonScaffold] cups failed for ${leagueId}:`, err);
   }

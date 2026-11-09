@@ -49,7 +49,7 @@ export default async function CupsPage({ params, searchParams }: Props) {
                 />
             ) : (
                 <p className={s.empty}>
-                    {model.selected ? 'The draw for this cup isn’t out yet.' : 'The cups are drawn at matchweek 7, once the table has had time to settle.'}
+                    {model.selected ? 'The draw for this cup isn’t out yet.' : model.emptyNote}
                 </p>
             )}
         </div>

@@ -86,8 +86,7 @@ export async function runDraw(
 
 /**
  * Tells each manager in `drawn` who they play, or that they have a bye. Also
- * announces a cup's seeded first round (createTournament), where `corrected`
- * marks the replacement for a bracket that was seeded before anyone had played.
+ * announces a cup's seeded first round (createTournament).
  */
 export async function notifyDraw(
   admin: SupabaseClient,
@@ -95,7 +94,6 @@ export async function notifyDraw(
   tournament: { league_id: string; name: string },
   round: DrawRound,
   drawn: DrawnTie[],
-  opts: { corrected?: boolean } = {},
 ) {
   const ids = drawn.flatMap((t) => [t.a, t.b]).filter((id): id is string => !!id);
   if (ids.length === 0) return;
@@ -111,17 +109,14 @@ export async function notifyDraw(
     for (const [mine, other] of sides) {
       const team = byId.get(mine);
       if (!team) continue;
-      const result = other
-        ? `you play **${byId.get(other)?.team_name ?? 'your opponent'}** ${when}.`
-        : `you have a bye to the ${nextStage}.`;
-      const content = opts.corrected
-        ? `**${tournament.name}** ${stage} redraw: ${result} The first draw was made before any games were played, so this one is seeded from the table.`
-        : `**${tournament.name}** ${stage} draw: ${result}`;
+      const content = other
+        ? `**${tournament.name}** ${stage} draw: you play **${byId.get(other)?.team_name ?? 'your opponent'}** ${when}.`
+        : `**${tournament.name}** ${stage} draw: you have a bye to the ${nextStage}.`;
       await notify(admin, {
         kind: 'matchdays',
         leagueId: tournament.league_id,
         userId: (team.user_id as string | null) ?? null,
-        title: `${tournament.name} ${opts.corrected ? 'Redraw' : 'Draw'}`,
+        title: `${tournament.name} Draw`,
         content,
         url,
         tag: `cup-draw:${round.id}:${mine}`,

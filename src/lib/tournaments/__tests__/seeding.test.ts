@@ -1,85 +1,91 @@
 import { describe, it, expect } from 'vitest';
-import { orderForSeeding, tableThrough } from '../seeding';
-import { isUnplayed } from '../reseedCups';
+import { cupDrawGameweek, orderForSeeding, tableThrough, type SeedMatchup } from '../seeding';
 
-// Dynasty Dragoon on 2026-08-21: six clubs, nobody had played, so the table
-// sorted them by name and the first two took the byes.
-const dragoon = [
-  { id: 'stamford', team_name: 'Stamford & Sons' },
-  { id: 'moises', team_name: 'Moises FC' },
-  { id: 'pizza', team_name: "Pizzaking's Club" },
-  { id: 'yang', team_name: 'yang fc' },
-  { id: 'united', team_name: "United 08' Vol.2" },
-  { id: 'sesko', team_name: 'Sesko Fender' },
+const teams = [
+  { id: 'a', team_name: 'A' },
+  { id: 'b', team_name: 'B' },
+  { id: 'c', team_name: 'C' },
 ];
-const table = (rows: [string, number, number][]) =>
-  new Map(rows.map(([id, rank, played]) => [id, { rank, played }]));
+const fm = (gameweek: number, a: string, b: string, sa: number, sb: number, status = 'completed'): SeedMatchup =>
+  ({ gameweek, status, team_a_id: a, team_b_id: b, score_a: sa, score_b: sb });
 
-describe('orderForSeeding', () => {
-  it('refuses to seed without an archive or a table', () => {
-    expect(orderForSeeding(dragoon, new Map(), new Map()).basis).toBe('none');
+describe('cupDrawGameweek', () => {
+  it('is the matchweek before the first round: League Cup MW15, Champions Cup MW31 in a 6-club league', () => {
+    expect(cupDrawGameweek('secondary_cup', 6)).toBe(15);
+    expect(cupDrawGameweek('primary_cup', 6)).toBe(31);
   });
 
-  it('seeds from the table once clubs have played', () => {
-    const real = table([['stamford', 1, 10], ['moises', 2, 10], ['pizza', 3, 10], ['yang', 4, 10], ['united', 5, 10], ['sesko', 6, 10]]);
-    const { basis, ordered } = orderForSeeding(dragoon, new Map(), real);
-    expect(basis).toBe('standings');
-    expect(ordered.map((t) => t.id)).toEqual(['stamford', 'moises', 'pizza', 'yang', 'united', 'sesko']);
+  it('draws the Consolation Cup with the Champions Cup so one table splits both', () => {
+    expect(cupDrawGameweek('consolation_cup', 6)).toBe(31);
+    expect(cupDrawGameweek('consolation_cup', 10)).toBe(cupDrawGameweek('primary_cup', 10));
   });
 
-  it('prefers the archived table over the current one', () => {
-    const real = table([['stamford', 1, 10], ['moises', 2, 10], ['pizza', 3, 10], ['yang', 4, 10], ['united', 5, 10], ['sesko', 6, 10]]);
-    const archive = new Map([['sesko', 1], ['united', 2], ['yang', 3], ['pizza', 4], ['moises', 5], ['stamford', 6]]);
-    const { basis, ordered } = orderForSeeding(dragoon, archive, real);
-    expect(basis).toBe('archive');
-    expect(ordered[0].id).toBe('sesko');
-  });
-
-  it('puts a club missing from the archive below the archived ones, by the current table', () => {
-    const real = table([['stamford', 1, 10], ['moises', 2, 10], ['pizza', 3, 10], ['yang', 4, 10], ['united', 5, 10], ['sesko', 6, 10]]);
-    const archive = new Map([['sesko', 1], ['united', 2], ['yang', 3], ['pizza', 4]]);
-    const { ordered } = orderForSeeding(dragoon, archive, real);
-    expect(ordered.map((t) => t.id)).toEqual(['sesko', 'united', 'yang', 'pizza', 'stamford', 'moises']);
-  });
-});
-
-describe('isUnplayed', () => {
-  const bye = { team_a_id: 'a', team_b_id: null, status: 'completed' };
-  const live = { team_a_id: 'b', team_b_id: 'c', status: 'active' };
-
-  it('treats a round of byes and waiting ties as unplayed', () => {
-    expect(isUnplayed([bye, live], [{ drawn_at: null }])).toBe(true);
-  });
-
-  it('is played once a real tie is complete', () => {
-    expect(isUnplayed([bye, { ...live, status: 'completed' }], [{ drawn_at: null }])).toBe(false);
-  });
-
-  it('is played once a later round has been drawn', () => {
-    expect(isUnplayed([bye, live], [{ drawn_at: null }, { drawn_at: '2027-02-01' }])).toBe(false);
+  it('follows the round schedule in a bigger league', () => {
+    // 12 clubs: a 10-club Champions Cup in a 16 bracket starts at MW30; a 16-bracket League Cup at MW9.
+    expect(cupDrawGameweek('primary_cup', 12)).toBe(29);
+    expect(cupDrawGameweek('secondary_cup', 12)).toBe(8);
   });
 });
 
 describe('tableThrough', () => {
-  const t = [{ id: 'a', team_name: 'A' }, { id: 'b', team_name: 'B' }, { id: 'c', team_name: 'C' }];
-  const fm = (gameweek: number, a: string, b: string, sa: number, sb: number) =>
-    ({ gameweek, team_a_id: a, team_b_id: b, score_a: sa, score_b: sb });
-
-  it('is empty until the seeding gameweek has finished', () => {
-    expect(tableThrough([fm(6, 'a', 'b', 90, 80)], t, 7).size).toBe(0);
+  it('is not ready until the draw gameweek has results', () => {
+    expect(tableThrough([fm(6, 'a', 'b', 90, 80)], teams, 7).size).toBe(0);
   });
 
-  it('ignores gameweeks after the seeding gameweek', () => {
-    const table = tableThrough([fm(7, 'a', 'b', 120, 100), fm(8, 'b', 'a', 900, 100)], t, 7);
+  it('is not ready while any matchup up to the draw gameweek is unfinished', () => {
+    const live = [fm(7, 'a', 'b', 120, 100, 'live'), fm(6, 'a', 'c', 90, 80)];
+    expect(tableThrough(live, teams, 7).size).toBe(0);
+    const stuckEarlier = [fm(7, 'a', 'b', 120, 100), fm(5, 'a', 'c', 90, 80, 'scheduled')];
+    expect(tableThrough(stuckEarlier, teams, 7).size).toBe(0);
+  });
+
+  it('ignores gameweeks after the draw gameweek, finished or not', () => {
+    const table = tableThrough([fm(7, 'a', 'b', 120, 100), fm(8, 'b', 'a', 900, 100), fm(9, 'b', 'a', 900, 100, 'live')], teams, 7);
     expect(table.get('a')?.rank).toBe(1);
     expect(table.get('b')?.rank).toBe(3);
   });
 
-  it('scores a margin inside the draw band as a draw, and breaks ties on goal difference', () => {
-    // a v b: 105-100 is a draw (1 point each). c has no game, so 0 points.
-    const table = tableThrough([fm(7, 'a', 'b', 105, 100)], t, 7);
+  it('scores a margin inside the draw band as a draw', () => {
+    const table = tableThrough([fm(7, 'a', 'b', 105, 100)], teams, 7);
     expect(table.get('a')).toEqual({ rank: 1, played: 1 });
     expect(table.get('b')).toEqual({ rank: 2, played: 1 });
     expect(table.get('c')).toEqual({ rank: 3, played: 0 });
+  });
+
+  it('breaks a points tie on goal difference, not on last season', () => {
+    // a and b each win once; b by more. Last season a finished above b.
+    const m = [fm(7, 'a', 'c', 130, 100), fm(7, 'b', 'c', 160, 100)];
+    const table = tableThrough(m, teams, 7, new Map([['a', 1], ['b', 2], ['c', 3]]));
+    expect(table.get('b')?.rank).toBe(1);
+    expect(table.get('a')?.rank).toBe(2);
+  });
+
+  it('uses last season only between clubs level on points, goal difference and points for', () => {
+    // a v b is level at 100-100, a draw: identical rows for a and b. c did not play.
+    const level = [fm(7, 'a', 'b', 100, 100)];
+    const lastYear = new Map([['a', 5], ['b', 2], ['c', 1]]);
+    const table = tableThrough(level, teams, 7, lastYear);
+    expect(table.get('b')?.rank).toBe(1);
+    expect(table.get('a')?.rank).toBe(2);
+  });
+
+  it('puts a club missing from last season below the clubs that have a rank', () => {
+    const level = [fm(7, 'a', 'b', 100, 100)];
+    const table = tableThrough(level, teams, 7, new Map([['a', 9]]));
+    expect(table.get('a')?.rank).toBe(1);
+    expect(table.get('b')?.rank).toBe(2);
+  });
+});
+
+describe('orderForSeeding', () => {
+  it('is not ready without a table, whatever last season says', () => {
+    expect(orderForSeeding(teams, new Map())).toEqual({ ready: false, ordered: [] });
+  });
+
+  it('orders by table position', () => {
+    const table = new Map([['c', { rank: 1, played: 7 }], ['a', { rank: 2, played: 7 }], ['b', { rank: 3, played: 7 }]]);
+    const { ready, ordered } = orderForSeeding(teams, table);
+    expect(ready).toBe(true);
+    expect(ordered.map((t) => t.id)).toEqual(['c', 'a', 'b']);
   });
 });

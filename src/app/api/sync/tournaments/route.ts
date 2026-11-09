@@ -17,6 +17,7 @@ import { getCurrentFplSeason } from '@/lib/season/currentSeason';
 import { processMatchupsForGameweek } from '@/lib/scoring/matchupProcessor';
 import { createTournament } from '@/lib/tournaments/createTournaments';
 import { executeAdvanceTournament } from '@/lib/tournaments/advanceTournament';
+import { drawDueCups } from '@/lib/tournaments/drawDueCups';
 import type { TournamentType } from '@/types';
 
 export const maxDuration = 60;
@@ -272,10 +273,20 @@ async function handleResolveStalled() {
     }
   }
 
+  // Draw any cup whose gameweek has just finished. After the loop, so the
+  // matchups it reads as completed are the ones resolved above.
+  let cupsDrawn: { leagueId: string; type: string }[] = [];
+  try {
+    cupsDrawn = (await drawDueCups(admin)).map(({ leagueId, type }) => ({ leagueId, type }));
+  } catch (e: any) {
+    console.error('[resolve_stalled] drawDueCups failed:', e);
+  }
+
   return NextResponse.json({
     ok: true,
     checked: gwsToCheck,
-    results
+    results,
+    cupsDrawn,
   });
 }
 

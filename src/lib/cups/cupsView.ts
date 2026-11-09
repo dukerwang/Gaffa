@@ -7,6 +7,7 @@
 import type { CrestConfig } from '@/components/crest/types';
 import type { HonourKind } from '@/lib/honours/getClubHonours';
 import { getSeeding } from '@/lib/tournaments/engine';
+import { cupDrawGameweek } from '@/lib/tournaments/seeding';
 import type { TournamentType } from '@/types';
 
 // ─── Inputs ──────────────────────────────────────────────────
@@ -140,6 +141,8 @@ export type NextTie =
 
 export interface CupsModel {
   shelf: ShelfItem[];
+  /** Said when no cup is selected: when the cups are drawn, and from what. */
+  emptyNote: string;
   selected: { id: string; name: string; type: TournamentType; seeded: boolean } | null;
   next: NextTie | null;
   rounds: RoundPage[];
@@ -495,7 +498,7 @@ export function buildCupsModel(input: CupsInput): CupsModel {
       kind: KIND[type],
       name: cup?.name ?? NAME[type],
       short: SHORT_NAME[type],
-      status: cup ? statusFor(input, cup, roundsOf(cup.id), tiesByRound) : 'Drawn at MW7',
+      status: cup ? statusFor(input, cup, roundsOf(cup.id), tiesByRound) : `Draw: MW${cupDrawGameweek(type, input.clubCount)}`,
       selected: !!cup && cup.id === selected?.id,
       href: cup ? `/league/${input.leagueId}/tournaments?cup=${cup.id}` : null,
     };
@@ -504,7 +507,12 @@ export function buildCupsModel(input: CupsInput): CupsModel {
   const crest = input.myCrest;
   const club = crest ? { primary: crest.primaryColor, secondary: crest.secondaryColor } : null;
 
-  if (!selected) return { shelf, selected: null, next: null, rounds: [], initialRound: 0, club };
+  const emptyNote =
+    `Each cup is drawn from the finished table once the matchweek before it starts is done: `
+    + `the League Cup after MW${cupDrawGameweek('secondary_cup', input.clubCount)}, `
+    + `the Champions Cup after MW${cupDrawGameweek('primary_cup', input.clubCount)}.`;
+
+  if (!selected) return { shelf, emptyNote, selected: null, next: null, rounds: [], initialRound: 0, club };
 
   const rounds = roundsOf(selected.id);
   const seeded = selected.type === 'primary_cup';
@@ -521,6 +529,7 @@ export function buildCupsModel(input: CupsInput): CupsModel {
 
   return {
     shelf,
+    emptyNote,
     selected: { id: selected.id, name: selected.name, type: selected.type, seeded },
     next: nextTieFor(ctx, pages),
     rounds: pages,

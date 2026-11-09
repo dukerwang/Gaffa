@@ -1,40 +1,43 @@
 /**
- * What a cup bracket is seeded from.
+ * When a cup is drawn, and what it is seeded from.
  *
- * A league with an archived table from last season seeds from that. A league
- * in its first season seeds from its own table as it stood after gameweek 7,
- * counting finished gameweeks only (docs/USER_GUIDE.md § 6). With neither,
- * there is nothing to seed from and no bracket is made.
+ * Decided 2026-11-08 (docs/DECISIONS.md): every cup is drawn once, after the
+ * last gameweek before its first round, from the league table as it stands
+ * then. Last season's final table only separates clubs level on that table. The same rule holds in a league's first season and every season
+ * after, so there is no special case to get wrong.
  *
- * Two mistakes this module exists to prevent, both made on 2026-08-21 and
- * 2026-11-08:
+ * - League Cup: after MW15 (first round MW16).
+ * - Champions Cup: after MW31 (first round MW32). The Consolation Cup is drawn
+ *   with it, because a league of 7 or more splits one table into the two cups.
  *
- * - Drawing before anyone has played. Every club sits on 0 points and
- *   `league_standings` falls through to its last tie-break, the club name, so
- *   seeds and byes come out alphabetical.
- * - Reading `league_standings` for the table. It counts `live` matchups, so a
- *   gameweek still being scored (and not yet through FPL's post-lockdown pass)
- *   moves clubs up and down on provisional numbers. The table here is built from
- *   `completed` matchups with a gameweek no later than the seeding gameweek, so
- *   the seeds are the same whenever they are drawn.
+ * Rules the code below holds to, each of which was a real mistake:
  *
- * `leagues.previous_season` is NOT evidence of an archive. It names the
- * previous FPL season (it feeds the draft board) from the day a league is
- * created, so a first-season league has one and no archived standings. Ask for
- * archived rows instead.
+ * - Never draw before there is a table. On 2026-08-21 two cups were drawn with
+ *   every club on 0 points and `league_standings` fell through to its last
+ *   tie-break, the club name, so seeds and byes came out alphabetical.
+ * - Never read `league_standings` for the table. It counts `live` matchups, so
+ *   a gameweek still being scored (and not yet through FPL's post-lockdown
+ *   pass) moves clubs on provisional numbers. The table here comes from
+ *   `completed` matchups only, and only when every matchup up to the draw
+ *   gameweek is completed. The same seeds come out whenever it is drawn.
+ * - Never take `leagues.previous_season` as evidence of an archive. It names the
+ *   previous FPL season from the day a league is created.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DRAW_THRESHOLD } from '@/lib/scoring/drawBand';
+import { buildRoundSpecs, nextPow2 } from '@/lib/tournaments/engine';
+import type { TournamentType } from '@/types';
 
-/** A league's first season seeds its cups from the table after this gameweek. */
-export const INAUGURAL_SEASON_CUP_SEED_GW = 7;
-
-export type SeedBasis = 'archive' | 'standings' | 'none';
-
-export interface CupSeedOrder<T> {
-  basis: SeedBasis;
-  /** Best seed first. Meaningless when `basis` is 'none'. */
-  ordered: T[];
+/**
+ * The gameweek whose table a cup is drawn from: the one before its first round
+ * starts, and never earlier than MW1. Derived from the round schedule so the
+ * two cannot drift apart. A Consolation Cup shares the Champions Cup's draw.
+ */
+export function cupDrawGameweek(type: TournamentType, clubs: number): number {
+  const drawn = type === 'secondary_cup' ? 'secondary_cup' : 'primary_cup';
+  const entrants = drawn === 'secondary_cup' ? clubs : clubs >= 7 ? clubs - 2 : clubs;
+  const first = buildRoundSpecs(nextPow2(entrants), drawn, clubs)[0];
+  return Math.max(1, first.startGameweek - 1);
 }
 
 export interface TableRow {
@@ -42,8 +45,9 @@ export interface TableRow {
   played: number;
 }
 
-export interface FinishedMatchup {
+export interface SeedMatchup {
   gameweek: number;
+  status: string;
   team_a_id: string | null;
   team_b_id: string | null;
   score_a: number | string | null;
@@ -51,23 +55,27 @@ export interface FinishedMatchup {
 }
 
 /**
- * The league table after `throughGw`, from finished matchups only: 3 points for
- * a win, 1 for a draw (a margin inside the draw band), 0 for a loss, then goal
- * difference, points for, and team name. The same order as `league_standings`.
+ * The league table after `throughGw`: 3 points for a win, 1 for a draw (a margin
+ * inside the draw band), 0 for a loss, then goal difference and points for (the
+ * order `league_standings` uses), then last season's final rank, then team name.
+ * Last season's rank only ever separates clubs level on everything else.
+ * Built from finished matchups only.
  *
- * Empty until the league has finished gameweek `throughGw`: a table of fewer
- * gameweeks is not the table the rule asks for.
+ * Empty (not ready) unless every matchup up to `throughGw` is completed and
+ * `throughGw` itself has results.
  */
 export function tableThrough(
-  matchups: FinishedMatchup[],
+  matchups: SeedMatchup[],
   teams: { id: string; team_name?: string | null }[],
   throughGw: number,
+  archiveRanks: Map<string, number> = new Map(),
 ): Map<string, TableRow> {
-  const finished = matchups.filter((m) => m.gameweek <= throughGw && m.team_a_id && m.team_b_id);
-  if (!finished.some((m) => m.gameweek === throughGw)) return new Map();
+  const played = matchups.filter((m) => m.gameweek <= throughGw && m.team_a_id && m.team_b_id);
+  if (played.some((m) => m.status !== 'completed')) return new Map();
+  if (!played.some((m) => m.gameweek === throughGw)) return new Map();
 
   const row = new Map(teams.map((t) => [t.id, { pts: 0, gd: 0, pf: 0, played: 0 }]));
-  for (const m of finished) {
+  for (const m of played) {
     const a = Number(m.score_a ?? 0);
     const b = Number(m.score_b ?? 0);
     const draw = Math.abs(a - b) <= DRAW_THRESHOLD;
@@ -82,41 +90,27 @@ export function tableThrough(
   }
 
   const name = (id: string) => teams.find((t) => t.id === id)?.team_name ?? '';
+  // A club missing from the archive (an expansion club) loses that tie.
+  const lastYear = (id: string) => archiveRanks.get(id) ?? 999;
   const ranked = [...row.entries()].sort(
-    ([ia, a], [ib, b]) => b.pts - a.pts || b.gd - a.gd || b.pf - a.pf || name(ia).localeCompare(name(ib)),
+    ([ia, a], [ib, b]) =>
+      b.pts - a.pts || b.gd - a.gd || b.pf - a.pf || lastYear(ia) - lastYear(ib) || name(ia).localeCompare(name(ib)),
   );
   return new Map(ranked.map(([id, r], i) => [id, { rank: i + 1, played: r.played }]));
 }
 
-/**
- * Orders `teams` best seed first.
- *
- * `archiveRanks` is last season's final_rank per club (empty when there is no
- * archive). `table` is from `tableThrough` (empty when there is no table to
- * trust yet). A club missing from the archive (an expansion club) goes below
- * the archived ones and is ordered among its peers by the current table.
- */
-export function orderForSeeding<T extends { id: string; team_name?: string | null }>(
-  teams: T[],
-  archiveRanks: Map<string, number>,
-  table: Map<string, TableRow>,
-): CupSeedOrder<T> {
-  const tableRank = (t: T) => table.get(t.id)?.rank ?? 999;
-  const byName = (a: T, b: T) => (a.team_name ?? '').localeCompare(b.team_name ?? '');
+export interface CupSeedOrder<T> {
+  /** False when there is no table to seed from yet; `ordered` is then empty. */
+  ready: boolean;
+  /** Best seed first. */
+  ordered: T[];
+}
 
-  if (archiveRanks.size > 0) {
-    const archived = (t: T) => archiveRanks.get(t.id) ?? 999;
-    return {
-      basis: 'archive',
-      ordered: [...teams].sort((a, b) => archived(a) - archived(b) || tableRank(a) - tableRank(b) || byName(a, b)),
-    };
-  }
-
-  if (table.size > 0) {
-    return { basis: 'standings', ordered: [...teams].sort((a, b) => tableRank(a) - tableRank(b) || byName(a, b)) };
-  }
-
-  return { basis: 'none', ordered: [...teams].sort(byName) };
+/** Orders `teams` best seed first by table position. Not ready when `table` is empty. */
+export function orderForSeeding<T extends { id: string }>(teams: T[], table: Map<string, TableRow>): CupSeedOrder<T> {
+  if (table.size === 0) return { ready: false, ordered: [] };
+  const rank = (t: T) => table.get(t.id)?.rank ?? 999;
+  return { ready: true, ordered: [...teams].sort((a, b) => rank(a) - rank(b)) };
 }
 
 /** The previous season's final_rank per club, or an empty map when the league has no archive for it. */
@@ -134,28 +128,20 @@ export async function loadArchiveRanks(admin: SupabaseClient, leagueId: string):
 }
 
 /**
- * The league's table after the seeding gameweek, from finished matchups, or an
- * empty map while that gameweek is unfinished. A league's schedule for the
- * season is at most a few hundred rows, so it is read in one page.
+ * The league's table after `throughGw`, or an empty map while it isn't ready.
+ * A league's schedule for a season is a few hundred rows at most, so one page.
  */
 export async function loadSeedTable(
   admin: SupabaseClient,
   leagueId: string,
   teams: { id: string; team_name?: string | null }[],
-  throughGw: number = INAUGURAL_SEASON_CUP_SEED_GW,
+  throughGw: number,
+  archiveRanks: Map<string, number> = new Map(),
 ): Promise<Map<string, TableRow>> {
   const { data } = await admin
     .from('matchups')
-    .select('gameweek, team_a_id, team_b_id, score_a, score_b')
+    .select('gameweek, status, team_a_id, team_b_id, score_a, score_b')
     .eq('league_id', leagueId)
-    .eq('status', 'completed')
     .lte('gameweek', throughGw);
-  return tableThrough((data ?? []) as FinishedMatchup[], teams, throughGw);
-}
-
-/** Whether a league's cups can be drawn at all yet: it has an archive, or it has finished the seeding gameweek. */
-export async function hasCupSeedBasis(admin: SupabaseClient, leagueId: string): Promise<boolean> {
-  if ((await loadArchiveRanks(admin, leagueId)).size > 0) return true;
-  const { data: teams } = await admin.from('teams').select('id, team_name').eq('league_id', leagueId);
-  return (await loadSeedTable(admin, leagueId, teams ?? [])).size > 0;
+  return tableThrough((data ?? []) as SeedMatchup[], teams, throughGw, archiveRanks);
 }

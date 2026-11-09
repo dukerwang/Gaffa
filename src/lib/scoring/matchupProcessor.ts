@@ -6,6 +6,7 @@ import { getCurrentFplSeason, getLatestReferenceStatsSeason } from '@/lib/season
 import { sendEmailToUsers } from '@/lib/email/sendEmailToUsers';
 import { getMatchweekSummaryEmail } from '@/lib/email/templates';
 import { executeAdvanceTournament } from '@/lib/tournaments/advanceTournament';
+import { drawDueCups } from '@/lib/tournaments/drawDueCups';
 import { payMeritPeriod } from '@/lib/economy/payMeritPeriod';
 import { DRAW_THRESHOLD } from '@/lib/scoring/drawBand';
 import { getFinishedPlTeamIds } from '@/lib/fixtures/lockout';
@@ -22,6 +23,28 @@ type MatchupUpdatePayload = {
 };
 
 export async function processMatchupsForGameweek(
+    gameweek: number,
+    finished: boolean,
+    opts: { force?: boolean } = {},
+) {
+    const result = await resolveGameweekMatchups(gameweek, finished, opts);
+
+    // Locking a gameweek is what makes a cup due: each is drawn from the
+    // finished table after the gameweek before its first round. Every path that
+    // locks scores comes through here, so the draw is checked here once rather
+    // than at each call site. It is self-gating (it reads only completed
+    // matchups) and idempotent, so asking when nothing is due costs a few queries.
+    if (finished) {
+        try {
+            await drawDueCups(createAdminClient());
+        } catch (err) {
+            console.error('[processMatchupsForGameweek] Cup draw failed:', err);
+        }
+    }
+    return result;
+}
+
+async function resolveGameweekMatchups(
     gameweek: number,
     finished: boolean,
     opts: { force?: boolean } = {},
@@ -634,6 +657,13 @@ export async function resolveAllStalledGameweeks(): Promise<{
             } catch (tErr) {
                 console.warn(`[resolveAllStalledGameweeks] Tournament advance failed for GW ${gw}:`, tErr);
             }
+        }
+
+        // A gameweek just resolved may be the one a cup is drawn after.
+        try {
+            await drawDueCups(admin);
+        } catch (dErr) {
+            console.warn('[resolveAllStalledGameweeks] Cup draw failed:', dErr);
         }
 
         return { resolved, skipped, tournamentsAdvanced };

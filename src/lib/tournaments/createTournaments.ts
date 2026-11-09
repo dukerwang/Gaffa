@@ -1,11 +1,14 @@
 /**
  * src/lib/tournaments/createTournaments.ts
  *
- * Core tournament creation logic — extracted from the HTTP route so it can be
- * called directly by the season reset orchestrator (and any future callers)
- * without needing to make an internal HTTP request.
+ * A cup is created when it is drawn: after the last gameweek before its first
+ * round, from the finished league table (src/lib/tournaments/seeding.ts). Until
+ * then it does not exist, so nothing can be seeded from a table that isn't
+ * there. Calling this early is safe: it skips, writes nothing and tells nobody.
  *
- * The HTTP route at /api/sync/tournaments?action=create delegates to this.
+ * Extracted from the HTTP route so the season reset, the cron and the page-load
+ * safety net can all call it directly. The HTTP route at
+ * /api/sync/tournaments?action=create delegates to it too.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -15,12 +18,7 @@ import {
   buildRoundSpecs,
   type SeedEntry,
 } from '@/lib/tournaments/engine';
-import {
-  INAUGURAL_SEASON_CUP_SEED_GW,
-  loadArchiveRanks,
-  loadSeedTable,
-  orderForSeeding,
-} from '@/lib/tournaments/seeding';
+import { cupDrawGameweek, loadArchiveRanks, loadSeedTable, orderForSeeding } from '@/lib/tournaments/seeding';
 import type { DrawnTie } from '@/lib/tournaments/draw';
 import { notifyDraw } from '@/lib/tournaments/runDraw';
 import { createNotification } from '@/lib/notifications/createNotification';
@@ -42,17 +40,34 @@ interface CreateAllTournamentsResult {
   tournamentsCreated: CreateTournamentResult[];
 }
 
+const CUP_NAMES = {
+  primary_cup: 'Champions Cup',
+  secondary_cup: 'League Cup',
+  consolation_cup: 'Consolation Cup',
+} satisfies Record<TournamentType, string>;
+
+/** Postgres unique_violation: another caller drew this cup first. */
+const UNIQUE_VIOLATION = '23505';
+
+/** Throws when a Supabase write failed, which `await` alone does not. */
+function must(res: { error: { message: string } | null }, what: string): void {
+  if (res.error) throw new Error(`${what}: ${res.error.message}`);
+}
+
 /**
- * Creates a single tournament for a league.
+ * Draws a single cup for a league if it is due, and does nothing otherwise.
+ *
+ * Safe to call from several places at once. The (league, type, season) unique
+ * index lets one caller create the cup; the others skip. A caller that fails
+ * partway removes what it made, so a half-built cup can never pass for a drawn
+ * one on the next call.
  *
  * @param admin     - Supabase admin client
  * @param leagueId  - The league to create the tournament in
  * @param type      - 'primary_cup' | 'secondary_cup' | 'consolation_cup'
- * @param startGw   - The first gameweek that should be included (usually 1 for new season)
+ * @param startGw   - The first gameweek the league plays (usually 1); a cup whose
+ *                    first round falls before it is skipped
  * @param season    - The season string to tag the tournament with (e.g. '2026-27')
- * @param opts      - `corrected`: this replaces a bracket that was seeded wrongly,
- *                    and the managers' notices say so. `silent`: send no notices;
- *                    announceFirstRound sends them later.
  */
 export async function createTournament(
   admin: SupabaseClient,
@@ -60,7 +75,6 @@ export async function createTournament(
   type: TournamentType,
   startGw: number,
   season: string,
-  opts: { corrected?: boolean; silent?: boolean } = {},
 ): Promise<CreateTournamentResult> {
   // --- Idempotency check ---
   const { data: existingTournament } = await admin
@@ -89,20 +103,14 @@ export async function createTournament(
     return { ok: false, error: 'Need at least 4 teams in the league' };
   }
 
-  // Seed from last season's archived table, else from this season's table
-  // after gameweek 7. With neither, any seed would be arbitrary (see
-  // seeding.ts), so no bracket is made yet.
-  const [archiveRanks, seedTable] = await Promise.all([
-    loadArchiveRanks(admin, leagueId),
-    loadSeedTable(admin, leagueId, allTeams),
-  ]);
-  const { basis, ordered: orderedTeams } = orderForSeeding(allTeams, archiveRanks, seedTable);
-  if (basis === 'none') {
-    return {
-      ok: true,
-      skipped: true,
-      error: `Skipped: ${type} has nothing to seed from yet (no archived table, gameweek ${INAUGURAL_SEASON_CUP_SEED_GW} not finished)`,
-    };
+  // Seed from the finished table after the gameweek before this cup's first
+  // round; last season's rank only breaks a tie. No table yet means not due.
+  const drawGw = cupDrawGameweek(type, allTeams.length);
+  const archiveRanks = await loadArchiveRanks(admin, leagueId);
+  const seedTable = await loadSeedTable(admin, leagueId, allTeams, drawGw, archiveRanks);
+  const { ready, ordered: orderedTeams } = orderForSeeding(allTeams, seedTable);
+  if (!ready) {
+    return { ok: true, skipped: true, error: `Skipped: ${type} is drawn once MW${drawGw} is finished` };
   }
 
   // Filter eligible teams by tournament type & league size
@@ -136,172 +144,162 @@ export async function createTournament(
     };
   }
 
-  const names = {
-    primary_cup: 'Champions Cup',
-    secondary_cup: 'League Cup',
-    consolation_cup: 'Consolation Cup',
-  } satisfies Record<TournamentType, string>;
-
   // 1. Insert tournament row
   const { data: tournament, error: tErr } = await admin
     .from('tournaments')
-    .insert({ league_id: leagueId, name: names[type], type, status: 'pending', season })
+    .insert({ league_id: leagueId, name: CUP_NAMES[type], type, status: 'pending', season })
     .select()
     .single();
 
+  if (tErr?.code === UNIQUE_VIOLATION) return { ok: true, skipped: true };
   if (tErr || !tournament) {
     return { ok: false, error: `Failed to create tournament: ${tErr?.message}` };
   }
 
-  // 2. Insert rounds
-  const { data: rounds, error: rErr } = await admin
-    .from('tournament_rounds')
-    .insert(
-      roundSpecs.map((r) => ({
-        tournament_id: tournament.id,
-        name: r.name,
-        round_number: r.roundNumber,
-        start_gameweek: r.startGameweek,
-        end_gameweek: r.endGameweek,
-        is_two_leg: r.isTwoLeg,
-      })),
-    )
-    .select()
-    .order('round_number', { ascending: true });
+  try {
+    // 2. Insert rounds
+    const { data: rounds, error: rErr } = await admin
+      .from('tournament_rounds')
+      .insert(
+        roundSpecs.map((r) => ({
+          tournament_id: tournament.id,
+          name: r.name,
+          round_number: r.roundNumber,
+          start_gameweek: r.startGameweek,
+          end_gameweek: r.endGameweek,
+          is_two_leg: r.isTwoLeg,
+        })),
+      )
+      .select()
+      .order('round_number', { ascending: true });
+    if (rErr || !rounds) throw new Error(`Failed to create rounds: ${rErr?.message}`);
 
-  if (rErr || !rounds) {
-    return { ok: false, error: `Failed to create rounds: ${rErr?.message}` };
-  }
+    // 3. Build matchup rows (round 1 from bracket, later rounds as empty TBD)
+    const allMatchupRows: {
+      roundId: string;
+      roundNumber: number;
+      teamA: string | null;
+      teamB: string | null;
+      bracketPos: number;
+    }[] = [];
 
-  // 3. Build matchup rows (round 1 from bracket, later rounds as empty TBD)
-  const allMatchupRows: {
-    roundId: string;
-    roundNumber: number;
-    teamA: string | null;
-    teamB: string | null;
-    bracketPos: number;
-  }[] = [];
-
-  for (let i = 0; i < bracketSlots.length; i += 2) {
-    allMatchupRows.push({
-      roundId: rounds[0].id,
-      roundNumber: 1,
-      teamA: bracketSlots[i],
-      teamB: bracketSlots[i + 1],
-      bracketPos: i / 2,
-    });
-  }
-  for (let r = 1; r < rounds.length; r++) {
-    for (let m = 0; m < roundSpecs[r].matchCount; m++) {
+    for (let i = 0; i < bracketSlots.length; i += 2) {
       allMatchupRows.push({
-        roundId: rounds[r].id,
-        roundNumber: r + 1,
-        teamA: null,
-        teamB: null,
-        bracketPos: m,
+        roundId: rounds[0].id,
+        roundNumber: 1,
+        teamA: bracketSlots[i],
+        teamB: bracketSlots[i + 1],
+        bracketPos: i / 2,
       });
     }
-  }
-
-  const { data: insertedMatchups, error: mErr } = await admin
-    .from('tournament_matchups')
-    .insert(
-      allMatchupRows.map((m) => ({
-        round_id: m.roundId,
-        team_a_id: m.teamA,
-        team_b_id: m.teamB,
-        bracket_position: m.bracketPos,
-        status: m.roundNumber === 1 && m.teamA && m.teamB ? 'active' : ('pending' as const),
-      })),
-    )
-    .select()
-    .order('created_at', { ascending: true });
-
-  if (mErr || !insertedMatchups) {
-    return { ok: false, error: `Failed to create matchups: ${mErr?.message}` };
-  }
-
-  // 4. Link next_matchup_id (winner progression). The League Cup has no fixed
-  // path: each round after the first is drawn (src/lib/tournaments/runDraw.ts).
-  const matchupsByRound = new Map<string, typeof insertedMatchups>();
-  for (const m of insertedMatchups) {
-    const arr = matchupsByRound.get(m.round_id) ?? [];
-    arr.push(m);
-    matchupsByRound.set(m.round_id, arr);
-  }
-
-  // The rows above were read before the links exist, so the links are kept
-  // here for the bye step below rather than read off those rows.
-  const nextOf = new Map<string, string>();
-  for (let r = 0; type !== 'secondary_cup' && r < rounds.length - 1; r++) {
-    const cur = (matchupsByRound.get(rounds[r].id) ?? []).sort(
-      (a, b) => a.bracket_position - b.bracket_position,
-    );
-    const nxt = (matchupsByRound.get(rounds[r + 1].id) ?? []).sort(
-      (a, b) => a.bracket_position - b.bracket_position,
-    );
-    for (const cm of cur) {
-      const nextPos = Math.floor(cm.bracket_position / 2);
-      const nextMatchup = nxt.find((nm) => nm.bracket_position === nextPos);
-      if (nextMatchup) {
-        await admin
-          .from('tournament_matchups')
-          .update({ next_matchup_id: nextMatchup.id })
-          .eq('id', cm.id);
-        nextOf.set(cm.id, nextMatchup.id);
+    for (let r = 1; r < rounds.length; r++) {
+      for (let m = 0; m < roundSpecs[r].matchCount; m++) {
+        allMatchupRows.push({
+          roundId: rounds[r].id,
+          roundNumber: r + 1,
+          teamA: null,
+          teamB: null,
+          bracketPos: m,
+        });
       }
     }
-  }
 
-  // 5. Auto-advance byes in round 1
-  const firstRoundMatchups = matchupsByRound.get(rounds[0].id) ?? [];
-  for (const m of firstRoundMatchups) {
-    if (!m.team_a_id && !m.team_b_id) continue;
-    if (!m.team_a_id || !m.team_b_id) {
-      const winnerId = m.team_a_id || m.team_b_id;
-      await admin
-        .from('tournament_matchups')
-        .update({ winner_id: winnerId, status: 'completed' })
-        .eq('id', m.id);
-      const nextId = nextOf.get(m.id);
-      if (nextId && winnerId) {
-        await advanceWinner(admin, nextId, winnerId, m.bracket_position);
+    const { data: insertedMatchups, error: mErr } = await admin
+      .from('tournament_matchups')
+      .insert(
+        allMatchupRows.map((m) => ({
+          round_id: m.roundId,
+          team_a_id: m.teamA,
+          team_b_id: m.teamB,
+          bracket_position: m.bracketPos,
+          status: m.roundNumber === 1 && m.teamA && m.teamB ? 'active' : ('pending' as const),
+        })),
+      )
+      .select()
+      .order('created_at', { ascending: true });
+    if (mErr || !insertedMatchups) throw new Error(`Failed to create matchups: ${mErr?.message}`);
+
+    // 4. Link next_matchup_id (winner progression). The League Cup has no fixed
+    // path: each round after the first is drawn (src/lib/tournaments/runDraw.ts).
+    const matchupsByRound = new Map<string, typeof insertedMatchups>();
+    for (const m of insertedMatchups) {
+      const arr = matchupsByRound.get(m.round_id) ?? [];
+      arr.push(m);
+      matchupsByRound.set(m.round_id, arr);
+    }
+
+    // The rows above were read before the links exist, so the links are kept
+    // here for the bye step below rather than read off those rows.
+    const nextOf = new Map<string, string>();
+    for (let r = 0; type !== 'secondary_cup' && r < rounds.length - 1; r++) {
+      const cur = (matchupsByRound.get(rounds[r].id) ?? []).sort(
+        (a, b) => a.bracket_position - b.bracket_position,
+      );
+      const nxt = (matchupsByRound.get(rounds[r + 1].id) ?? []).sort(
+        (a, b) => a.bracket_position - b.bracket_position,
+      );
+      for (const cm of cur) {
+        const nextPos = Math.floor(cm.bracket_position / 2);
+        const nextMatchup = nxt.find((nm) => nm.bracket_position === nextPos);
+        if (nextMatchup) {
+          must(
+            await admin.from('tournament_matchups').update({ next_matchup_id: nextMatchup.id }).eq('id', cm.id),
+            'Failed to link ties',
+          );
+          nextOf.set(cm.id, nextMatchup.id);
+        }
       }
     }
-  }
 
-  // 6. Activate tournament
-  await admin.from('tournaments').update({ status: 'active' }).eq('id', tournament.id);
+    // 5. Auto-advance byes in round 1
+    const firstRoundMatchups = matchupsByRound.get(rounds[0].id) ?? [];
+    for (const m of firstRoundMatchups) {
+      if (!m.team_a_id && !m.team_b_id) continue;
+      if (!m.team_a_id || !m.team_b_id) {
+        const winnerId = m.team_a_id || m.team_b_id;
+        must(
+          await admin.from('tournament_matchups').update({ winner_id: winnerId, status: 'completed' }).eq('id', m.id),
+          'Failed to mark a bye',
+        );
+        const nextId = nextOf.get(m.id);
+        if (nextId && winnerId) {
+          await advanceWinner(admin, nextId, winnerId, m.bracket_position);
+        }
+      }
+    }
 
-  // 7. Tell each manager who they drew. Later rounds are announced by runDraw
-  // (League Cup) or follow from the bracket (Champions Cup).
-  if (!opts.silent) {
+    // 6. Activate tournament
+    must(await admin.from('tournaments').update({ status: 'active' }).eq('id', tournament.id), 'Failed to activate');
+
+    // 7. Tell each manager who they drew. Later rounds are announced by runDraw
+    // (League Cup) or follow from the bracket (Champions Cup). The cup is drawn
+    // by now, so a failed notice is logged, not allowed to undo it.
     try {
-      await announceFirstRound(admin, tournament.id, { corrected: opts.corrected });
+      await announceFirstRound(admin, tournament.id);
     } catch (err) {
       console.error(`[createTournament] Failed to send ${type} draw notifications:`, err);
     }
-  }
 
-  return {
-    ok: true,
-    tournament_id: tournament.id,
-    bracket_size: bracketSize,
-    teams: seeds.length,
-    byes: bracketSize - seeds.length,
-    rounds: rounds.length,
-  };
+    return {
+      ok: true,
+      tournament_id: tournament.id,
+      bracket_size: bracketSize,
+      teams: seeds.length,
+      byes: bracketSize - seeds.length,
+      rounds: rounds.length,
+    };
+  } catch (err) {
+    // Leave nothing half-built: rounds and ties go with the tournament row.
+    await admin.from('tournaments').delete().eq('id', tournament.id);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 /**
  * Tells each manager in a cup's first round who they play, or that they have a
- * bye. Reads the bracket as stored, so it announces whatever is there now.
+ * bye. Reads the bracket as stored.
  */
-export async function announceFirstRound(
-  admin: SupabaseClient,
-  tournamentId: string,
-  opts: { corrected?: boolean } = {},
-): Promise<void> {
+export async function announceFirstRound(admin: SupabaseClient, tournamentId: string): Promise<void> {
   const { data: tournament } = await admin
     .from('tournaments')
     .select('id, league_id, name')
@@ -326,12 +324,16 @@ export async function announceFirstRound(
     if (a && b) ties.push({ a, b });
     else if (a || b) ties.push({ a: (a ?? b) as string, b: null });
   }
-  await notifyDraw(admin, createNotification, tournament, round, ties, opts);
+  await notifyDraw(admin, createNotification, tournament, round, ties);
 }
 
 /**
- * Creates all three tournaments (Champions Cup, League Cup, Consolation Cup)
- * for a league in a single call. Called by the season reset orchestrator.
+ * Draws every cup of a league that is due and not yet drawn. Called by the
+ * season reset (where nothing is due yet), the cron, and the page-load safety
+ * net; each is a cheap no-op when nothing is due.
+ *
+ * The Champions Cup goes first so a league of 7 or more splits one table into
+ * its two cups in one pass.
  */
 export async function createAllTournaments(
   admin: SupabaseClient,
@@ -339,7 +341,7 @@ export async function createAllTournaments(
   season: string,
   startGw = 1,
 ): Promise<CreateAllTournamentsResult> {
-  const types: TournamentType[] = ['primary_cup', 'secondary_cup', 'consolation_cup'];
+  const types: TournamentType[] = ['primary_cup', 'consolation_cup', 'secondary_cup'];
   const results: CreateTournamentResult[] = [];
 
   for (const type of types) {
@@ -375,8 +377,8 @@ async function advanceWinner(
 
   // Slot A for even positions, slot B for odd positions
   const field = currentBracketPos % 2 === 0 ? 'team_a_id' : 'team_b_id';
-  await admin
-    .from('tournament_matchups')
-    .update({ [field]: winnerId })
-    .eq('id', nextMatchupId);
+  must(
+    await admin.from('tournament_matchups').update({ [field]: winnerId }).eq('id', nextMatchupId),
+    'Failed to place a bye club',
+  );
 }
