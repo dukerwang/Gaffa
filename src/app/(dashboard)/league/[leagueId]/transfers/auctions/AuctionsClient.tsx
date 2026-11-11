@@ -339,11 +339,11 @@ export default function AuctionsClient({
 
           <div className={styles.desk}>
             <div className={styles.deskRow}>
-              <span className={styles.deskLabel}>Committed if you win</span>
+              <span className={styles.deskLabel}>Committed</span>
               <span className={styles.deskValue}>{money(committed)}</span>
             </div>
             <div className={styles.deskRow}>
-              <span className={styles.deskLabel}>Free after that</span>
+              <span className={styles.deskLabel}>Uncommitted</span>
               <span className={`${styles.deskValue} ${styles.statAccent}`}>
                 {money(Math.max(0, budget - committed))}
               </span>
