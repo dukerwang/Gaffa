@@ -1,3 +1,4 @@
+import { getSessionUser } from '@/lib/supabase/sessionUser';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { loadUserGuide } from '@/lib/guide/loadUserGuide';
@@ -12,9 +13,7 @@ export const metadata: Metadata = {
 
 export default async function GuidePage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
 
   const guide = await loadUserGuide();
 

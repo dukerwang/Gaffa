@@ -1,3 +1,4 @@
+import { getSessionUser } from '@/lib/supabase/sessionUser';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import NavigationLink from '@/components/ui/NavigationLink';
@@ -6,7 +7,7 @@ import styles from './join.module.css';
 
 export default async function JoinLeaguePage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
 
   return (

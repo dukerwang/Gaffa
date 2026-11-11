@@ -26,9 +26,12 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims verifies the session token's signature locally against the
+  // project's cached public key, so a signed-in request costs no round trip to
+  // Supabase Auth. It still refreshes an expired token. Anything that changes
+  // data re-checks with auth.getUser() in its own route.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims?.sub ? claimsData.claims : null;
 
   const pathname = request.nextUrl.pathname;
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup');
