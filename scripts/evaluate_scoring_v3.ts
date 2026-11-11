@@ -340,6 +340,8 @@ async function main() {
   const perStart = {} as Record<string, Record<StepKey, number[]>>;
   // Agreement with FotMob's own match rating, 60+ minutes (see printAgreement).
   const agreement: { pos: GranularPosition; fotmob: number; ours: Record<StepKey, number> }[] = [];
+  // --dump-apps: every 80+ minute appearance with points and Defensive per step.
+  const dumped: Record<string, unknown>[] = [];
   for (const r of apps) {
     const pos = r.players.primary_position as GranularPosition;
     const meta = playerMeta.get(r.player_id)!;
@@ -362,8 +364,21 @@ async function main() {
     const agreeRow = r.stats.minutes_played >= 60 && typeof fotmobRating === 'number'
       ? { pos, fotmob: fotmobRating, ours: {} as Record<StepKey, number> } : null;
     if (agreeRow) agreement.push(agreeRow);
+    const dumpRow = process.argv.includes('--dump-apps') && r.stats.minutes_played >= 80 ? {
+      name: r.players.web_name, club: clubOf.get(r.player_id), gw: r.gameweek, pos, gc: r.stats.goals_conceded,
+      xgc: r.stats.expected_goals_conceded, cs: !!r.stats.clean_sheet, tackles: r.stats.fpl_tackles, cbi: r.stats.fpl_cbi,
+      recoveries: r.stats.fpl_recoveries, aerials: fotmobFields(r).aerials_won, fotmob: fotmobRating,
+      steps: {} as Record<string, unknown>,
+    } : null;
+    if (dumpRow) dumped.push(dumpRow);
     for (const step of STEPS) {
       const result = calculateMatchRating(statsFor(r, step), pos, refs[step.key], pos, step.options);
+      if (dumpRow) dumpRow.steps[step.key] = {
+        pts: +result.fantasyPoints.toFixed(2), rating: +result.rating.toFixed(2),
+        defRaw: +defensiveRawInput(statsFor(r, step), pos, pos).defensiveRaw.toFixed(2),
+        defScore: +(result.breakdown.find((b) => b.key === 'defensive')?.score ?? 0).toFixed(3),
+        defRef: refs[step.key][pos].defensive,
+      };
       const pts = result.fantasyPoints;
       if (agreeRow) agreeRow.ours[step.key] = result.rating;
       line.pts[step.key] += pts;
@@ -414,6 +429,10 @@ async function main() {
   console.log('pos  starts' + STEPS.map((s) => s.key.padStart(8)).join(''));
   for (const p of positions) console.log(`${p.pos.padEnd(4)} ${String(p.starts).padStart(6)}` + STEPS.map((s) => (p.startPpg as any)[s.key].toFixed(2).padStart(8)).join(''));
   printAgreement(agreement);
+  if (dumped.length) {
+    writeFileSync(`${OUT_DIR}/apps_${season}.json`, JSON.stringify(dumped));
+    console.log(`Wrote ${dumped.length} appearances of 80+ minutes to ${OUT_DIR}/apps_${season}.json`);
+  }
   console.log('\nMean points by goals conceded, 80+ minutes');
   console.log('group gc ' + STEPS.map((s) => s.key.padStart(8)).join(''));
   const gcTable = Object.entries(gcAgg).flatMap(([group, byGc]) => Object.entries(byGc).map(([gc, bySteps]) => ({
