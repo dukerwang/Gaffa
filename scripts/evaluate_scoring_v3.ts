@@ -53,7 +53,7 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'csbps' | 'csonly' | 'gkgp' | 'csgk';
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef';
 type Component = 'match_impact' | 'defensive' | 'threat';
 /** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
 interface Step {
@@ -132,10 +132,29 @@ const EXPERIMENTS: Step[] = [
     },
   },
 ];
+// nocs: csgk, and outfielders get no clean-sheet bonus in Defensive either.
+// Team defending still counts through goals conceded against xGC (Defensive)
+// and -4 BPS per goal conceded (Match Impact), which are continuous rather
+// than a 0-or-1 cliff.
 // csonly and gkgp together.
 EXPERIMENTS.push({
   ...EXPERIMENTS.find((e) => e.key === 'gkgp')!, key: 'csgk', label: 'Exp: clean-sheet BPS out + keeper goals prevented',
   adjust: (st) => EXPERIMENTS.find((e) => e.key === 'gkgp')!.adjust!(EXPERIMENTS.find((e) => e.key === 'csonly')!.adjust!(st)),
+});
+EXPERIMENTS.push({
+  ...EXPERIMENTS.find((e) => e.key === 'csgk')!, key: 'nocs', label: 'Exp: csgk + no outfield clean-sheet bonus',
+  adjust: (st) => {
+    const out = EXPERIMENTS.find((e) => e.key === 'csgk')!.adjust!(st);
+    return st.fpl_element_type === 1 ? out : { ...out, clean_sheet: false };
+  },
+});
+// nocsdef: as nocs, but only FPL defenders lose the Defensive clean-sheet bonus; DMs and CMs keep theirs.
+EXPERIMENTS.push({
+  ...EXPERIMENTS.find((e) => e.key === 'csgk')!, key: 'nocsdef', label: 'Exp: csgk + no clean-sheet bonus for defenders',
+  adjust: (st) => {
+    const out = EXPERIMENTS.find((e) => e.key === 'csgk')!.adjust!(st);
+    return st.fpl_element_type === 2 ? { ...out, clean_sheet: false } : out;
+  },
 });
 const tried = (process.argv.find((a) => a.startsWith('--try='))?.split('=')[1] ?? '').split(',').filter(Boolean);
 for (const key of tried) {
@@ -291,6 +310,8 @@ async function main() {
   // Mean points by goals conceded (0, 1, 2, 3+), 80+ minutes, for positions scored on defending.
   const GC_GROUP: Partial<Record<GranularPosition, string>> = { GK: 'GK', CB: 'CB', LB: 'FB', RB: 'FB', LWB: 'FB', RWB: 'FB', DM: 'DM' };
   const gcAgg: Record<string, Record<number, Record<StepKey, number[]>>> = {};
+  // Clean-sheet dependence, 80+ minutes, same groups as gcAgg.
+  const csDep: Record<string, Partial<Record<StepKey, { pts: number; cs: boolean }[]>>> = {};
   const perApp = {} as Record<string, Record<StepKey, number[]>>;
   // Starts: FPL doesn't record who started, so 60+ minutes stands in for it.
   const perStart = {} as Record<string, Record<StepKey, number[]>>;
@@ -325,6 +346,7 @@ async function main() {
       line.pts[step.key] += pts;
       perApp[pos][step.key].push(pts);
       if (r.stats.minutes_played >= 60) ((perStart[pos] ??= {} as Record<StepKey, number[]>)[step.key] ??= []).push(pts);
+      if (gcGroup && r.stats.minutes_played >= 80) (((csDep[gcGroup] ??= {})[step.key] ??= [])).push({ pts, cs: !!r.stats.clean_sheet });
       if (gcGroup && r.stats.minutes_played >= 80) ((gcAgg[gcGroup] ??= {})[gcKey] ??= {} as Record<StepKey, number[]>)[step.key] = [...(gcAgg[gcGroup][gcKey][step.key] ?? []), pts];
     }
     lines.set(r.player_id, line);
@@ -376,6 +398,20 @@ async function main() {
     ...Object.fromEntries(STEPS.map((s) => [s.key, +mean(bySteps[s.key]).toFixed(1)])),
   })));
   for (const row of gcTable) console.log(`${row.group.padEnd(5)} ${row.gc === 3 ? '3+' : row.gc}  ` + STEPS.map((s) => String((row as any)[s.key]).padStart(8)).join(''));
+  // How much of a defender's score is the clean sheet? Share of the variance
+  // in points explained by whether the team kept one, the mean with and
+  // without, and how many 20+ point games came without one.
+  console.log('\nClean-sheet dependence, 80+ minutes: % of points variance explained by the clean sheet | mean with / without | 20+ pt games without one');
+  for (const [group, bySteps] of Object.entries(csDep)) {
+    console.log(group + '   ' + STEPS.map((st) => {
+      const a = bySteps[st.key] ?? []; if (!a.length) return '';
+      const all = mean(a.map((x) => x.pts)), w = a.filter((x) => x.cs), wo = a.filter((x) => !x.cs);
+      const tot = a.reduce((t, x) => t + (x.pts - all) ** 2, 0);
+      const between = w.length * (mean(w.map((x) => x.pts)) - all) ** 2 + wo.length * (mean(wo.map((x) => x.pts)) - all) ** 2;
+      const big = a.filter((x) => x.pts >= 20), bigNo = big.filter((x) => !x.cs).length;
+      return `${st.key} ${(100 * between / tot).toFixed(0)}% ${mean(w.map((x) => x.pts)).toFixed(1)}/${mean(wo.map((x) => x.pts)).toFixed(1)} ${bigNo}/${big.length}`;
+    }).join(' | '));
+  }
   const out = `${OUT_DIR}/leaderboard_${season}.json`;
   writeFileSync(out, JSON.stringify({
     season, generated: new Date().toISOString(),
