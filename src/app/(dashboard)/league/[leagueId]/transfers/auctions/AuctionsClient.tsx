@@ -349,7 +349,7 @@ export default function AuctionsClient({
               </span>
             </div>
             <div className={`${styles.deskRow} ${styles.deskLast}`}>
-              <span className={styles.deskLabel}>Your lots selling</span>
+              <span className={styles.deskLabel}>Your lots</span>
               <span className={styles.deskValue}>
                 {biddableAuctions.filter((a) => a.seller_team_id === me).length}
               </span>
