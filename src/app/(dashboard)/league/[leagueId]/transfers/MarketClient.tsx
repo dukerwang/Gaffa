@@ -188,7 +188,7 @@ export default function MarketClient({
           {/* ── Closing now ─────────────────────────────── */}
           <div className={styles.sect} data-tour="market-closing">
             <h2 className={styles.sectTitle}>
-              Closing Now <AuctionTimingHelp />
+              Closing Now <AuctionTimingHelp isDynasty={model.league.is_dynasty !== false} />
             </h2>
             <span className={styles.sectHint}>
               free agents and listed players together

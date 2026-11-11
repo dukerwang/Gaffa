@@ -81,13 +81,15 @@ export default function Walkthrough({ steps, onExit, onSkipAll }: Props) {
     return () => mq.removeEventListener('change', sync);
   }, []);
 
-  // Bring the target into view once per step, then follow it. The page can
-  // still reflow underneath (images, live scores), so the rect is re-read every
-  // frame while a walkthrough is open.
+  // Bring the target into view once per step, then follow it when the page
+  // reflows underneath (images, live scores) or the window resizes.
   useLayoutEffect(() => {
     if (!step.at) return;
     const first = findTarget(step.at);
     if (first) {
+      // Inner scroll containers first (the lineup rail, the sub-nav), then the
+      // window, with room for the sticky top bar.
+      first.scrollIntoView({ block: 'nearest', inline: 'nearest' });
       const r = first.getBoundingClientRect();
       const fits = r.height < window.innerHeight * 0.55;
       if (r.top < SCROLL_OFFSET || r.bottom > window.innerHeight * (fits ? 0.6 : 1)) {
@@ -95,12 +97,14 @@ export default function Walkthrough({ steps, onExit, onSkipAll }: Props) {
       }
     }
     // The spotlight lives in page coordinates, so scrolling carries it with
-    // the page instead of re-measuring a frame behind. Only a target in the
-    // sticky top bar is measured against the viewport.
-    let raf = 0;
+    // the page and needs no measuring. Only a target in the sticky top bar is
+    // measured against the viewport.
     let pinnedFor: HTMLElement | null = null;
     let pinned = false;
-    const follow = () => {
+    let observed: HTMLElement | null = null;
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(document.body);
+    const measure = () => {
       const el = step.at ? findTarget(step.at) : null;
       if (el) {
         if (el !== pinnedFor) {
@@ -118,13 +122,26 @@ export default function Walkthrough({ steps, onExit, onSkipAll }: Props) {
           pinned,
         };
         setSpot((prev) => (sameBox(prev, next) ? prev : next));
+        if (el !== observed) {
+          if (observed) ro.unobserve(observed);
+          ro.observe(el);
+          observed = el;
+        }
       } else {
         setSpot(null);
       }
-      raf = requestAnimationFrame(follow);
     };
-    raf = requestAnimationFrame(follow);
-    return () => cancelAnimationFrame(raf);
+    // One frame for the scroll above to settle, then on every real change.
+    const raf = requestAnimationFrame(measure);
+    // A target can appear after the step does (rows that load late).
+    const late = window.setInterval(() => { if (!observed) measure(); }, 500);
+    window.addEventListener('resize', measure);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearInterval(late);
+      window.removeEventListener('resize', measure);
+      ro.disconnect();
+    };
   }, [step.at]);
 
   const finish = useCallback(() => onExit(), [onExit]);

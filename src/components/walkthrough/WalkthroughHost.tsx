@@ -47,7 +47,8 @@ export default function WalkthroughHost({ leagueId, status, isDynasty }: Props) 
 
   useEffect(() => {
     const pageChapter = chapterForPath(pathname, leagueId, format);
-    const welcomeDue = tour === WELCOME.id || (isPostDraft(status) && shouldAutoStart(WELCOME));
+    // A chapter asked for by name (a Help tile) runs now; Welcome waits for the next visit.
+    const welcomeDue = tour === WELCOME.id || (!tour && isPostDraft(status) && shouldAutoStart(WELCOME));
     const chapter = welcomeDue ? WELCOME : pageChapter;
     if (!chapter) return;
     const forced = tour === chapter.id;
