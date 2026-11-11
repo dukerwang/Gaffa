@@ -53,7 +53,7 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf';
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf' | 'xgcdef' | 'xgcgk';
 type Component = 'match_impact' | 'defensive' | 'threat';
 /** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
 interface Step {
@@ -137,6 +137,23 @@ EXPERIMENTS.push({
   ...EXPERIMENTS.find((e) => e.key === 'gkgp')!, key: 'cshalf', label: 'Exp: half the clean-sheet BPS out + keeper goals prevented',
   adjust: (st) => EXPERIMENTS.find((e) => e.key === 'gkgp')!.adjust!(
     st.fpl_element_type === 1 || st.fpl_element_type === 2 ? { ...st, bps: (st.bps ?? 0) - (st.clean_sheet && st.minutes_played >= 60 ? 6 : 0) } : st),
+});
+// xgcdef: outfield defenders credited for the chances the team prevented,
+// not for whether the chances allowed went in. Defensive today adds
+// 5 x (xGC - goals conceded), which pays more the more chances the opponent
+// had. This makes it -5 x xGC (plus a constant the recomputed references
+// absorb); goals conceded still count through the clean-sheet bonus and BPS.
+// Emulated through xGC: 5 x (xGC' - GC) = 15 - 5 x xGC when xGC' = GC - xGC + 3.
+const preventChances = (st: RawStats): RawStats => st.fpl_element_type === 1 ? st
+  : { ...st, expected_goals_conceded: (st.goals_conceded ?? 0) - (st.expected_goals_conceded ?? 0) + 3 };
+EXPERIMENTS.push({
+  key: 'xgcdef', label: 'Exp: defenders credited for chances prevented', version: 'v3',
+  fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
+  options: { v3References: false }, adjust: preventChances,
+});
+EXPERIMENTS.push({
+  ...EXPERIMENTS.find((e) => e.key === 'gkgp')!, key: 'xgcgk', label: 'Exp: xgcdef + keeper goals prevented',
+  adjust: (st) => EXPERIMENTS.find((e) => e.key === 'gkgp')!.adjust!(preventChances(st)),
 });
 // nocs: csgk, and outfielders get no clean-sheet bonus in Defensive either.
 // Team defending still counts through goals conceded against xGC (Defensive)
@@ -317,7 +334,7 @@ async function main() {
   const GC_GROUP: Partial<Record<GranularPosition, string>> = { GK: 'GK', CB: 'CB', LB: 'FB', RB: 'FB', LWB: 'FB', RWB: 'FB', DM: 'DM' };
   const gcAgg: Record<string, Record<number, Record<StepKey, number[]>>> = {};
   // Clean-sheet dependence, 80+ minutes, same groups as gcAgg.
-  const csDep: Record<string, Partial<Record<StepKey, { pts: number; cs: boolean }[]>>> = {};
+  const csDep: Record<string, Partial<Record<StepKey, { pts: number; cs: boolean; xgc: number }[]>>> = {};
   const perApp = {} as Record<string, Record<StepKey, number[]>>;
   // Starts: FPL doesn't record who started, so 60+ minutes stands in for it.
   const perStart = {} as Record<string, Record<StepKey, number[]>>;
@@ -352,7 +369,7 @@ async function main() {
       line.pts[step.key] += pts;
       perApp[pos][step.key].push(pts);
       if (r.stats.minutes_played >= 60) ((perStart[pos] ??= {} as Record<StepKey, number[]>)[step.key] ??= []).push(pts);
-      if (gcGroup && r.stats.minutes_played >= 80) (((csDep[gcGroup] ??= {})[step.key] ??= [])).push({ pts, cs: !!r.stats.clean_sheet });
+      if (gcGroup && r.stats.minutes_played >= 80) (((csDep[gcGroup] ??= {})[step.key] ??= [])).push({ pts, cs: !!r.stats.clean_sheet, xgc: r.stats.expected_goals_conceded ?? 0 });
       if (gcGroup && r.stats.minutes_played >= 80) ((gcAgg[gcGroup] ??= {})[gcKey] ??= {} as Record<StepKey, number[]>)[step.key] = [...(gcAgg[gcGroup][gcKey][step.key] ?? []), pts];
     }
     lines.set(r.player_id, line);
@@ -416,6 +433,15 @@ async function main() {
       const between = w.length * (mean(w.map((x) => x.pts)) - all) ** 2 + wo.length * (mean(wo.map((x) => x.pts)) - all) ** 2;
       const big = a.filter((x) => x.pts >= 20), bigNo = big.filter((x) => !x.cs).length;
       return `${st.key} ${(100 * between / tot).toFixed(0)}% ${mean(w.map((x) => x.pts)).toFixed(1)}/${mean(wo.map((x) => x.pts)).toFixed(1)} ${bigNo}/${big.length}`;
+    }).join(' | '));
+  }
+  // Clean sheets by the opponent's chances: controlled (xGC < 0.6), middling, survived (1.2+).
+  console.log('\nClean-sheet games by opponent chances, 80+ minutes: mean points at xGC <0.6 / 0.6-1.2 / 1.2+');
+  for (const [group, bySteps] of Object.entries(csDep)) {
+    console.log(group + '   ' + STEPS.map((st) => {
+      const cs = (bySteps[st.key] ?? []).filter((x) => x.cs);
+      const band = (lo: number, hi: number) => mean(cs.filter((x) => x.xgc >= lo && x.xgc < hi).map((x) => x.pts)).toFixed(1);
+      return `${st.key} ${band(0, 0.6)}/${band(0.6, 1.2)}/${band(1.2, 99)}`;
     }).join(' | '));
   }
   const out = `${OUT_DIR}/leaderboard_${season}.json`;
