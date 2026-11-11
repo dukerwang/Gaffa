@@ -26,7 +26,9 @@ async function signJwt(payload: Record<string, unknown>, privateKey: CryptoKey) 
 type Claims = { sub?: string; email?: string; user_metadata?: Record<string, unknown> };
 
 function fakeClient(result: { data: { claims: Claims } | null; error: unknown }) {
-  return { auth: { getClaims: async () => result } } as never;
+  return {
+    auth: { getClaims: async () => result, getUser: async () => ({ data: { user: null } }) },
+  } as never;
 }
 
 describe('getSessionUser (mocked)', () => {
@@ -49,6 +51,43 @@ describe('getSessionUser (mocked)', () => {
     expect(await getSessionUser(fakeClient({ data: null, error: new Error('x') }))).toBeNull();
     expect(await getSessionUser(fakeClient({ data: null, error: null }))).toBeNull();
     expect(await getSessionUser(fakeClient({ data: { claims: {} }, error: null }))).toBeNull();
+  });
+});
+
+describe('getSessionUser fallback', () => {
+  function client(claims: { data: unknown; error: unknown }, getUser: () => Promise<unknown>) {
+    return { auth: { getClaims: async () => claims, getUser } } as never;
+  }
+
+  it('asks the Auth server when verification errors, and uses its answer', async () => {
+    let calls = 0;
+    const user = await getSessionUser(
+      client({ data: null, error: new Error('jwks fetch failed') }, async () => {
+        calls++;
+        return { data: { user: { id: 'u9', email: 'x@y.co', user_metadata: { username: 'x' } } } };
+      }),
+    );
+    expect(calls).toBe(1);
+    expect(user).toEqual({ id: 'u9', email: 'x@y.co', user_metadata: { username: 'x' } });
+  });
+
+  it('returns null when verification errors and the Auth server also rejects', async () => {
+    const user = await getSessionUser(
+      client({ data: null, error: new Error('bad jwt') }, async () => ({ data: { user: null } })),
+    );
+    expect(user).toBeNull();
+  });
+
+  it('does not call the Auth server when there is simply no session', async () => {
+    let calls = 0;
+    const user = await getSessionUser(
+      client({ data: null, error: null }, async () => {
+        calls++;
+        return { data: { user: null } };
+      }),
+    );
+    expect(calls).toBe(0);
+    expect(user).toBeNull();
   });
 });
 

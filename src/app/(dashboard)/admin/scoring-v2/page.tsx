@@ -12,7 +12,6 @@
  * sync or `scripts/backfill-scoring-v2.mjs`). Until then, match_rating_v2 is NULL.
  */
 
-import { getSessionUser } from '@/lib/supabase/sessionUser';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentFplSeason, getLatestReferenceStatsSeason } from '@/lib/season/currentSeason';
@@ -106,7 +105,7 @@ function DeltaBar({ value, max }: { value: number; max: number }) {
 
 export default async function ScoringV2Page() {
   const supabase = await createClient();
-  const user = await getSessionUser(supabase);
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
   const admin = createAdminClient();
