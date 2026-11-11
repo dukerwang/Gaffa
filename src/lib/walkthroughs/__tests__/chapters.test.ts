@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { AUCTION_TIMING_STEPS, CHAPTERS, FIGURES, chapterForPath, isPostDraft, stepsForFormat } from '../chapters';
+import { AUCTION_TIMING_STEPS, CHAPTERS, FIGURES, WELCOME, chapterForPath, isPostDraft, stepsForFormat } from '../chapters';
 
 const SRC = path.resolve(__dirname, '../../..');
 const LEAGUE_APP = path.join(SRC, 'app/(dashboard)/league/[leagueId]');
@@ -47,6 +47,17 @@ describe('walkthrough chapters', () => {
     expect(num('lib/roster/executeDrop.ts', /marketValue \* ([\d.]+)/) * 100).toBeCloseTo(FIGURES.severancePct);
     expect(num('lib/roster/executeDrop.ts', /Math\.max\((\d+), Math\.floor\(marketValue/)).toBe(FIGURES.severanceMin);
     expect(num('lib/economy/meritPayments.ts', /MERIT_PERIOD_LENGTH = (\d+)/)).toBe(FIGURES.meritPeriod);
+  });
+
+  it('keeps Welcome independent of any page', () => {
+    expect(WELCOME.steps.every((s) => !s.at)).toBe(true);
+    expect(CHAPTERS.some((c) => c.id === WELCOME.id)).toBe(false);
+  });
+
+  it('names each step instead of narrating it', () => {
+    const narrated = /^(where|when|who|how|what|why|if|your|find|make|open)\b/i;
+    const titles = [WELCOME, ...CHAPTERS].flatMap((c) => c.steps.map((s) => s.title));
+    expect(titles.filter((t) => narrated.test(t))).toEqual([]);
   });
 
   it('gives each chapter a unique id and route', () => {

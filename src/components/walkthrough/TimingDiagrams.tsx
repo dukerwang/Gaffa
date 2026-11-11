@@ -12,7 +12,7 @@ import {
   TIER_3_MAX_MV,
   TIER_4_FLOOR_MS,
 } from '@/lib/auction/timer';
-import { FIGURES, SCOUT_PCT, SOLIDARITY_PCT, type Diagram } from '@/lib/walkthroughs/chapters';
+import { FIGURES, MERIT, SCOUT_PCT, SOLIDARITY_PCT, type Diagram } from '@/lib/walkthroughs/chapters';
 import { PINNED } from '@/lib/walkthroughs/players';
 import PositionBadge from '@/components/players/PositionBadge';
 import s from './TimingDiagrams.module.css';
@@ -210,6 +210,62 @@ function PlayerCardSample() {
   );
 }
 
+/** The front page's pinned example: matchweek 4, Gabriel's clean sheet against Haaland's goal. */
+function Ratings() {
+  const rows = [
+    { p: PINNED.gabriel, label: 'Gabriel', pos: 'CB' as const, note: 'Clean sheet', rating: 8.43, pts: 28.1 },
+    { p: PINNED.haaland, label: 'Haaland', pos: 'ST' as const, note: 'Scored', rating: 8.19, pts: 24.6 },
+  ];
+  return (
+    <div className={s.ratings}>
+      {rows.map((r, i) => (
+        <div className={s.rating} key={r.p.name}>
+          <Portrait size="sm" {...r.p} />
+          <div className={s.ratingWho}>
+            <span className={s.ratingName}>{r.label}</span>
+            <span className={s.ratingNote}><PositionBadge position={r.pos} size="sm" /> {r.note}</span>
+          </div>
+          <span className={s.ratingTrack}><i style={{ width: `${(r.rating / 10) * 100}%` }} data-top={i === 0 || undefined} /></span>
+          <span className={s.ratingFig}>{r.rating.toFixed(2)}<small>{r.pts} pts</small></span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MatchRevenue() {
+  const results: [string, number][] = [['Win', MERIT.win], ['Draw', MERIT.draw], ['Loss', MERIT.loss]];
+  return (
+    <div className={s.revenue}>
+      {results.map(([label, amount]) => (
+        <div className={s.revenueCell} key={label}>
+          <span className={s.optionName}>{label}</span>
+          <span className={s.optionFig}>€{amount}m</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TransferFlow() {
+  return (
+    <div className={s.flow}>
+      <div className={s.flowStop}>
+        <Portrait size="sm" {...PINNED.barcola} />
+        <span className={s.flowText}><b>Barcola</b>PSG to Liverpool</span>
+      </div>
+      <span className={s.flowArrow} aria-hidden="true">→</span>
+      <div className={s.flowStop}>
+        <span className={s.flowText}><b>Auction</b>Every league</span>
+      </div>
+      <span className={s.flowArrow} aria-hidden="true">→</span>
+      <div className={s.flowStop}>
+        <span className={s.flowText}><b>€164m</b>26 bids</span>
+      </div>
+    </div>
+  );
+}
+
 export function DiagramView({ diagram }: { diagram: Diagram }) {
   switch (diagram) {
     case 'lengths': return <Lengths />;
@@ -222,5 +278,8 @@ export function DiagramView({ diagram }: { diagram: Diagram }) {
     case 'release-retain': return <ReleaseRetain />;
     case 'fee-split': return <FeeSplit />;
     case 'player-card': return <PlayerCardSample />;
+    case 'ratings': return <Ratings />;
+    case 'match-revenue': return <MatchRevenue />;
+    case 'transfer-flow': return <TransferFlow />;
   }
 }

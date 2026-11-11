@@ -1,12 +1,12 @@
 /* The walkthrough, ported from the approved prototype (Claude Design,
    "Walkthroughs", 2026-11-08). */
 
-.root { position: fixed; inset: 0; z-index: 1200; pointer-events: none; }
+/* Pinned to the page's origin, so an absolute child sits in page coordinates and scrolls with it. */
+.root { position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: 1200; pointer-events: none; }
 
 .spot {
-  position: fixed;
   border-radius: 12px;
-  box-shadow: 0 0 0 200vmax rgba(14, 16, 12, 0.58), 0 0 0 2px #fff;
+  box-shadow: 0 0 0 9999px rgba(14, 16, 12, 0.58), 0 0 0 2px #fff;
   transition:
     left var(--dur-base) var(--ease-standard),
     top var(--dur-base) var(--ease-standard),

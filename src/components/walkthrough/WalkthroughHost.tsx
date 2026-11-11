@@ -1,20 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Icon } from '@/components/ui/Icon';
-import topBarStyles from '@/components/layout/TopBar.module.css';
 import {
+  CHAPTERS,
+  WELCOME,
   chapterForPath,
   isPostDraft,
   stepsForFormat,
   type Chapter,
   type LeagueFormat,
-  type WalkthroughStep,
 } from '@/lib/walkthroughs/chapters';
 import { markSeen, shouldAutoStart, turnOffAutoStart } from '@/lib/walkthroughs/seen';
 import Walkthrough, { findTarget } from './Walkthrough';
+import { WALKTHROUGH_EVENT } from './WalkthroughButton';
 
 interface Props {
   leagueId: string;
@@ -32,33 +31,24 @@ function blockedByAnotherLayer() {
 }
 
 /**
- * Starts a page's chapter the first time a manager opens that page after the
- * draft, and whenever Help sends them to it with ?tour=. Everything here reads
- * the DOM and browser storage; a walkthrough makes no requests.
+ * Starts the walkthroughs. Welcome runs first, the first time a manager opens
+ * their league after the draft. Then each page's chapter runs the first time
+ * they open that page. Help (?tour=) and the button beside a page's title
+ * replay them. Everything here reads the DOM and browser storage; a
+ * walkthrough makes no requests.
  */
 export default function WalkthroughHost({ leagueId, status, isDynasty }: Props) {
   const pathname = usePathname();
   const tour = useSearchParams().get('tour');
-  const [active, setActive] = useState<{ chapter: Chapter; steps: WalkthroughStep[]; pathname: string } | null>(null);
-  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  const [active, setActive] = useState<{ chapter: Chapter; pathname: string } | null>(null);
+  // Bumped when Welcome finishes, so the page's own chapter can follow it.
+  const [finished, setFinished] = useState(0);
   const format: LeagueFormat = isDynasty ? 'dynasty' : 'redraft';
-  const pageChapter = isPostDraft(status) ? chapterForPath(pathname, leagueId, format) : null;
-
-  // The top bar is rendered by the layout above this one.
-  useEffect(() => {
-    let tries = 0;
-    let timer = 0;
-    const find = () => {
-      const el = document.getElementById('walkthrough-slot');
-      if (el) setSlot(el);
-      else if (tries++ < 40) timer = window.setTimeout(find, POLL_MS);
-    };
-    timer = window.setTimeout(find, 0);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
-    const chapter = chapterForPath(pathname, leagueId, format);
+    const pageChapter = chapterForPath(pathname, leagueId, format);
+    const welcomeDue = tour === WELCOME.id || (isPostDraft(status) && shouldAutoStart(WELCOME));
+    const chapter = welcomeDue ? WELCOME : pageChapter;
     if (!chapter) return;
     const forced = tour === chapter.id;
     if (!forced && (!isPostDraft(status) || !shouldAutoStart(chapter))) return;
@@ -70,53 +60,47 @@ export default function WalkthroughHost({ leagueId, status, isDynasty }: Props) 
       const ready =
         !blockedByAnotherLayer() &&
         (forced || !chapter.requires || findTarget(chapter.requires)) &&
-        steps.some((s) => s.at && findTarget(s.at));
+        (chapter === WELCOME || steps.some((s) => s.at && findTarget(s.at)));
       if (ready) {
         if (forced) window.history.replaceState(null, '', pathname);
-        setActive({ chapter, steps, pathname });
+        setActive({ chapter, pathname });
         return;
       }
       if (Date.now() - started < WAIT_MS) timer = window.setTimeout(check, POLL_MS);
     };
     timer = window.setTimeout(check, POLL_MS);
     return () => window.clearTimeout(timer);
-  }, [pathname, tour, leagueId, status, format]);
+  }, [pathname, tour, leagueId, status, format, finished]);
 
-  const replay =
-    pageChapter && slot
-      ? createPortal(
-          <button
-            type="button"
-            className={topBarStyles.iconBtn}
-            aria-label="Page Walkthrough"
-            title="Page Walkthrough"
-            data-tour="nav-help"
-            onClick={() => setActive({ chapter: pageChapter, steps: stepsForFormat(pageChapter.steps, format), pathname })}
-          >
-            <Icon name="help-circle" size={18} strokeWidth={1.75} />
-          </button>,
-          slot,
-        )
-      : null;
+  // The question mark beside a page's title.
+  useEffect(() => {
+    const onReplay = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      const chapter = id === WELCOME.id ? WELCOME : CHAPTERS.find((c) => c.id === id);
+      if (chapter) setActive({ chapter, pathname: window.location.pathname });
+    };
+    window.addEventListener(WALKTHROUGH_EVENT, onReplay);
+    return () => window.removeEventListener(WALKTHROUGH_EVENT, onReplay);
+  }, []);
 
   // A walkthrough belongs to the page it started on.
-  if (!active || active.pathname !== pathname) return replay;
+  if (!active || active.pathname !== pathname) return null;
+
+  const done = () => {
+    markSeen(active.chapter);
+    setActive(null);
+    if (active.chapter === WELCOME) setFinished((n) => n + 1);
+  };
 
   return (
-    <>
-      {replay}
     <Walkthrough
-      steps={active.steps}
-      onExit={() => {
-        markSeen(active.chapter);
-        setActive(null);
-      }}
+      key={active.chapter.id}
+      steps={stepsForFormat(active.chapter.steps, format)}
+      onExit={done}
       onSkipAll={() => {
         turnOffAutoStart();
-        markSeen(active.chapter);
-        setActive(null);
+        done();
       }}
     />
-    </>
   );
 }

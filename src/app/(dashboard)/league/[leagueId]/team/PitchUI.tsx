@@ -33,6 +33,7 @@ import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/aca
 import { serializeLineup } from '@/lib/lineups/lineupSerializer';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { IconButton } from '@/components/ui/IconButton';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -1976,7 +1977,7 @@ export default function PitchUI({
                                 interactive={false}
                             />
                             <div className={styles.boardTitles}>
-                                <h1 className={styles.boardTeamName}>{teamName}</h1>
+                                <h1 className={styles.boardTeamName}>{teamName} <WalkthroughButton chapter="lineup" /></h1>
                                 <span className={styles.boardLeague}>{masthead.leagueName}</span>
                             </div>
                         </div>

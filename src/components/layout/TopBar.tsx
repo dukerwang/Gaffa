@@ -609,8 +609,6 @@ export default function TopBar() {
             </div>
           )}
 
-          {currentLeagueId && <span id="walkthrough-slot" className={styles.walkthroughSlot} />}
-
           {/* Persistent League Chat */}
           {currentLeagueId && (
             <ChatNavIcon

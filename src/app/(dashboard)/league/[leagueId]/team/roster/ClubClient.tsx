@@ -22,6 +22,7 @@ import {
   avgForm, seasonPts, ppgOf, valueOf, countdown,
 } from './clubDerive';
 import styles from './club.module.css';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 // ── Shared prop types ────────────────────────────────────────────────────────
 // Declared alongside the loader that produces them (`@/lib/teams/loadClubView`)
@@ -379,7 +380,7 @@ export default function ClubClient({
                 so a label naming the kind of thing you're looking at was just
                 repeating the page back at itself. */}
             <div className="g-label">{club.season} · {club.leagueName}</div>
-            <h1 className={styles.mhClub}>{club.name}</h1>
+            <h1 className={styles.mhClub}>{club.name} <WalkthroughButton chapter="club" /></h1>
             <div className={styles.mhMeta}>
               <span>{club.manager}</span>
               {viewerIsOwner && <span className={styles.mhYou}>You</span>}

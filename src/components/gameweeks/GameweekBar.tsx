@@ -10,6 +10,7 @@ import type { MatchState } from '@/lib/matchups/matchupView';
 import { fmt, ordinal, type RibbonCell, type TeamMeta } from '@/lib/matchups/roundView';
 import { Crest, Glyph, Local, deadlineText, s, weekendRange } from './parts';
 import type { TieLite } from './types';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 interface GwOption extends PickerOption { cell?: RibbonCell }
 
@@ -91,6 +92,7 @@ export function GameweekBar({ leagueId, gw, gameweeks, ribbon, record, state, wi
   return (
     <nav className={s.gwb} aria-label="Gameweeks" data-tour="gw-bar">
       <span className={`${s.gwbName} ${s.dOnly}`}>Gameweeks</span>
+      <WalkthroughButton chapter="gameweeks" />
       <span className={`${s.gwbStep} ${s.dOnly}`}>
         <IconButton variant="secondary" label="Previous Gameweek" icon={<Glyph k="left" size={18} />} disabled={prev == null} onClick={() => prev != null && go(prev)} />
         {picker(s.gwPick, (o) => <span className={s.gwPickT}>{o.label}</span>)}

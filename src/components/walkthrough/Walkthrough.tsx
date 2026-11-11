@@ -20,6 +20,8 @@ interface Box {
   top: number;
   width: number;
   height: number;
+  /** In a fixed or sticky header: measured against the viewport, not the page. */
+  pinned: boolean;
 }
 
 const CARD_WIDTH = 348;
@@ -29,12 +31,20 @@ const SCROLL_OFFSET = 96;
 const PHONE = '(max-width: 640px)';
 
 function sameBox(a: Box | null, b: Box) {
-  return !!a && Math.abs(a.left - b.left) < 0.5 && Math.abs(a.top - b.top) < 0.5 && Math.abs(a.width - b.width) < 0.5 && Math.abs(a.height - b.height) < 0.5;
+  return !!a && a.pinned === b.pinned && Math.abs(a.left - b.left) < 0.5 && Math.abs(a.top - b.top) < 0.5 && Math.abs(a.width - b.width) < 0.5 && Math.abs(a.height - b.height) < 0.5;
 }
 
 function stepAvailable(step: WalkthroughStep, phone: boolean) {
   if ((step.desktopOnly && phone) || (step.phoneOnly && !phone)) return false;
   return !step.at || !!step.fallback || !!findTarget(step.at);
+}
+
+function isPinned(el: HTMLElement) {
+  for (let n: HTMLElement | null = el; n; n = n.parentElement) {
+    const position = getComputedStyle(n).position;
+    if (position === 'fixed' || position === 'sticky') return true;
+  }
+  return false;
 }
 
 export function findTarget(at: string): HTMLElement | null {
@@ -84,16 +94,28 @@ export default function Walkthrough({ steps, onExit, onSkipAll }: Props) {
         window.scrollBy({ top: r.top - SCROLL_OFFSET });
       }
     }
+    // The spotlight lives in page coordinates, so scrolling carries it with
+    // the page instead of re-measuring a frame behind. Only a target in the
+    // sticky top bar is measured against the viewport.
     let raf = 0;
+    let pinnedFor: HTMLElement | null = null;
+    let pinned = false;
     const follow = () => {
       const el = step.at ? findTarget(step.at) : null;
       if (el) {
+        if (el !== pinnedFor) {
+          pinnedFor = el;
+          pinned = isPinned(el);
+        }
         const r = el.getBoundingClientRect();
+        const dx = pinned ? 0 : window.scrollX;
+        const dy = pinned ? 0 : window.scrollY;
         const next = {
-          left: r.left - SPOT_PADDING,
-          top: r.top - SPOT_PADDING,
+          left: r.left + dx - SPOT_PADDING,
+          top: r.top + dy - SPOT_PADDING,
           width: r.width + SPOT_PADDING * 2,
           height: r.height + SPOT_PADDING * 2,
+          pinned,
         };
         setSpot((prev) => (sameBox(prev, next) ? prev : next));
       } else {
@@ -121,22 +143,33 @@ export default function Walkthrough({ steps, onExit, onSkipAll }: Props) {
 
   const shownSpot = step.at && !targetMissing ? spot : null;
   const centred = !shownSpot;
+  // Beside its target on a wide screen; on a phone, a sheet at the bottom.
   let cardStyle: CSSProperties | undefined;
-  if (shownSpot && !phone) {
-    const below = shownSpot.top + shownSpot.height + 280 < window.innerHeight;
-    cardStyle = {
-      left: Math.max(16, Math.min(shownSpot.left, window.innerWidth - CARD_WIDTH - 16)),
-      top: below ? shownSpot.top + shownSpot.height + 10 : shownSpot.top - 10,
-      transform: below ? undefined : 'translateY(-100%)',
-    };
+  let spotStyle: CSSProperties | undefined;
+  if (shownSpot) {
+    const { pinned, ...box } = shownSpot;
+    spotStyle = { ...box, position: pinned ? 'fixed' : 'absolute' };
+    if (!phone) {
+      const offsetY = pinned ? 0 : window.scrollY;
+      const viewportTop = shownSpot.top - offsetY;
+      const below = viewportTop + shownSpot.height + 280 < window.innerHeight;
+      cardStyle = {
+        position: pinned ? 'fixed' : 'absolute',
+        left: Math.max(16, Math.min(shownSpot.left, window.innerWidth - CARD_WIDTH - 16)),
+        top: below ? shownSpot.top + shownSpot.height + 10 : shownSpot.top - 10,
+        transform: below ? undefined : 'translateY(-100%)',
+      };
+    }
   }
+  const anchored = !!cardStyle;
 
   return createPortal(
     <div className={styles.root}>
-      {shownSpot ? <div className={styles.spot} style={shownSpot} /> : <div className={styles.scrim} />}
+      {spotStyle ? <div className={styles.spot} style={spotStyle} /> : <div className={styles.scrim} />}
       {/* The page stays visible but can't be pressed while this is open. */}
       <div className={styles.shield} />
-      <div className={centred ? `${styles.layer} ${styles.layerCentred}` : styles.layer}>
+      {(() => {
+        const card = (
         <div
           key={index}
           ref={cardRef}
@@ -170,7 +203,9 @@ export default function Walkthrough({ steps, onExit, onSkipAll }: Props) {
             </button>
           </div>
         </div>
-      </div>
+        );
+        return anchored ? card : <div className={centred ? `${styles.layer} ${styles.layerCentred}` : styles.layer}>{card}</div>;
+      })()}
     </div>,
     document.body,
   );

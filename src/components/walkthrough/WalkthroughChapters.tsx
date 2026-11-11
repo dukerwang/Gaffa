@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Portrait from '@/components/players/Portrait';
 import { Icon } from '@/components/ui/Icon';
-import { CHAPTERS } from '@/lib/walkthroughs/chapters';
+import { CHAPTERS, WELCOME } from '@/lib/walkthroughs/chapters';
 import { PINNED } from '@/lib/walkthroughs/players';
 import { resetWalkthroughs } from '@/lib/walkthroughs/seen';
 import styles from './WalkthroughChapters.module.css';
@@ -30,6 +30,10 @@ export default function WalkthroughChapters({ leagueId, isDynasty }: { leagueId:
         </button>
       </div>
       <div className={styles.grid}>
+        <Link href={`/league/${leagueId}?tour=${WELCOME.id}`} className={styles.tile}>
+          <span className={styles.cup} aria-hidden="true"><Icon name="gaffa" size={40} /></span>
+          <span className={styles.name}>{WELCOME.title}</span>
+        </Link>
         {chapters.map((c) => (
           <Link key={c.id} href={`/league/${leagueId}${c.route}?tour=${c.id}`} className={styles.tile}>
             {c.player ? (

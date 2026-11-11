@@ -25,6 +25,7 @@ import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import styles from './market.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import EmptyState from '@/components/ui/EmptyState';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
 const ProposeBuilder = dynamic(() => import('@/components/transfers/ProposeBuilder'), { ssr: false });
@@ -160,7 +161,7 @@ export default function MarketClient({
             {model.league.name} · GW{model.currentGameweek} · open until GW
             {(model.league.total_gameweeks ?? 38) - 8}
           </div>
-          <h1 className={styles.title}>Transfer Market</h1>
+          <h1 className={styles.title}>Transfer Market <WalkthroughButton chapter="market" /></h1>
         </div>
         <div className={styles.stats}>
           <div className={styles.stat}>

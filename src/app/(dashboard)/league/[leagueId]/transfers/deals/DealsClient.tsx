@@ -29,6 +29,7 @@ const ListingEditor = dynamic(() => import('@/components/transfers/ListingEditor
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { describeDeal } from '@/lib/transfers/describeDeal';
 import EmptyState from '@/components/ui/EmptyState';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 /**
  * Deals — your business only.
@@ -425,7 +426,7 @@ export default function DealsClient({
       <header className={styles.header}>
         <div>
           <div className={`g-label ${styles.kicker}`}>Transfer Market → Deals</div>
-          <h1 className={styles.title}>Your Deals</h1>
+          <h1 className={styles.title}>Your Deals <WalkthroughButton chapter="deals" /></h1>
         </div>
         <div className={styles.stats}>
           <div className={styles.stat}>

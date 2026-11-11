@@ -15,10 +15,10 @@ import TransfersSubNav from '@/components/transfers/TransfersSubNav';
 import type { BidMode } from '@/components/transfers/BidDialog';
 import { setServerClock, useTick, formatAuctionClock, isClosing } from '@/components/transfers/useTick';
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
-import AuctionTimingHelp from '@/components/transfers/AuctionTimingHelp';
 import styles from './auctions.module.css';
 import EmptyState from '@/components/ui/EmptyState';
 import { Icon, IconButton } from '@/components/ui';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
 
@@ -182,7 +182,7 @@ export default function AuctionsClient({
         <div>
           <div className={`g-label ${styles.kicker}`}>Transfer Market → Auctions</div>
           <h1 className={styles.title}>
-            The Auction Room <AuctionTimingHelp isDynasty={model.league.is_dynasty !== false} />
+            The Auction Room <WalkthroughButton chapter="auctions" />
           </h1>
         </div>
         <div className={styles.stats}>
