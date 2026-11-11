@@ -84,7 +84,11 @@ export async function runDraw(
   return { applied: true, ties: drawn };
 }
 
-async function notifyDraw(
+/**
+ * Tells each manager in `drawn` who they play, or that they have a bye. Also
+ * announces a cup's seeded first round (createTournament).
+ */
+export async function notifyDraw(
   admin: SupabaseClient,
   notify: Notify,
   tournament: { league_id: string; name: string },
@@ -92,6 +96,7 @@ async function notifyDraw(
   drawn: DrawnTie[],
 ) {
   const ids = drawn.flatMap((t) => [t.a, t.b]).filter((id): id is string => !!id);
+  if (ids.length === 0) return;
   const { data: teams } = await admin.from('teams').select('id, user_id, team_name').in('id', ids);
   const byId = new Map((teams ?? []).map((t) => [t.id as string, t]));
   const stage = round.name.toLowerCase();

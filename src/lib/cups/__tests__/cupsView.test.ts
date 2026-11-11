@@ -203,9 +203,11 @@ describe('statuses', () => {
     expect(m.shelf.map((s) => s.status)).toEqual(['Not Entered', 'Not Entered', 'Not Entered']);
   });
 
-  it('reads Drawn at MW7 before the first season has any cups', () => {
+  it('names the matchweek each cup is drawn after, before any cup exists', () => {
     const m = buildCupsModel(militia({ cups: [], rounds: [], ties: [] }));
-    expect(m.shelf.map((s) => s.status)).toEqual(['Drawn at MW7', 'Drawn at MW7', 'Drawn at MW7']);
+    expect(m.shelf.map((s) => s.status)).toEqual(['Draw: MW31', 'Draw: MW15', 'Draw: MW31']);
+    expect(m.emptyNote).toContain('League Cup after MW15');
+    expect(m.emptyNote).toContain('Champions Cup after MW31');
     expect(m.selected).toBeNull();
   });
 });

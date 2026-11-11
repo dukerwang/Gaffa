@@ -31,8 +31,7 @@ interface Props {
  *
  * Three things in this file are load-bearing and must survive any rewrite:
  *   1. the pre-draft early return, which skips every active-league fetch
- *   2. the `ensureSeasonScaffold` safety net, whose cup check is deliberately
- *      independent of its matchup check
+ *   2. the `ensureSeasonScaffold` safety net for a league with no schedule
  *   3. the server-side score sync, which avoids a 0.0–0.0 flash on first paint
  */
 export default async function LeaguePage({ params }: Props) {
@@ -99,10 +98,11 @@ export default async function LeaguePage({ params }: Props) {
 
   // ── 2. Season scaffold safety net ───────────────────────────
   // For leagues whose draft completed before the ensureSeasonScaffold fix, or
-  // via the SQL cron (which cannot call it). The cup check is INDEPENDENT of
-  // the matchup check on purpose: gating the cup backfill behind "zero
-  // matchups exist" is exactly what left two production leagues with a full
-  // schedule and no cups, permanently.
+  // via the SQL cron (which cannot call it). Only the schedule is checked here.
+  // Cups are not made at kickoff: each is drawn after the gameweek before its
+  // first round, by the resolve cron and by every path that locks a gameweek
+  // (processMatchupsForGameweek), so "no cups yet" is normal for most of a
+  // season and says nothing about whether the scaffold ran.
   //
   // The FPL status for step 3 is fetched alongside these counts: it reads
   // nothing the scaffold writes. The matchup lookup that uses it still runs
@@ -114,18 +114,14 @@ export default async function LeaguePage({ params }: Props) {
             .from('matchups')
             .select('id', { count: 'exact', head: true })
             .eq('league_id', leagueId),
-          admin
-            .from('tournaments')
-            .select('id', { count: 'exact', head: true })
-            .eq('league_id', leagueId),
         ])
       : null,
     myTeam ? getFplStatus() : null,
   ]);
 
   if (scaffoldCounts) {
-    const [{ count: matchupCount }, { count: tournamentCount }] = scaffoldCounts;
-    if ((matchupCount ?? 0) === 0 || (tournamentCount ?? 0) === 0) {
+    const [{ count: matchupCount }] = scaffoldCounts;
+    if ((matchupCount ?? 0) === 0) {
       const { ensureSeasonScaffold } = await import('@/lib/schedule/ensureSeasonScaffold');
       await ensureSeasonScaffold(admin, leagueId, league.current_season);
     }
