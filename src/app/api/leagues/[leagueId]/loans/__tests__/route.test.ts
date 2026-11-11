@@ -49,7 +49,29 @@ function setup(mutate: (tables: Tables) => void = () => {}) {
   const tables = leagueFixture();
   tables.chat_messages = [];
   mutate(tables);
-  admin = createFakeSupabase(tables, {});
+  admin = createFakeSupabase(tables, {
+    rpc: {
+      // Mirrors migration 188: per player, [points, minutes] pairs for each
+      // season, appearances only, this season newest gameweek first.
+      effective_ppg_samples: (args) => {
+        const rows = (tables.player_stats ?? []).filter(
+          (s) => args.p_player_ids.includes(s.player_id) && Number(s.stats?.minutes_played ?? 0) > 0,
+        );
+        const pairs = (playerId: string, season: string) =>
+          rows
+            .filter((s) => s.player_id === playerId && s.season === season)
+            .sort((a, b) => b.gameweek - a.gameweek)
+            .map((s) => [Number(s.fantasy_points) || 0, Number(s.stats.minutes_played)]);
+        return args.p_player_ids
+          .filter((id: string) => rows.some((s) => s.player_id === id))
+          .map((id: string) => ({
+            player_id: id,
+            curr: pairs(id, args.p_season),
+            prev: pairs(id, args.p_prev_season),
+          }));
+      },
+    },
+  });
   state.admin = admin;
   return tables;
 }
@@ -459,7 +481,9 @@ describe('reading the loans hub', () => {
    * 24 players with 38 prior-season appearances and 8 this season: 1,104 stats
    * rows. This route used to read them in one request ordered newest first, so
    * the cap cut off the oldest prior-season weeks, and with eight appearances
-   * the prior season still carries a fifth of the figure.
+   * the prior season still carries a fifth of the figure. The database now
+   * returns one row per player, so the cap can't truncate; this keeps the whole
+   * path from stats to the figure honest.
    */
   it('computes recent_ppg from every stats row, past the 1,000-row cap', async () => {
     const tables = setup((t) => {
