@@ -53,7 +53,7 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef';
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf';
 type Component = 'match_impact' | 'defensive' | 'threat';
 /** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
 interface Step {
@@ -132,6 +132,12 @@ const EXPERIMENTS: Step[] = [
     },
   },
 ];
+// cshalf: half of the +12 clean-sheet BPS out (6), keeper goals prevented as in csgk.
+EXPERIMENTS.push({
+  ...EXPERIMENTS.find((e) => e.key === 'gkgp')!, key: 'cshalf', label: 'Exp: half the clean-sheet BPS out + keeper goals prevented',
+  adjust: (st) => EXPERIMENTS.find((e) => e.key === 'gkgp')!.adjust!(
+    st.fpl_element_type === 1 || st.fpl_element_type === 2 ? { ...st, bps: (st.bps ?? 0) - (st.clean_sheet && st.minutes_played >= 60 ? 6 : 0) } : st),
+});
 // nocs: csgk, and outfielders get no clean-sheet bonus in Defensive either.
 // Team defending still counts through goals conceded against xGC (Defensive)
 // and -4 BPS per goal conceded (Match Impact), which are continuous rather
