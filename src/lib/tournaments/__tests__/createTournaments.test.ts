@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createFakeSupabase } from '@/test/supabaseFake';
 
-const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
-vi.mock('@/lib/notifications/createNotification', () => ({ createNotification: notify }));
+const notify = vi.fn() as any;
 
 import { createTournament } from '../createTournaments';
 
@@ -41,7 +40,7 @@ beforeEach(() => notify.mockReset());
 describe('createTournament: when a cup is drawn', () => {
   it('makes nothing before the gameweek ahead of its first round is finished', async () => {
     const admin = createFakeSupabase(leagueAt(30));
-    const res = await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27');
+    const res = await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27', notify);
     expect(res.skipped).toBe(true);
     expect(res.error).toMatch(/MW31/);
     expect(admin.__writes.filter((w) => w.op === 'insert')).toEqual([]);
@@ -50,39 +49,39 @@ describe('createTournament: when a cup is drawn', () => {
 
   it('waits while the draw gameweek is still being scored', async () => {
     const admin = createFakeSupabase(leagueAt(31, { lastStatus: 'live' }));
-    const res = await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27');
+    const res = await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27', notify);
     expect(res.skipped).toBe(true);
     expect(admin.__writes.filter((w) => w.op === 'insert')).toEqual([]);
   });
 
   it('draws the League Cup after MW15, not MW14', async () => {
     const early = createFakeSupabase(leagueAt(14));
-    expect((await createTournament(early as any, LEAGUE, 'secondary_cup', 1, '2026-27')).skipped).toBe(true);
+    expect((await createTournament(early as any, LEAGUE, 'secondary_cup', 1, '2026-27', notify)).skipped).toBe(true);
 
     const due = createFakeSupabase(leagueAt(15));
-    expect(await createTournament(due as any, LEAGUE, 'secondary_cup', 1, '2026-27')).toMatchObject({ ok: true, byes: 2 });
+    expect(await createTournament(due as any, LEAGUE, 'secondary_cup', 1, '2026-27', notify)).toMatchObject({ ok: true, byes: 2 });
   });
 });
 
 describe('createTournament: seeding and notices', () => {
   it('seeds from the finished table ignoring live scores: the top two get the byes, and each manager is told', async () => {
     const admin = createFakeSupabase(leagueAt(31));
-    const res = await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27');
+    const res = await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27', notify);
     expect(res).toMatchObject({ ok: true, bracket_size: 8, byes: 2 });
 
-    const contents = notify.mock.calls.map(([, n]) => `${n.userId}: ${n.content}`);
+    const contents = notify.mock.calls.map(([, n]: any[]) => `${n.userId}: ${n.content}`);
     expect(contents).toHaveLength(6);
-    expect(contents.find((c) => c.startsWith('u1:'))).toMatch(/bye to the semi-final/);
-    expect(contents.find((c) => c.startsWith('u2:'))).toMatch(/bye to the semi-final/);
-    expect(contents.find((c) => c.startsWith('u3:'))).toMatch(/you play \*\*Sesko Fender\*\*/);
+    expect(contents.find((c: string) => c.startsWith('u1:'))).toMatch(/bye to the semi-final/);
+    expect(contents.find((c: string) => c.startsWith('u2:'))).toMatch(/bye to the semi-final/);
+    expect(contents.find((c: string) => c.startsWith('u3:'))).toMatch(/you play \*\*Sesko Fender\*\*/);
     expect(notify.mock.calls[0][1]).toMatchObject({ kind: 'matchdays', title: 'Champions Cup Draw' });
   });
 
   it('does nothing the second time', async () => {
     const admin = createFakeSupabase(leagueAt(31));
-    await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27');
+    await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27', notify);
     notify.mockReset();
-    const again = await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27');
+    const again = await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27', notify);
     expect(again.skipped).toBe(true);
     expect(notify).not.toHaveBeenCalled();
   });
@@ -97,7 +96,7 @@ describe('createTournament: failure', () => {
         ? { insert: () => ({ select: () => ({ order: async () => ({ data: null, error: { message: 'boom' } }) }) }) }
         : real(table);
 
-    const res = await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27');
+    const res = await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27', notify);
     expect(res).toMatchObject({ ok: false });
     expect(res.error).toMatch(/boom/);
     const { data } = await real('tournaments').select('id');
@@ -117,7 +116,7 @@ describe('createTournament: failure', () => {
           }
         : real(table);
 
-    const res = await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27');
+    const res = await createTournament(admin as any, LEAGUE, 'primary_cup', 1, '2026-27', notify);
     expect(res).toMatchObject({ ok: true, skipped: true });
     expect(notify).not.toHaveBeenCalled();
   });

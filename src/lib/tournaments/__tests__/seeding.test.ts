@@ -39,6 +39,10 @@ describe('tableThrough', () => {
     expect(tableThrough(stuckEarlier, teams, 7).size).toBe(0);
   });
 
+  it('is ready past a blank draw gameweek once a later one has finished', () => {
+    expect(tableThrough([fm(6, 'a', 'b', 90, 80)], teams, 7, new Map(), true).size).toBe(3);
+  });
+
   it('ignores gameweeks after the draw gameweek, finished or not', () => {
     const table = tableThrough([fm(7, 'a', 'b', 120, 100), fm(8, 'b', 'a', 900, 100), fm(9, 'b', 'a', 900, 100, 'live')], teams, 7);
     expect(table.get('a')?.rank).toBe(1);

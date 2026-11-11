@@ -69,10 +69,14 @@ export function tableThrough(
   teams: { id: string; team_name?: string | null }[],
   throughGw: number,
   archiveRanks: Map<string, number> = new Map(),
+  laterFinished = false,
 ): Map<string, TableRow> {
   const played = matchups.filter((m) => m.gameweek <= throughGw && m.team_a_id && m.team_b_id);
   if (played.some((m) => m.status !== 'completed')) return new Map();
-  if (!played.some((m) => m.gameweek === throughGw)) return new Map();
+  // `throughGw` has results, or the league has finished a later gameweek (so a
+  // blank `throughGw` with no matchups cannot hold the draw back for ever).
+  if (!played.some((m) => m.gameweek === throughGw) && !laterFinished) return new Map();
+  if (played.length === 0) return new Map();
 
   const row = new Map(teams.map((t) => [t.id, { pts: 0, gd: 0, pf: 0, played: 0 }]));
   for (const m of played) {
@@ -138,10 +142,19 @@ export async function loadSeedTable(
   throughGw: number,
   archiveRanks: Map<string, number> = new Map(),
 ): Promise<Map<string, TableRow>> {
-  const { data } = await admin
-    .from('matchups')
-    .select('gameweek, status, team_a_id, team_b_id, score_a, score_b')
-    .eq('league_id', leagueId)
-    .lte('gameweek', throughGw);
-  return tableThrough((data ?? []) as SeedMatchup[], teams, throughGw, archiveRanks);
+  const [{ data }, { data: later }] = await Promise.all([
+    admin
+      .from('matchups')
+      .select('gameweek, status, team_a_id, team_b_id, score_a, score_b')
+      .eq('league_id', leagueId)
+      .lte('gameweek', throughGw),
+    admin
+      .from('matchups')
+      .select('id')
+      .eq('league_id', leagueId)
+      .eq('status', 'completed')
+      .gt('gameweek', throughGw)
+      .limit(1),
+  ]);
+  return tableThrough((data ?? []) as SeedMatchup[], teams, throughGw, archiveRanks, (later ?? []).length > 0);
 }

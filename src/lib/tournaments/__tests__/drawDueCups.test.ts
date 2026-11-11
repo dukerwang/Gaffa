@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createFakeSupabase } from '@/test/supabaseFake';
 
-const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
-vi.mock('@/lib/notifications/createNotification', () => ({ createNotification: notify }));
+const notify = vi.fn() as any;
 
 import { drawDueCups, drawDueCupsForLeague } from '../drawDueCups';
 
@@ -40,34 +39,34 @@ beforeEach(() => notify.mockReset());
 describe('drawDueCups', () => {
   it('draws nothing at kickoff', async () => {
     const admin = createFakeSupabase(leagueFinished(0));
-    expect(await drawDueCups(admin as any)).toEqual([]);
+    expect(await drawDueCups(admin as any, notify)).toEqual([]);
     expect(typesOf(admin)).toEqual([]);
   });
 
   it('draws only the League Cup once MW15 is finished', async () => {
     const admin = createFakeSupabase(leagueFinished(15));
-    const drawn = await drawDueCups(admin as any);
+    const drawn = await drawDueCups(admin as any, notify);
     expect(drawn.map((d) => d.type)).toEqual(['secondary_cup']);
   });
 
   it('draws the Champions Cup and the Consolation Cup together once MW31 is finished', async () => {
     const admin = createFakeSupabase(leagueFinished(31));
-    const drawn = await drawDueCupsForLeague(admin as any, LEAGUE, SEASON);
+    const drawn = await drawDueCupsForLeague(admin as any, LEAGUE, SEASON, notify);
     expect(drawn.map((d) => d.type).sort()).toEqual(['consolation_cup', 'primary_cup', 'secondary_cup']);
   });
 
   it('draws a cup once: a second run makes nothing and tells nobody again', async () => {
     const admin = createFakeSupabase(leagueFinished(15));
-    await drawDueCups(admin as any);
+    await drawDueCups(admin as any, notify);
     const told = notify.mock.calls.length;
     expect(told).toBe(6);
 
-    expect(await drawDueCups(admin as any)).toEqual([]);
+    expect(await drawDueCups(admin as any, notify)).toEqual([]);
     expect(notify).toHaveBeenCalledTimes(told);
   });
 
   it('skips a league that is not active', async () => {
     const admin = createFakeSupabase(leagueFinished(31, { leagues: [{ id: LEAGUE, status: 'offseason', current_season: SEASON }] }));
-    expect(await drawDueCups(admin as any)).toEqual([]);
+    expect(await drawDueCups(admin as any, notify)).toEqual([]);
   });
 });

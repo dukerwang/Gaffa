@@ -68,6 +68,7 @@ function must(res: { error: { message: string } | null }, what: string): void {
  * @param startGw   - The first gameweek the league plays (usually 1); a cup whose
  *                    first round falls before it is skipped
  * @param season    - The season string to tag the tournament with (e.g. '2026-27')
+ * @param notify    - How draw notices are sent; tests pass a stub
  */
 export async function createTournament(
   admin: SupabaseClient,
@@ -75,6 +76,7 @@ export async function createTournament(
   type: TournamentType,
   startGw: number,
   season: string,
+  notify: typeof createNotification = createNotification,
 ): Promise<CreateTournamentResult> {
   // --- Idempotency check ---
   const { data: existingTournament } = await admin
@@ -275,7 +277,7 @@ export async function createTournament(
     // (League Cup) or follow from the bracket (Champions Cup). The cup is drawn
     // by now, so a failed notice is logged, not allowed to undo it.
     try {
-      await announceFirstRound(admin, tournament.id);
+      await announceFirstRound(admin, tournament.id, notify);
     } catch (err) {
       console.error(`[createTournament] Failed to send ${type} draw notifications:`, err);
     }
@@ -299,7 +301,11 @@ export async function createTournament(
  * Tells each manager in a cup's first round who they play, or that they have a
  * bye. Reads the bracket as stored.
  */
-export async function announceFirstRound(admin: SupabaseClient, tournamentId: string): Promise<void> {
+export async function announceFirstRound(
+  admin: SupabaseClient,
+  tournamentId: string,
+  notify: typeof createNotification = createNotification,
+): Promise<void> {
   const { data: tournament } = await admin
     .from('tournaments')
     .select('id, league_id, name')
@@ -324,7 +330,7 @@ export async function announceFirstRound(admin: SupabaseClient, tournamentId: st
     if (a && b) ties.push({ a, b });
     else if (a || b) ties.push({ a: (a ?? b) as string, b: null });
   }
-  await notifyDraw(admin, createNotification, tournament, round, ties);
+  await notifyDraw(admin, notify, tournament, round, ties);
 }
 
 /**

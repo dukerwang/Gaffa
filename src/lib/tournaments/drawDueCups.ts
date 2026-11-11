@@ -12,6 +12,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createTournament } from '@/lib/tournaments/createTournaments';
 import { cupDrawGameweek } from '@/lib/tournaments/seeding';
+import type { createNotification } from '@/lib/notifications/createNotification';
 import type { TournamentType } from '@/types';
 
 /** Champions Cup first: a league of 7 or more splits one table into the two cups. */
@@ -28,6 +29,7 @@ export async function drawDueCupsForLeague(
   admin: SupabaseClient,
   leagueId: string,
   season: string,
+  notify?: typeof createNotification,
 ): Promise<DrawnCup[]> {
   const [{ data: cups }, { count: clubs }] = await Promise.all([
     admin.from('tournaments').select('type').eq('league_id', leagueId).eq('season', season),
@@ -50,7 +52,7 @@ export async function drawDueCupsForLeague(
 
   const drawn: DrawnCup[] = [];
   for (const type of due) {
-    const res = await createTournament(admin, leagueId, type, 1, season);
+    const res = await createTournament(admin, leagueId, type, 1, season, notify);
     if (res.ok && !res.skipped && res.tournament_id) drawn.push({ leagueId, type, tournamentId: res.tournament_id });
     else if (!res.ok) console.error(`[drawDueCups] ${type} for ${leagueId}:`, res.error);
   }
@@ -58,7 +60,7 @@ export async function drawDueCupsForLeague(
 }
 
 /** Draws whatever is due for every active league. */
-export async function drawDueCups(admin: SupabaseClient): Promise<DrawnCup[]> {
+export async function drawDueCups(admin: SupabaseClient, notify?: typeof createNotification): Promise<DrawnCup[]> {
   const { data: leagues } = await admin
     .from('leagues')
     .select('id, current_season')
@@ -68,7 +70,7 @@ export async function drawDueCups(admin: SupabaseClient): Promise<DrawnCup[]> {
   for (const league of (leagues ?? []) as { id: string; current_season: string | null }[]) {
     if (!league.current_season) continue;
     try {
-      drawn.push(...(await drawDueCupsForLeague(admin, league.id, league.current_season)));
+      drawn.push(...(await drawDueCupsForLeague(admin, league.id, league.current_season, notify)));
     } catch (err) {
       // One league's failure must not stop the others being drawn.
       console.error(`[drawDueCups] ${league.id}:`, err);
