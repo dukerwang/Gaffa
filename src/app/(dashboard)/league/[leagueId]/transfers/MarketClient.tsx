@@ -25,6 +25,7 @@ import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import styles from './market.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import EmptyState from '@/components/ui/EmptyState';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
 const ProposeBuilder = dynamic(() => import('@/components/transfers/ProposeBuilder'), { ssr: false });
@@ -160,7 +161,7 @@ export default function MarketClient({
             {model.league.name} · GW{model.currentGameweek} · open until GW
             {(model.league.total_gameweeks ?? 38) - 8}
           </div>
-          <h1 className={styles.title}>Transfer Market</h1>
+          <h1 className={styles.title}>Transfer Market <WalkthroughButton chapter="market" /></h1>
         </div>
         <div className={styles.stats}>
           <div className={styles.stat}>
@@ -185,9 +186,9 @@ export default function MarketClient({
       <div className={styles.body}>
         <main className={styles.main}>
           {/* ── Closing now ─────────────────────────────── */}
-          <div className={styles.sect}>
+          <div className={styles.sect} data-tour="market-closing">
             <h2 className={styles.sectTitle}>
-              Closing Now <AuctionTimingHelp />
+              Closing Now <AuctionTimingHelp isDynasty={model.league.is_dynasty !== false} />
             </h2>
             <span className={styles.sectHint}>
               free agents and listed players together
@@ -282,7 +283,7 @@ export default function MarketClient({
           {/* ── New transfers ───────────────────────────── */}
           {model.newTransfers.length > 0 && (
             <>
-              <div className={`${styles.sect} ${styles.sectSpaced}`}>
+              <div className={`${styles.sect} ${styles.sectSpaced}`} data-tour="market-new">
                 <h2 className={styles.sectTitle}>New Transfers</h2>
                 <span className={styles.sectHint}>arrived in the last week, not yet on the market</span>
                 <NavigationLink href={`/league/${leagueId}/transfers/free-agents`} className={styles.sectMore}>
@@ -391,7 +392,7 @@ export default function MarketClient({
           </div>
 
           {/* ── Schedule ────────────────────────────────── */}
-          <div className={`${styles.sect} ${styles.sectSpaced}`}>
+          <div className={`${styles.sect} ${styles.sectSpaced}`} data-tour="market-deadlines">
             <h2 className={styles.sectTitle}>Deadlines</h2>
             <span className={styles.sectHint}>next seven days</span>
           </div>
@@ -420,7 +421,7 @@ export default function MarketClient({
         </main>
 
         {/* ── The Wire ──────────────────────────────────── */}
-        <aside className={styles.rail}>
+        <aside className={styles.rail} data-tour="market-wire">
           <div className={styles.railHead}>
             <h2 className={styles.railTitle}>The Wire</h2>
             <span className={styles.railLive}>● Live</span>

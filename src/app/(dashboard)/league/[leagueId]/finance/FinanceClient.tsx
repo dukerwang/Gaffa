@@ -9,6 +9,7 @@ import MyClub from './MyClub';
 import LeagueView from './LeagueView';
 import { money } from './format';
 import styles from './finance.module.css';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 type View = 'club' | 'league';
 
@@ -29,10 +30,10 @@ export default function FinanceClient({ data }: { data: FinanceData }) {
         <div className={styles.shelfTop}>
           <CrestBadge config={me.crest} size={44} teamName={me.name} teamId={me.teamId} interactive={false} />
           <div className={styles.titles}>
-            <h1 className={styles.title}>Finance</h1>
+            <h1 className={styles.title}>Finance <WalkthroughButton chapter="finance" /></h1>
             <span className={styles.club}>{me.name}</span>
           </div>
-          <div className={styles.shelfSwitch}>
+          <div className={styles.shelfSwitch} data-tour="fin-view">
             <SegmentedControl<View>
               variant="ink"
               ariaLabel="Finance view"
@@ -46,7 +47,7 @@ export default function FinanceClient({ data }: { data: FinanceData }) {
           </div>
         </div>
 
-        <div className={styles.hero}>
+        <div className={styles.hero} data-tour="fin-hero">
           <div className={styles.spend}>
             <span className={styles.shelfKey}>Spendable</span>
             <span className={`${styles.spendFig} ${over ? styles.spendOver : ''}`}>

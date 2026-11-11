@@ -37,8 +37,9 @@ interface Props {
    * measured yet; the shared crop applies unchanged, same as before these
    * existed.
    */
-  headTopPct?: number | null;
-  headWidthPct?: number | null;
+  /** Required so a new caller can't forget them and quietly get an uncorrected crop. Pass null when unknown. */
+  headTopPct: number | null | undefined;
+  headWidthPct: number | null | undefined;
   /**
    * `players.photo_version` (migration 136) — cache-busts the photo URL so a
    * browser that cached it before PL replaced the underlying bytes actually

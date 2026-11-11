@@ -99,6 +99,13 @@ export default function TopBar() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Page sheets that stand above the content, like the lineup's squad slider,
+  // hide themselves while the menu is open.
+  useEffect(() => {
+    document.documentElement.toggleAttribute('data-nav-open', mobileMenuOpen);
+    return () => document.documentElement.removeAttribute('data-nav-open');
+  }, [mobileMenuOpen]);
   const [balanceDropdownOpen, setBalanceDropdownOpen] = useState(false);
   const [leagueBalances, setLeagueBalances] = useState<LeagueTeamBalance[]>([]);
   const [leagueBalancesLoading, setLeagueBalancesLoading] = useState(false);
@@ -403,7 +410,7 @@ export default function TopBar() {
 
         {/* --- Page Navigation (only when in a league) --- */}
         {currentLeagueId && (
-          <div className={styles.pageNav} ref={pageNavRef}>
+          <div className={styles.pageNav} ref={pageNavRef} data-tour="nav-main">
             {/* Home (standalone) */}
             <div className={styles.navItem}>
               <Link
@@ -509,7 +516,7 @@ export default function TopBar() {
         <div className={styles.rightSection}>
           {/* Club Balance */}
           {currentLeagueId && currentTeam && (
-            <div className={styles.balanceContainer}>
+            <div className={styles.balanceContainer} data-tour="nav-balance">
               <button
                 ref={setBalanceAnchor}
                 type="button"
@@ -758,6 +765,7 @@ export default function TopBar() {
           {currentLeagueId && (
             <button
               className={styles.menuToggle}
+              data-tour="nav-menu"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               type="button"
               aria-label="Toggle navigation menu"

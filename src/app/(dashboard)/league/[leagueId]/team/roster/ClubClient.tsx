@@ -22,6 +22,7 @@ import {
   avgForm, seasonPts, ppgOf, valueOf, countdown,
 } from './clubDerive';
 import styles from './club.module.css';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 // ── Shared prop types ────────────────────────────────────────────────────────
 // Declared alongside the loader that produces them (`@/lib/teams/loadClubView`)
@@ -379,7 +380,7 @@ export default function ClubClient({
                 so a label naming the kind of thing you're looking at was just
                 repeating the page back at itself. */}
             <div className="g-label">{club.season} · {club.leagueName}</div>
-            <h1 className={styles.mhClub}>{club.name}</h1>
+            <h1 className={styles.mhClub}>{club.name} <WalkthroughButton chapter="club" /></h1>
             <div className={styles.mhMeta}>
               <span>{club.manager}</span>
               {viewerIsOwner && <span className={styles.mhYou}>You</span>}
@@ -411,7 +412,7 @@ export default function ClubClient({
 
         <ClubSwitcher leagueId={leagueId} clubs={clubs} currentTeamId={teamId} />
 
-        <div className={styles.figs}>
+        <div className={styles.figs} data-tour="club-figures">
           <Fig label="Club Balance" value={money(club.balance)} sub="Available to spend" />
           <Fig label="Squad value" value={money(totals.value)} sub={`${entries.length} players under contract`} />
           <Fig
@@ -442,7 +443,7 @@ export default function ClubClient({
       )}
 
       {/* ── Toolbar ── */}
-      <div className={styles.toolbar}>
+      <div className={styles.toolbar} data-tour="club-toolbar">
         <SegmentedControl
           variant="ink"
           className={styles.viewSwitch}
@@ -482,7 +483,7 @@ export default function ClubClient({
 
       {/* ── Layout ── */}
       <div className={styles.layout}>
-        <main>
+        <main data-tour="club-squad">
           {view === 'pitch' && <ClubPitch entries={entries} savedLineup={savedLineup} selId={selectedId} onSelect={selectEntry} />}
           {view === 'depth' && <DepthChart entries={shown} allEntries={entries} selId={selectedId} onSelect={selectEntry} />}
           {view === 'table' && <SquadTable entries={shown} selId={selectedId} onSelect={selectEntry} />}
@@ -507,7 +508,7 @@ export default function ClubClient({
         {narrow && inspectorOpen && (
           <div className={styles.railScrim} onClick={() => setInspectorOpen(false)} />
         )}
-        <div className={`${styles.rail} ${narrow && inspectorOpen ? styles.railOpen : ''}`}>
+        <div className={`${styles.rail} ${narrow && inspectorOpen ? styles.railOpen : ''}`} data-tour="club-inspector">
           {narrow && (
             <IconButton
               label="Close"

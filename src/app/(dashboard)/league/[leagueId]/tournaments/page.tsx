@@ -39,15 +39,17 @@ export default async function CupsPage({ params, searchParams }: Props) {
         <div className="g-page">
             {live && <LiveRefresh leagueId={leagueId} />}
             <TrophyShelf items={model.shelf} club={model.club} season={season}>
-                {model.next ? <NextTie next={model.next} kind={kind} /> : null}
+                {model.next ? <div data-tour="cups-next"><NextTie next={model.next} kind={kind} /></div> : null}
             </TrophyShelf>
             {model.selected && model.rounds.length > 0 ? (
-                <RoundPager
-                    key={model.selected.id}
-                    rounds={model.rounds}
-                    initial={model.initialRound}
-                    seeded={model.selected.seeded}
-                />
+                <div data-tour="cups-rounds">
+                    <RoundPager
+                        key={model.selected.id}
+                        rounds={model.rounds}
+                        initial={model.initialRound}
+                        seeded={model.selected.seeded}
+                    />
+                </div>
             ) : (
                 <p className={s.empty}>
                     {model.selected ? 'The draw for this cup isn’t out yet.' : model.emptyNote}

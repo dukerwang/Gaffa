@@ -34,7 +34,7 @@ export default function ClubFacilities({
   const [buying, setBuying] = useState<FacilityView | null>(null);
 
   return (
-    <section id="facilities" className={`${styles.section} g-panel`}>
+    <section id="facilities" className={`${styles.section} g-panel`} data-tour="club-facilities">
       <div className={styles.head}>
         <h2 className={styles.title}>Club Facilities</h2>
         {viewerIsOwner && (

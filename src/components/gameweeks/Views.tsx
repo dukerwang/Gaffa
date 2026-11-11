@@ -96,7 +96,7 @@ export function RoundView(p: RoundProps) {
       ) : (
         <>
           {mine && (
-            <div className={s.hxWide}>
+            <div className={s.hxWide} data-tour="gw-scoreboard">
               <Scoreboard tie={mine} state={mine.state} gw={p.gw} myTeamId={p.myTeamId} metas={p.metas} window={p.window} deadline={p.deadline}
                 href={`/league/${p.leagueId}/matchups/${mine.id}`} lineupHref={`/league/${p.leagueId}/team`} squadHref={`/league/${p.leagueId}/team/roster`} onOpen={open} />
             </div>

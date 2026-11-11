@@ -60,6 +60,8 @@ export interface ShowcaseArrival {
   openingBid: number | null;
   /** Every bid's amount, oldest first. */
   bidAmounts: number[];
+  /** Hours after the first bid that each bid landed. */
+  bidHours: number[];
   /** How many clubs bid. Counted, never named. */
   clubs: number;
 }
@@ -258,6 +260,7 @@ async function loadArrival(admin: AdminClient): Promise<ShowcaseArrival | null> 
     bids: Number(row.bid_count ?? 0),
     openingBid: history.length ? Number(history[0].amount) : null,
     bidAmounts: history.map((b) => Number(b.amount)),
+    bidHours: history.map((b) => (new Date(b.at).getTime() - new Date(history[0].at).getTime()) / 3_600_000),
     clubs: new Set(history.map((b) => b.team_id)).size,
   };
 }
@@ -292,7 +295,9 @@ async function fetchShowcase(): Promise<Showcase> {
 }
 
 // The examples are settled records, so a day between refreshes is plenty.
-const getCachedShowcase = unstable_cache(fetchShowcase, ['public-showcase-examples-v2'], { revalidate: 86_400 });
+// Bump the version whenever Showcase changes shape. The cache outlives a deploy,
+// so the new code would otherwise read yesterday's object and crash on what's missing.
+const getCachedShowcase = unstable_cache(fetchShowcase, ['public-showcase-examples-v3'], { revalidate: 86_400 });
 
 export async function loadShowcase(): Promise<Showcase> {
   if (process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST)) return fetchShowcase();

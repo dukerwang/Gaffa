@@ -14,6 +14,7 @@ import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
 import styles from './free-agents.module.css';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import EmptyState from '@/components/ui/EmptyState';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
 const SignNowDialog = dynamic(() => import('@/components/transfers/SignNowDialog'), { ssr: false });
@@ -173,7 +174,7 @@ export default function FreeAgentsClient({
       <header className={styles.header}>
         <div>
           <div className={`g-label ${styles.kicker}`}>Transfer Market → Free Agency</div>
-          <h1 className={styles.title}>Free Agency</h1>
+          <h1 className={styles.title}>Free Agency <WalkthroughButton chapter="free-agents" /></h1>
         </div>
         <div className={styles.stats}>
           <div className={styles.stat}>
@@ -248,7 +249,7 @@ export default function FreeAgentsClient({
         </section>
       )}
 
-      <div className={styles.tools}>
+      <div className={styles.tools} data-tour="fa-tools">
         <input
           className={styles.input}
           placeholder="Search every unowned player…"
@@ -302,9 +303,10 @@ export default function FreeAgentsClient({
             </tr>
           </thead>
           <tbody className={loading ? styles.loading : ''}>
-            {rows.map((p) => (
+            {rows.map((p, i) => (
               <tr
                 key={p.id}
+                data-tour={i === 0 ? 'fa-row' : undefined}
                 className="g-row"
                 style={{ '--pf': `var(--color-pos-${String(p.primary_position).toLowerCase()})` } as React.CSSProperties}
               >

@@ -2,6 +2,7 @@ import CrestBadge from '@/components/crest/CrestBadge';
 import type { CrestConfig } from '@/components/crest/types';
 import type { HomeModel } from '@/lib/home/buildHomeModel';
 import styles from './home.module.css';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 /**
  * The masthead names YOUR CLUB, not the league.
@@ -28,7 +29,7 @@ export function Masthead({ model }: { model: HomeModel }) {
             teamId={model.club.id}
           />
           <div className={styles.mastTx}>
-            <h1 className={styles.mastName}>{model.club.name}</h1>
+            <h1 className={styles.mastName}>{model.club.name} <WalkthroughButton chapter="home" /></h1>
             <div className={styles.mastSub}>{model.subtitle}</div>
           </div>
         </div>

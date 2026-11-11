@@ -74,7 +74,7 @@ export function Fixtures({ ties, clock, state, metas, myTeamId, leagueId }: {
     ? <span className={s.fsKey}><span><i className={s.fsKeyDot} />Starters in each kickoff</span></span>
     : <span className={s.fsKey}><span><i className={s.fsKeyBand} />Draw band</span></span>;
   return (
-    <section className={s.blk}>
+    <section className={s.blk} data-tour="gw-fixtures">
       <div className={s.sh}><h2 className={s.shT}>Fixtures</h2><span className={`${s.shTools} ${s.dOnly}`}>{key}</span></div>
       <div className={s.panel}>
         {clock.length > 0 && (

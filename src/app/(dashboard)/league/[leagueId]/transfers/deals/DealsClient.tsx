@@ -29,6 +29,7 @@ const ListingEditor = dynamic(() => import('@/components/transfers/ListingEditor
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import { describeDeal } from '@/lib/transfers/describeDeal';
 import EmptyState from '@/components/ui/EmptyState';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 /**
  * Deals — your business only.
@@ -425,7 +426,7 @@ export default function DealsClient({
       <header className={styles.header}>
         <div>
           <div className={`g-label ${styles.kicker}`}>Transfer Market → Deals</div>
-          <h1 className={styles.title}>Your Deals</h1>
+          <h1 className={styles.title}>Your Deals <WalkthroughButton chapter="deals" /></h1>
         </div>
         <div className={styles.stats}>
           <div className={styles.stat}>
@@ -442,7 +443,7 @@ export default function DealsClient({
           </div>
           {/* No colour: the loan-slot figure ran on --color-pos-wb, a wing-back
               field colour, and measured 2.65 on the dark page. */}
-          <div className={styles.stat}>
+          <div className={styles.stat} data-tour="deals-slots">
             <div className={styles.statValue}>
               {runningLoans.filter((l) => l.borrower_team_id === me).length} of{' '}
               {model.league.max_loan_ins ?? 2}
@@ -465,6 +466,7 @@ export default function DealsClient({
             <button
               type="button"
               className={styles.proposeBtn}
+              data-tour="deals-offer"
               onClick={() => { setProposeRightId(null); setProposeTeamId(null); setProposePlayerId(null); setProposeCounterSeed(null); setPropose('offer'); }}
             >
               Make an offer
@@ -472,6 +474,7 @@ export default function DealsClient({
             <button
               type="button"
               className={`${styles.proposeBtn} ${styles.proposeBtnGhost}`}
+              data-tour="deals-loan"
               onClick={() => { setProposeLoanDirection('borrow'); setProposeTeamId(null); setProposePlayerId(null); setProposeCounterSeed(null); setPropose('loan'); }}
             >
               Request a loan
@@ -487,7 +490,7 @@ export default function DealsClient({
 
           {error && <p className={styles.error}>{error}</p>}
 
-          <div className={styles.sect}>
+          <div className={styles.sect} data-tour="deals-incoming">
             <h2 className={styles.sectTitle}>Incoming</h2>
             <span className={styles.sectHint}>
               {answerCount === 0 ? 'nothing needs an answer' : `${answerCount} to answer`}

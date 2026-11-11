@@ -33,6 +33,7 @@ import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/aca
 import { serializeLineup } from '@/lib/lineups/lineupSerializer';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { IconButton } from '@/components/ui/IconButton';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -1976,7 +1977,7 @@ export default function PitchUI({
                                 interactive={false}
                             />
                             <div className={styles.boardTitles}>
-                                <h1 className={styles.boardTeamName}>{teamName}</h1>
+                                <h1 className={styles.boardTeamName}>{teamName} <WalkthroughButton chapter="lineup" /></h1>
                                 <span className={styles.boardLeague}>{masthead.leagueName}</span>
                             </div>
                         </div>
@@ -1996,7 +1997,7 @@ export default function PitchUI({
                                 <Icon name="share" size={13} strokeWidth={1.75} />
                                 Share Lineup
                             </NavigationLink>
-                            <button className={styles.saveBtn} onClick={handleSave} disabled={!canSave || lineupLocked}>
+                            <button className={styles.saveBtn} data-tour="lineup-save" onClick={handleSave} disabled={!canSave || lineupLocked}>
                                 {saving ? 'Saving…' : 'Save Lineup'}
                             </button>
                         </div>
@@ -2022,7 +2023,7 @@ export default function PitchUI({
                 )}
 
             {/* ── Formation bar ── */}
-            <div className={styles.formationBar}>
+            <div className={styles.formationBar} data-tour="lineup-formation">
                 <span className={`g-label ${styles.formationBarLabel}`}>{lineupWeekLabel ?? 'Formation'}</span>
                 <div className={styles.formationGroups}>
                     {formationsByBackLine().map((group) => (
@@ -2170,7 +2171,7 @@ export default function PitchUI({
                         </div>
                     )}
 
-                    <div className={styles.pitchContainer}>
+                    <div className={styles.pitchContainer} data-tour="lineup-pitch">
                         {/* Outer green run-off; inner pitchField = touchlines inside the grass */}
                         <div className={styles.pitchField}>
                         {/* Attacking end (top) */}
@@ -2275,7 +2276,7 @@ export default function PitchUI({
                         pool, which is only the players not currently picked.
                         This sits BELOW .pitchContainer: nothing inside the
                         pitch, and no node position, is touched by it. */}
-                    <div className={styles.benchBlock}>
+                    <div className={styles.benchBlock} data-tour="lineup-bench">
                         <div className={styles.benchHead}>
                             <h3 className={styles.benchTitle}>Bench</h3>
                             <span className="g-label">
@@ -2375,6 +2376,7 @@ export default function PitchUI({
                     selected states had already drifted apart. One row class
                     serves all four now. */}
                 <div
+                    data-tour="lineup-rail"
                     className={styles.sidebarCol}
                     data-squad-open={squadOpen ? 'true' : 'false'}
                     style={isPhone ? {
@@ -2394,6 +2396,7 @@ export default function PitchUI({
                         legible without opening anything. */}
                     <motion.button
                         type="button"
+                        data-tour="lineup-handle"
                         className={styles.squadHandle}
                         onPanStart={isPhone ? handleSquadPanStart : undefined}
                         onPan={isPhone ? handleSquadPan : undefined}

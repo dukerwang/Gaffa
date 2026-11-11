@@ -58,7 +58,7 @@ export function tierInitialFloorMs(marketValue: number = 0): number {
 /**
  * Inactivity timeout by auction age.
  */
-const DECAY_BANDS: readonly { readonly untilAgeMs: number; readonly timeoutMs: number }[] = [
+export const DECAY_BANDS: readonly { readonly untilAgeMs: number; readonly timeoutMs: number }[] = [
     { untilAgeMs: 48 * 60 * 60 * 1000, timeoutMs: 6 * 60 * 60 * 1000 },
     { untilAgeMs: 72 * 60 * 60 * 1000, timeoutMs: 4 * 60 * 60 * 1000 },
     { untilAgeMs: 96 * 60 * 60 * 1000, timeoutMs: 2 * 60 * 60 * 1000 },

@@ -3,6 +3,7 @@ import NavigationLink from '@/components/ui/NavigationLink';
 import Trophy from '@/components/trophies/Trophy';
 import type { ShelfItem } from '@/lib/cups/cupsView';
 import s from './cups.module.css';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 /**
  * The page's anchor: the three trophies on the topbar's green, each one the
@@ -23,10 +24,10 @@ export function TrophyShelf({
 }) {
   return (
     <>
-      <section className={s.shelf} aria-labelledby="cups-title">
+      <section className={s.shelf} aria-labelledby="cups-title" data-tour="cups-shelf">
         <div className={s.shelfGrid}>
           <div>
-            <h1 id="cups-title" className={s.shelfH}>Cups</h1>
+            <h1 id="cups-title" className={s.shelfH}>Cups <WalkthroughButton chapter="cups" /></h1>
             <nav className={s.cab} aria-label="Cups">
               {items.map((it) => {
                 const inner = (

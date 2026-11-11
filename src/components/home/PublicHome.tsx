@@ -12,6 +12,7 @@ import RatedPortrait from '@/app/(dashboard)/dashboard/RatedPortrait';
 import { Matchweek } from '@/app/(dashboard)/dashboard/Matchweek';
 import dash from '@/app/(dashboard)/dashboard/dashboard.module.css';
 import DockCta from './DockCta';
+import BarcolaTransfer from './BarcolaTransfer';
 import styles from './PublicHome.module.css';
 
 /* eslint-disable @next/next/no-img-element */
@@ -312,6 +313,12 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
           </div>
         </div>
       </section>
+
+      {arrival && arrival.bidAmounts.length > 1 && (
+        <section className={styles.barcola} aria-label="How a real transfer reaches Gaffa">
+          <BarcolaTransfer arrival={arrival} />
+        </section>
+      )}
 
       {/* Ratings */}
       {comparison && (

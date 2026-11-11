@@ -3,15 +3,17 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/ui/Icon';
+import WalkthroughChapters from '@/components/walkthrough/WalkthroughChapters';
 import styles from './settings.module.css';
 
 const REPORT_TYPES = ['Bug', 'Feedback', 'Feature', 'Other'] as const;
 
 interface Props {
   leagueId?: string | null;
+  isDynasty?: boolean;
 }
 
-export default function HelpClient({ leagueId = null }: Props) {
+export default function HelpClient({ leagueId = null, isDynasty = true }: Props) {
   const [reportType, setReportType] = useState<(typeof REPORT_TYPES)[number]>('Bug');
   const [reportMessage, setReportMessage] = useState('');
   const [reportStatus, setReportStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
@@ -57,6 +59,8 @@ export default function HelpClient({ leagueId = null }: Props) {
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>Help</h1>
+
+      {leagueId && <WalkthroughChapters leagueId={leagueId} isDynasty={isDynasty} />}
 
       <section className={styles.section}>
         <div className={styles.panel}>
