@@ -1,3 +1,4 @@
+import { getSessionUser } from '@/lib/supabase/sessionUser';
 import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -32,9 +33,7 @@ export default async function MyTeamPage({ params }: Props) {
   const { leagueId } = await params;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
 
   if (!user) redirect('/login');
 

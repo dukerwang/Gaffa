@@ -780,3 +780,53 @@ are drawn, is an agent's reading.
 
 **Tapping a tie opens a full tie page**, built from the matchups redesign.
 Picked over a bottom sheet and over no detail view.
+
+---
+
+## 2026-11-08 — Cups are drawn after the matchweek before they start
+
+Raised when Dynasty Dragoon's byes went to the first two clubs alphabetically,
+because the cups were drawn on 2026-08-21 with every club on 0 points. Duke
+first held to the rule already published (seed at matchweek 7):
+> "i think it's only fair to stick to the rule that was established first."
+
+Then, given the choice to seed each cup from the finished table the matchweek
+before its first round, with last season's finish as a tiebreaker only:
+> "tie breaker is cool then, makes sense to go more year-by-year. sure let's be
+> more fair this year then, make sure it's changed from now on, and for
+> champions cup too. i would rescind the previous notification you sent. and
+> also make this new rule airtight"
+
+**What that settled:** every cup, in every season, is drawn once from the
+finished league table after the matchweek before its first round (League Cup
+after MW15, Champions Cup after MW31). Last season's final position only
+separates clubs level on the table. It applies this season, to both leagues
+and to the Champions Cup too. The earlier "seeded at matchweek 7" rule is
+replaced. The draw notices already sent were removed from the app.
+
+**Choices an agent made, not Duke:** the Consolation Cup is drawn with the
+Champions Cup; "level on the table" means level on points, goal difference and
+points for; the table counts finished matchweeks only.
+
+---
+
+## 2026-11-11 — Narrated headings are banned, and checked
+
+On walkthrough step titles such as "Where the Fee Goes", "When You Can’t Bid"
+and "Who Signs Him":
+> "isn't this the whole "inanimate verb" thing?"
+
+Then, once they were renamed ("Fee Split", "Bidding Freeze", "Settlement"):
+> "i need a rule for this for the future ASAP because it's such a huge part of
+> claudelish and i don't want any part of that"
+
+and "also audit for this across the app".
+
+This is the 2026-09-04 rule ("name things; don't narrate them"), which until now
+was only a warning with three patterns. How it is enforced is an agent's
+implementation, not Duke's wording: `scripts/check-ui-rules.mjs` now rejects any
+title-case heading with a question word, a relative clause, a pronoun, an
+auxiliary or modal verb, or a question mark, in h1–h6, in any element styled as
+a title or heading, and in a component's `title` or `heading` prop. Sentence-case
+strings (empty states, statuses) are prose and aren't checked. See
+`docs/UI_RULES.md` rule 2.

@@ -181,7 +181,7 @@ export function Fronts({ model }: { model: HomeModel }) {
     <section aria-label="Competitions" data-tour="home-fronts">
       <div className={styles.sect}>
         <h2 className={styles.sectT}>
-          {model.phase === 'closed' ? 'How It Finished' : 'On All Fronts'}
+          {model.phase === 'closed' ? 'Final Positions' : 'On All Fronts'}
         </h2>
       </div>
       <div className={styles.fronts}>

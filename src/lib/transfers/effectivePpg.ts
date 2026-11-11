@@ -128,48 +128,42 @@ export async function buildEffectivePpgMap(
 
   const groups: Record<string, { curr: PpgSample[]; prev: PpgSample[] }> = {};
 
-  // Two axes of batching, and both are load-bearing.
+  // The database does the reading (migration 188): one row per player with
+  // their appearances as [points, minutes] pairs, this season's newest first.
+  // The old path paged every player_stats row, `stats` JSON included, to read
+  // one number from it: ~5,400 rows and 4 MB in six sequential requests.
   //
-  // CHUNK caps the `.in()` list so the URL stays a sane length. PAGE caps the
-  // ROWS that come back: a chunk of 200 players across two seasons is up to
-  // 200 x 76 = 15,200 rows, and PostgREST silently returns only the first
-  // 1,000. Chunking alone does not save you from that — it was returning a
-  // truncated set, and because the order is season/gameweek descending, what
-  // fell off the end was the prior season, which is precisely the input the
-  // 0-9-appearance branches lean on. Page until a short page arrives.
-  const CHUNK = 200;
-  const PAGE = 1000;
+  // CHUNK only caps the id list so the request body stays small. A chunk
+  // returns at most one row per player, far under PostgREST's 1,000-row cap.
+  const CHUNK = 300;
+  const chunks: string[][] = [];
   for (let i = 0; i < missingPlayerIds.length; i += CHUNK) {
-    const chunk = missingPlayerIds.slice(i, i + CHUNK);
+    chunks.push(missingPlayerIds.slice(i, i + CHUNK));
+  }
 
-    for (let offset = 0; ; offset += PAGE) {
-      const { data: stats } = await admin
-        .from('player_stats')
-        .select('player_id, fantasy_points, gameweek, stats, season')
-        .in('player_id', chunk)
-        .in('season', [currentSeason, prevSeason])
-        .order('season', { ascending: false })
-        .order('gameweek', { ascending: false })
-        .order('player_id', { ascending: true })
-        // A double gameweek gives one player two rows with the same season and
-        // gameweek. Without a unique last key those two can swap across a page
-        // boundary between requests, reading one twice and the other not at all.
-        .order('id', { ascending: true })
-        .range(offset, offset + PAGE - 1);
+  const results = await Promise.all(
+    chunks.map((chunk) =>
+      admin.rpc('effective_ppg_samples', {
+        p_player_ids: chunk,
+        p_season: currentSeason,
+        p_prev_season: prevSeason,
+      }),
+    ),
+  );
 
-      for (const s of stats ?? []) {
-        const raw = (s.stats as Record<string, unknown> | null) ?? {};
-        const minutes = Number(raw.minutes_played ?? 0);
-        if (minutes <= 0) continue;
-
-        if (!groups[s.player_id]) groups[s.player_id] = { curr: [], prev: [] };
-        const sample: PpgSample = { points: Number(s.fantasy_points) || 0, minutes };
-
-        if (s.season === currentSeason) groups[s.player_id].curr.push(sample);
-        else if (s.season === prevSeason) groups[s.player_id].prev.push(sample);
-      }
-
-      if (!stats || stats.length < PAGE) break;
+  for (const { data, error } of results) {
+    // A failed read must not look like "no appearances": that would price
+    // every player off the market-value proxy and cache it.
+    if (error) throw new Error(`effective_ppg_samples failed: ${error.message}`);
+    for (const row of (data ?? []) as {
+      player_id: string;
+      curr: [number, number][];
+      prev: [number, number][];
+    }[]) {
+      groups[row.player_id] = {
+        curr: row.curr.map(([points, minutes]) => ({ points: Number(points) || 0, minutes: Number(minutes) })),
+        prev: row.prev.map(([points, minutes]) => ({ points: Number(points) || 0, minutes: Number(minutes) })),
+      };
     }
   }
 

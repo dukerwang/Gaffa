@@ -47,7 +47,7 @@ A team's weekly score is its starting XI's fantasy points, plus a **Bench Depth 
 
 Auto-subs replace a zero-minute starter once his own fixture is confirmed finished, scanning the bench in a fixed **DEF → MID → ATT → FLEX** order and re-rating the substitute against the *slot he filled*, not his own position.
 
-Three knockout cups — **Champions Cup**, **League Cup**, **Consolation Cup** — run in parallel with the league table, seeded by league position, so a club with no title chance still has a tie to play for. Cups never draw: level scores are broken by best individual performer, then by bracket seed.
+Three knockout cups — **Champions Cup**, **League Cup**, **Consolation Cup** — run in parallel with the league table. Each is drawn once, after the matchweek before its first round, seeded by league position at that point, so a club with no title chance still has a tie to play for. Cups never draw: level scores are broken by best individual performer, then by bracket seed.
 
 ### The transfer market (open auction economy)
 Every player not currently on your roster — genuine free agents and other managers' listings alike — sits on **one board**, bid on the same way: a public, uncapped-duration **open auction**, paid from a **Club Balance** (the product name for the internal `faab_budget` — permanent, uncapped, never resets between seasons, and itself a tradeable asset).

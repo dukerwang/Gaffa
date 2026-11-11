@@ -1,3 +1,4 @@
+import { getSessionUser } from '@/lib/supabase/sessionUser';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
@@ -20,7 +21,7 @@ export default async function CupsPage({ params, searchParams }: Props) {
     const { cup } = await searchParams;
 
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getSessionUser(supabase);
     if (!user) redirect('/login');
 
     const res = await loadCupsPage(createAdminClient(), {
@@ -51,7 +52,7 @@ export default async function CupsPage({ params, searchParams }: Props) {
                 </div>
             ) : (
                 <p className={s.empty}>
-                    {model.selected ? 'The draw for this cup isn’t out yet.' : 'The cups are drawn at matchweek 7, once the table has had time to settle.'}
+                    {model.selected ? 'The draw for this cup isn’t out yet.' : model.emptyNote}
                 </p>
             )}
         </div>

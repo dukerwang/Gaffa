@@ -14,9 +14,14 @@ them and getting them wrong. If you change a rule, change it here first.
    "Record Book", not "Record book". "Save Lineup", not "Save lineup". Running
    prose (help text, errors, state notices, empty states) stays sentence case.
    Never uppercase a label in the markup. — DECISIONS 2026-09-04, 2026-09-09
-2. **A heading names the thing beneath it; it does not caption it.**
+2. **A heading names the thing beneath it; it never narrates it.** A heading
+   is a noun phrase, the way a page in a football almanac is titled:
    "Title-Winning XI", not "The XI That Won It". "League & Cups", not "How It
-   Splits". "Previous Meetings", not "Every Meeting". — DECISIONS 2026-09-04
+   Splits". "Fee Split", not "Where the Fee Goes". "Bidding Freeze", not "When
+   You Can’t Bid". "Departures", not "Players Who Leave". A heading has no question word (how, what, where, when, who, which), no relative clause ("Players Who Leave"), no pronoun (it, you, we, he, they), no auxiliary or modal verb (is, can, can’t, will) and no question mark. "Your" is fine: "Your Deals" is a name. It covers
+   every heading-shaped string: page, section and card titles, dialog and
+   notification titles, walkthrough steps. `check-ui-rules.mjs` rejects a
+   title-case heading that breaks it. — DECISIONS 2026-09-04, 2026-11-11
 3. **No eyebrow labels above titles.** No uppercase kicker over a heading.
    — DECISIONS 2026-08-22
 4. **"Club Balance", never "FAAB"** in anything a user reads.

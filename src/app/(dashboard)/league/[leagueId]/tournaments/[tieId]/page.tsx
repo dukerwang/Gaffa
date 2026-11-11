@@ -1,3 +1,4 @@
+import { getSessionUser } from '@/lib/supabase/sessionUser';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
@@ -17,7 +18,7 @@ export default async function CupTiePage({ params, searchParams }: Props) {
     const { leg } = await searchParams;
 
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getSessionUser(supabase);
     if (!user) redirect('/login');
 
     const admin = createAdminClient();

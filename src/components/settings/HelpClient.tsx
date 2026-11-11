@@ -70,7 +70,7 @@ export default function HelpClient({ leagueId = null, isDynasty = true }: Props)
           </Link>
 
           <Link href="/updates" className={styles.linkRow} onClick={() => window.dispatchEvent(new Event('navigation-start'))}>
-            <span>What&rsquo;s new</span>
+            <span>Updates</span>
             <Icon name="chevron-right" size={16} className={styles.linkChevron} />
           </Link>
 

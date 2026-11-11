@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { getSessionUser } from '@/lib/supabase/sessionUser';
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -26,9 +27,10 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Verifies the session token locally, so a signed-in request costs no round
+  // trip to Supabase Auth, and still refreshes an expired token. Anything that
+  // changes data re-checks with auth.getUser() in its own route.
+  const user = await getSessionUser(supabase);
 
   const pathname = request.nextUrl.pathname;
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup');
