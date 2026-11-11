@@ -82,7 +82,7 @@ export default function TermsPage() {
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>6. Contact Us</h2>
+          <h2 className={styles.sectionTitle}>6. Contact</h2>
           <p className={styles.paragraph}>
             If you have any questions or feedback regarding these Terms, please contact us at:
           </p>

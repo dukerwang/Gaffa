@@ -154,7 +154,7 @@ export default function PairingView({ leagueId, h2h, subject, opponent, isViewer
           <div className={styles.block}>
             <div className={styles.sect}>
               <h2 className={styles.sectT}>League &amp; Cups</h2>
-              <span className={styles.sectHint}>Where the meetings were played</span>
+              <span className={styles.sectHint}>By competition</span>
             </div>
             <div className={`${styles.box} ${styles.splitGrid}`}>
               <div className={styles.splitCell}>

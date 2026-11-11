@@ -96,7 +96,7 @@ Full quotes and dates in **`docs/DECISIONS.md`**. Summary: [decided]
 * **Imagery belongs on the page**, player portraits in particular. (2026-09-15) [decided]
 * **A card that leads somewhere looks clickable as a whole**; secondary destinations are shortcuts, not big buttons. (2026-09-15) [decided]
 * **Headings, section titles, buttons, and short labels are Title Case.** Running prose stays sentence case. (2026-09-09) [decided]
-* **A heading names the thing beneath it**, it does not caption it. "Title-Winning XI", not "The XI That Won It". [decided]
+* **A heading names the thing beneath it**, it does not caption it. "Title-Winning XI", not "The XI That Won It"; "Fee Split", not "Where the Fee Goes". No question words, pronouns, modal verbs or question marks in a heading. [decided] (2026-09-04, enforced 2026-11-11)
 
 ---
 
