@@ -29,10 +29,20 @@ line is wrong.
 | Also Appeared | Squad | The thing, not what it did |
 | What's Happening | Activity | A name, not a question |
 | Where Your Money Went | Spending | Same |
+| Where the Fee Goes | Fee Split | The thing itself |
+| When You Can’t Bid | Bidding Freeze | Names the rule, no modal verb |
+| Who Signs Him | Settlement | No question word |
+| Players Who Leave | Departures | No relative clause |
+| How It Finished | Final Positions | Same |
+| What’s New | Updates | A name, not a question |
 
-Tells that you have written a caption: it starts with How / What / Where / Why;
-it contains "it", "that", or "we"; it is a question; it is a full clause with a
-verb; it would work as a sentence in a match report.
+Tells that you have written a caption: it starts with How / What / Where / When
+/ Who / Why / If; it has a relative clause ("who", "that", "which"); it has a
+pronoun ("it", "you", "we", "he", "they"); it has an auxiliary or modal verb
+("is", "can", "can’t", "will"); it is a question; it would work as a sentence
+in a match report. `scripts/check-ui-rules.mjs` rejects these in title-case
+headings since 2026-11-11 (DECISIONS), so a narrated heading fails at the write.
+The check can't see a heading built from a variable, so judge those yourself.
 
 Empty states are the exception — those *are* sentences ("No trophies yet"), and
 they stay sentence case.
