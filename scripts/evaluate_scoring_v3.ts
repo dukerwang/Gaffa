@@ -53,7 +53,7 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'csbps';
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'csbps' | 'csonly' | 'gkgp' | 'csgk';
 type Component = 'match_impact' | 'defensive' | 'threat';
 /** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
 interface Step {
@@ -107,7 +107,36 @@ const EXPERIMENTS: Step[] = [
       return { ...st, bps: (st.bps ?? 0) - cs + 4 * (st.goals_conceded ?? 0) };
     },
   },
+  {
+    // As csbps, but only the +12 clean-sheet BPS comes out; the -4 per goal
+    // conceded stays in Match Impact.
+    key: 'csonly', label: 'Exp: clean-sheet BPS only out', version: 'v3',
+    fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
+    options: { v3References: false },
+    adjust: (st) => {
+      if (st.fpl_element_type !== 1 && st.fpl_element_type !== 2) return st;
+      return { ...st, bps: (st.bps ?? 0) - (st.clean_sheet && st.minutes_played >= 60 ? 12 : 0) };
+    },
+  },
+  {
+    // Keepers judged on shot-stopping: FotMob's goals prevented (xG on target
+    // faced minus goals conceded) in place of the team's xGC minus goals
+    // conceded in Defensive. Emulated by setting xGC so xGC - GC = goals prevented.
+    key: 'gkgp', label: 'Exp: keeper goals prevented', version: 'v3',
+    fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost', 'goals_prevented' as keyof RawStats], recompute: ['match_impact', 'defensive'],
+    options: { v3References: false },
+    adjust: (st) => {
+      const gp = (st as any).goals_prevented;
+      if (st.fpl_element_type !== 1 || typeof gp !== 'number') return st;
+      return { ...st, expected_goals_conceded: Math.max(0, (st.goals_conceded ?? 0) + gp) };
+    },
+  },
 ];
+// csonly and gkgp together.
+EXPERIMENTS.push({
+  ...EXPERIMENTS.find((e) => e.key === 'gkgp')!, key: 'csgk', label: 'Exp: clean-sheet BPS out + keeper goals prevented',
+  adjust: (st) => EXPERIMENTS.find((e) => e.key === 'gkgp')!.adjust!(EXPERIMENTS.find((e) => e.key === 'csonly')!.adjust!(st)),
+});
 const tried = (process.argv.find((a) => a.startsWith('--try='))?.split('=')[1] ?? '').split(',').filter(Boolean);
 for (const key of tried) {
   const exp = EXPERIMENTS.find((e) => e.key === key);
@@ -175,7 +204,8 @@ async function main() {
       line_breaking_passes: f.stats['Line breaking passes']?.value ?? 0,
       aerials_won: aerialWon,
       aerials_lost: (f.stats['Aerial duels won']?.total ?? 0) - aerialWon,
-    };
+      ...(typeof f.stats['Goals prevented']?.value === 'number' ? { goals_prevented: f.stats['Goals prevented'].value } : {}),
+    } as Partial<RawStats>;
   };
   const statsFor = (r: any, step: Step): RawStats => {
     const extra = fotmobFields(r) as Record<string, unknown>;
@@ -402,6 +432,21 @@ function printAgreement(rows: { pos: GranularPosition; fotmob: number; ours: Rec
     const sub = pos === 'all' ? rows : rows.filter((r) => r.pos === pos);
     if (sub.length < 30) continue;
     console.log(`${pos.padEnd(4)} ${String(sub.length).padStart(5)}` + STEPS.map((s) => spearman(sub.map((r) => r.ours[s.key]), sub.map((r) => r.fotmob)).toFixed(3).padStart(8)).join(''));
+  }
+  // Positional balance: each position's share of the season's best games (top
+  // 10% by rating, all positions pooled), against its share of all games.
+  console.log('\nShare of the top 10% of games by rating, all positions pooled (% ; FotMob first)');
+  console.log('pos   games  FotMob' + STEPS.map((s) => s.key.padStart(8)).join(''));
+  const topShare = (key: (r: (typeof rows)[number]) => number) => {
+    const cut = [...rows].map(key).sort((a, b) => b - a)[Math.floor(rows.length * 0.1)];
+    const top = rows.filter((r) => key(r) > cut);
+    return (pos: GranularPosition) => (100 * top.filter((r) => r.pos === pos).length) / top.length;
+  };
+  const fmShare = topShare((r) => r.fotmob), stepShare = STEPS.map((s) => topShare((r) => r.ours[s.key]));
+  for (const pos of POSITIONS) {
+    const n = rows.filter((r) => r.pos === pos).length;
+    if (n < 30) continue;
+    console.log(`${pos.padEnd(4)} ${(100 * n / rows.length).toFixed(1).padStart(6)} ${fmShare(pos).toFixed(1).padStart(7)}` + stepShare.map((f) => f(pos).toFixed(1).padStart(8)).join(''));
   }
   // Each step against the one before, per position: the change in Spearman
   // with a 95% bootstrap interval (300 resamples of appearances, paired).
