@@ -53,7 +53,7 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf' | 'xgcdef' | 'xgcgk';
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf' | 'xgcdef' | 'xgcgk' | 'xgcneu';
 type Component = 'match_impact' | 'defensive' | 'threat';
 /** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
 interface Step {
@@ -150,6 +150,15 @@ EXPERIMENTS.push({
   key: 'xgcdef', label: 'Exp: defenders credited for chances prevented', version: 'v3',
   fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
   options: { v3References: false }, adjust: preventChances,
+});
+// xgcneu: the team term neutral for outfielders: no credit for surviving
+// chances, no penalty for allowing them. Emulated as xGC' = GC + 1, a constant
+// the recomputed references absorb.
+EXPERIMENTS.push({
+  key: 'xgcneu', label: 'Exp: defenders neutral on opponent chances', version: 'v3',
+  fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
+  options: { v3References: false },
+  adjust: (st) => st.fpl_element_type === 1 ? st : { ...st, expected_goals_conceded: (st.goals_conceded ?? 0) + 1 },
 });
 EXPERIMENTS.push({
   ...EXPERIMENTS.find((e) => e.key === 'gkgp')!, key: 'xgcgk', label: 'Exp: xgcdef + keeper goals prevented',
