@@ -1,3 +1,4 @@
+import { getSessionUser } from '@/lib/supabase/sessionUser';
 import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
 import { effectiveSlots } from '@/lib/facilities/facilities';
 import { createClient } from '@/lib/supabase/server';
@@ -18,7 +19,7 @@ export default async function TradesPage({ params, searchParams }: Props) {
   const { tab: tabParam } = await searchParams;
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
 
   const admin = createAdminClient();
