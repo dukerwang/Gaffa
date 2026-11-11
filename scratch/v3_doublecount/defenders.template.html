@@ -75,11 +75,12 @@ th button[aria-pressed="true"]::after { content: " ↓"; }
 <main>
   <section>
     <div class="options">
+      <div class="opt"><strong>Live</strong><span>What leagues score today (V2). Defensive pays 5 × (opponent xGC − goals conceded), as V3 does.</span></div>
       <div class="opt"><strong>V3 Now</strong><span>Defensive pays 5 × (opponent xGC − goals conceded): the more chances a defence survives, the bigger the reward.</span></div>
       <div class="opt"><strong>Neutral</strong><span>No reward for surviving chances and no penalty for allowing them. Goals conceded still count through the clean-sheet bonus and BPS.</span></div>
       <div class="opt"><strong>Chances Prevented</strong><span>Each expected goal the opponent creates costs 5 in Defensive. Goals conceded still count through the clean-sheet bonus and BPS.</span></div>
     </div>
-    <p class="note">A defender's own tackles, clearances, blocks, interceptions and headers count the same under all three. Points are V3 points; "Δ" is the change from V3 Now.</p>
+    <p class="note">A defender's own tackles, clearances, blocks, interceptions and headers count the same under all three. Each option's change is shown against Live: points in green or red, and ▲/▼ for rank on the leaderboard. V3 Now also includes the other V3 changes (line-breaking passes, aerial duels, substitutes, penalties), which is why it differs from Live in games where the team term didn't change.</p>
   </section>
 
   <section id="leaderboard">
@@ -112,7 +113,7 @@ th button[aria-pressed="true"]::after { content: " ↓"; }
 <script id="data" type="application/json">__DATA__</script>
 <script>
 const D = JSON.parse(document.getElementById('data').textContent);
-const OPTS = ['V3 Now', 'Neutral', 'Chances Prevented'];
+const OPTS = ['Live', 'V3 Now', 'Neutral', 'Chances Prevented'];
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const mean = (a) => a.reduce((s, x) => s + x, 0) / (a.length || 1);
 const actions = (g) => g.t + g.cbi + g.h;

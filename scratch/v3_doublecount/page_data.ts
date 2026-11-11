@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import clubs from '../../src/lib/clubs/clubs.json';
 import { fetchAll } from '../../scripts/lib/fetchAll';
 for (const l of readFileSync('.env.local', 'utf8').split('\n')) { const m = l.match(/^([A-Z0-9_]+)=(.*)$/); if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim().replace(/^"|"$/g, ''); }
-const STEPS = ['pen', 'xgcneu', 'xgcdef'] as const;
+const STEPS = ['v2', 'pen', 'xgcneu', 'xgcdef'] as const;
 const DEF = ['CB', 'LB', 'RB', 'LWB', 'RWB'];
 (async () => {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
