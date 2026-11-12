@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&display=swap">
 <style>
-/* Layout: one column of three sections (Leaderboard, Game Types, Player Games), each a control row over a scrolling table. */
+/* Layout: one column of four sections (Leaderboard, Shot Profile, Game Types, Player Games), each a control row over a scrolling table. */
 :root {
   --bg: #F8F4EC; --card: #FCFAF7; --inset: #E2DFDA; --line: #D9D5CF; --line-strong: #C2BDB5;
   --text: #1B1915; --text-2: #49443B; --muted: #635D51;
@@ -44,6 +44,7 @@ p { margin: 0; max-width: 72ch; color: var(--text-2); }
 .opt { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; }
 .opt strong { font-size: 14px; }
 .opt span { font-size: 13px; color: var(--muted); }
+.controls .gap { width: 12px; }
 .controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .seg { all: unset; cursor: pointer; font-family: var(--label); font-weight: 600; font-size: 14px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--text-2); }
 .seg[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-topbar); }
@@ -86,8 +87,14 @@ th button[aria-pressed="true"]::after { content: " ↓"; }
   <section id="leaderboard">
     <h2>Leaderboard</h2>
     <div class="controls" id="lb-pos"></div>
-    <p class="note">Regular starters only (1,800+ minutes). Points per 90, with rank. Select a column heading to rank by that option.</p>
+    <p class="note" id="lb-note"></p>
     <div class="scroll"><table id="lb"></table></div>
+  </section>
+
+  <section id="shots">
+    <h2>Shot Profile</h2>
+    <p class="note">Open-play shots only, from FotMob's shot map: every shot's xG, so each goal is counted at the chance it came from. Clear chances are 0.3+ xG, half chances 0.1 to 0.3, low chances under 0.1. League-wide, 42% of clear chances were scored, 16% of half chances and 4% of low chances. Same players and position filter as the leaderboard. Select a column heading to sort.</p>
+    <div class="scroll"><table id="shot-table"></table></div>
   </section>
 
   <section id="types">
@@ -124,33 +131,58 @@ const delta = (v, base) => {
   return `<span class="d ${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)}</span>`;
 };
 const ptsCells = (vals) => vals.map((v, i) => `<td class="opt-col"><span class="pts">${v.toFixed(1)}</span>${i ? delta(v, vals[0]) : ''}</td>`).join('');
-const gameRow = (g) => `<tr><td class="l">${g.gw}</td><td class="l">${esc(g.n)} ${chip(g.p)}</td><td class="l">${esc(g.c)} <span class="muted">${!g.o ? '' : g.o.startsWith('@') ? '@ ' + esc(g.o.slice(1)) : 'v ' + esc(g.o)}</span></td><td>${g.s ?? ''}</td><td>${g.g}${g.pg ? ` <span class="muted">(${g.pg} pen)</span>` : ''}</td><td>${g.a}</td><td>${g.sh}</td><td>${g.xg.toFixed(2)}</td><td>${g.xgot.toFixed(2)}</td><td>${g.ch}</td><td>${g.fm ?? '–'}</td>${ptsCells(g.pts)}</tr>`;
-const gameHead = `<tr><th class="l">GW</th><th class="l">Player</th><th class="l">Match</th><th>Score</th><th>G</th><th>A</th><th>Shots</th><th>xG</th><th>xGOT</th><th>Chances</th><th>FotMob</th>${OPTS.map((o) => `<th class="opt-col">${o}</th>`).join('')}</tr>`;
+const goalXg = (g) => g.g - g.pg === 0 ? '' : g.gx ? g.gx.map((x) => x.toFixed(2)).join(', ') : '–';
+const gameRow = (g) => `<tr><td class="l">${g.gw}</td><td class="l">${esc(g.n)} ${chip(g.p)}</td><td class="l">${esc(g.c)} <span class="muted">${!g.o ? '' : g.o.startsWith('@') ? '@ ' + esc(g.o.slice(1)) : 'v ' + esc(g.o)}</span></td><td>${g.s ?? ''}</td><td>${g.g}${g.pg ? ` <span class="muted">(${g.pg} pen)</span>` : ''}</td><td>${goalXg(g)}</td><td>${g.a}</td><td>${g.sh}</td><td>${g.xg.toFixed(2)}</td><td>${g.xgot.toFixed(2)}</td><td>${g.ch}</td><td>${g.fm ?? '–'}</td>${ptsCells(g.pts)}</tr>`;
+const gameHead = `<tr><th class="l">GW</th><th class="l">Player</th><th class="l">Match</th><th>Score</th><th>G</th><th>Goal xG</th><th>A</th><th>Shots</th><th>xG</th><th>xGOT</th><th>Chances</th><th>FotMob</th>${OPTS.map((o) => `<th class="opt-col">${o}</th>`).join('')}</tr>`;
 
 // Leaderboard
 const POS = { 'Wingers': ['LW', 'RW'], 'Strikers': ['ST'] };
-let lbPos = 'Wingers', lbSort = 0;
+const VIEWS = { 'Per 90': { key: 'per90', dp: 1, note: 'Points per 90, with rank.' }, 'Season Total': { key: 'tot', dp: 0, note: 'Total points across the season, with rank. More minutes count for more here.' } };
+let lbPos = 'Wingers', lbSort = 0, lbView = 'Per 90';
 function renderLb() {
-  document.getElementById('lb-pos').innerHTML = Object.keys(POS).map((k) => `<button class="seg" aria-pressed="${k === lbPos}" data-k="${k}">${k}</button>`).join('');
+  document.getElementById('lb-pos').innerHTML = Object.keys(POS).map((k) => `<button class="seg" aria-pressed="${k === lbPos}" data-k="${k}">${k}</button>`).join('') + '<span class="gap"></span>' +
+    Object.keys(VIEWS).map((k) => `<button class="seg" aria-pressed="${k === lbView}" data-v="${k}">${k}</button>`).join('');
+  const V = VIEWS[lbView], val = (p) => p[V.key];
+  document.getElementById('lb-note').textContent = `Regular starters only (1,800+ minutes). ${V.note} Select a column heading to rank by that option.`;
   const rows = D.lb.filter((p) => POS[lbPos].includes(p.p));
-  const rank = OPTS.map((_, i) => new Map([...rows].sort((a, b) => b.per90[i] - a.per90[i]).map((p, r) => [p, r + 1])));
-  const sorted = [...rows].sort((a, b) => b.per90[lbSort] - a.per90[lbSort]);
-  document.getElementById('lb').innerHTML = `<tr><th class="l">#</th><th class="l">Player</th><th class="l">Club</th><th>Mins</th>${OPTS.map((o, i) => `<th class="opt-col"><button aria-pressed="${i === lbSort}" data-i="${i}">${o}</button></th>`).join('')}</tr>` +
-    sorted.map((p, r) => `<tr><td class="l muted">${r + 1}</td><td class="l">${esc(p.n)} ${chip(p.p)}</td><td class="l">${esc(p.c)}</td><td>${p.min.toLocaleString()}</td>${p.per90.map((v, i) => {
+  const rank = OPTS.map((_, i) => new Map([...rows].sort((a, b) => val(b)[i] - val(a)[i]).map((p, r) => [p, r + 1])));
+  const sorted = [...rows].sort((a, b) => val(b)[lbSort] - val(a)[lbSort]);
+  document.getElementById('lb').innerHTML = `<tr><th class="l">#</th><th class="l">Player</th><th class="l">Club</th><th>Mins</th><th>G</th><th>A</th>${OPTS.map((o, i) => `<th class="opt-col"><button aria-pressed="${i === lbSort}" data-i="${i}">${o}</button></th>`).join('')}</tr>` +
+    sorted.map((p, r) => `<tr><td class="l muted">${r + 1}</td><td class="l">${esc(p.n)} ${chip(p.p)}</td><td class="l">${esc(p.c)}</td><td>${p.min.toLocaleString()}</td><td>${p.g}</td><td>${p.a}</td>${val(p).map((v, i) => {
       const rk = rank[i].get(p), base = rank[0].get(p), mv = base - rk;
       const mvTxt = i && mv ? `<span class="d ${mv > 0 ? 'up' : 'down'}">${mv > 0 ? '▲' : '▼'}${Math.abs(mv)}</span>` : '';
-      return `<td class="opt-col"><span class="pts">${v.toFixed(1)}</span> <span class="muted">#${rk}</span>${mvTxt}</td>`;
+      return `<td class="opt-col"><span class="pts">${v.toFixed(V.dp)}</span> <span class="muted">#${rk}</span>${mvTxt}</td>`;
     }).join('')}</tr>`).join('');
 }
-document.getElementById('lb-pos').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { lbPos = b.dataset.k; renderLb(); } });
+document.getElementById('lb-pos').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.v) lbView = b.dataset.v; else lbPos = b.dataset.k; renderLb(); renderShots(); });
+
+// Shot profile
+const SCOLS = [
+  { k: 'Shots', v: (p) => p.sp.shots, f: (p) => p.sp.shots },
+  { k: 'xG', v: (p) => p.sp.xg, f: (p) => p.sp.xg.toFixed(1) },
+  { k: 'Goals', v: (p) => p.sp.goals, f: (p) => p.sp.goals },
+  { k: 'Goals − xG', v: (p) => p.sp.goals - p.sp.xg, f: (p) => { const d = p.sp.goals - p.sp.xg; return `<span class="${d > 0.05 ? 'up' : d < -0.05 ? 'down' : 'flat'}">${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d).toFixed(1)}</span>`; } },
+  { k: 'xG per Shot', v: (p) => p.sp.xg / (p.sp.shots || 1), f: (p) => (p.sp.xg / (p.sp.shots || 1)).toFixed(2) },
+  { k: 'Clear Chances', v: (p) => p.sp.shotBands[0], f: (p) => `${p.sp.goalBands[0]} of ${p.sp.shotBands[0]}` },
+  { k: 'Half Chances', v: (p) => p.sp.shotBands[1], f: (p) => `${p.sp.goalBands[1]} of ${p.sp.shotBands[1]}` },
+  { k: 'Low Chances', v: (p) => p.sp.shotBands[2], f: (p) => `${p.sp.goalBands[2]} of ${p.sp.shotBands[2]}` },
+];
+let shotSort = 2;
+function renderShots() {
+  const rows = D.lb.filter((p) => POS[lbPos].includes(p.p) && p.sp).sort((a, b) => SCOLS[shotSort].v(b) - SCOLS[shotSort].v(a));
+  document.getElementById('shot-table').innerHTML = `<tr><th class="l">Player</th><th class="l">Club</th>${SCOLS.map((c, i) => `<th${i === 5 ? ' class="opt-col"' : ''}><button aria-pressed="${i === shotSort}" data-i="${i}">${c.k}</button></th>`).join('')}</tr>` +
+    rows.map((p) => `<tr><td class="l">${esc(p.n)} ${chip(p.p)}</td><td class="l">${esc(p.c)}</td>${SCOLS.map((c, i) => `<td${i === 5 ? ' class="opt-col"' : ''}>${c.f(p)}</td>`).join('')}</tr>`).join('');
+}
+document.getElementById('shot-table').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { shotSort = +b.dataset.i; renderShots(); } });
 document.getElementById('lb').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { lbSort = +b.dataset.i; renderLb(); } });
 
 // Game types
 const noGA = (g) => g.g + g.a === 0;
 const oneGoal = (g) => g.g === 1 && g.pg === 0 && g.a === 0;
 const TYPES = [
-  { k: 'One Goal', d: 'One open-play goal and no assist, hardest chance (lowest xG) first.', f: oneGoal, sort: (a, b) => a.xg - b.xg },
-  { k: 'Tap-Ins', d: 'One open-play goal from 0.5+ xG, no assist.', f: (g) => oneGoal(g) && g.xg >= 0.5, sort: (a, b) => b.xg - a.xg },
+  { k: 'One Goal', d: 'One open-play goal and no assist, hardest chance (lowest goal xG) first.', f: oneGoal, sort: (a, b) => (a.gx?.[0] ?? 9) - (b.gx?.[0] ?? 9) },
+  { k: 'Clear-Chance Goals', d: 'One open-play goal from a chance worth 0.3+ xG, no assist, easiest chance first.', f: (g) => oneGoal(g) && (g.gx?.[0] ?? 0) >= 0.3, sort: (a, b) => b.gx[0] - a.gx[0] },
+  { k: 'Low-Chance Goals', d: 'One open-play goal from a chance worth under 0.1 xG, no assist, hardest chance first.', f: (g) => oneGoal(g) && g.gx && g.gx[0] < 0.1, sort: (a, b) => a.gx[0] - b.gx[0] },
   { k: 'Two or More Goals', d: 'Braces and hat-tricks, most goals first.', f: (g) => g.g >= 2, sort: (a, b) => b.g - a.g || a.xg - b.xg },
   { k: 'Assists', d: 'Assisted, no goal, highest FotMob rating first.', f: (g) => g.a >= 1 && g.g === 0, sort: (a, b) => (b.fm ?? 0) - (a.fm ?? 0) },
   { k: 'Saved Shots', d: 'No goal or assist, but shots on target worth 0.5+ xGOT, highest xGOT first.', f: (g) => noGA(g) && g.xgot >= 0.5, sort: (a, b) => b.xgot - a.xgot },
@@ -183,5 +215,5 @@ function renderPlayer() {
 }
 document.getElementById('player-q').addEventListener('input', renderPlayer);
 
-renderLb(); renderType(); renderPlayer();
+renderLb(); renderShots(); renderType(); renderPlayer();
 </script>
