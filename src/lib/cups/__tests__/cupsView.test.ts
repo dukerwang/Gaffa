@@ -83,9 +83,9 @@ describe('Matchday Militia today', () => {
 
   it('shows each cup with your status in it', () => {
     expect(m.shelf.map((s) => [s.short, s.status])).toEqual([
-      ['Champions', 'QF · MW32'],
+      ['Champions Cup', 'QF · MW32'],
       ['League Cup', 'QF · MW16'],
-      ['Consolation', 'From MW36'],
+      ['Consolation Cup', 'From MW36'],
     ]);
     for (const s of m.shelf) expect(s.status.length).toBeLessThanOrEqual(12);
   });
@@ -209,6 +209,21 @@ describe('statuses', () => {
     expect(m.emptyNote).toContain('League Cup after MW15');
     expect(m.emptyNote).toContain('Champions Cup after MW31');
     expect(m.selected).toBeNull();
+  });
+
+  it('links an undrawn cup by its type and says when that cup is drawn', () => {
+    const none = { cups: [], rounds: [], ties: [] };
+    const m = buildCupsModel(militia(none));
+    expect(m.shelf.map((x) => x.href)).toEqual([
+      expect.stringMatching(/\?cup=primary_cup$/),
+      expect.stringMatching(/\?cup=secondary_cup$/),
+      expect.stringMatching(/\?cup=consolation_cup$/),
+    ]);
+
+    const picked = buildCupsModel(militia({ ...none, selectedCupId: 'secondary_cup' }));
+    expect(picked.selected).toBeNull();
+    expect(picked.shelf.map((x) => x.selected)).toEqual([false, true, false]);
+    expect(picked.emptyNote).toBe('The League Cup is drawn from the finished league table after MW15.');
   });
 });
 

@@ -130,7 +130,7 @@ export interface ShelfItem {
   short: string;
   status: string;
   selected: boolean;
-  href: string | null;
+  href: string;
 }
 
 export type NextTie =
@@ -155,7 +155,7 @@ export interface CupsModel {
 const ORDER: TournamentType[] = ['primary_cup', 'secondary_cup', 'consolation_cup'];
 const KIND: Record<TournamentType, HonourKind> = { primary_cup: 'champions_cup', secondary_cup: 'league_cup', consolation_cup: 'consolation_cup' };
 const NAME: Record<TournamentType, string> = { primary_cup: 'Champions Cup', secondary_cup: 'League Cup', consolation_cup: 'Consolation Cup' };
-const SHORT_NAME: Record<TournamentType, string> = { primary_cup: 'Champions', secondary_cup: 'League Cup', consolation_cup: 'Consolation' };
+const SHORT_NAME: Record<TournamentType, string> = { primary_cup: 'Champions Cup', secondary_cup: 'League Cup', consolation_cup: 'Consolation Cup' };
 
 export function roundShort(name: string): string {
   const n = name.toLowerCase();
@@ -469,9 +469,13 @@ export function buildCupsModel(input: CupsInput): CupsModel {
   const roundsOf = (cupId: string) => input.rounds.filter((r) => r.tournament_id === cupId).sort((a, b) => a.round_number - b.round_number);
   const byType = new Map(input.cups.map((c) => [c.type, c]));
 
+  // A cup not yet drawn is picked by its type, since it has no id: the page
+  // then says when it is drawn instead of showing a bracket.
+  const undrawnPick = ORDER.find((t) => t === input.selectedCupId && !byType.has(t)) ?? null;
+
   // Default cup: your soonest unfinished tie, then the first active cup, then the Champions Cup.
   let selected = input.cups.find((c) => c.id === input.selectedCupId) ?? null;
-  if (!selected) {
+  if (!selected && !undrawnPick) {
     let soonest: { cup: CupRow; gw: number } | null = null;
     for (const c of input.cups) {
       if (c.status === 'completed') continue;
@@ -499,18 +503,19 @@ export function buildCupsModel(input: CupsInput): CupsModel {
       name: cup?.name ?? NAME[type],
       short: SHORT_NAME[type],
       status: cup ? statusFor(input, cup, roundsOf(cup.id), tiesByRound) : `Draw: MW${cupDrawGameweek(type, input.clubCount)}`,
-      selected: !!cup && cup.id === selected?.id,
-      href: cup ? `/league/${input.leagueId}/tournaments?cup=${cup.id}` : null,
+      selected: cup ? cup.id === selected?.id : type === undrawnPick,
+      href: `/league/${input.leagueId}/tournaments?cup=${cup?.id ?? type}`,
     };
   });
 
   const crest = input.myCrest;
   const club = crest ? { primary: crest.primaryColor, secondary: crest.secondaryColor } : null;
 
-  const emptyNote =
-    `Each cup is drawn from the finished table once the matchweek before it starts is done: `
-    + `the League Cup after MW${cupDrawGameweek('secondary_cup', input.clubCount)}, `
-    + `the Champions Cup after MW${cupDrawGameweek('primary_cup', input.clubCount)}.`;
+  const drawn = (type: TournamentType) => `MW${cupDrawGameweek(type, input.clubCount)}`;
+  const emptyNote = undrawnPick
+    ? `The ${NAME[undrawnPick]} is drawn from the finished league table after ${drawn(undrawnPick)}.`
+    : `Each cup is drawn from the finished table once the matchweek before it starts is done: `
+      + `the League Cup after ${drawn('secondary_cup')}, the Champions Cup after ${drawn('primary_cup')}.`;
 
   if (!selected) return { shelf, emptyNote, selected: null, next: null, rounds: [], initialRound: 0, club };
 

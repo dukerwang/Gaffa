@@ -33,11 +33,12 @@
   min-height: 44px;
   padding: 10px 4px 12px;
   border-radius: 10px;
-  color: inherit;
+  color: var(--shelf-ink);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
   transition: background-color var(--dur-fast) var(--ease-standard);
 }
+.cabItem:hover, .cabItem:focus-visible { color: var(--shelf-ink); }
 .cabItem:focus-visible { outline: 2px solid var(--shelf-ink); outline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) {
   .cabItem:not(.on):hover { background: color-mix(in oklab, var(--shelf-ink) 6%, transparent); }
@@ -65,7 +66,19 @@
   border-radius: 2px;
   background: var(--shelf-ink);
 }
-.cabName { font-family: var(--font-serif); font-size: 15px; font-weight: 600; white-space: nowrap; }
+.cabName {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-wrap: balance;
+  /* Two lines on a phone keep the three statuses level when a full name wraps. */
+  min-height: 2.4em;
+}
+@media (min-width: 480px) {
+  .cabName { white-space: nowrap; min-height: 0; }
+}
 .cabStatus {
   font-family: var(--font-label);
   font-size: 12.5px;
