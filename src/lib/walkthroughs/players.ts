@@ -1,7 +1,9 @@
 /**
  * The famous faces the walkthroughs use, with everything <Portrait> needs to
  * crop them the way the rest of the app does. Copied from `players`, because a
- * walkthrough makes no requests.
+ * walkthrough makes no requests. When PL replaces one of these photos, the
+ * daily scripts/backfill_portrait_crops.ts run prints a [pinned] line with the
+ * new values to copy in here.
  */
 
 export interface PinnedPlayer {
@@ -24,15 +26,15 @@ const pin = (name: string, club: string, code: number, photoVersion: string | nu
 
 export const PINNED = {
   saliba: pin('William Saliba', 'Arsenal', 462424, '1758016023000', 0.01, 0.28),
-  gabriel: pin('Gabriel Magalhães', 'Arsenal', 226597, '1789487092000', 0.014, 0.274),
-  odegaard: pin('Martin Ødegaard', 'Arsenal', 184029, '1789487090000', 0.02, 0.322),
-  saka: pin('Bukayo Saka', 'Arsenal', 223340, '1789487092000', 0.016, 0.282),
-  barcola: pin('Bradley Barcola', 'Liverpool', 482616, null, null, null),
-  eze: pin('Eberechi Eze', 'Arsenal', 232413, '1789487092000', 0.014, 0.304),
-  rogers: pin('Morgan Rogers', 'Chelsea', 244850, '1789485536000', 0.012, 0.284),
-  joaoPedro: pin('João Pedro', 'Chelsea', 475168, '1789485538000', 0.01, 0.254),
-  palmer: pin('Cole Palmer', 'Chelsea', 244851, '1789485536000', 0.008, 0.266),
-  haaland: pin('Erling Haaland', 'Man City', 223094, '1789725304000', 0.036, 0.27),
+  gabriel: pin('Gabriel Magalhães', 'Arsenal', 226597, '1793992350000', 0.014, 0.274),
+  odegaard: pin('Martin Ødegaard', 'Arsenal', 184029, '1793992347000', 0.02, 0.322),
+  saka: pin('Bukayo Saka', 'Arsenal', 223340, '1793992349000', 0.016, 0.282),
+  barcola: pin('Bradley Barcola', 'Liverpool', 482616, '1793995878000', 0.012, 0.272),
+  eze: pin('Eberechi Eze', 'Arsenal', 232413, '1793992351000', 0.014, 0.304),
+  rogers: pin('Morgan Rogers', 'Chelsea', 244850, '1793997086000', 0.012, 0.284),
+  joaoPedro: pin('João Pedro', 'Chelsea', 475168, '1793997089000', 0.01, 0.254),
+  palmer: pin('Cole Palmer', 'Chelsea', 244851, '1793997086000', 0.008, 0.266),
+  haaland: pin('Erling Haaland', 'Man City', 223094, '1793994863000', 0.036, 0.27),
   rodri: pin('Rodri', 'Man City', 220566, '1758015875000', 0.012, 0.268),
 } as const;
 
