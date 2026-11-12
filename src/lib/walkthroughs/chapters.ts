@@ -36,7 +36,10 @@ export type Diagram =
   | 'player-card'
   | 'ratings'
   | 'match-revenue'
-  | 'transfer-flow';
+  | 'transfer-flow'
+  | 'arrival'
+  | 'matchup'
+  | 'trophies';
 
 export interface WalkthroughStep {
   /** The `data-tour` value to spotlight. Absent: a centred card. */
@@ -76,6 +79,8 @@ export const FIGURES = {
   severancePct: 20,
   severanceMin: 2,
   meritPeriod: 4,
+  leagueMin: 4,
+  leagueMax: 12,
 };
 
 export const SOLIDARITY_PCT = Math.round(DEFAULT_SOLIDARITY_SHARE * 100);
@@ -103,6 +108,19 @@ export const WELCOME: Chapter = {
     { title: 'Walkthroughs', body: 'Each page explains itself the first time you open it. Press the question mark beside a page’s title to go through it again.' },
   ],
 };
+
+/**
+ * First Look: the front page's cards for visitors, before any sign-up. Every
+ * card has a picture; nothing on it makes a request.
+ */
+export const FIRST_LOOK: WalkthroughStep[] = [
+  { diagram: 'ratings', title: 'Ratings', body: 'Each player is rated against others in his position, so a centre-back’s clean sheet can outscore a striker’s goal.' },
+  { diagram: 'matchup', title: 'Matchups', body: `Each gameweek your XI plays one club, head to head. Finish within ${DRAW_THRESHOLD} points and it’s a draw.` },
+  { diagram: 'trophies', title: 'Trophies', body: 'Four every season: the league title and three cups, all won with the same squad.' },
+  { diagram: 'arrival', title: 'Real Transfers', body: `When a player signs for a Premier League club, he arrives in Gaffa as a free agent. Any manager can open an auction for him, and every bid is public. Players worth ${money(FIGURES.arrivalAuctionMin)} or more go to auction on their own.` },
+  { diagram: 'release-retain', title: 'Departures', body: `When one of your players leaves the Premier League, take ${FIGURES.compensationPct}% of his value now, or keep his rights for the day he returns.` },
+  { diagram: 'match-revenue', title: 'Club Balance', body: 'Your club’s money for signings, trades, loans and Club Facilities. Every result adds to it, and it carries over from season to season.' },
+];
 
 /** Also what the `?` on Closing Now and the front page's door open. */
 export const AUCTION_TIMING_STEPS: WalkthroughStep[] = [
