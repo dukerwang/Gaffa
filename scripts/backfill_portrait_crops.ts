@@ -33,8 +33,22 @@
  *
  *   --apply   write the measurements (default is dry run)
  *   --all     include inactive players too (default: is_active only)
- *   --full    re-measure players who already have stored values -- for
- *             picking up a photo PL has since replaced (default: skip them)
+ *   --full    re-measure every player, changed or not
+ *
+ * By default it measures players with no stored crop yet, plus every player
+ * whose photo PL has replaced since it was last measured. PL replaces photos
+ * without warning (a whole batch was reshot on 2026-11-06), and a crop
+ * measured off the old photo misframes the new one. A HEAD request per source
+ * reads each photo's Last-Modified, and a player whose stamp differs from
+ * `photo_version` is re-measured, which also bumps `photo_version` so browsers
+ * drop their cached copy. Scheduled daily from launchd
+ * (scripts/launchd/com.gaffa.portrait-crops-daily.plist, copied into
+ * ~/Library/LaunchAgents, which runs scripts/run_portrait_crops.sh --apply).
+ *
+ * The walkthroughs' pinned players (src/lib/walkthroughs/players.ts) are a
+ * copy of these values, since a walkthrough makes no requests. When one of
+ * their photos changes the run ends with a [pinned] line naming the new values
+ * to copy in.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -136,6 +150,33 @@ async function measurePortrait(
   return { headTopPct: topY / h, headWidthPct, lastModified };
 }
 
+async function headPhoto(code: string, size: '500x500' | '110x140'): Promise<{ ok: boolean; lastModified: string | null }> {
+  // A network error reads as "no photo" for this run rather than failing the
+  // whole run: the player is simply checked again tomorrow.
+  try {
+    const res = await fetch(`https://resources.premierleague.com/premierleague25/photos/players/${size}/${code}.png`, { method: 'HEAD' });
+    return { ok: res.ok, lastModified: res.ok ? res.headers.get('last-modified') : null };
+  } catch {
+    return { ok: false, lastModified: null };
+  }
+}
+
+/** The later of the sources' Last-Modified stamps, in ms: whichever PL touched most recently (photo.ts). */
+function photoVersionOf(lastModified: (string | null | undefined)[]): string | null {
+  const times = lastModified
+    .filter((v): v is string => !!v)
+    .map((v) => Date.parse(v))
+    .filter((t) => !Number.isNaN(t));
+  return times.length ? String(Math.max(...times)) : null;
+}
+
+/** FPL photo codes of the walkthroughs' pinned players, read from their source file. */
+function pinnedCodes(): Set<string> {
+  const file = path.join(HERE, '..', 'src', 'lib', 'walkthroughs', 'players.ts');
+  if (!fs.existsSync(file)) return new Set();
+  return new Set([...fs.readFileSync(file, 'utf-8').matchAll(/pin\('[^']*', '[^']*', (\d+)/g)].map((m) => m[1]));
+}
+
 async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = new Array(items.length);
   let next = 0;
@@ -164,6 +205,7 @@ async function main() {
     id: string;
     name: string;
     photo_url: string | null;
+    photo_version: string | null;
     is_active: boolean;
     portrait_head_top_pct: number | null;
     portrait_head_width_pct: number | null;
@@ -176,9 +218,10 @@ async function main() {
     let query = db
       .from('players')
       .select(
-        'id, name, photo_url, is_active, portrait_head_top_pct, portrait_head_width_pct, portrait_tall_head_top_pct, portrait_tall_head_width_pct',
+        'id, name, photo_url, photo_version, is_active, portrait_head_top_pct, portrait_head_width_pct, portrait_tall_head_top_pct, portrait_tall_head_width_pct',
       )
       .not('photo_url', 'is', null)
+      .order('id')
       .range(from, from + PAGE_SIZE - 1);
     if (!ALL) query = query.eq('is_active', true);
 
@@ -192,10 +235,26 @@ async function main() {
     if (data.length < PAGE_SIZE) break;
   }
 
-  const targets = rows.filter((r) => FULL || r.portrait_head_top_pct === null || r.portrait_tall_head_top_pct === null);
+  // One HEAD per source: the photo's current version stamp, and whether PL
+  // serves the square cut-out at all. Cheap next to measuring every photo.
+  const probes = await mapWithConcurrency(rows, CONCURRENCY, async (row) => {
+    const code = fplPhotoCode(row.photo_url);
+    if (!code) return null;
+    const [square, tall] = await Promise.all([headPhoto(code, '500x500'), headPhoto(code, '110x140')]);
+    return { hasSquare: square.ok, version: photoVersionOf([square.lastModified, tall.lastModified]) };
+  });
+  const targets = rows.filter((r, i) => {
+    const probe = probes[i];
+    if (!probe) return false;
+    if (FULL) return true;
+    if (probe.version && probe.version !== r.photo_version) return true;
+    return probe.hasSquare && r.portrait_head_top_pct === null;
+  });
   console.log(`[info] ${rows.length} candidate players, ${targets.length} to measure (${APPLY ? 'APPLY' : 'DRY RUN'}${ALL ? ', all' : ', active only'}${FULL ? ', full' : ''})`);
+  const pinned = pinnedCodes();
 
   let measured = 0;
+  const pinnedChanges: string[] = [];
   let noCutout = 0;
   let failed = 0;
 
@@ -214,11 +273,11 @@ async function main() {
       console.log(`${APPLY ? '[write]' : '[dry]  '} ${row.name.padEnd(28)} square(${fmt(square)})  tall(${fmt(tall)})`);
       // The later of the two -- whichever source PL most recently touched --
       // as a single version stamp for this player's photo (photo.ts).
-      const lastMods = [square?.lastModified, tall?.lastModified]
-        .filter((s): s is string => !!s)
-        .map((s) => Date.parse(s))
-        .filter((t) => !Number.isNaN(t));
-      const photoVersion = lastMods.length ? String(Math.max(...lastMods)) : null;
+      const photoVersion = photoVersionOf([square?.lastModified, tall?.lastModified]);
+      if (pinned.has(code)) {
+        const r3 = (n: number | undefined) => (n == null ? 'null' : String(Math.round(n * 1000) / 1000));
+        pinnedChanges.push(`[pinned] ${row.name}: photoVersion '${photoVersion}', headTopPct ${r3(square?.headTopPct)}, headWidthPct ${r3(square?.headWidthPct)} -> src/lib/walkthroughs/players.ts`);
+      }
       if (APPLY) {
         const { error } = await db
           .from('players')
@@ -239,6 +298,7 @@ async function main() {
   });
 
   console.log(`\n[done] measured=${measured} no-cutout=${noCutout} failed=${failed}`);
+  for (const line of pinnedChanges) console.log(line);
   if (!APPLY) console.log('[info] dry run -- pass --apply to write these values');
 }
 
