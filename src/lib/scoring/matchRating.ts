@@ -113,6 +113,16 @@ const BPS_PER_ASSIST = 9;
  * penalties the rule agrees with FotMob slightly better than V2.
  */
 export const PENALTY_XG = 0.79;
+
+/** Open-play shot residuals for EngineOptions.shotFinishing. xG is capped at 0.8 so one miss can't cost more than four goals' worth. */
+export function shotFinishingRaw(shots: { xg: number; goal: boolean }[], lambda: number): number {
+    let t = 0;
+    for (const s of shots) {
+        const x = Math.min(0.8, Math.max(0, s.xg));
+        t += s.goal ? 1 - lambda * x : -x * (1 - lambda * x) / (1 - x);
+    }
+    return t;
+}
 export const PENALTY_THREAT = 16;
 
 /** Penalties taken in a V3 row: scored (FotMob) plus missed or saved (FPL). V2 rows read 0. */
@@ -181,6 +191,14 @@ export interface EngineOptions {
     neutralTeamDefence?: boolean;
     /** Experiment only: Finishing as shot quality, non-penalty xGOT minus xG (needs stats.xgot). */
     finishingFromXgot?: boolean;
+    /**
+     * Experiment only: Finishing from each open-play shot (needs stats.np_shots).
+     * A goal earns 1 - lambda * xG and a miss costs xG * (1 - lambda * xG) / (1 - xG),
+     * so an average finisher still nets zero. lambda 1 is goals minus xG; lambda 0
+     * makes every goal worth the same and a missed clear chance cost more.
+     * median/stddev normalize the result in place of the global finishing scale.
+     */
+    shotFinishing?: { lambda: number; median: number; stddev: number };
     /** Experiment only: replaces some of a position's weights (POSITION_WEIGHTS). */
     positionWeights?: Partial<Record<GranularPosition, Partial<Record<RatingComponent, number>>>>;
 }
@@ -583,6 +601,13 @@ function computeComponentScores(
     // they went in; the goal itself counts in Goal Involvement. Scale from
     // 2025-26 outfield appearances of 45+ minutes: median 0, sd 0.19, set to
     // 0.165 to keep V2's ratio of scale to spread (0.28 against 0.32).
+    if (options?.shotFinishing && stats.np_shots) {
+        const raw = shotFinishingRaw(stats.np_shots, options.shotFinishing.lambda) + xaOutperf * 0.5;
+        finishing = {
+            score: sigmoidNormalize(raw, options.shotFinishing.median, options.shotFinishing.stddev),
+            detail: `${raw >= 0 ? '+' : ''}${raw.toFixed(2)} per-shot finishing`,
+        };
+    }
     if (options?.finishingFromXgot && stats.xgot != null) {
         const shotQuality = (stats.xgot - PENALTY_XG * pens.scored) - xg;
         finishing = {

@@ -78,10 +78,11 @@ th button[aria-pressed="true"]::after { content: " ↓"; }
     <div class="options">
       <div class="opt"><strong>Live</strong><span>What leagues score today (V2).</span></div>
       <div class="opt"><strong>V3</strong><span>V3 as it stands. Finishing is goals minus xG (non-penalty), so a goal also counts there, more for a harder chance. Wingers weight Finishing 0.25, strikers 0.10.</span></div>
-      <div class="opt"><strong>Shot-Quality Finishing</strong><span>Finishing becomes how well shots were struck (xG on target minus xG), whether or not they went in. The goal counts only in Goal Involvement.</span></div>
       <div class="opt"><strong>Wingers Like Strikers</strong><span>V3, with wingers weighted the same as strikers: Finishing 0.25 to 0.10, and the 0.15 shared between Influence, Creativity and Threat.</span></div>
+      <div class="opt"><strong>Even Goals, Halfway</strong><span>Finishing judged shot by shot, halfway between V3 and Even Goals. A harder goal still counts a little more; a missed clear chance costs a little more.</span></div>
+      <div class="opt"><strong>Even Goals</strong><span>Finishing judged shot by shot. Every open-play goal counts the same, whatever the chance. A miss costs more the clearer the chance was: missing a 0.5 xG chance costs a goal's worth. An average finisher still nets zero.</span></div>
     </div>
-    <p class="note">Each option's change is shown against Live: points in green or red, and ▲/▼ for rank on the leaderboard. Shot-Quality Finishing also affects attacking midfielders, who aren't shown here. Wingers Like Strikers changes wingers only.</p>
+    <p class="note">Each option's change is shown against Live: points in green or red, and ▲/▼ for rank on the leaderboard. The two Even Goals options keep V3's weights and also reach attacking midfielders and strikers, through their smaller Finishing weight. Wingers Like Strikers changes wingers only.</p>
   </section>
 
   <section id="leaderboard">
@@ -120,7 +121,7 @@ th button[aria-pressed="true"]::after { content: " ↓"; }
 <script id="data" type="application/json">__DATA__</script>
 <script>
 const D = JSON.parse(document.getElementById('data').textContent);
-const OPTS = ['Live', 'V3', 'Shot-Quality Finishing', 'Wingers Like Strikers'];
+const OPTS = ['Live', 'V3', 'Wingers Like Strikers', 'Even Goals, Halfway', 'Even Goals'];
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const mean = (a) => a.reduce((s, x) => s + x, 0) / (a.length || 1);
 const actions = (g) => g.t + g.r + g.du;
@@ -182,6 +183,7 @@ const oneGoal = (g) => g.g === 1 && g.pg === 0 && g.a === 0;
 const TYPES = [
   { k: 'One Goal', d: 'One open-play goal and no assist, hardest chance (lowest goal xG) first.', f: oneGoal, sort: (a, b) => (a.gx?.[0] ?? 9) - (b.gx?.[0] ?? 9) },
   { k: 'Clear-Chance Goals', d: 'One open-play goal from a chance worth 0.3+ xG, no assist, easiest chance first.', f: (g) => oneGoal(g) && (g.gx?.[0] ?? 0) >= 0.3, sort: (a, b) => b.gx[0] - a.gx[0] },
+  { k: 'Half-Chance Goals', d: 'One open-play goal from a chance worth 0.1 to 0.3 xG, no assist, hardest chance first.', f: (g) => oneGoal(g) && g.gx && g.gx[0] >= 0.1 && g.gx[0] < 0.3, sort: (a, b) => a.gx[0] - b.gx[0] },
   { k: 'Low-Chance Goals', d: 'One open-play goal from a chance worth under 0.1 xG, no assist, hardest chance first.', f: (g) => oneGoal(g) && g.gx && g.gx[0] < 0.1, sort: (a, b) => a.gx[0] - b.gx[0] },
   { k: 'Two or More Goals', d: 'Braces and hat-tricks, most goals first.', f: (g) => g.g >= 2, sort: (a, b) => b.g - a.g || a.xg - b.xg },
   { k: 'Assists', d: 'Assisted, no goal, highest FotMob rating first.', f: (g) => g.a >= 1 && g.g === 0, sort: (a, b) => (b.fm ?? 0) - (a.fm ?? 0) },

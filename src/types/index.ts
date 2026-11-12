@@ -359,6 +359,8 @@ export interface RawStats {
   aerials_lost?: number;
   /** FotMob expected goals on target (xGOT), penalties included; experiments only so far. */
   xgot?: number;
+  /** Experiment only: open-play shots from FotMob's shot map (EngineOptions.shotFinishing). */
+  np_shots?: { xg: number; goal: boolean }[];
   /** V3 row whose player FotMob didn't list for this match; FotMob fields read as zero. */
   fotmob_missing?: boolean;
 }

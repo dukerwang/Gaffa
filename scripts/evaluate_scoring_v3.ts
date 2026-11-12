@@ -27,7 +27,7 @@
  * scripts/lib/fplSeasonPlayers.ts.
  */
 import { createClient } from '@supabase/supabase-js';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import {
   calculateMatchRating,
   DEFAULT_REFERENCE_STATS,
@@ -35,6 +35,8 @@ import {
   type EngineOptions,
   fallbackElementType,
   matchImpactRawInput,
+  PENALTY_XG,
+  shotFinishingRaw,
   threatRawInput,
 } from '../src/lib/scoring/matchRating';
 import { CLUB_BY_SLUG, clubByFplCode } from '../src/lib/clubs/registry';
@@ -53,7 +55,7 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'neutral' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf' | 'xgcdef' | 'xgcgk' | 'cmw10' | 'cmw15' | 'finxgot' | 'wlikest';
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'neutral' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf' | 'xgcdef' | 'xgcgk' | 'cmw10' | 'cmw15' | 'finxgot' | 'wlikest' | 'finl0' | 'finl5' | 'finl1' | 'finl0w' | 'finl5w';
 type Component = 'match_impact' | 'defensive' | 'threat';
 /** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
 interface Step {
@@ -178,6 +180,21 @@ EXPERIMENTS.push({ ...NEUTRAL_STEP, key: 'finxgot', label: 'Exp: Finishing as sh
   fields: [...NEUTRAL_STEP.fields, 'xgot'], options: { v3References: false, finishingFromXgot: true } });
 EXPERIMENTS.push({ ...NEUTRAL_STEP, key: 'wlikest', label: 'Exp: wingers weighted like strikers',
   options: { v3References: false, positionWeights: { LW: W_AS_ST, RW: W_AS_ST } } });
+// Per-shot Finishing (EngineOptions.shotFinishing). lambda 1 is goals minus xG
+// shot by shot (a check against today's match-level figure); 0.5 and 0 pay
+// less extra for a harder goal and charge more for a missed clear chance.
+// Scales: 2025-26 outfield appearances of 45+ minutes, stddev matched to the
+// spread of today's Finishing input (0.28 against its own sd), so only the
+// shape of the scale changes. Set by --fit-shot-finishing.
+const SHOT_FIN: Record<string, { lambda: number; median: number; stddev: number }> = JSON.parse(
+  existsSync('scratch/v3_shots/shot_fin_scale.json') ? readFileSync('scratch/v3_shots/shot_fin_scale.json', 'utf8') : '{}');
+for (const [key, lambda, w] of [['finl1', 1, false], ['finl5', 0.5, false], ['finl0', 0, false], ['finl5w', 0.5, true], ['finl0w', 0, true]] as const) {
+  const sc = SHOT_FIN[String(lambda)];
+  if (!sc) continue;
+  EXPERIMENTS.push({ ...NEUTRAL_STEP, key, label: `Exp: per-shot Finishing, lambda ${lambda}${w ? ', wingers like strikers' : ''}`,
+    fields: [...NEUTRAL_STEP.fields, 'np_shots' as keyof RawStats],
+    options: { v3References: false, shotFinishing: sc, ...(w ? { positionWeights: { LW: W_AS_ST, RW: W_AS_ST } } : {}) } });
+}
 // nocs: csgk, and outfielders get no clean-sheet bonus in Defensive either.
 // Team defending still counts through goals conceded against xGC (Defensive)
 // and -4 BPS per goal conceded (Match Impact), which are continuous rather
@@ -260,6 +277,11 @@ async function main() {
   if (!existsSync(fotmobFile)) throw new Error(`${fotmobFile} missing: run scripts/scrape_fotmob_season.ts first`);
   const fotmob = new Map<string, any>(JSON.parse(readFileSync(fotmobFile, 'utf8')).rows
     .map((r: any) => [`${r.player_id}:${r.match_id}`, r]));
+  // Per-shot xG from FotMob shot maps (scratch/v3_shots/fetch_shots.mts), for the shot-finishing experiments.
+  const shotDir = `.fotmob-cache/${season}/shots`;
+  const shotsByMatch = new Map<number, any[]>(existsSync(shotDir) ? readdirSync(shotDir).map((fn) => {
+    const j = JSON.parse(readFileSync(`${shotDir}/${fn}`, 'utf8')); return [j.matchId, j.shots];
+  }) : []);
   const fotmobFields = (r: any): Partial<RawStats> => {
     const f = fotmob.get(`${r.player_id}:${r.match_id}`);
     if (!f) return {};
@@ -271,8 +293,34 @@ async function main() {
       aerials_lost: (f.stats['Aerial duels won']?.total ?? 0) - aerialWon,
       ...(typeof f.stats['Goals prevented']?.value === 'number' ? { goals_prevented: f.stats['Goals prevented'].value } : {}),
       xgot: f.stats['Expected goals on target (xGOT)']?.value ?? 0,
+      ...(shotsByMatch.has(f.fotmob_match_id) ? { np_shots: shotsByMatch.get(f.fotmob_match_id)!
+        .filter((s: any) => s.playerId === f.fotmob_player_id && s.situation !== 'Penalty' && !s.isOwnGoal)
+        .map((s: any) => ({ xg: s.xg ?? 0, goal: s.eventType === 'Goal' })) } : {}),
     } as Partial<RawStats>;
   };
+  // --fit-shot-finishing: scales for the per-shot Finishing experiments, from
+  // outfield appearances of 45+ minutes with a shot map. Each lambda keeps its
+  // own median, and its stddev is 0.28 times its spread over today's spread.
+  if (process.argv.includes('--fit-shot-finishing')) {
+    const sample = apps.filter((r) => r.stats.minutes_played >= 45 && r.players.primary_position !== 'GK')
+      .map((r) => ({ r, f: fotmobFields(r) as any })).filter((x) => x.f.np_shots);
+    const pct = (xs: number[], p: number) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(p * (s.length - 1))]; };
+    const sd = (xs: number[]) => { const m = xs.reduce((t, x) => t + x, 0) / xs.length; return Math.sqrt(xs.reduce((t, x) => t + (x - m) ** 2, 0) / xs.length); };
+    const xaPart = (st: any) => 0.5 * ((st.assists ?? 0) - (st.expected_assists ?? 0));
+    const today = sample.map(({ r, f }) => {
+      const pg = f.penalty_goals ?? 0, pm = r.stats.penalties_missed ?? 0;
+      return (r.stats.goals - pg) - Math.max(0, (r.stats.expected_goals ?? 0) - PENALTY_XG * (pg + pm)) + xaPart(r.stats);
+    });
+    const out: Record<string, { lambda: number; median: number; stddev: number }> = {};
+    console.log(`\nPer-shot Finishing scales, ${sample.length} appearances. Today: median ${pct(today, 0.5).toFixed(3)}, sd ${sd(today).toFixed(3)}`);
+    for (const lambda of [1, 0.5, 0]) {
+      const xs = sample.map(({ r, f }) => shotFinishingRaw(f.np_shots, lambda) + xaPart(r.stats));
+      out[String(lambda)] = { lambda, median: +pct(xs, 0.5).toFixed(4), stddev: +(0.28 * sd(xs) / sd(today)).toFixed(4) };
+      console.log(`  lambda ${lambda}: median ${pct(xs, 0.5).toFixed(3)}, sd ${sd(xs).toFixed(3)} -> scale ${out[String(lambda)].stddev}`);
+    }
+    writeFileSync('scratch/v3_shots/shot_fin_scale.json', JSON.stringify(out, null, 2));
+    return;
+  }
   const statsFor = (r: any, step: Step): RawStats => {
     const extra = fotmobFields(r) as Record<string, unknown>;
     const picked = Object.fromEntries(step.fields.filter((k) => k in extra).map((k) => [k, extra[k]]));
