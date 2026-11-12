@@ -279,7 +279,7 @@ function Matchup() {
     <div className={s.matchup}>
       <div className={s.matchupScores}>
         <span className={s.matchupSide}><span className={s.matchupClub}>Your Club</span><b>{home.toFixed(1)}</b></span>
-        <span className={s.matchupResult}>Draw</span>
+        <span className={s.matchupResult}>{Math.abs(margin) <= DRAW_THRESHOLD ? 'Draw' : margin > 0 ? 'Win' : 'Loss'}</span>
         <span className={s.matchupSide} data-away><b>{away.toFixed(1)}</b><span className={s.matchupClub}>Rival</span></span>
       </div>
       <div className={s.band}>
