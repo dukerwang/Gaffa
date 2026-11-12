@@ -53,7 +53,7 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'neutral' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf' | 'xgcdef' | 'xgcgk';
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'neutral' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf' | 'xgcdef' | 'xgcgk' | 'cmflex' | 'amflex';
 type Component = 'match_impact' | 'defensive' | 'threat';
 /** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
 interface Step {
@@ -162,6 +162,14 @@ EXPERIMENTS.push({
   options: { v3References: false, neutralTeamDefence: false },
   adjust: (st) => EXPERIMENTS.find((e) => e.key === 'gkgp')!.adjust!(preventChances(st)),
 });
+// cmflex: a central midfielder's flex (0.25) can also go to Defensive, so a
+// ball-winning game earns it the way a creative one does through Creativity.
+// amflex adds the same for attacking midfielders.
+const NEUTRAL_STEP: Step = STEPS.find((st) => st.key === 'neutral')!;
+EXPERIMENTS.push({ ...NEUTRAL_STEP, key: 'cmflex', label: 'Exp: CM flex includes Defensive',
+  options: { v3References: false, flexComponents: { CM: ['match_impact', 'creativity', 'influence', 'defensive'] } } });
+EXPERIMENTS.push({ ...NEUTRAL_STEP, key: 'amflex', label: 'Exp: CM and AM flex include Defensive',
+  options: { v3References: false, flexComponents: { CM: ['match_impact', 'creativity', 'influence', 'defensive'], AM: ['creativity', 'goal_involvement', 'finishing', 'defensive'] } } });
 // nocs: csgk, and outfielders get no clean-sheet bonus in Defensive either.
 // Team defending still counts through goals conceded against xGC (Defensive)
 // and -4 BPS per goal conceded (Match Impact), which are continuous rather
@@ -375,6 +383,9 @@ async function main() {
       name: r.players.web_name, club: clubOf.get(r.player_id), gw: r.gameweek, pos, gc: r.stats.goals_conceded,
       xgc: r.stats.expected_goals_conceded, cs: !!r.stats.clean_sheet, tackles: r.stats.fpl_tackles, cbi: r.stats.fpl_cbi,
       recoveries: r.stats.fpl_recoveries, aerials: fotmobFields(r).aerials_won, fotmob: fotmobRating,
+      goals: r.stats.goals, assists: r.stats.assists,
+      chances: fotmob.get(`${r.player_id}:${r.match_id}`)?.stats['Chances created']?.value ?? 0,
+      duels: fotmob.get(`${r.player_id}:${r.match_id}`)?.stats['Ground duels won']?.value ?? 0,
       steps: {} as Record<string, unknown>,
     } : null;
     if (dumpRow) dumped.push(dumpRow);

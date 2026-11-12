@@ -179,6 +179,8 @@ export interface EngineOptions {
     penaltiesOnce?: boolean;
     /** false keeps V2's team term in outfielders' Defensive (see defensiveRawInput). */
     neutralTeamDefence?: boolean;
+    /** Experiment only: replaces a position's flex candidates (FLEX_CONFIG). */
+    flexComponents?: Partial<Record<GranularPosition, RatingComponent[]>>;
 }
 
 /**
@@ -625,11 +627,13 @@ function computeComponentScores(
 
 export function applyPositionWeights(
     scores: ComponentScores,
-    position: GranularPosition
+    position: GranularPosition,
+    flexOverride?: RatingComponent[],
 ) {
     const normalizedPos = normalizePosition(position);
     const weights = POSITION_WEIGHTS[normalizedPos] || POSITION_WEIGHTS.CM;
-    const flexConfig = FLEX_CONFIG[normalizedPos] || FLEX_CONFIG.CM;
+    const baseFlex = FLEX_CONFIG[normalizedPos] || FLEX_CONFIG.CM;
+    const flexConfig = flexOverride ? { ...baseFlex, components: flexOverride } : baseFlex;
 
     let maxScore = -1;
     let maxComponent: RatingComponent | '' = '';
@@ -1045,7 +1049,7 @@ function scoreAppearance(
     }
 
     // Step 2: Weighted composite
-    const { composite, breakdown } = applyPositionWeights(scores, position);
+    const { composite, breakdown } = applyPositionWeights(scores, position, options?.flexComponents?.[position]);
 
     // Add detail to breakdown
     for (const item of breakdown) {

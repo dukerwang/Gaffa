@@ -6,8 +6,10 @@ import { createClient } from '@supabase/supabase-js';
 import clubs from '../../src/lib/clubs/clubs.json';
 import { fetchAll } from '../../scripts/lib/fetchAll';
 for (const l of readFileSync('.env.local', 'utf8').split('\n')) { const m = l.match(/^([A-Z0-9_]+)=(.*)$/); if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim().replace(/^"|"$/g, ''); }
-const STEPS = ['v2', 'pen', 'xgcneu', 'xgcdef'] as const;
-const DEF = ['CB', 'LB', 'RB', 'LWB', 'RWB'];
+// node_modules/.bin/tsx scratch/v3_doublecount/page_data.ts [defenders|midfielders]
+const GROUP = process.argv[2] ?? 'defenders';
+const STEPS = (GROUP === 'midfielders' ? ['v2', 'neutral', 'cmflex', 'amflex'] : ['v2', 'pen', 'xgcneu', 'xgcdef']) as readonly string[];
+const DEF = GROUP === 'midfielders' ? ['DM', 'CM', 'AM'] : ['CB', 'LB', 'RB', 'LWB', 'RWB'];
 (async () => {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
   const fx = await fetchAll<any>((f, t) => sb.from('pl_fixtures').select('fpl_fixture_id, gameweek, home_club, away_club, home_score, away_score').eq('season', '2025-26').order('fpl_fixture_id').range(f, t));
@@ -25,12 +27,13 @@ const DEF = ['CB', 'LB', 'RB', 'LWB', 'RWB'];
     return {
       n: a.name, c: short.get(a.club) ?? a.club ?? '', p: a.pos, gw: a.gw, o: opp ? (f.side === 'home' ? '' : '@') + (short.get(opp) ?? opp) : '', s: score,
       gc: a.gc, x: +(+a.xgc).toFixed(2), t: a.tackles ?? 0, cbi: a.cbi ?? 0, h: a.aerials ?? 0, fm: a.fotmob ?? null,
+      g: a.goals ?? 0, a: a.assists ?? 0, ch: a.chances ?? 0, r: a.recoveries ?? 0, du: a.duels ?? 0,
       pts: STEPS.map((k) => a.steps[k].pts),
     };
   });
   const lb = JSON.parse(readFileSync('scratch/v3_eval/leaderboard_2025-26.json', 'utf8')).players
     .filter((p: any) => DEF.includes(p.pos) && p.minutes >= 1800)
     .map((p: any) => ({ n: p.name, c: p.club, p: p.pos, min: p.minutes, apps: p.apps, per90: STEPS.map((k) => +(p.pts[k] * 90 / p.minutes).toFixed(2)) }));
-  writeFileSync('scratch/v3_doublecount/page_data.json', JSON.stringify({ steps: STEPS, games, lb }));
+  writeFileSync(`scratch/v3_doublecount/page_data${GROUP === 'midfielders' ? '_mid' : ''}.json`, JSON.stringify({ steps: STEPS, games, lb }));
   console.log(games.length, 'games,', games.filter((g: any) => !g.o).length, 'without an opponent,', lb.length, 'players on the leaderboard');
 })();
