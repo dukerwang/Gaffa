@@ -53,7 +53,7 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'neutral' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf' | 'xgcdef' | 'xgcgk' | 'cmw10' | 'cmw15';
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'neutral' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf' | 'xgcdef' | 'xgcgk' | 'cmw10' | 'cmw15' | 'finxgot' | 'wlikest';
 type Component = 'match_impact' | 'defensive' | 'threat';
 /** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
 interface Step {
@@ -170,6 +170,14 @@ EXPERIMENTS.push({ ...NEUTRAL_STEP, key: 'cmw10', label: 'Exp: CM Creativity 0.1
   options: { v3References: false, positionWeights: { CM: { creativity: 0.10, defensive: 0.10 } } } });
 EXPERIMENTS.push({ ...NEUTRAL_STEP, key: 'cmw15', label: 'Exp: CM Creativity 0.10, Threat 0.05, Defensive 0.15',
   options: { v3References: false, positionWeights: { CM: { creativity: 0.10, threat: 0.05, defensive: 0.15 } } } });
+// Attackers. finxgot: Finishing as shot quality (xGOT - xG), so a goal counts
+// once, in Goal Involvement. wlikest: wingers weighted like strikers
+// (Finishing 0.25 -> 0.10, the 0.15 spread to Influence, Creativity, Threat).
+const W_AS_ST = { influence: 0.10, creativity: 0.10, threat: 0.15, finishing: 0.10 };
+EXPERIMENTS.push({ ...NEUTRAL_STEP, key: 'finxgot', label: 'Exp: Finishing as shot quality',
+  fields: [...NEUTRAL_STEP.fields, 'xgot'], options: { v3References: false, finishingFromXgot: true } });
+EXPERIMENTS.push({ ...NEUTRAL_STEP, key: 'wlikest', label: 'Exp: wingers weighted like strikers',
+  options: { v3References: false, positionWeights: { LW: W_AS_ST, RW: W_AS_ST } } });
 // nocs: csgk, and outfielders get no clean-sheet bonus in Defensive either.
 // Team defending still counts through goals conceded against xGC (Defensive)
 // and -4 BPS per goal conceded (Match Impact), which are continuous rather
@@ -262,6 +270,7 @@ async function main() {
       aerials_won: aerialWon,
       aerials_lost: (f.stats['Aerial duels won']?.total ?? 0) - aerialWon,
       ...(typeof f.stats['Goals prevented']?.value === 'number' ? { goals_prevented: f.stats['Goals prevented'].value } : {}),
+      xgot: f.stats['Expected goals on target (xGOT)']?.value ?? 0,
     } as Partial<RawStats>;
   };
   const statsFor = (r: any, step: Step): RawStats => {
@@ -383,7 +392,10 @@ async function main() {
       name: r.players.web_name, club: clubOf.get(r.player_id), gw: r.gameweek, pos, gc: r.stats.goals_conceded,
       xgc: r.stats.expected_goals_conceded, cs: !!r.stats.clean_sheet, tackles: r.stats.fpl_tackles, cbi: r.stats.fpl_cbi,
       recoveries: r.stats.fpl_recoveries, aerials: fotmobFields(r).aerials_won, fotmob: fotmobRating,
-      goals: r.stats.goals, assists: r.stats.assists,
+      goals: r.stats.goals, assists: r.stats.assists, xg: r.stats.expected_goals, xa: r.stats.expected_assists,
+      xgot: fotmob.get(`${r.player_id}:${r.match_id}`)?.stats['Expected goals on target (xGOT)']?.value ?? 0,
+      shots: fotmob.get(`${r.player_id}:${r.match_id}`)?.stats['Total shots']?.value ?? 0,
+      penalty_goals: fotmobFields(r).penalty_goals ?? 0,
       chances: fotmob.get(`${r.player_id}:${r.match_id}`)?.stats['Chances created']?.value ?? 0,
       duels: fotmob.get(`${r.player_id}:${r.match_id}`)?.stats['Ground duels won']?.value ?? 0,
       steps: {} as Record<string, unknown>,

@@ -357,6 +357,8 @@ export interface RawStats {
   /** FotMob aerial duels won and lost. */
   aerials_won?: number;
   aerials_lost?: number;
+  /** FotMob expected goals on target (xGOT), penalties included; experiments only so far. */
+  xgot?: number;
   /** V3 row whose player FotMob didn't list for this match; FotMob fields read as zero. */
   fotmob_missing?: boolean;
 }

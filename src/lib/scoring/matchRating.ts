@@ -179,6 +179,8 @@ export interface EngineOptions {
     penaltiesOnce?: boolean;
     /** false keeps V2's team term in outfielders' Defensive (see defensiveRawInput). */
     neutralTeamDefence?: boolean;
+    /** Experiment only: Finishing as shot quality, non-penalty xGOT minus xG (needs stats.xgot). */
+    finishingFromXgot?: boolean;
     /** Experiment only: replaces some of a position's weights (POSITION_WEIGHTS). */
     positionWeights?: Partial<Record<GranularPosition, Partial<Record<RatingComponent, number>>>>;
 }
@@ -572,10 +574,22 @@ function computeComponentScores(
 
     // Finishing also uses a global stddev: V2's per-position ST value (0.47) was
     // 3× wider than V1's (0.15), massively deflating clinical strikers like Haaland.
-    const finishing: ComponentResult = {
+    let finishing: ComponentResult = {
         score: sigmoidNormalize(finInput, GLOBAL_FINISHING_MEDIAN, GLOBAL_FINISHING_STDDEV),
         detail: `${xgOutperf >= 0 ? '+' : ''}${xgOutperf.toFixed(2)} vs ${pens.scored + pens.missed > 0 ? 'non-penalty ' : ''}xG, ${xaOutperf >= 0 ? '+' : ''}${xaOutperf.toFixed(2)} vs xA`,
     };
+    // Experiment: shot quality. How much better the shots were struck than the
+    // chances (xGOT - xG, penalties out at PENALTY_XG each), whether or not
+    // they went in; the goal itself counts in Goal Involvement. Scale from
+    // 2025-26 outfield appearances of 45+ minutes: median 0, sd 0.19, set to
+    // 0.165 to keep V2's ratio of scale to spread (0.28 against 0.32).
+    if (options?.finishingFromXgot && stats.xgot != null) {
+        const shotQuality = (stats.xgot - PENALTY_XG * pens.scored) - xg;
+        finishing = {
+            score: sigmoidNormalize(shotQuality, 0, 0.165),
+            detail: `${shotQuality >= 0 ? '+' : ''}${shotQuality.toFixed(2)} xGOT vs xG`,
+        };
+    }
 
     // 9. Save Score (GK-only — non-GKs get a neutral 0.5)
     let saveScore: ComponentResult;

@@ -1,0 +1,187 @@
+<title>Attacker Scoring Options</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: one column of three sections (Leaderboard, Game Types, Player Games), each a control row over a scrolling table. */
+:root {
+  --bg: #F8F4EC; --card: #FCFAF7; --inset: #E2DFDA; --line: #D9D5CF; --line-strong: #C2BDB5;
+  --text: #1B1915; --text-2: #49443B; --muted: #635D51;
+  --accent: #0C6D3E; --accent-dim: rgba(12,109,62,0.10); --topbar: #0C6D3E; --on-topbar: #FFFFFF;
+  --up: #0C6D3E; --down: #AE3C36;
+  --pos-w:#00866F; --pos-st:#AD4C42;
+  --sans: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --label: 'Sofia Sans Semi Condensed', 'Arial Narrow', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #1B1F29; --card: #272D39; --inset: #202530; --line: #2D333E; --line-strong: #3F4552;
+    --text: #EBE7E1; --text-2: #B5B0A7; --muted: #989389;
+    --accent: #28A564; --accent-dim: rgba(40,165,100,0.14); --topbar: #134F2E; --on-topbar: #EBE7E1;
+    --up: #28A564; --down: #E0736B;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #1B1F29; --card: #272D39; --inset: #202530; --line: #2D333E; --line-strong: #3F4552;
+  --text: #EBE7E1; --text-2: #B5B0A7; --muted: #989389;
+  --accent: #28A564; --accent-dim: rgba(40,165,100,0.14); --topbar: #134F2E; --on-topbar: #EBE7E1;
+  --up: #28A564; --down: #E0736B;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.5; }
+.topbar { background: var(--topbar); color: var(--on-topbar); padding-block: 14px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.topbar .in { max-width: 1120px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; justify-content: space-between; }
+.topbar h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.topbar .meta { font-family: var(--label); font-size: 14px; opacity: 0.85; }
+main { max-width: 1120px; margin: 0 auto; padding-block: 20px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 32px; }
+section { display: grid; gap: 10px; min-width: 0; }
+h2 { margin: 0; font-size: 17px; font-weight: 700; text-wrap: balance; }
+p { margin: 0; max-width: 72ch; color: var(--text-2); }
+.options { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.opt { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; }
+.opt strong { font-size: 14px; }
+.opt span { font-size: 13px; color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.seg { all: unset; cursor: pointer; font-family: var(--label); font-weight: 600; font-size: 14px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--text-2); }
+.seg[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-topbar); }
+.seg:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type="search"] { font: inherit; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); min-width: 0; width: 220px; max-width: 100%; }
+.summary { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--text-2); }
+.summary b { font-family: var(--label); font-size: 15px; color: var(--text); font-variant-numeric: tabular-nums; }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th { font-family: var(--label); font-weight: 600; font-size: 13px; color: var(--muted); text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; background: var(--card); }
+td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+th.l, td.l { text-align: left; }
+tr:last-child td { border-bottom: 0; }
+th.opt-col, td.opt-col { border-left: 1px solid var(--line); }
+th button { all: unset; cursor: pointer; }
+th button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+th button[aria-pressed="true"] { color: var(--text); }
+th button[aria-pressed="true"]::after { content: " ↓"; }
+.chip { display: inline-block; min-width: 34px; text-align: center; font-family: var(--label); font-weight: 700; font-size: 12px; line-height: 18px; padding: 0 5px; border-radius: 4px; color: #fff; }
+.pos-LW,.pos-RW{background:var(--pos-w)} .pos-ST{background:var(--pos-st)}
+.up { color: var(--up); font-weight: 600; } .down { color: var(--down); font-weight: 600; } .flat { color: var(--muted); }
+.d { font-size: 12px; margin-left: 4px; }
+.muted { color: var(--muted); }
+.pts { font-weight: 600; }
+.note { font-size: 13px; color: var(--muted); }
+</style>
+
+<header class="topbar"><div class="in"><h1>Attacker Scoring Options</h1><span class="meta">2025-26 · wingers and strikers · games of 80+ minutes</span></div></header>
+<main>
+  <section>
+    <div class="options">
+      <div class="opt"><strong>Live</strong><span>What leagues score today (V2).</span></div>
+      <div class="opt"><strong>V3</strong><span>V3 as it stands. Finishing is goals minus xG (non-penalty), so a goal also counts there, more for a harder chance. Wingers weight Finishing 0.25, strikers 0.10.</span></div>
+      <div class="opt"><strong>Shot-Quality Finishing</strong><span>Finishing becomes how well shots were struck (xG on target minus xG), whether or not they went in. The goal counts only in Goal Involvement.</span></div>
+      <div class="opt"><strong>Wingers Like Strikers</strong><span>V3, with wingers weighted the same as strikers: Finishing 0.25 to 0.10, and the 0.15 shared between Influence, Creativity and Threat.</span></div>
+    </div>
+    <p class="note">Each option's change is shown against Live: points in green or red, and ▲/▼ for rank on the leaderboard. Shot-Quality Finishing also affects attacking midfielders, who aren't shown here. Wingers Like Strikers changes wingers only.</p>
+  </section>
+
+  <section id="leaderboard">
+    <h2>Leaderboard</h2>
+    <div class="controls" id="lb-pos"></div>
+    <p class="note">Regular starters only (1,800+ minutes). Points per 90, with rank. Select a column heading to rank by that option.</p>
+    <div class="scroll"><table id="lb"></table></div>
+  </section>
+
+  <section id="types">
+    <h2>Game Types</h2>
+    <div class="controls" id="type-pick"></div>
+    <p class="note" id="type-desc"></p>
+    <div class="summary" id="type-sum"></div>
+    <div class="scroll"><table id="type-table"></table></div>
+  </section>
+
+  <section id="player">
+    <h2>Player Games</h2>
+    <div class="controls">
+      <label for="player-q" class="note">Attacker</label>
+      <input type="search" id="player-q" list="player-list" value="Saka" autocomplete="off">
+      <datalist id="player-list"></datalist>
+    </div>
+    <div class="summary" id="player-sum"></div>
+    <div class="scroll"><table id="player-table"></table></div>
+  </section>
+</main>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+const D = JSON.parse(document.getElementById('data').textContent);
+const OPTS = ['Live', 'V3', 'Shot-Quality Finishing', 'Wingers Like Strikers'];
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const mean = (a) => a.reduce((s, x) => s + x, 0) / (a.length || 1);
+const actions = (g) => g.t + g.r + g.du;
+const chip = (p) => `<span class="chip pos-${p}">${p}</span>`;
+const delta = (v, base) => {
+  const d = v - base;
+  if (Math.abs(d) < 0.05) return '<span class="d flat">±0</span>';
+  return `<span class="d ${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)}</span>`;
+};
+const ptsCells = (vals) => vals.map((v, i) => `<td class="opt-col"><span class="pts">${v.toFixed(1)}</span>${i ? delta(v, vals[0]) : ''}</td>`).join('');
+const gameRow = (g) => `<tr><td class="l">${g.gw}</td><td class="l">${esc(g.n)} ${chip(g.p)}</td><td class="l">${esc(g.c)} <span class="muted">${!g.o ? '' : g.o.startsWith('@') ? '@ ' + esc(g.o.slice(1)) : 'v ' + esc(g.o)}</span></td><td>${g.s ?? ''}</td><td>${g.g}${g.pg ? ` <span class="muted">(${g.pg} pen)</span>` : ''}</td><td>${g.a}</td><td>${g.sh}</td><td>${g.xg.toFixed(2)}</td><td>${g.xgot.toFixed(2)}</td><td>${g.ch}</td><td>${g.fm ?? '–'}</td>${ptsCells(g.pts)}</tr>`;
+const gameHead = `<tr><th class="l">GW</th><th class="l">Player</th><th class="l">Match</th><th>Score</th><th>G</th><th>A</th><th>Shots</th><th>xG</th><th>xGOT</th><th>Chances</th><th>FotMob</th>${OPTS.map((o) => `<th class="opt-col">${o}</th>`).join('')}</tr>`;
+
+// Leaderboard
+const POS = { 'Wingers': ['LW', 'RW'], 'Strikers': ['ST'] };
+let lbPos = 'Wingers', lbSort = 0;
+function renderLb() {
+  document.getElementById('lb-pos').innerHTML = Object.keys(POS).map((k) => `<button class="seg" aria-pressed="${k === lbPos}" data-k="${k}">${k}</button>`).join('');
+  const rows = D.lb.filter((p) => POS[lbPos].includes(p.p));
+  const rank = OPTS.map((_, i) => new Map([...rows].sort((a, b) => b.per90[i] - a.per90[i]).map((p, r) => [p, r + 1])));
+  const sorted = [...rows].sort((a, b) => b.per90[lbSort] - a.per90[lbSort]);
+  document.getElementById('lb').innerHTML = `<tr><th class="l">#</th><th class="l">Player</th><th class="l">Club</th><th>Mins</th>${OPTS.map((o, i) => `<th class="opt-col"><button aria-pressed="${i === lbSort}" data-i="${i}">${o}</button></th>`).join('')}</tr>` +
+    sorted.map((p, r) => `<tr><td class="l muted">${r + 1}</td><td class="l">${esc(p.n)} ${chip(p.p)}</td><td class="l">${esc(p.c)}</td><td>${p.min.toLocaleString()}</td>${p.per90.map((v, i) => {
+      const rk = rank[i].get(p), base = rank[0].get(p), mv = base - rk;
+      const mvTxt = i && mv ? `<span class="d ${mv > 0 ? 'up' : 'down'}">${mv > 0 ? '▲' : '▼'}${Math.abs(mv)}</span>` : '';
+      return `<td class="opt-col"><span class="pts">${v.toFixed(1)}</span> <span class="muted">#${rk}</span>${mvTxt}</td>`;
+    }).join('')}</tr>`).join('');
+}
+document.getElementById('lb-pos').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { lbPos = b.dataset.k; renderLb(); } });
+document.getElementById('lb').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { lbSort = +b.dataset.i; renderLb(); } });
+
+// Game types
+const noGA = (g) => g.g + g.a === 0;
+const oneGoal = (g) => g.g === 1 && g.pg === 0 && g.a === 0;
+const TYPES = [
+  { k: 'One Goal', d: 'One open-play goal and no assist, hardest chance (lowest xG) first.', f: oneGoal, sort: (a, b) => a.xg - b.xg },
+  { k: 'Tap-Ins', d: 'One open-play goal from 0.5+ xG, no assist.', f: (g) => oneGoal(g) && g.xg >= 0.5, sort: (a, b) => b.xg - a.xg },
+  { k: 'Two or More Goals', d: 'Braces and hat-tricks, most goals first.', f: (g) => g.g >= 2, sort: (a, b) => b.g - a.g || a.xg - b.xg },
+  { k: 'Assists', d: 'Assisted, no goal, highest FotMob rating first.', f: (g) => g.a >= 1 && g.g === 0, sort: (a, b) => (b.fm ?? 0) - (a.fm ?? 0) },
+  { k: 'Saved Shots', d: 'No goal or assist, but shots on target worth 0.5+ xGOT, highest xGOT first.', f: (g) => noGA(g) && g.xgot >= 0.5, sort: (a, b) => b.xgot - a.xgot },
+  { k: 'Missed Chances', d: 'No goal or assist from 0.6+ xG, most xG first.', f: (g) => noGA(g) && g.xg >= 0.6, sort: (a, b) => b.xg - a.xg },
+  { k: 'Creative Games', d: 'No goal or assist, three or more chances created, most chances first.', f: (g) => noGA(g) && g.ch >= 3, sort: (a, b) => b.ch - a.ch },
+  { k: 'Quiet Games', d: 'No goal or assist, under 0.2 xG and under two chances created, lowest FotMob rating first.', f: (g) => noGA(g) && g.xg < 0.2 && g.ch < 2, sort: (a, b) => (a.fm ?? 9) - (b.fm ?? 9) },
+];
+let typeK = TYPES[0].k;
+function renderType() {
+  const t = TYPES.find((x) => x.k === typeK);
+  document.getElementById('type-pick').innerHTML = TYPES.map((x) => `<button class="seg" aria-pressed="${x.k === typeK}" data-k="${x.k}">${x.k}</button>`).join('');
+  const all = D.games.filter(t.f), shown = [...all].sort(t.sort).slice(0, 30);
+  document.getElementById('type-desc').textContent = `${t.d} Showing ${shown.length} of ${all.length} games.`;
+  document.getElementById('type-sum').innerHTML = `<span>Average of all ${all.length} games:</span>` + OPTS.map((o, i) => `<span>${o} <b>${mean(all.map((g) => g.pts[i])).toFixed(1)}</b></span>`).join('');
+  document.getElementById('type-table').innerHTML = gameHead + shown.map(gameRow).join('');
+}
+document.getElementById('type-pick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { typeK = b.dataset.k; renderType(); } });
+
+// Player games
+const names = [...new Set(D.games.map((g) => g.n))].sort();
+document.getElementById('player-list').innerHTML = names.map((n) => `<option value="${esc(n)}">`).join('');
+function renderPlayer() {
+  const q = document.getElementById('player-q').value.trim().toLowerCase();
+  const exact = names.find((n) => n.toLowerCase() === q) ?? names.find((n) => n.toLowerCase().startsWith(q));
+  const gs = exact ? D.games.filter((g) => g.n === exact).sort((a, b) => a.gw - b.gw) : [];
+  document.getElementById('player-sum').innerHTML = gs.length
+    ? `<span>${esc(exact)}, ${gs.length} games:</span>` + OPTS.map((o, i) => `<span>${o} <b>${mean(gs.map((g) => g.pts[i])).toFixed(1)}</b> a game</span>`).join('')
+    : '<span>No winger or striker by that name with an 80+ minute game.</span>';
+  document.getElementById('player-table').innerHTML = gs.length ? gameHead + gs.map(gameRow).join('') : '';
+}
+document.getElementById('player-q').addEventListener('input', renderPlayer);
+
+renderLb(); renderType(); renderPlayer();
+</script>
