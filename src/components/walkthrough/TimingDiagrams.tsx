@@ -25,6 +25,8 @@ const BARCOLA_BID_HOURS = [0, 4.23, 4.67, 11.7, 25.47, 25.49, 34.36, 39.42, 46.3
 const BARCOLA_MIN_HOURS = 72;
 const BARCOLA_LAST_BID = 74.47;
 const BARCOLA_CLOSED = 76.47;
+const BARCOLA_VALUE = 90;
+const BARCOLA_FEE = 164;
 
 function useWidth(initial: number) {
   const ref = useRef<HTMLDivElement>(null);
@@ -57,7 +59,7 @@ function Lengths() {
       ))}
       <div className={s.note}>
         <Portrait size="sm" {...PINNED.barcola} />
-        <span><b>Barcola</b>, valued €90m, stayed open at least {longest} hours.</span>
+        <span><b>Barcola</b>, valued €{BARCOLA_VALUE}m, stayed open at least {longest} hours.</span>
       </div>
     </div>
   );
@@ -262,7 +264,31 @@ function TransferFlow() {
       </div>
       <span className={s.flowArrow} aria-hidden="true">→</span>
       <div className={s.flowStop}>
-        <span className={s.flowText}><b>€164m</b>26 bids</span>
+        <span className={s.flowText}><b>€{BARCOLA_FEE}m</b>{BARCOLA_BID_HOURS.length} bids</span>
+      </div>
+    </div>
+  );
+}
+
+/** A real arrival and its Gaffa auction: Barcola's move from PSG, side by side with Rodri's departure. */
+function Arrival() {
+  return (
+    <div className={s.choice}>
+      <div className={s.choiceWho}>
+        <Portrait size="sm" {...PINNED.barcola} />
+        <span>Barcola joins Liverpool from PSG</span>
+      </div>
+      <div className={s.choiceGrid}>
+        <div className={s.option}>
+          <span className={s.optionName}>Valued</span>
+          <span className={s.optionFig}>€{BARCOLA_VALUE}m</span>
+          <span className={s.optionText}>His market value when the auction opened.</span>
+        </div>
+        <div className={s.option}>
+          <span className={s.optionName}>Signed For</span>
+          <span className={s.optionFig}>€{BARCOLA_FEE}m</span>
+          <span className={s.optionText}>After {BARCOLA_BID_HOURS.length} public bids over {Math.round(BARCOLA_CLOSED)} hours.</span>
+        </div>
       </div>
     </div>
   );
@@ -326,6 +352,7 @@ export function DiagramView({ diagram }: { diagram: Diagram }) {
     case 'ratings': return <Ratings />;
     case 'match-revenue': return <MatchRevenue />;
     case 'transfer-flow': return <TransferFlow />;
+    case 'arrival': return <Arrival />;
     case 'matchup': return <Matchup />;
     case 'trophies': return <Trophies />;
   }

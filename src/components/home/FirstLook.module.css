@@ -1,172 +1,53 @@
-/* First Look: one panel, the steps down the side and the stage beside them. */
+/* First Look: a grid of cards, each one picture and its explanation. Cards in
+   a row share their row heights through subgrid, so titles, pictures and text
+   line up across the row. */
 
-.panel {
+.grid {
   margin-top: 20px;
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s4);
+}
+
+.card {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: var(--s4);
+  min-width: 0;
+  padding: var(--s5);
   border-radius: 14px;
   background: var(--color-bg-card);
   border: var(--line);
-  overflow: hidden;
-}
-
-.steps {
-  margin: 0;
-  padding: var(--s2);
-  list-style: none;
-  border-right: var(--line);
-  background: var(--color-bg-card-alt);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.stepBtn {
-  width: 100%;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: var(--s3);
-  padding: 0 var(--s3);
-  border: 0;
-  border-radius: 8px;
-  background: none;
-  color: var(--color-text-secondary);
-  text-align: left;
-  cursor: pointer;
-  transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .stepBtn:hover { background: var(--color-bg-elevated); color: var(--color-text-primary); }
-}
-
-.stepBtn[aria-current='step'] { background: var(--color-green-50); color: var(--color-text-primary); }
-:global([data-theme='dark']) .stepBtn[aria-current='step'] { background: var(--color-accent-dim); }
-
-.stepNo {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--color-bg-inset);
-  font-family: var(--font-label);
-  font-size: var(--t-12);
-  font-weight: 700;
-  color: var(--color-text-secondary);
-}
-
-.stepBtn[aria-current='step'] .stepNo { background: var(--color-accent); color: var(--color-on-accent); }
-
-.stepName {
-  font-family: var(--font-serif);
-  font-size: var(--t-15);
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.stage {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  padding: var(--s6) 28px 18px;
-}
-
-.slide {
-  flex: 1;
-  max-width: 560px;
-  animation: enter var(--dur-base) var(--ease-standard) both;
-}
-
-@keyframes enter {
-  from { opacity: 0; transform: translateY(4px); }
 }
 
 .title {
   margin: 0;
   font-family: var(--font-serif);
-  font-size: var(--t-25);
+  font-size: var(--t-20);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
   color: var(--color-text-primary);
 }
 
-.diagram { margin-top: var(--s4); }
+.picture {
+  min-width: 0;
+  align-self: center;
+}
 
 .body {
-  margin: var(--s4) 0 0;
+  margin: 0;
   font-size: var(--t-15);
   line-height: 1.55;
   color: var(--color-text-secondary);
   text-wrap: pretty;
 }
 
-.actions { margin-top: var(--s5); display: flex; flex-wrap: wrap; gap: var(--s3); }
-
-.btn {
-  display: inline-grid;
-  place-items: center;
-  min-height: 48px;
-  padding: 0 var(--s6);
-  border-radius: 8px;
-  font-size: var(--t-15);
-  font-weight: 600;
-  white-space: nowrap;
-  text-decoration: none;
+@media (max-width: 1080px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-.primary { background: var(--color-accent); color: var(--color-on-accent); }
-.primary:hover { color: var(--color-on-accent); }
-.ghost { box-shadow: inset 0 0 0 1px var(--color-border-strong); color: var(--color-text-primary); }
-.ghost:hover { color: var(--color-text-primary); }
-
-.foot {
-  margin-top: var(--s5);
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-}
-
-.count {
-  margin-right: auto;
-  font-family: var(--font-label);
-  font-size: var(--t-13);
-  color: var(--color-text-muted);
-}
-
-.arrow {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 50%;
-  background: var(--color-bg-inset);
-  color: var(--color-text-primary);
-  cursor: pointer;
-}
-
-.arrow:disabled { opacity: 0.35; cursor: default; }
-
-/* Phones: the steps become a row of chips above the stage. */
-@media (max-width: 860px) {
-  .panel { grid-template-columns: minmax(0, 1fr); }
-  .steps {
-    flex-direction: row;
-    overflow-x: auto;
-    scrollbar-width: none;
-    border-right: 0;
-    border-bottom: var(--line);
-    padding: var(--s2) var(--s3);
-  }
-  .steps::-webkit-scrollbar { display: none; }
-  .stepBtn { width: auto; padding: 0 var(--s3) 0 var(--s2); }
-  .stage { padding: 18px var(--s4) var(--s4); }
-  .title { font-size: var(--t-20); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .slide { animation: none; }
+@media (max-width: 640px) {
+  .grid { grid-template-columns: minmax(0, 1fr); gap: var(--s3); }
+  .card { padding: var(--s4); }
 }

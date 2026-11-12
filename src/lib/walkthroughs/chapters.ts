@@ -37,6 +37,7 @@ export type Diagram =
   | 'ratings'
   | 'match-revenue'
   | 'transfer-flow'
+  | 'arrival'
   | 'matchup'
   | 'trophies';
 
@@ -78,6 +79,8 @@ export const FIGURES = {
   severancePct: 20,
   severanceMin: 2,
   meritPeriod: 4,
+  leagueMin: 4,
+  leagueMax: 12,
 };
 
 export const SOLIDARITY_PCT = Math.round(DEFAULT_SOLIDARITY_SHARE * 100);
@@ -107,17 +110,16 @@ export const WELCOME: Chapter = {
 };
 
 /**
- * First Look: the front page's inline tour for visitors and for signups with
- * no league. The same story as Welcome, every step with a picture, ending on
- * starting or joining a league. No sign-up, no requests.
+ * First Look: the front page's cards for visitors, before any sign-up. Every
+ * card has a picture; nothing on it makes a request.
  */
 export const FIRST_LOOK: WalkthroughStep[] = [
-  { diagram: 'ratings', title: 'Ratings', body: WELCOME.steps[1].body },
-  { diagram: 'matchup', title: 'Matchups', body: WELCOME.steps[2].body },
-  { diagram: 'trophies', title: 'Trophies', body: WELCOME.steps[3].body },
-  { diagram: 'match-revenue', title: 'Club Balance', body: `Your club’s money for signings, trades, loans and Club Facilities. It carries over every season, and every result adds to it.` },
-  { diagram: 'transfer-flow', title: 'Real Transfers', body: WELCOME.steps[6].body },
-  { diagram: 'fee-split', title: 'Scout’s Fee', body: WELCOME.steps[7].body },
+  { diagram: 'ratings', title: 'Ratings', body: 'Each player is rated against others in his position, so a centre-back’s clean sheet can outscore a striker’s goal.' },
+  { diagram: 'matchup', title: 'Matchups', body: `Each gameweek your XI plays one club, head to head. Finish within ${DRAW_THRESHOLD} points and it’s a draw.` },
+  { diagram: 'trophies', title: 'Trophies', body: 'Four every season: the league title and three cups, all won with the same squad.' },
+  { diagram: 'arrival', title: 'Real Transfers', body: `When a player signs for a Premier League club, he arrives in Gaffa as a free agent. Any manager can open an auction for him, and every bid is public. Players worth ${money(FIGURES.arrivalAuctionMin)} or more go to auction on their own.` },
+  { diagram: 'release-retain', title: 'Departures', body: `When one of your players leaves the Premier League, take ${FIGURES.compensationPct}% of his value now, or keep his rights for the day he returns.` },
+  { diagram: 'match-revenue', title: 'Club Balance', body: 'Your club’s money for signings, trades, loans and Club Facilities. Every result adds to it, and it carries over from season to season.' },
 ];
 
 /** Also what the `?` on Closing Now and the front page's door open. */

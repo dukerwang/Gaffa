@@ -47,11 +47,12 @@ describe('walkthrough chapters', () => {
     expect(num('lib/roster/executeDrop.ts', /marketValue \* ([\d.]+)/) * 100).toBeCloseTo(FIGURES.severancePct);
     expect(num('lib/roster/executeDrop.ts', /Math\.max\((\d+), Math\.floor\(marketValue/)).toBe(FIGURES.severanceMin);
     expect(num('lib/economy/meritPayments.ts', /MERIT_PERIOD_LENGTH = (\d+)/)).toBe(FIGURES.meritPeriod);
+    const size = /clamp\(Math\.round\(maxTeams \?\? \d+\), (\d+), (\d+)\)/.exec(read('app/api/leagues/create/route.ts'));
+    expect([Number(size?.[1]), Number(size?.[2])]).toEqual([FIGURES.leagueMin, FIGURES.leagueMax]);
   });
 
-  it('keeps First Look in step with Welcome', () => {
+  it('gives every First Look card a picture and no page anchor', () => {
     expect(FIRST_LOOK.every((s) => s.diagram && !s.at)).toBe(true);
-    expect(WELCOME.steps.map((s) => s.title)).toEqual(expect.arrayContaining(['Ratings', 'Matchups', 'Trophies', 'Real Transfers', 'Scout’s Fee']));
   });
 
   it('keeps Welcome independent of any page', () => {
