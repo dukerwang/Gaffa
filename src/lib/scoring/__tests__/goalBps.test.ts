@@ -93,6 +93,24 @@ describe('V3 net aerial duels', () => {
     });
 });
 
+describe('V3 team defence neutral on chances', () => {
+    const base = { fpl_tackles: 2, fpl_cbi: 4, fpl_recoveries: 4, clean_sheet: true, goals_conceded: 0 };
+    const raw = (o: Partial<RawStats>, pos: GranularPosition = 'CB') => defensiveRawInput(stats({ ...base, ...o }), pos).defensiveRaw;
+
+    it('gives an outfielder nothing for surviving chances, and takes nothing for allowing them', () => {
+        expect(raw({ engine_version: 'v3', expected_goals_conceded: 3.27 })).toBe(raw({ engine_version: 'v3', expected_goals_conceded: 0.3 }));
+        const conceded = { goals_conceded: 2, clean_sheet: false };
+        expect(raw({ ...conceded, engine_version: 'v3', expected_goals_conceded: 0.4 }, 'DM')).toBe(raw({ ...conceded, engine_version: 'v3', expected_goals_conceded: 2.5 }, 'DM'));
+    });
+
+    it('keeps the V2 team term for V2 rows, when switched off, and for keepers', () => {
+        expect(raw({ expected_goals_conceded: 2 }) - raw({ expected_goals_conceded: 0 })).toBeCloseTo(10);
+        const off = (x: number) => defensiveRawInput(stats({ ...base, engine_version: 'v3', expected_goals_conceded: x }), 'CB', undefined, { neutralTeamDefence: false }).defensiveRaw;
+        expect(off(2) - off(0)).toBeCloseTo(10);
+        expect(raw({ engine_version: 'v3', expected_goals_conceded: 2 }, 'GK')).not.toBe(raw({ engine_version: 'v3', expected_goals_conceded: 0 }, 'GK'));
+    });
+});
+
 describe('V3 substitute scoring', () => {
     const quiet = { bps: 6, influence: 4, creativity: 3, threat: 2, fpl_tackles: 1, fpl_recoveries: 1 };
 

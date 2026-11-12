@@ -1,64 +1,64 @@
 {
   "engine": "v3",
   "season": "2025-26",
-  "generated": "2026-09-27",
+  "generated": "2026-11-12",
   "source": "player_stats 2025-26 + FotMob scrape, appearances of 45+ minutes",
   "method": "median and population stddev per position; wide defenders pooled, LW/RW pooled (as scripts/recompute_reference_stats.mjs)",
   "components": {
     "defensive": {
       "AM": {
-        "median": 4.2,
-        "stddev": 5.7655,
+        "median": 3.5,
+        "stddev": 3.1787,
         "n": 489
       },
       "CB": {
-        "median": 5.9,
-        "stddev": 9.3087,
+        "median": 6,
+        "stddev": 5.8715,
         "n": 1700
       },
       "CM": {
-        "median": 6.199999999999999,
-        "stddev": 7.0578,
+        "median": 6.5,
+        "stddev": 4.0109,
         "n": 665
       },
       "DM": {
-        "median": 8.25,
-        "stddev": 9.821,
+        "median": 9,
+        "stddev": 6.7308,
         "n": 1161
       },
       "LB": {
-        "median": 9.15,
-        "stddev": 9.958,
+        "median": 9,
+        "stddev": 6.7617,
         "n": 1563
       },
       "LW": {
-        "median": 3.6377906976744185,
-        "stddev": 5.2573,
+        "median": 3,
+        "stddev": 2.6543,
         "n": 1328
       },
       "LWB": {
-        "median": 9.15,
-        "stddev": 9.958,
+        "median": 9,
+        "stddev": 6.7617,
         "n": 1563
       },
       "RB": {
-        "median": 9.15,
-        "stddev": 9.958,
+        "median": 9,
+        "stddev": 6.7617,
         "n": 1563
       },
       "RW": {
-        "median": 3.6377906976744185,
-        "stddev": 5.2573,
+        "median": 3,
+        "stddev": 2.6543,
         "n": 1328
       },
       "RWB": {
-        "median": 9.15,
-        "stddev": 9.958,
+        "median": 9,
+        "stddev": 6.7617,
         "n": 1563
       },
       "ST": {
-        "median": 2.55,
-        "stddev": 5.5926,
+        "median": 2,
+        "stddev": 3.1529,
         "n": 822
       }
     },

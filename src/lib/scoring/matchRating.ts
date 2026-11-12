@@ -177,6 +177,8 @@ export interface EngineOptions {
     v3References?: boolean;
     /** false leaves penalties in Threat and Finishing, as V2 does (see PENALTY_THREAT). */
     penaltiesOnce?: boolean;
+    /** false keeps V2's team term in outfielders' Defensive (see defensiveRawInput). */
+    neutralTeamDefence?: boolean;
 }
 
 /**
@@ -358,6 +360,7 @@ export function defensiveRawInput(
     stats: RawStats,
     position: GranularPosition,
     primaryPosition?: GranularPosition,
+    options?: EngineOptions,
 ) {
     const gc = stats.goals_conceded;
     const xgc = stats.expected_goals_conceded ?? 0;
@@ -381,8 +384,22 @@ export function defensiveRawInput(
         }
     }
     const canGetCS = csBonus > 0;
-    const xgcOutperf = Math.max(0, xgc - gc) * 5;
-    const gcPenalty = Math.max(0, gc - xgc) * 5;
+    // V3: outfielders' team term is neutral on the opponent's chances.
+    // V2 added 5 x (xGC - goals conceded), which paid a defence more the more
+    // chances it survived: a clean sheet against 3.27 xGC earned +16, one
+    // against 0.3 earned +1.5. xGC is the danger that got through to a shot,
+    // shared by the whole team, and a shot a defender blocks adds to it while
+    // his block is credited above. So V3 neither rewards nor punishes it: an
+    // outfielder's Defensive is his own defending plus the clean-sheet bonus,
+    // and goals conceded also count through BPS in Match Impact. Keepers keep
+    // their xGC term, which measures shot-stopping.
+    // Approved by Duke 2026-11-11 after comparing leaderboards and real games
+    // (scratch/v3_doublecount/defenders.template.html). It agrees with FotMob
+    // less at CB and DM on purpose: FotMob's action-based rating favours the
+    // games a defence survives under heavy pressure.
+    const neutralTeam = stats.engine_version === 'v3' && options?.neutralTeamDefence !== false;
+    const xgcOutperf = neutralTeam ? 0 : Math.max(0, xgc - gc) * 5;
+    const gcPenalty = neutralTeam ? 0 : Math.max(0, gc - xgc) * 5;
 
     const tackles = Math.max(0, stats.fpl_tackles ?? 0);
     const cbi = Math.max(0, stats.fpl_cbi ?? 0);
@@ -511,7 +528,7 @@ function computeComponentScores(
     //      − GC penalty (defense let goals through above the chance quality)
     //      + clean-sheet bonus (position-weighted: GK/DEF/DM full, CM half, AM/ATT 0)
     const { defensiveRaw, canGetCS, gc, xgc, tackles, cbi, recoveries, dc } =
-        defensiveRawInput(stats, position, primaryPosition);
+        defensiveRawInput(stats, position, primaryPosition, options);
 
     const defensive: ComponentResult = {
         score: sigmoidNormalize(defensiveRaw, volRef('defensive').median, volRef('defensive').stddev),

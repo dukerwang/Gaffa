@@ -53,7 +53,7 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf' | 'xgcdef' | 'xgcgk' | 'xgcneu';
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'neutral' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf' | 'xgcdef' | 'xgcgk';
 type Component = 'match_impact' | 'defensive' | 'threat';
 /** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
 interface Step {
@@ -65,20 +65,20 @@ interface Step {
 }
 const STEPS: Step[] = [
   { key: 'v2', label: 'V2', version: 'v2', fields: [], recompute: [] },
-  { key: 'goal', label: 'Goal BPS fix', version: 'v3', fields: ['penalty_goals'], recompute: ['match_impact'], options: { substituteScaling: false, v3References: false, penaltiesOnce: false } },
+  { key: 'goal', label: 'Goal BPS fix', version: 'v3', fields: ['penalty_goals'], recompute: ['match_impact'], options: { substituteScaling: false, v3References: false, penaltiesOnce: false, neutralTeamDefence: false } },
   {
     key: 'lbp', label: '+ Line-breaking passes', version: 'v3', fields: ['penalty_goals', 'line_breaking_passes'],
-    recompute: ['match_impact'], options: { substituteScaling: false, v3References: false, penaltiesOnce: false },
+    recompute: ['match_impact'], options: { substituteScaling: false, v3References: false, penaltiesOnce: false, neutralTeamDefence: false },
   },
   {
     key: 'aerial', label: '+ Net aerial duels', version: 'v3',
     fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
-    options: { substituteScaling: false, v3References: false, penaltiesOnce: false },
+    options: { substituteScaling: false, v3References: false, penaltiesOnce: false, neutralTeamDefence: false },
   },
   {
     key: 'subs', label: '+ Substitute scoring', version: 'v3',
     fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
-    options: { v3References: false, penaltiesOnce: false },
+    options: { v3References: false, penaltiesOnce: false, neutralTeamDefence: false },
   },
   {
     // Penalties out of Threat and Finishing (PENALTY_THREAT, PENALTY_XG). Threat
@@ -87,6 +87,12 @@ const STEPS: Step[] = [
     // method (the threat table shows the gap) and, at AM, a median that jumps
     // between tied values, raising every AM's Threat.
     key: 'pen', label: '+ Penalties counted once', version: 'v3',
+    fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
+    options: { v3References: false, neutralTeamDefence: false },
+  },
+  {
+    // Outfielders' Defensive neutral on the opponent's chances (defensiveRawInput).
+    key: 'neutral', label: '+ Team defence neutral on chances', version: 'v3',
     fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
     options: { v3References: false },
   },
@@ -149,19 +155,11 @@ const preventChances = (st: RawStats): RawStats => st.fpl_element_type === 1 ? s
 EXPERIMENTS.push({
   key: 'xgcdef', label: 'Exp: defenders credited for chances prevented', version: 'v3',
   fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
-  options: { v3References: false }, adjust: preventChances,
-});
-// xgcneu: the team term neutral for outfielders: no credit for surviving
-// chances, no penalty for allowing them. Emulated as xGC' = GC + 1, a constant
-// the recomputed references absorb.
-EXPERIMENTS.push({
-  key: 'xgcneu', label: 'Exp: defenders neutral on opponent chances', version: 'v3',
-  fields: ['penalty_goals', 'line_breaking_passes', 'aerials_won', 'aerials_lost'], recompute: ['match_impact', 'defensive'],
-  options: { v3References: false },
-  adjust: (st) => st.fpl_element_type === 1 ? st : { ...st, expected_goals_conceded: (st.goals_conceded ?? 0) + 1 },
+  options: { v3References: false, neutralTeamDefence: false }, adjust: preventChances,
 });
 EXPERIMENTS.push({
   ...EXPERIMENTS.find((e) => e.key === 'gkgp')!, key: 'xgcgk', label: 'Exp: xgcdef + keeper goals prevented',
+  options: { v3References: false, neutralTeamDefence: false },
   adjust: (st) => EXPERIMENTS.find((e) => e.key === 'gkgp')!.adjust!(preventChances(st)),
 });
 // nocs: csgk, and outfielders get no clean-sheet bonus in Defensive either.
@@ -270,7 +268,7 @@ async function main() {
     WIDE_DEF.includes(pos) ? WIDE_DEF : pos === 'LW' || pos === 'RW' ? ['LW', 'RW'] : [pos];
   const rawInput: Record<Component, (s: RawStats, pos: GranularPosition, o?: EngineOptions) => number> = {
     match_impact: (st, pos, o) => matchImpactRawInput(st, pos, o),
-    defensive: (st, pos) => defensiveRawInput(st, pos, pos).defensiveRaw,
+    defensive: (st, pos, o) => defensiveRawInput(st, pos, pos, o).defensiveRaw,
     threat: (st, _pos, o) => threatRawInput(st, o),
   };
   const refs = {} as Record<StepKey, RefMap>;
@@ -384,7 +382,7 @@ async function main() {
       const result = calculateMatchRating(statsFor(r, step), pos, refs[step.key], pos, step.options);
       if (dumpRow) dumpRow.steps[step.key] = {
         pts: +result.fantasyPoints.toFixed(2), rating: +result.rating.toFixed(2),
-        defRaw: +defensiveRawInput(statsFor(r, step), pos, pos).defensiveRaw.toFixed(2),
+        defRaw: +defensiveRawInput(statsFor(r, step), pos, pos, step.options).defensiveRaw.toFixed(2),
         defScore: +(result.breakdown.find((b) => b.key === 'defensive')?.score ?? 0).toFixed(3),
         defRef: refs[step.key][pos].defensive,
       };
