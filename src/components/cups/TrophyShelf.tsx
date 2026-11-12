@@ -39,7 +39,7 @@ export function TrophyShelf({
                     <span className={s.cabStatus}>{it.status}</span>
                   </>
                 );
-                return it.href ? (
+                return (
                   <NavigationLink
                     key={it.type}
                     href={it.href}
@@ -50,8 +50,6 @@ export function TrophyShelf({
                   >
                     {inner}
                   </NavigationLink>
-                ) : (
-                  <span key={it.type} className={s.cabItem} aria-label={`${it.name}: ${it.status}`}>{inner}</span>
                 );
               })}
             </nav>
