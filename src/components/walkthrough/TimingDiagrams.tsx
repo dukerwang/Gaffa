@@ -15,6 +15,8 @@ import {
 import { FIGURES, MERIT, SCOUT_PCT, SOLIDARITY_PCT, type Diagram } from '@/lib/walkthroughs/chapters';
 import { PINNED } from '@/lib/walkthroughs/players';
 import PositionBadge from '@/components/players/PositionBadge';
+import Trophy from '@/components/trophies/Trophy';
+import { DRAW_THRESHOLD } from '@/lib/scoring/drawBand';
 import s from './TimingDiagrams.module.css';
 
 const HOUR = 3_600_000;
@@ -266,6 +268,49 @@ function TransferFlow() {
   );
 }
 
+/** A matchup inside the draw band: the margin sits inside the shaded ±10. */
+function Matchup() {
+  const home = 152.6;
+  const away = 145.3;
+  const margin = home - away;
+  const span = DRAW_THRESHOLD * 3;
+  const at = (v: number) => `${50 + (v / span) * 50}%`;
+  return (
+    <div className={s.matchup}>
+      <div className={s.matchupScores}>
+        <span className={s.matchupSide}><span className={s.matchupClub}>Your Club</span><b>{home.toFixed(1)}</b></span>
+        <span className={s.matchupResult}>Draw</span>
+        <span className={s.matchupSide} data-away><b>{away.toFixed(1)}</b><span className={s.matchupClub}>Rival</span></span>
+      </div>
+      <div className={s.band}>
+        <i style={{ left: at(-DRAW_THRESHOLD), width: `${(DRAW_THRESHOLD / span) * 100}%` }} />
+        <b style={{ left: at(margin) }} />
+      </div>
+      <div className={s.bandLabels}><span>Their win</span><span>Draw within {DRAW_THRESHOLD}</span><span>Your win</span></div>
+    </div>
+  );
+}
+
+const TROPHY_KINDS = [
+  { kind: 'league_title' as const, name: 'League Title' },
+  { kind: 'champions_cup' as const, name: 'Champions Cup' },
+  { kind: 'league_cup' as const, name: 'League Cup' },
+  { kind: 'consolation_cup' as const, name: 'Consolation Cup' },
+];
+
+function Trophies() {
+  return (
+    <div className={s.trophies}>
+      {TROPHY_KINDS.map((t) => (
+        <div className={s.trophyCell} key={t.kind}>
+          <Trophy kind={t.kind} size="pip" height={44} />
+          <span>{t.name}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function DiagramView({ diagram }: { diagram: Diagram }) {
   switch (diagram) {
     case 'lengths': return <Lengths />;
@@ -281,5 +326,7 @@ export function DiagramView({ diagram }: { diagram: Diagram }) {
     case 'ratings': return <Ratings />;
     case 'match-revenue': return <MatchRevenue />;
     case 'transfer-flow': return <TransferFlow />;
+    case 'matchup': return <Matchup />;
+    case 'trophies': return <Trophies />;
   }
 }

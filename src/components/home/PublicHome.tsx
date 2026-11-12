@@ -13,6 +13,7 @@ import { Matchweek } from '@/app/(dashboard)/dashboard/Matchweek';
 import dash from '@/app/(dashboard)/dashboard/dashboard.module.css';
 import DockCta from './DockCta';
 import BarcolaTransfer from './BarcolaTransfer';
+import FirstLook from './FirstLook';
 import styles from './PublicHome.module.css';
 
 /* eslint-disable @next/next/no-img-element */
@@ -170,8 +171,20 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
         </div>
       </section>
 
+      {/* First Look: the game in a few steps, before any sign-up */}
+      <section className={`${styles.section} ${topRated ? styles.first : ''}`} aria-labelledby="first-look">
+        <div className={styles.lock}>
+          <span className={styles.iconTile} aria-hidden="true"><Icon name="gaffa" size={30} /></span>
+          <div>
+            <h2 id="first-look" className={styles.lockT}>First Look</h2>
+            <div className={styles.lockSub}>The game in six pictures</div>
+          </div>
+        </div>
+        <FirstLook createHref={createHref} joinHref={joinHref} />
+      </section>
+
       {/* Transfers */}
-      <section className={`${styles.section} ${topRated ? styles.first : ''}`} aria-labelledby="transfer-wire">
+      <section className={styles.section} aria-labelledby="transfer-wire">
         <div className={styles.lock}>
           <span className={styles.iconTile} aria-hidden="true"><SwapIcon /></span>
           <div>

@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { AUCTION_TIMING_STEPS, CHAPTERS, FIGURES, WELCOME, chapterForPath, isPostDraft, stepsForFormat } from '../chapters';
+import { AUCTION_TIMING_STEPS, CHAPTERS, FIGURES, FIRST_LOOK, WELCOME, chapterForPath, isPostDraft, stepsForFormat } from '../chapters';
 
 const SRC = path.resolve(__dirname, '../../..');
 const LEAGUE_APP = path.join(SRC, 'app/(dashboard)/league/[leagueId]');
@@ -49,6 +49,11 @@ describe('walkthrough chapters', () => {
     expect(num('lib/economy/meritPayments.ts', /MERIT_PERIOD_LENGTH = (\d+)/)).toBe(FIGURES.meritPeriod);
   });
 
+  it('keeps First Look in step with Welcome', () => {
+    expect(FIRST_LOOK.every((s) => s.diagram && !s.at)).toBe(true);
+    expect(WELCOME.steps.map((s) => s.title)).toEqual(expect.arrayContaining(['Ratings', 'Matchups', 'Trophies', 'Real Transfers', 'Scout’s Fee']));
+  });
+
   it('keeps Welcome independent of any page', () => {
     expect(WELCOME.steps.every((s) => !s.at)).toBe(true);
     expect(CHAPTERS.some((c) => c.id === WELCOME.id)).toBe(false);
@@ -56,7 +61,7 @@ describe('walkthrough chapters', () => {
 
   it('names each step instead of narrating it', () => {
     const narrated = /^(where|when|who|how|what|why|if|your|find|make|open)\b/i;
-    const titles = [WELCOME, ...CHAPTERS].flatMap((c) => c.steps.map((s) => s.title));
+    const titles = [WELCOME, ...CHAPTERS, { steps: FIRST_LOOK }].flatMap((c) => c.steps.map((s) => s.title));
     expect(titles.filter((t) => narrated.test(t))).toEqual([]);
   });
 

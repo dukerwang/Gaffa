@@ -36,7 +36,9 @@ export type Diagram =
   | 'player-card'
   | 'ratings'
   | 'match-revenue'
-  | 'transfer-flow';
+  | 'transfer-flow'
+  | 'matchup'
+  | 'trophies';
 
 export interface WalkthroughStep {
   /** The `data-tour` value to spotlight. Absent: a centred card. */
@@ -103,6 +105,20 @@ export const WELCOME: Chapter = {
     { title: 'Walkthroughs', body: 'Each page explains itself the first time you open it. Press the question mark beside a page’s title to go through it again.' },
   ],
 };
+
+/**
+ * First Look: the front page's inline tour for visitors and for signups with
+ * no league. The same story as Welcome, every step with a picture, ending on
+ * starting or joining a league. No sign-up, no requests.
+ */
+export const FIRST_LOOK: WalkthroughStep[] = [
+  { diagram: 'ratings', title: 'Ratings', body: WELCOME.steps[1].body },
+  { diagram: 'matchup', title: 'Matchups', body: WELCOME.steps[2].body },
+  { diagram: 'trophies', title: 'Trophies', body: WELCOME.steps[3].body },
+  { diagram: 'match-revenue', title: 'Club Balance', body: `Your club’s money for signings, trades, loans and Club Facilities. It carries over every season, and every result adds to it.` },
+  { diagram: 'transfer-flow', title: 'Real Transfers', body: WELCOME.steps[6].body },
+  { diagram: 'fee-split', title: 'Scout’s Fee', body: WELCOME.steps[7].body },
+];
 
 /** Also what the `?` on Closing Now and the front page's door open. */
 export const AUCTION_TIMING_STEPS: WalkthroughStep[] = [
