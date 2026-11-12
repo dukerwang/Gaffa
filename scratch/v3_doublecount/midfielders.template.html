@@ -77,10 +77,10 @@ th button[aria-pressed="true"]::after { content: " ↓"; }
     <div class="options">
       <div class="opt"><strong>Live</strong><span>What leagues score today (V2).</span></div>
       <div class="opt"><strong>V3</strong><span>V3 as it stands, with neutral team defence. A goal now strips the BPS FPL actually paid for it, which lowers midfielders' goal games.</span></div>
-      <div class="opt"><strong>CM Ball-Winning</strong><span>V3, and a central midfielder's best side of the game earns the 0.25 flex whether it's creating or winning the ball. Today only Match Impact, Creativity or Influence can.</span></div>
-      <div class="opt"><strong>CM and AM Ball-Winning</strong><span>The same for attacking midfielders, whose flex today goes only to Creativity, Goal Involvement or Finishing.</span></div>
+      <div class="opt"><strong>CM Split 10/10</strong><span>V3, with a central midfielder's weights moved 0.05 from Creativity to Defensive: Creativity 0.10, Defensive 0.10.</span></div>
+      <div class="opt"><strong>CM Split 15</strong><span>V3, with 0.05 from Creativity and 0.05 from Threat moved to Defensive: Creativity 0.10, Threat 0.05, Defensive 0.15.</span></div>
     </div>
-    <p class="note">Each option's change is shown against Live: points in green or red, and ▲/▼ for rank on the leaderboard. Ball-winning is tackles, recoveries and ground duels won. DMs already have Defensive in their flex, so the two new options leave them unchanged.</p>
+    <p class="note">Each option's change is shown against Live: points in green or red, and ▲/▼ for rank on the leaderboard. Ball-winning is tackles, recoveries and ground duels won. Both splits change central midfielders only; DM and AM columns match V3. Today a CM is Match Impact 0.20, Influence 0.15, Creativity 0.15, Threat 0.10, Defensive 0.05, Goal Involvement 0.10.</p>
   </section>
 
   <section id="leaderboard">
@@ -102,7 +102,7 @@ th button[aria-pressed="true"]::after { content: " ↓"; }
     <h2>Player Games</h2>
     <div class="controls">
       <label for="player-q" class="note">Midfielder</label>
-      <input type="search" id="player-q" list="player-list" value="Caicedo" autocomplete="off">
+      <input type="search" id="player-q" list="player-list" value="Enzo" autocomplete="off">
       <datalist id="player-list"></datalist>
     </div>
     <div class="summary" id="player-sum"></div>
@@ -113,7 +113,7 @@ th button[aria-pressed="true"]::after { content: " ↓"; }
 <script id="data" type="application/json">__DATA__</script>
 <script>
 const D = JSON.parse(document.getElementById('data').textContent);
-const OPTS = ['Live', 'V3', 'CM Ball-Winning', 'CM and AM Ball-Winning'];
+const OPTS = ['Live', 'V3', 'CM Split 10/10', 'CM Split 15'];
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const mean = (a) => a.reduce((s, x) => s + x, 0) / (a.length || 1);
 const actions = (g) => g.t + g.r + g.du;
@@ -129,7 +129,7 @@ const gameHead = `<tr><th class="l">GW</th><th class="l">Player</th><th class="l
 
 // Leaderboard
 const POS = { 'Defensive Midfielders': ['DM'], 'Central Midfielders': ['CM'], 'Attacking Midfielders': ['AM'] };
-let lbPos = 'Central Midfielders', lbSort = 0;
+let lbPos = 'Central Midfielders', lbSort = 0; // CM first: the splits only touch CMs
 function renderLb() {
   document.getElementById('lb-pos').innerHTML = Object.keys(POS).map((k) => `<button class="seg" aria-pressed="${k === lbPos}" data-k="${k}">${k}</button>`).join('');
   const rows = D.lb.filter((p) => POS[lbPos].includes(p.p));

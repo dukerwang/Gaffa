@@ -53,7 +53,7 @@ const POSITIONS: GranularPosition[] = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'DM
 const WIDE_DEF: GranularPosition[] = ['LB', 'RB', 'LWB', 'RWB'];
 type RefMap = Record<GranularPosition, ReferenceStats>;
 
-type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'neutral' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf' | 'xgcdef' | 'xgcgk' | 'cmflex' | 'amflex';
+type StepKey = 'v2' | 'goal' | 'lbp' | 'aerial' | 'subs' | 'pen' | 'neutral' | 'csbps' | 'csonly' | 'gkgp' | 'csgk' | 'nocs' | 'nocsdef' | 'cshalf' | 'xgcdef' | 'xgcgk' | 'cmw10' | 'cmw15';
 type Component = 'match_impact' | 'defensive' | 'threat';
 /** `recompute` lists the components whose raw input the step changes; their references are recomputed. */
 interface Step {
@@ -162,14 +162,14 @@ EXPERIMENTS.push({
   options: { v3References: false, neutralTeamDefence: false },
   adjust: (st) => EXPERIMENTS.find((e) => e.key === 'gkgp')!.adjust!(preventChances(st)),
 });
-// cmflex: a central midfielder's flex (0.25) can also go to Defensive, so a
-// ball-winning game earns it the way a creative one does through Creativity.
-// amflex adds the same for attacking midfielders.
+// CM weight splits: move weight from Creativity (and Threat) to Defensive,
+// so ball-winning counts closer to creating. Today CM is Match Impact 0.20,
+// Influence 0.15, Creativity 0.15, Threat 0.10, Defensive 0.05, GI 0.10.
 const NEUTRAL_STEP: Step = STEPS.find((st) => st.key === 'neutral')!;
-EXPERIMENTS.push({ ...NEUTRAL_STEP, key: 'cmflex', label: 'Exp: CM flex includes Defensive',
-  options: { v3References: false, flexComponents: { CM: ['match_impact', 'creativity', 'influence', 'defensive'] } } });
-EXPERIMENTS.push({ ...NEUTRAL_STEP, key: 'amflex', label: 'Exp: CM and AM flex include Defensive',
-  options: { v3References: false, flexComponents: { CM: ['match_impact', 'creativity', 'influence', 'defensive'], AM: ['creativity', 'goal_involvement', 'finishing', 'defensive'] } } });
+EXPERIMENTS.push({ ...NEUTRAL_STEP, key: 'cmw10', label: 'Exp: CM Creativity 0.10, Defensive 0.10',
+  options: { v3References: false, positionWeights: { CM: { creativity: 0.10, defensive: 0.10 } } } });
+EXPERIMENTS.push({ ...NEUTRAL_STEP, key: 'cmw15', label: 'Exp: CM Creativity 0.10, Threat 0.05, Defensive 0.15',
+  options: { v3References: false, positionWeights: { CM: { creativity: 0.10, threat: 0.05, defensive: 0.15 } } } });
 // nocs: csgk, and outfielders get no clean-sheet bonus in Defensive either.
 // Team defending still counts through goals conceded against xGC (Defensive)
 // and -4 BPS per goal conceded (Match Impact), which are continuous rather
