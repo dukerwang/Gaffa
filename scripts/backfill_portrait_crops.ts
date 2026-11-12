@@ -151,8 +151,14 @@ async function measurePortrait(
 }
 
 async function headPhoto(code: string, size: '500x500' | '110x140'): Promise<{ ok: boolean; lastModified: string | null }> {
-  const res = await fetch(`https://resources.premierleague.com/premierleague25/photos/players/${size}/${code}.png`, { method: 'HEAD' });
-  return { ok: res.ok, lastModified: res.ok ? res.headers.get('last-modified') : null };
+  // A network error reads as "no photo" for this run rather than failing the
+  // whole run: the player is simply checked again tomorrow.
+  try {
+    const res = await fetch(`https://resources.premierleague.com/premierleague25/photos/players/${size}/${code}.png`, { method: 'HEAD' });
+    return { ok: res.ok, lastModified: res.ok ? res.headers.get('last-modified') : null };
+  } catch {
+    return { ok: false, lastModified: null };
+  }
 }
 
 /** The later of the sources' Last-Modified stamps, in ms: whichever PL touched most recently (photo.ts). */
