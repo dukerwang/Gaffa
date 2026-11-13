@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { fetchAllPagesOrThrow } from '@/lib/supabase/pagination';
 
 export const maxDuration = 60;
 
@@ -24,11 +25,20 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient();
 
-  const { data: academyRows, error: academyErr } = await admin
-    .from('roster_entries')
-    .select('id, team_id, league_id, player_id, player:players(name, date_of_birth)')
-    .eq('status', 'taxi');
-  if (academyErr) return NextResponse.json({ error: academyErr.message }, { status: 500 });
+  // Every league's academy at once, so this read is not bounded by one club list.
+  let academyRows: any[];
+  try {
+    academyRows = await fetchAllPagesOrThrow<any>((from, to) =>
+      admin
+        .from('roster_entries')
+        .select('id, team_id, league_id, player_id, player:players(name, date_of_birth)')
+        .eq('status', 'taxi')
+        .order('id')
+        .range(from, to),
+    );
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  }
 
   if (!academyRows || academyRows.length === 0) {
     return NextResponse.json({ ok: true, scanned: 0, aged_out: 0, promoted: 0, unresolved: [] });

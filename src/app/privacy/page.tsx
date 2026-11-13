@@ -30,7 +30,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>2. Information We Collect</h2>
+          <h2 className={styles.sectionTitle}>2. Information Collected</h2>
           <p className={styles.paragraph}>
             We only collect standard information necessary to authenticate you, manage your fantasy squad, and send you in-game notifications:
           </p>
@@ -48,7 +48,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>3. How We Use Your Information</h2>
+          <h2 className={styles.sectionTitle}>3. Use of Information</h2>
           <p className={styles.paragraph}>
             We use the collected information for the following limited purposes:
           </p>
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>7. Contact Us</h2>
+          <h2 className={styles.sectionTitle}>7. Contact</h2>
           <p className={styles.paragraph}>
             For any privacy concerns or general questions, you can reach out to us at:
           </p>

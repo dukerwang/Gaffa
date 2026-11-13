@@ -222,7 +222,7 @@ async function notifyLineupSetIfLocked(
       kind: 'club',
       leagueId,
       userId: team.user_id,
-      title: 'Lineup Set For You',
+      title: 'Lineup Set Automatically',
       content:
         `Your lineup for gameweek ${gameweek} is locked because you have a held player, so your last saved lineup was used. ` +
         `Any player no longer available was replaced. Activate or drop your held player to pick your own lineup again.`,

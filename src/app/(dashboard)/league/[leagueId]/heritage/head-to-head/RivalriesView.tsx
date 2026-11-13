@@ -94,7 +94,7 @@ export default function RivalriesView({ leagueId, pairings, clubs, viewerTeamId 
             <div className={styles.block}>
               <div className={styles.sect}>
                 <h2 className={styles.sectT}>Other Rivalries</h2>
-                <span className={styles.sectHint}>Pairings you are not part of</span>
+                <span className={styles.sectHint}>Rest of the league</span>
               </div>
               <div className={styles.box}>{rest.map((h) => <Row key={`${h.teamId}-${h.opponentId}`} h={h} />)}</div>
             </div>

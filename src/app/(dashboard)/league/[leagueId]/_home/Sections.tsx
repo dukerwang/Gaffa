@@ -26,7 +26,7 @@ export function Market({ model }: { model: HomeModel }) {
   if (model.phase === 'closed') return null;
 
   return (
-    <section aria-label="In the market">
+    <section aria-label="In the market" data-tour="home-market">
       <div className={styles.sect}>
         <h2 className={styles.sectT}>
           {model.phase === 'market' ? 'The Week in the Market' : 'In the Market'}
@@ -178,10 +178,10 @@ export function Market({ model }: { model: HomeModel }) {
  */
 export function Fronts({ model }: { model: HomeModel }) {
   return (
-    <section aria-label="Competitions">
+    <section aria-label="Competitions" data-tour="home-fronts">
       <div className={styles.sect}>
         <h2 className={styles.sectT}>
-          {model.phase === 'closed' ? 'How It Finished' : 'On All Fronts'}
+          {model.phase === 'closed' ? 'Final Positions' : 'On All Fronts'}
         </h2>
       </div>
       <div className={styles.fronts}>
@@ -290,7 +290,7 @@ export function Matchweek({ model }: { model: HomeModel }) {
  */
 export function StandingsTable({ model }: { model: HomeModel }) {
   return (
-    <section aria-label="Standings">
+    <section aria-label="Standings" data-tour="home-standings">
       <div className={styles.sect}>
         <h2 className={styles.sectT}>
           {model.phase === 'closed' ? 'The Final Table' : 'The Table'}

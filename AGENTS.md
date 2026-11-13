@@ -46,6 +46,11 @@ and keep fixtures disposable.
 
 Do not claim a feature is live on Vercel until the build passes.
 
+Before merging, have a reviewer with fresh context read the branch's diff
+against `REVIEW.md` (in Claude Code, `/code-review`). Fix every Important
+finding or dismiss it with a reason in the PR description. Every PR runs
+`.github/workflows/pr-checks.yml`, and `main` won't merge until it passes.
+
 ## Ask before you act
 
 These have consequences that a rerun cannot undo. Get a yes first:
@@ -80,7 +85,7 @@ or direct imperatives ("Press Enter to open"). Ban "allows you to" and "lets you
 Avoid pseudo-passive status tags like "if it holds" in favor of direct sports-journal copy ("projected €34m").
 
 A heading names the thing beneath it; it does not caption it. "Title-Winning
-XI", not "The XI That Won It". "League & Cups", not "How It Splits".
+XI", not "The XI That Won It". "League & Cups", not "How It Splits". A heading has no question word (how, what, where, when, who, which), no relative clause ("Players Who Leave"), no pronoun (it, you, we, he, they), no auxiliary or modal verb (is, can, can’t, will) and no question mark. "Your" is fine: "Your Deals" is a name. `scripts/check-ui-rules.mjs` rejects a title-case heading that breaks this (DECISIONS 2026-11-11).
 
 Say **Club Balance**, never "FAAB", in anything a user reads. Leagues cycle
 indefinitely; they never "complete".

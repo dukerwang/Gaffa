@@ -519,23 +519,19 @@ export async function runSeasonReset(
   }
 
   if (league.status === 'offseason') {
-    // Check if matchups or tournaments are missing
+    // A reset that finished leaves a schedule. It leaves no cups: those are
+    // drawn later, after the gameweek before each one starts, so their absence
+    // here says nothing about whether the reset ran.
     const { count: matchupCount } = await admin
       .from('matchups')
       .select('id', { count: 'exact', head: true })
       .eq('league_id', leagueId);
 
-    const { count: tournamentCount } = await admin
-      .from('tournaments')
-      .select('id', { count: 'exact', head: true })
-      .eq('league_id', leagueId)
-      .eq('season', league.current_season);
-
-    if ((matchupCount ?? 0) > 0 && (tournamentCount ?? 0) >= 3) {
+    if ((matchupCount ?? 0) > 0) {
       throw new Error(`League is already in offseason mode (season: ${league.current_season}). Reset already ran.`);
     }
 
-    console.warn(`[seasonReset] League is in offseason but has missing schedule (${matchupCount}) or tournaments (${tournamentCount}). Retrying generation steps.`);
+    console.warn(`[seasonReset] League is in offseason but has no schedule. Retrying generation steps.`);
     
     // Step 9: Generate new matchup schedule for the upcoming season.
     const scheduleResult = await insertMatchups(admin, leagueId);
@@ -543,7 +539,7 @@ export async function runSeasonReset(
       throw new Error('Failed to generate matchup schedule during retry.');
     }
 
-    // Step 10: Generate all three tournament brackets for the new season.
+    // Step 10: Draw any cup that is due (none is at kickoff).
     const tournamentResult = await createAllTournaments(admin, leagueId, league.current_season);
 
     // Reconstruct prizes list from transactions table to send notifications

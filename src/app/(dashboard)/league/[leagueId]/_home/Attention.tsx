@@ -76,7 +76,7 @@ export default function Attention({
 
     // There are dismissed items; show a minimal strip so the user can restore them.
     return (
-      <section className={styles.attn} aria-label="Nothing needs you">
+      <section className={styles.attn} aria-label="Nothing needs you" data-tour="home-alerts">
         <div className={styles.attnHd}>
           <h2 className={styles.attnT}>Nothing needs you</h2>
           <button type="button" className={styles.attnRestore} onClick={restore}>
@@ -92,7 +92,7 @@ export default function Attention({
   }
 
   return (
-    <section className={styles.attn} aria-label="Needs you">
+    <section className={styles.attn} aria-label="Needs you" data-tour="home-alerts">
       <div className={styles.attnHd}>
         <h2 className={styles.attnT}>Alerts</h2>
         <span className={styles.attnHint}>

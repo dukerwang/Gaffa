@@ -1,0 +1,33 @@
+:root{
+  --bg:#F8F4EC;--card:#FCFAF7;--card-alt:#F9F6F1;--sec:#EBE8DE;
+  --ink:#1B1915;--ink2:#49443B;--muted:#635D51;
+  --border:#C2BDB5;--subtle:#D9D5CF;--strong:#8C857A;
+  --g50:#EAF5ED;--g100:#D6EBDC;--g200:#ADD6BA;--g300:#3B8D5D;--accent:#0C6D3E;--top:#185B37;--g900:#16452A;
+  --live:#B23731;--gold:#805D00;--silver:#66635C;
+  --serif:'Newsreader',Georgia,serif;--sans:'Hanken Grotesk',system-ui,sans-serif;--label:'Sofia Sans Semi Condensed','Arial Narrow',sans-serif;
+  --shadow-card:0 1px 2px rgba(23,20,15,.05),0 8px 20px -12px rgba(23,20,15,.15);
+  --shadow-lift:0 1px 3px rgba(28,28,28,.08),0 8px 24px rgba(28,28,28,.14);
+}
+*{box-sizing:border-box}
+body{margin:0;background:#E9E5DC;font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased}
+.q{max-width:1320px;margin:0 auto;padding:28px 24px 8px}
+.q h1{font-family:var(--serif);font-size:28px;margin:0 0 6px;font-weight:600}
+.q p{margin:0;color:var(--ink2);font-size:15px;max-width:760px;line-height:1.5}
+.row{display:flex;gap:28px;justify-content:center;align-items:flex-start;padding:24px;flex-wrap:wrap}
+.opt{display:flex;flex-direction:column;gap:12px;align-items:center;cursor:pointer}
+.opt .cap{width:390px;padding:0 4px}
+.opt .cap b{font-family:var(--serif);font-size:20px;display:block}
+.opt .cap span{font-size:13.5px;color:var(--ink2);line-height:1.45;display:block;margin-top:3px}
+.opt.selected .phone{outline:3px solid var(--accent);outline-offset:4px}
+.phone{width:390px;border-radius:30px;overflow:hidden;background:var(--bg);box-shadow:0 2px 6px rgba(0,0,0,.08),0 30px 60px -30px rgba(0,0,0,.35)}
+/* topbar stub */
+.tb{height:52px;background:var(--top);display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:#F3EEE3}
+.tb .wm{font-family:var(--serif);font-weight:700;font-size:19px;letter-spacing:-.01em}
+.tb .lg{font-family:var(--label);font-size:13px;font-weight:600;opacity:.85}
+.crest{display:inline-block;flex:none}
+.crest svg{width:100%;height:auto;display:block}
+.c20{width:20px}.c24{width:24px}.c28{width:28px}.c36{width:36px}.c44{width:44px}.c52{width:52px}
+.lab{font-family:var(--label);font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.serif{font-family:var(--serif)}
+.num{font-variant-numeric:tabular-nums}
+.you{color:var(--accent)}

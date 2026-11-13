@@ -65,10 +65,10 @@ If a starter is out, Gaffa checks your bench for cover in a fixed order — **DE
 
 There are **two** locks, and they're different:
 
-- **Your formation** locks as soon as the first match involving *any* of your squad kicks off.
+- **Your formation** stays open after kickoff, but only for shapes that still have a slot for every starter who has locked.
 - **An individual player** locks only when *his own club* kicks off.
 
-So the gameweek does **not** shut in one go. Until a player's club kicks off you can still move him, which means you can react to Saturday lunchtime results before the late games. What you can't do is reshape the side after your first player is already out there.
+So the gameweek does **not** shut in one go. Until a player's club kicks off you can still move him, which means you can react to Saturday lunchtime results before the late games. What you can't do is pick a shape that has no place for someone already out there.
 
 Once **this gameweek's last match kicks off**, you can set **next week's** lineup and move players to academy — same moment for everyone. IR moves open then too, except for a player in this week's lineup, starting or on the bench: he stays locked until the week settles, because moving him on or off IR would change the points he already scored. This week's matchup, scores, and live XI stay up until the week actually settles (the morning review). A postponed match with no kickoff time is ignored, so one abandoned fixture cannot hold the league on this week's editor.
 
@@ -130,7 +130,7 @@ A dynasty league drafts **once**, before its first season (a redraft league draf
 - It's a **snake draft**: order reverses every round, running for as many rounds as your roster size, so everyone finishes with a full squad.
 - Any active, undrafted Premier League player is available. There's no separate rookie pool.
 - Each pick has a **90-second clock**. Miss it and the system picks for you — from players you've pre-starred if you set a queue, otherwise by whichever position you need most.
-- When the last pick lands, the season schedule is generated and normal play switches on. Cup brackets wait until gameweek 7 in a league's first season, so the seeds reflect real form (§6).
+- When the last pick lands, the season schedule is generated and normal play switches on. Cups aren't drawn at kickoff. Each is drawn later from the finished table (§6).
 
 **Why only one draft ever?** Because a dynasty league where talent arrives by lottery every year isn't a dynasty. After the initial draft, every player who enters the league has to be *bought* — which is what makes the Club Balance meaningful and a good squad an achievement rather than a draft slot.
 
@@ -267,7 +267,7 @@ It works — an absent starter is replaced from your bench once his fixture fini
 
 In the league it's a draw — a gap of 10 or fewer is a draw, and 0–0 qualifies.
 
-In a cup tie there are no draws, so it has to resolve. The first tie-break is the best individual performer, but at 0–0 nobody has one: every player scored zero, so there's nothing to compare. In that case the club in the **higher bracket position** advances — the better seed in the opening round. So a genuine 0–0 cup tie is settled by where you finished in the league, which is the only thing left to separate the two sides.
+In a cup tie there are no draws, so it has to resolve. The first tie-break is the best individual performer, but at 0–0 nobody has one: every player scored zero, so there's nothing to compare. In that case the club in the **higher bracket position** advances: the better seed in a seeded round, or the club higher in the table at the draw in a League Cup round that was drawn. So a genuine 0–0 cup tie is settled by where you stand in the league, which is the only thing left to separate the two sides.
 
 ---
 
@@ -290,17 +290,32 @@ It solves a real problem with league-only fantasy football, too: by March, half 
 **You don't set a separate cup lineup.** Your gameweek score is calculated once from your one XI, and that same score counts for your league match *and* any cup tie you have that week. One team, one performance, multiple competitions — exactly as a real squad plays a midweek cup game with the players it has.
 
 - **Brackets are seeded on league position** in the standard pattern (1 v 16, 8 v 9, 5 v 12 …), and **byes go to the top seeds**. Finishing high in the table is worth something beyond the table.
-- **In a league's first season, brackets are seeded at gameweek 7**, not at the draft. Seeding before anyone has played makes the seeds and byes arbitrary. A league with a previous season seeds immediately from its archived standings.
+- **Each cup is drawn once, after the last matchweek before its first round, from the league table as it stands then.** The League Cup's first round is MW16, so it's drawn after MW15. The Champions Cup's is MW32, so it's drawn after MW31, and the Consolation Cup is drawn with it. The same rule holds in a league's first season and every season after, so a club's finish last year doesn't earn it a bye this year. The table counts finished matchweeks only, never one still being scored. If clubs are level on everything in the table, last season's final position separates them.
+- **Every manager gets a notification when a cup is drawn**, with their opponent or their bye, and again for each League Cup round that's drawn after it.
 - Some rounds are **two-legged**, decided on **aggregate** across both gameweeks.
 - **There are no draws in a cup.** The league's 10-point draw band doesn't apply — somebody has to advance.
 - **Level ties are settled by your best individual performer.** If the scores are equal, the club whose highest-scoring single player outscored the other's goes through.
-- **If even that is level** — including a 0–0, where nobody has a best performer — the club in the **higher bracket position** advances. In the opening round that's the better seed.
+- **If even that is level** — including a 0–0, where nobody has a best performer — the club in the **higher bracket position** advances. In a seeded round that's the better seed; in a drawn League Cup round it's the club that stood higher in the table when the round was drawn.
 
 That tie-break is worth thinking about in a cup week. A side built on one outstanding player and a thin supporting cast can lose a league match on aggregate points and still survive a cup tie on the strength of that one performance.
 
 Everything advances automatically as gameweeks resolve — there's nothing to confirm.
 
-In a small league (4–6 managers) every club enters the Champions Cup and the Consolation Cup holds placeholder slots; there aren't enough teams for three meaningful brackets.
+### The League Cup draw
+
+The Champions Cup is a fixed, seeded bracket: once it's drawn after MW31, you can see your whole path to the final. The **League Cup is drawn round by round.** Its first round is seeded, with byes to the top seeds, and every round after that is drawn at random once the round before it finishes. You get a notification with your opponent as soon as the draw is made.
+
+**Why a draw?** Two seeded cups taken from the same table come out as the same bracket: in a small league, the Champions Cup and the League Cup would be the same ties in the same order, one story told twice. An open draw is also how domestic cups work in real football, where you don't know who you'll get until the balls come out.
+
+### Small leagues (4–6 managers)
+
+Every club enters the Champions Cup, and the Consolation Cup is played by the clubs it knocks out:
+
+- **6 clubs:** both quarter-final losers and both semi-final losers. Their semi-finals are drawn once all four are known, and played over MW36 and MW37, with the final at MW38.
+- **5 clubs:** the quarter-final loser and both semi-final losers. The highest-placed of the three gets a bye to the final.
+- **4 clubs:** the two semi-final losers, in a single final at MW38.
+
+So in a small league, going out of the Champions Cup isn't the end of your season: there's still a trophy to play for.
 
 Cup results feed end-of-season prize money (§14) — so a cup run pays as well as flatters.
 
@@ -563,7 +578,7 @@ Once every gameweek and cup tie is complete, the commissioner triggers the reset
 2. **The season is archived** — final standings, every matchup, cup winners, and each player's season stats and ranks are written to the permanent record.
 3. **Placement and cup prizes are paid** into Club Balances. Finishing first pays **€40m**, scaling down to **€20m** for last — a flatter curve than it looks, because the bulk of league earnings now arrives monthly during the season (§11). Cup money is on top: **€50m** to the Champions Cup winner (**€20m** runner-up), **€25m** to the League Cup or Consolation Cup winner (**€10m** runner-up each).
 4. **Records reset, money doesn't.** Wins, losses, draws and points go to zero. Club Balance carries over untouched.
-5. **A new season is generated** — the season counter advances, and a fresh schedule plus all three cup brackets are created.
+5. **A new season is generated** — the season counter advances, and a fresh schedule is created. The cups follow when they come due (§6).
 
 **Departures are not part of the reset.** Players leaving the Premier League — including everyone at a relegated club — are picked up continuously as it happens, and each one opens a release-or-retain decision for you to answer (§13). So relegation doesn't hit you in one lump at the reset; it arrives as decisions as the summer unfolds.
 
@@ -589,7 +604,7 @@ A new club starts with the league's **median Club Balance** and pays nothing for
 
 Everything above describes a **dynasty** league, Gaffa's main format, where your squad carries over forever. When a league is created, the commissioner can choose **Redraft** instead: the format most fantasy players already know, where every season is its own competition.
 
-**Every season starts with a draft.** At the end of a season the league's results go into its history, as in dynasty. Then every squad is cleared, every Club Balance goes back to the league's budget, and the league waits for its next draft. The draft order is shuffled at random, and the commissioner can still change it or schedule the draft from the lobby. A new manager can join while the league waits. When the draft finishes, the season's schedule and cups are built. The cups are seeded from last season's final table.
+**Every season starts with a draft.** At the end of a season the league's results go into its history, as in dynasty. Then every squad is cleared, every Club Balance goes back to the league's budget, and the league waits for its next draft. The draft order is shuffled at random, and the commissioner can still change it or schedule the draft from the lobby. A new manager can join while the league waits. When the draft finishes, the season's schedule is built. The cups are drawn later in the season, from that season's table, as in dynasty.
 
 A redraft league plays the same game: the same positions, scoring, lineups, auto-subs, matchups, draw band and cups. You still trade, use IR, and sign free agents in open auctions from your Club Balance. What it leaves out is everything that only pays off over several seasons:
 

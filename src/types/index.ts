@@ -347,6 +347,15 @@ export interface RawStats {
    * not backfilled. See src/lib/fixtures/starters.ts.
    */
   started?: boolean;
+  /**
+   * Goals his club conceded in the whole match, whether or not he was on the
+   * pitch for them, from the fixture's final score. FPL's `clean_sheets` only
+   * counts his own minutes, so a defender subbed off before his side conceded
+   * keeps one; the performance block reads this to say so instead of printing
+   * a bare "clean sheet" beside a defeat. Written by the live stats sync;
+   * absent on rows synced before 2026-10-26 unless backfilled.
+   */
+  team_goals_conceded?: number;
 }
 
 export interface DraftPick {
@@ -496,6 +505,8 @@ export interface TournamentRound {
   start_gameweek: number;
   end_gameweek: number;
   is_two_leg: boolean;
+  /** Set when the round's ties were drawn at random (migration 183); null for a seeded round. */
+  drawn_at: string | null;
   created_at: string;
   // Joined fields
   matchups?: TournamentMatchup[];
@@ -511,6 +522,8 @@ export interface TournamentMatchup {
   team_a_score_leg2: number;
   team_b_score_leg2: number;
   winner_id: string | null;
+  /** How a finished tie was decided (migration 183); null for a bye or an unfinished tie. */
+  decided_by: 'score' | 'best_performer' | 'position' | null;
   next_matchup_id: string | null;
   bracket_position: number;
   status: TournamentMatchupStatus;

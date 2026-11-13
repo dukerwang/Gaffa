@@ -10,6 +10,9 @@ export type ChatTabState =
 
 export type ViewerClub = { teamId: string; name: string };
 
+/** The channel list, or one open conversation. */
+export type ChatView = 'channels' | 'chat';
+
 interface UnreadSummary {
   lobbyUnread: boolean;
   dmUnreadPeerIds: string[];
@@ -20,6 +23,7 @@ interface LeagueChatContextType {
   isOpen: boolean;
   isMinimized: boolean;
   activeTab: ChatTabState;
+  view: ChatView;
   viewerClub: ViewerClub | null;
   unreadSummary: UnreadSummary;
   openChat: (tab?: ChatTabState) => void;
@@ -28,6 +32,7 @@ interface LeagueChatContextType {
   minimizeChat: () => void;
   restoreChat: () => void;
   setActiveTab: (tab: ChatTabState) => void;
+  setView: (view: ChatView) => void;
   setViewerClub: (club: ViewerClub | null) => void;
   setUnreadSummary: React.Dispatch<React.SetStateAction<UnreadSummary>>;
 }
@@ -58,6 +63,7 @@ export function LeagueChatProvider({
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [activeTab, setActiveTab] = useState<ChatTabState>({ type: 'lobby' });
+  const [view, setView] = useState<ChatView>('channels');
   const [viewerClub, setViewerClub] = useState<ViewerClub | null>(null);
   const [unreadSummary, setUnreadSummary] = useState<UnreadSummary>({
     lobbyUnread: false,
@@ -72,9 +78,13 @@ export function LeagueChatProvider({
     }
   }, [pathname, leagueId]);
 
+  // Opening the chat lands on the channel list unless the caller names a conversation.
   const openChat = useCallback((tab?: ChatTabState) => {
     if (tab) {
       setActiveTab(tab);
+      setView('chat');
+    } else {
+      setView('channels');
     }
     setIsOpen(true);
     setIsMinimized(false);
@@ -91,6 +101,7 @@ export function LeagueChatProvider({
         setIsMinimized(false);
         return true;
       }
+      if (!prev) setView('channels');
       return !prev;
     });
   }, [isMinimized]);
@@ -110,6 +121,7 @@ export function LeagueChatProvider({
       isOpen,
       isMinimized,
       activeTab,
+      view,
       viewerClub,
       unreadSummary,
       openChat,
@@ -118,6 +130,7 @@ export function LeagueChatProvider({
       minimizeChat,
       restoreChat,
       setActiveTab,
+      setView,
       setViewerClub,
       setUnreadSummary,
     }),
@@ -126,6 +139,7 @@ export function LeagueChatProvider({
       isOpen,
       isMinimized,
       activeTab,
+      view,
       viewerClub,
       unreadSummary,
       openChat,

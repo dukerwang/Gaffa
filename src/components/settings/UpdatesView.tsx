@@ -37,7 +37,7 @@ export default function UpdatesView({ updates }: Props) {
         Back to Help
       </Link>
 
-      <h1 className={styles.pageTitle}>What&rsquo;s New</h1>
+      <h1 className={styles.pageTitle}>Updates</h1>
 
       {updates.length === 0 ? (
         <EmptyState>Nothing published yet — check back soon.</EmptyState>

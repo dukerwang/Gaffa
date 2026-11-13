@@ -14,9 +14,10 @@
  * hold. This runs at the moment of the write.
  *
  * Only rules a machine can judge live here. Rule 2 (name things, don't narrate
- * them) is a warning with a deliberately tiny pattern set, because the general
- * case needs judgement. The rest of docs/UI_RULES.md is not checkable and is
- * not attempted.
+ * them) is an error since 2026-11-11, when Duke asked for it to be enforced:
+ * a heading with a question word, a pronoun, an auxiliary verb or a question
+ * mark is a sentence, not a name. The rest of docs/UI_RULES.md is not
+ * checkable and is not attempted.
  *
  * ERRORS exit 2 (the hook feeds them back). WARNINGS exit 0.
  */
@@ -53,8 +54,35 @@ const MINOR = new Set([
   'vs', 'with', 'yet',
 ]);
 
-/** Rule 2's tiny denylist: headings that narrate rather than name. */
-const COY = [/^How\b/, /\bThat\b/, /\bIt\b/];
+/**
+ * Rule 2: a heading is a noun phrase. Each of these marks a sentence instead:
+ * a question or relative word ("Where the Fee Goes", "Players Who Leave"), a
+ * pronoun ("You Lead", "How It Splits"), an auxiliary or modal ("When You
+ * Can't Bid") or a question mark. "Your" is allowed: "Your Deals" is a name.
+ */
+const NARRATION = [
+  [/^(?:how|what|where|when|why|who|which|whose|if|whether)\b/i, 'starts like a sentence'],
+  [/\b(?:who|whom|whose|where|when|which|that|what)\b/i, 'has a question or relative word'],
+  [/\b(?:it|it's|it’s|he|him|she|her|they|them|we|us|you|you're|you’re|you've|you’ve|you'll|you’ll)\b/i, 'has a pronoun'],
+  [/\b(?:is|are|was|were|been|can|can't|can’t|cannot|could|will|won't|won’t|would|should|must|does|doesn't|doesn’t|didn't|didn’t|don't|don’t)\b/i, 'has a verb'],
+  [/\?$/, 'is a question'],
+];
+
+/** Headings are title case; a sentence-case string is prose (an empty state, a status), which may be a sentence. */
+function isTitleCase(text) {
+  const words = text.replace(/^\d+\.\s*/, '').split(/\s+/).map((w) => w.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '')).filter(Boolean);
+  const significant = words.filter((w, i) => i === 0 || !MINOR.has(w.toLowerCase()));
+  return words.length >= 2 && significant.every((w) => /^\p{Lu}/u.test(w));
+}
+
+function checkNaming(f, src, index, text) {
+  if (!isTitleCase(text)) return;
+  const hit = NARRATION.find(([re]) => re.test(text));
+  if (hit) {
+    err(f, lineOf(src, index), 'heading-narrates',
+      `"${text}" ${hit[1]}, so it narrates. Name the thing instead: "Fee Split", not "Where the Fee Goes" (UI_RULES rule 2).`, text);
+  }
+}
 
 // ── 1. Docs must not contradict the decisions log ──────────────────────────
 // This is the exact failure that produced eleven months of lowercase headings:
@@ -173,9 +201,22 @@ function checkTsx(f, src) {
       err(f, lineOf(src, m.index), 'heading-case',
         `"${text}" — headings are title case. Lowercase: ${bad.join(', ')}`, text);
     }
-    if (COY.some((p) => p.test(text))) {
-      warn(f, lineOf(src, m.index), 'heading-narrates',
-        `"${text}" reads as a caption. Name the thing instead (UI_RULES rule 2).`, text);
+  }
+
+  // Rule 2 covers every heading: h1–h6, any element styled as a title or
+  // heading, and a component's title or heading prop.
+  const headings = [
+    /<h[1-6](?:\s[^>]*)?>([^<>{}]+)<\/h[1-6]>/g,
+    /<\w+\s[^>]*className=\{?[^>]*?(?:[Tt]itle|[Hh]eading)\w*[^>]*>([^<>{}]+)</g,
+    /<[A-Z]\w*\s[^>]*?\b(?:title|heading)="([^"]+)"/g,
+  ];
+  const seen = new Set();
+  for (const hre of headings) {
+    for (const hm of src.matchAll(hre)) {
+      const text = hm[1].trim().replace(/&rsquo;|&apos;/g, '’');
+      if (!text || seen.has(hm.index) || /[.!]$/.test(text) || text.split(/\s+/).length > 8) continue;
+      seen.add(hm.index);
+      checkNaming(f, src, hm.index, text);
     }
   }
 }

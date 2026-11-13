@@ -1,0 +1,53 @@
+/* First Look: a grid of cards, each one picture and its explanation. Cards in
+   a row share their row heights through subgrid, so titles, pictures and text
+   line up across the row. */
+
+.grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s4);
+}
+
+.card {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: var(--s4);
+  min-width: 0;
+  padding: var(--s5);
+  border-radius: 14px;
+  background: var(--color-bg-card);
+  border: var(--line);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-20);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--color-text-primary);
+}
+
+.picture {
+  min-width: 0;
+  align-self: center;
+}
+
+.body {
+  margin: 0;
+  font-size: var(--t-15);
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+  text-wrap: pretty;
+}
+
+@media (max-width: 1080px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .grid { grid-template-columns: minmax(0, 1fr); gap: var(--s3); }
+  .card { padding: var(--s4); }
+}

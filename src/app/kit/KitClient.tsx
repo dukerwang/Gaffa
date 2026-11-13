@@ -182,7 +182,7 @@ function BiddingBoard() {
     >
       <div className={styles.bidLayout}>
         <div className={styles.lot}>
-          <Portrait photoUrl={saka.photo} name={saka.name} club={saka.club} size="lg" />
+          <Portrait headTopPct={null} headWidthPct={null} photoUrl={saka.photo} name={saka.name} club={saka.club} size="lg" />
           <div className={styles.lotText}>
             <span className="g-namerow">
               <PositionBadge position={saka.pos} />
@@ -341,7 +341,7 @@ function PickersBoard() {
       <ul className={styles.rows}>
         {PLAYERS.slice(1, 4).map((p) => (
           <li key={p.id} className={styles.playerRow}>
-            <Portrait photoUrl={p.photo} name={p.name} club={p.club} size="sm" />
+            <Portrait headTopPct={null} headWidthPct={null} photoUrl={p.photo} name={p.name} club={p.club} size="sm" />
             <span className={styles.playerText}>
               <span className="g-namerow">
                 <PositionBadge position={p.pos} size="sm" />
@@ -410,7 +410,7 @@ function TabsBoard() {
           <div className={styles.portraitRow}>
             {shown.map((p) => (
               <figure key={p.id} className={styles.portraitCell}>
-                <Portrait photoUrl={p.photo} name={p.name} club={p.club} size="md" />
+                <Portrait headTopPct={null} headWidthPct={null} photoUrl={p.photo} name={p.name} club={p.club} size="md" />
                 <figcaption>{p.name.split(' ').slice(-1)[0]}</figcaption>
               </figure>
             ))}

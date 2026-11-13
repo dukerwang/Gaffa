@@ -11,7 +11,7 @@ const FIGS = ['Club Balance', 'Squad value', 'Points for', 'Squad age'];
  */
 export default function Loading() {
   return (
-    <div className={`${styles.shell} ${styles.page} g-page`} aria-busy="true" aria-label="Loading club">
+    <div className={`${styles.shell} ${styles.page} g-page`} data-route-skeleton aria-busy="true" aria-label="Loading club">
       <header className={`${styles.masthead} g-panel`}>
         <div className={styles.mhTop}>
           <div className={styles.mhCrest}>

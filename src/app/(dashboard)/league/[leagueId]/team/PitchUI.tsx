@@ -33,6 +33,7 @@ import { calculateAgeInYears, getSeasonReferenceDate } from '@/lib/transfers/aca
 import { serializeLineup } from '@/lib/lineups/lineupSerializer';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { IconButton } from '@/components/ui/IconButton';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -285,7 +286,7 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isDimmed, isEmp
                 }
             }}
             style={isLocked ? { opacity: 0.7 } : undefined}
-            title={isLocked ? 'Match started (Locked) — click to view' : isInvalid ? 'Player is not eligible for this position' : 'Tap to swap · tap the name for his card'}
+            title={isLocked ? 'Match started (Locked) — click to view' : isInvalid ? 'Player is not eligible for this position' : 'Tap to swap · tap the nameplate for his card'}
         >
             {/* The lot-size portrait, with the club on its crest chip. The node
                 used to carry a three-letter club abbreviation as a line of text
@@ -319,19 +320,23 @@ function PitchNode({ slotPos, player, isSelected, isValidTarget, isDimmed, isEmp
                 <NodeBadge cell={scoreCell(status, points, projected)} />
             </span>
 
-            <div className={chipCls}>
+            {/* The whole nameplate opens the card, not just the glyphs of the
+                name. The name alone was a 12px-tall target inside a
+                swap-arming button, so a click a pixel off it armed the swap
+                instead and the card seemed to open at random. */}
+            <div
+                className={chipCls}
+                onClick={player && onViewDetails ? (e) => {
+                    e.stopPropagation();
+                    onViewDetails();
+                } : undefined}
+                title={player ? `${pitchFullName(player)} — tap the nameplate for his card` : undefined}
+            >
                 <div className={styles.nodeChipBody}>
                     {player ? (
                         <>
                             <span
                                 className={`${styles.nodePlayerNameCenter} ${displayName(player).length > 12 ? styles.nodeNameLong : ''} ${isInvalid ? styles.nodeNameInvalid : ''}`}
-                                onClick={(e) => {
-                                    if (onViewDetails) {
-                                        e.stopPropagation();
-                                        onViewDetails();
-                                    }
-                                }}
-                                title={`${pitchFullName(player)} — tap the name for his card`}
                             >
                                 {displayName(player)}
                             </span>
@@ -1976,7 +1981,7 @@ export default function PitchUI({
                                 interactive={false}
                             />
                             <div className={styles.boardTitles}>
-                                <h1 className={styles.boardTeamName}>{teamName}</h1>
+                                <h1 className={styles.boardTeamName}>{teamName} <WalkthroughButton chapter="lineup" /></h1>
                                 <span className={styles.boardLeague}>{masthead.leagueName}</span>
                             </div>
                         </div>
@@ -1996,7 +2001,7 @@ export default function PitchUI({
                                 <Icon name="share" size={13} strokeWidth={1.75} />
                                 Share Lineup
                             </NavigationLink>
-                            <button className={styles.saveBtn} onClick={handleSave} disabled={!canSave || lineupLocked}>
+                            <button className={styles.saveBtn} data-tour="lineup-save" onClick={handleSave} disabled={!canSave || lineupLocked}>
                                 {saving ? 'Saving…' : 'Save Lineup'}
                             </button>
                         </div>
@@ -2022,7 +2027,7 @@ export default function PitchUI({
                 )}
 
             {/* ── Formation bar ── */}
-            <div className={styles.formationBar}>
+            <div className={styles.formationBar} data-tour="lineup-formation">
                 <span className={`g-label ${styles.formationBarLabel}`}>{lineupWeekLabel ?? 'Formation'}</span>
                 <div className={styles.formationGroups}>
                     {formationsByBackLine().map((group) => (
@@ -2170,7 +2175,7 @@ export default function PitchUI({
                         </div>
                     )}
 
-                    <div className={styles.pitchContainer}>
+                    <div className={styles.pitchContainer} data-tour="lineup-pitch">
                         {/* Outer green run-off; inner pitchField = touchlines inside the grass */}
                         <div className={styles.pitchField}>
                         {/* Attacking end (top) */}
@@ -2275,7 +2280,7 @@ export default function PitchUI({
                         pool, which is only the players not currently picked.
                         This sits BELOW .pitchContainer: nothing inside the
                         pitch, and no node position, is touched by it. */}
-                    <div className={styles.benchBlock}>
+                    <div className={styles.benchBlock} data-tour="lineup-bench">
                         <div className={styles.benchHead}>
                             <h3 className={styles.benchTitle}>Bench</h3>
                             <span className="g-label">
@@ -2375,6 +2380,7 @@ export default function PitchUI({
                     selected states had already drifted apart. One row class
                     serves all four now. */}
                 <div
+                    data-tour="lineup-rail"
                     className={styles.sidebarCol}
                     data-squad-open={squadOpen ? 'true' : 'false'}
                     style={isPhone ? {
@@ -2394,6 +2400,7 @@ export default function PitchUI({
                         legible without opening anything. */}
                     <motion.button
                         type="button"
+                        data-tour="lineup-handle"
                         className={styles.squadHandle}
                         onPanStart={isPhone ? handleSquadPanStart : undefined}
                         onPan={isPhone ? handleSquadPan : undefined}

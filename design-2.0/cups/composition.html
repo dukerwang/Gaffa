@@ -1,0 +1,157 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700&family=Hanken+Grotesk:wght@400;500;600;700&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&display=swap">
+<style>{{css}}
+/* ── shared: the draw as round sections ── */
+.draw{padding:4px 16px 24px}
+.rh{display:flex;align-items:baseline;justify-content:space-between;margin:22px 0 10px}
+.rh h3{font-family:var(--serif);font-size:20px;margin:0;font-weight:600}
+.rh .when{font-family:var(--label);font-size:13px;font-weight:600;color:var(--ink2)}
+.ties{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tie{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:12px 12px;min-height:56px}
+.tie+.tie{border-top:1px solid var(--subtle)}
+.side{display:flex;align-items:center;gap:8px;min-width:0;font-weight:600;font-size:14px}
+.side.r{flex-direction:row-reverse;text-align:right}
+.side span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seed{font-family:var(--label);font-size:11px;color:var(--muted);font-weight:600}
+.vs{font-family:var(--label);font-size:12px;color:var(--muted);font-weight:600}
+.tie.mine{background:var(--g50)}
+.byes{display:flex;align-items:center;gap:8px;padding:11px 12px;border-top:1px solid var(--subtle);font-size:13px;color:var(--ink2)}
+.byes .crest{margin-left:2px}
+.hat{border:1px dashed var(--strong);border-radius:10px;padding:14px 12px;display:flex;flex-direction:column;gap:10px;background:transparent}
+.hat .lineup{display:flex;gap:10px;align-items:center}
+.hat .q2{width:28px;height:34px;border-radius:6px;border:1.5px dashed var(--strong);display:grid;place-items:center;font-family:var(--serif);color:var(--muted);font-size:15px}
+.hat p{margin:0;font-size:13px;color:var(--ink2)}
+
+/* ── A: trophy shelf ── */
+.shelfA{background:var(--top);padding:18px 16px 64px;color:#F3EEE3}
+.shelfA h2{font-family:var(--serif);font-size:30px;margin:0 0 14px;font-weight:600;color:#F3EEE3}
+.cab{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.cab a{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px 10px;border-radius:10px;text-decoration:none;color:inherit;position:relative}
+.cab a .tro{height:96px;display:flex;align-items:flex-end;filter:drop-shadow(0 8px 10px rgba(0,0,0,.25))}
+.cab a .tro svg{height:96px;width:auto}
+.cab a.dim .tro{opacity:.55}
+.cab a.on{background:rgba(255,255,255,.08)}
+.cab a.on::after{content:"";position:absolute;left:30%;right:30%;bottom:0;height:3px;border-radius:2px;background:#F3EEE3}
+.cab .nm{font-family:var(--serif);font-size:15px;font-weight:600}
+.cab .st{font-family:var(--label);font-size:12.5px;font-weight:600;opacity:.82;text-align:center;line-height:1.25}
+.nextA{margin:-46px 16px 0;background:var(--card);border-radius:12px;box-shadow:var(--shadow-lift);padding:14px 14px 12px}
+.bug{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px}
+.bug .tm{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;font-weight:600;font-size:14px}
+.bug .mid{font-family:var(--serif);font-size:15px;color:var(--muted)}
+.bug .mid b{display:block;font-size:26px;color:var(--ink);font-weight:600;line-height:1}
+.meta{display:flex;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--subtle);font-size:12.5px;color:var(--ink2)}
+.meta b{font-weight:600;color:var(--ink)}
+
+/* ── B: next tie first ── */
+.heroB{background:var(--top);color:#F3EEE3;padding:16px 16px 18px}
+.heroB .comp{display:flex;align-items:center;gap:8px;font-family:var(--serif);font-size:17px;font-weight:600}
+.heroB .comp .pip{color:#E6DCC4}
+.heroB .bug{margin-top:16px}
+.heroB .bug .tm{color:#F3EEE3}
+.heroB .bug .mid{color:rgba(243,238,227,.7)}
+.heroB .bug .mid b{color:#F3EEE3}
+.heroB .foot{margin-top:14px;display:flex;justify-content:space-between;font-family:var(--label);font-weight:600;font-size:13px;color:rgba(243,238,227,.85)}
+.list{margin:16px 16px 0;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.li{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;padding:10px 12px;min-height:64px}
+.li+.li{border-top:1px solid var(--subtle)}
+.li .tro{display:flex;justify-content:center}
+.li .tro svg{height:48px;width:auto}
+.li b{font-family:var(--serif);font-size:16px;font-weight:600;display:block}
+.li small{font-size:12.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}.li>span:nth-child(2){min-width:0}
+.li .pz{font-family:var(--serif);font-size:15px;font-weight:600;text-align:right}
+.li .pz small{display:block;font-family:var(--label);font-size:11px;color:var(--muted);font-weight:600}
+.li.on{background:var(--g50)}
+
+/* ── C: competition hero ── */
+.tabsC{display:flex;gap:18px;padding:12px 16px 0;border-bottom:1px solid var(--subtle);background:var(--bg)}
+.tabsC a{font-family:var(--label);font-weight:600;font-size:14.5px;color:var(--ink2);padding:8px 0 10px;text-decoration:none;white-space:nowrap}
+.tabsC a.on{color:var(--ink);box-shadow:inset 0 -2.5px 0 var(--ink)}
+.heroC{display:grid;grid-template-columns:120px 1fr;gap:14px;padding:18px 16px 6px;align-items:end}
+.heroC .tro{display:flex;justify-content:center;filter:drop-shadow(0 10px 12px rgba(40,30,10,.18))}
+.heroC .tro svg{height:170px;width:auto}
+.heroC h2{font-family:var(--serif);font-size:30px;margin:0;font-weight:600;line-height:1.05}
+.stakes{display:flex;gap:16px;margin-top:10px}
+.stakes div{display:flex;flex-direction:column}
+.stakes b{font-family:var(--serif);font-size:22px;font-weight:600}
+.road{margin:14px 16px 0;position:relative;padding:14px 0 4px}
+.road .line{position:absolute;left:8px;right:8px;top:21px;height:2px;background:var(--subtle)}
+.road .done{position:absolute;left:8px;top:21px;height:2px;width:0;background:var(--accent)}
+.road ol{list-style:none;margin:0;padding:0;display:flex;justify-content:space-between;position:relative}
+.road li{display:flex;flex-direction:column;align-items:center;gap:6px;width:25%}
+.road li i{width:16px;height:16px;border-radius:50%;background:var(--bg);border:2px solid var(--strong)}
+.road li.now i{border-color:var(--accent);background:var(--accent);box-shadow:0 0 0 4px var(--g100)}
+.road li b{font-family:var(--label);font-size:12.5px;font-weight:700}
+.road li small{font-family:var(--label);font-size:12px;color:var(--muted);font-weight:600}
+</style></head><body>
+<div class="q"><h1>Which composition should the Cups page start from?</h1>
+<p>Matchday Militia as it stands today (MW8), seen as Not Too Xabi. All three use the same draw below the fold, shown as stacked rounds; the draw itself is the next question. Click one to choose.</p></div>
+<div class="row">
+
+<!-- A -->
+<div class="opt" data-choice="a" onclick="toggleSelect(this)">
+<div class="phone">
+  <div class="tb"><span class="wm">Gaffa</span><span class="lg">Matchday Militia</span></div>
+  <div class="shelfA">
+    <h2>Cups</h2>
+    <div class="cab">
+      <a class="dim"><span class="tro">{{t:champions_cup_card}}</span><span class="nm">Champions</span><span class="st">QF · MW32</span></a>
+      <a class="on"><span class="tro">{{t:league_cup_card}}</span><span class="nm">League Cup</span><span class="st">QF · MW16</span></a>
+      <a class="dim"><span class="tro">{{t:consolation_cup_card}}</span><span class="nm">Consolation</span><span class="st">From MW36</span></a>
+    </div>
+  </div>
+  <div class="nextA">
+    <div class="bug">
+      <div class="tm"><span class="crest c44">{{c:Not Too Xabi}}</span><span class="you">Not Too Xabi</span></div>
+      <div class="mid"><b>v</b></div>
+      <div class="tm"><span class="crest c44">{{c:tottenyang FC}}</span><span>tottenyang FC</span></div>
+    </div>
+    <div class="meta"><span><b>Quarter-Final</b> · MW16</span><span>Sat 19 Dec</span></div>
+  </div>
+  {{draw}}
+</div>
+<div class="cap"><b>A · Trophy Shelf</b><span>The three trophies stand on a green shelf and act as the cup switcher, each carrying your status in it. Your next tie in the selected cup sits on the shelf's edge, then the draw.</span></div>
+</div>
+
+<!-- B -->
+<div class="opt" data-choice="b" onclick="toggleSelect(this)">
+<div class="phone">
+  <div class="tb"><span class="wm">Gaffa</span><span class="lg">Matchday Militia</span></div>
+  <div class="heroB">
+    <div class="comp"><span class="pip">{{t:league_cup_pip}}</span>League Cup Quarter-Final</div>
+    <div class="bug">
+      <div class="tm"><span class="crest c52">{{c:Not Too Xabi}}</span><span>Not Too Xabi</span></div>
+      <div class="mid"><b>v</b></div>
+      <div class="tm"><span class="crest c52">{{c:tottenyang FC}}</span><span>tottenyang FC</span></div>
+    </div>
+    <div class="foot"><span>MW16 · Sat 19 Dec</span><span>8 Weeks</span></div>
+  </div>
+  <div class="list">
+    <div class="li"><span class="tro">{{t:champions_cup_card}}</span><span><b>Champions Cup</b><small>QF v tottenyang FC · MW32</small></span><span class="pz">€50m<small>Winner</small></span></div>
+    <div class="li on"><span class="tro">{{t:league_cup_card}}</span><span><b>League Cup</b><small>QF v tottenyang FC · MW16</small></span><span class="pz">€25m<small>Winner</small></span></div>
+    <div class="li"><span class="tro">{{t:consolation_cup_card}}</span><span><b>Consolation Cup</b><small>From MW36, if out of Champions</small></span><span class="pz">€25m<small>Winner</small></span></div>
+  </div>
+  {{draw}}
+</div>
+<div class="cap"><b>B · Next Tie First</b><span>Opens on the one thing that matters this week: your next cup tie, as a score bug. Below it, one row per cup with your status and the prize. Tap a row for its draw.</span></div>
+</div>
+
+<!-- C -->
+<div class="opt" data-choice="c" onclick="toggleSelect(this)">
+<div class="phone">
+  <div class="tb"><span class="wm">Gaffa</span><span class="lg">Matchday Militia</span></div>
+  <div class="tabsC"><a>Champions Cup</a><a class="on">League Cup</a><a>Consolation Cup</a></div>
+  <div class="heroC">
+    <span class="tro">{{t:league_cup_hero}}</span>
+    <div><h2>League Cup</h2>
+      <div class="stakes"><div><b>€25m</b><span class="lab">Winner</span></div><div><b>€10m</b><span class="lab">Runner-Up</span></div></div>
+    </div>
+  </div>
+  <div class="road"><div class="line"></div>
+    <ol><li class="now"><i></i><b>QF</b><small>MW16</small></li><li><i></i><b>SF</b><small>MW21 · 24</small></li><li><i></i><b>Final</b><small>MW31</small></li></ol>
+  </div>
+  {{draw}}
+</div>
+<div class="cap"><b>C · Competition Hero</b><span>One cup at a time, behind kit Tabs. The trophy is large and the head's instrument is the cup's road (rounds and matchweeks) plus the prize money. Your tie is highlighted inside the draw.</span></div>
+</div>
+
+</div></body></html>

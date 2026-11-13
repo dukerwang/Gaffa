@@ -20,9 +20,12 @@ import { resolveAllStalledGameweeks, processMatchupsForGameweek } from '@/lib/sc
 import { getCurrentFplSeason, getLatestReferenceStatsSeason } from '@/lib/season/currentSeason';
 import { snapshotCurrentFplFixtures } from '@/lib/fixtures/upsertFixtures';
 import { startedFixtures } from '@/lib/fixtures/starters';
+import { teamGoalsConceded as goalsConcededIn } from '@/lib/fixtures/goalsConceded';
 import { syncPlLineups } from '@/lib/fixtures/plLineups';
 import { recomputePositionRanks, type RecomputeResult } from '@/lib/stats/seasonStats';
-import type { GranularPosition, FplLivePlayerStats } from '@/types';
+import { fetchAllPagesOrThrow } from '@/lib/supabase/pagination';
+import { chunk as chunked, sameStatRow } from '@/lib/sync/statRowDiff';
+import type { GranularPosition, FplLivePlayerStats, RawStats } from '@/types';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -209,6 +212,8 @@ async function syncFplLiveRatings(
     event: number | null;
     team_h: number;
     team_a: number;
+    team_h_score: number | null;
+    team_a_score: number | null;
     kickoff_time: string | null;
   }
 
@@ -232,6 +237,12 @@ async function syncFplLiveRatings(
     teamFixtures[f.team_a].push(f.id);
   });
 
+  // What the player's side conceded in the whole match. `pl_team_id` is a
+  // seasonal FPL id, so it is only compared against this same payload.
+  const fixtureById = new Map<number, FplFixtureRaw>(fixtures.map((f: FplFixtureRaw) => [f.id, f]));
+  const teamGoalsConceded = (fixtureId: number, teamId: number | null): number | undefined =>
+    goalsConcededIn(fixtureById.get(fixtureId), teamId);
+
   // 4. Bulk lookup players to avoid N+1 queries
   const fplIds = elements.map(el => el.id);
   const { data: dbPlayers } = await supabase
@@ -242,7 +253,66 @@ async function syncFplLiveRatings(
   const playerMap = new Map();
   dbPlayers?.forEach(p => playerMap.set(p.fpl_id, p));
 
-  let saved = 0;
+  // The rows this gameweek already holds, read once. The sync runs every five
+  // minutes all gameweek long, and rewriting every player's row each time
+  // (identical values included) is what exhausted the database's disk IO
+  // budget. Each computed row is compared against what is stored and only a
+  // change is written, in batches rather than one request per player.
+  const storedRows = await fetchAllPagesOrThrow<{
+    id: string;
+    player_id: string;
+    match_id: number;
+    stats: unknown;
+    fantasy_points: number | null;
+    match_rating: number | null;
+    perf: unknown;
+  }>((from, to) =>
+    supabase
+      .from('player_stats')
+      .select('id, player_id, match_id, stats, fantasy_points, match_rating, perf')
+      .eq('season', fplSeason)
+      .eq('gameweek', gameweek)
+      .order('id')
+      .range(from, to),
+  );
+  const storedByKey = new Map<string, (typeof storedRows)[number]>();
+  const storedByPlayer = new Map<string, typeof storedRows>();
+  for (const row of storedRows) {
+    storedByKey.set(`${row.player_id}:${row.match_id}`, row);
+    const list = storedByPlayer.get(row.player_id);
+    if (list) list.push(row);
+    else storedByPlayer.set(row.player_id, [row]);
+  }
+
+  const pendingUpserts: Record<string, unknown>[] = [];
+  const staleIds: string[] = [];
+  const staleKeys = new Set<string>();
+  let unchanged = 0;
+
+  const markStale = (row: (typeof storedRows)[number]) => {
+    staleIds.push(row.id);
+    staleKeys.add(`${row.player_id}:${row.match_id}`);
+  };
+
+  const queueRow = (row: {
+    player_id: string;
+    match_id: number;
+    stats: unknown;
+    fantasy_points: number;
+    match_rating: number;
+    perf: unknown;
+    [column: string]: unknown;
+  }) => {
+    const key = `${row.player_id}:${row.match_id}`;
+    const prior = storedByKey.get(key);
+    // A row marked stale is deleted before the upserts run, so it has to be
+    // written back even if its values match.
+    if (prior && !staleKeys.has(key) && sameStatRow(prior, row)) {
+      unchanged++;
+      return;
+    }
+    pendingUpserts.push(row);
+  };
 
   // 5. Process in batches
   for (let i = 0; i < elements.length; i += 50) {
@@ -268,16 +338,14 @@ async function syncFplLiveRatings(
             .filter((id: number) => id < SYNTHETIC_MATCH_ID_FLOOR);
 
           if (realFixtureIds.length > 0) {
-            // One delete per player per gameweek, clearing only rows that no
-            // longer describe a match they featured in — synthetic placeholders
-            // and stale fixture ids — and never a sibling of a double gameweek.
-            await supabase
-              .from('player_stats')
-              .delete()
-              .eq('player_id', dbPlayer.id)
-              .eq('season', fplSeason)
-              .eq('gameweek', gameweek)
-              .not('match_id', 'in', `(${realFixtureIds.join(',')})`);
+            // Clear only rows that no longer describe a match the player
+            // featured in — synthetic placeholders and stale fixture ids —
+            // and never a sibling of a double gameweek. Found in the rows read
+            // above, so a gameweek with nothing stale costs no delete at all.
+            const realSet = new Set<number>(realFixtureIds);
+            for (const row of storedByPlayer.get(dbPlayer.id) ?? []) {
+              if (!realSet.has(row.match_id)) markStale(row);
+            }
           }
 
           // Per-match starts, for the Lineup Builder's starting lineups.
@@ -356,28 +424,29 @@ async function syncFplLiveRatings(
               dbPlayer.primary_position as GranularPosition,
               refStats as any
             );
+            const storedStats: RawStats = {
+              ...rawStats,
+              started: started.has(fixtureId),
+              team_goals_conceded: teamGoalsConceded(fixtureId, dbPlayer.pl_team_id),
+            };
 
-            const { error } = await supabase.from('player_stats').upsert(
-              {
-                player_id: dbPlayer.id,
-                match_id: fixtureId,
-                gameweek,
-                season: fplSeason,
-                stats: { ...rawStats, started: started.has(fixtureId) },
-                fantasy_points: v2.fantasyPoints,
-                match_rating: v2.rating,
-                // The explanation, banded, snapshotted alongside the score it
-                // explains — see migration 140. Bands only, never scores.
-                perf: buildPerformanceGroups(
-                  v2.breakdown,
-                  dbPlayer.primary_position as GranularPosition,
-                  rawStats,
-                  featExcessFor(rawStats, dbPlayer.primary_position as GranularPosition),
-                ),
-              },
-              { onConflict: 'player_id,season,match_id' },
-            );
-            if (!error) saved++;
+            queueRow({
+              player_id: dbPlayer.id,
+              match_id: fixtureId,
+              gameweek,
+              season: fplSeason,
+              stats: storedStats,
+              fantasy_points: v2.fantasyPoints,
+              match_rating: v2.rating,
+              // The explanation, banded, snapshotted alongside the score it
+              // explains — see migration 140. Bands only, never scores.
+              perf: buildPerformanceGroups(
+                v2.breakdown,
+                dbPlayer.primary_position as GranularPosition,
+                storedStats,
+                featExcessFor(rawStats, dbPlayer.primary_position as GranularPosition),
+              ),
+            });
           }
         } else {
           // Fallback for players who didn't play (DNP)
@@ -392,38 +461,45 @@ async function syncFplLiveRatings(
           // Clear stale placeholders only. A real fixture row here means an
           // earlier sync recorded an appearance FPL is momentarily not
           // explaining; deleting it would erase a match that was played.
-          await supabase
-            .from('player_stats')
-            .delete()
-            .eq('player_id', dbPlayer.id)
-            .eq('season', fplSeason)
-            .eq('gameweek', gameweek)
-            .gte('match_id', SYNTHETIC_MATCH_ID_FLOOR)
-            .neq('match_id', fixtureId);
+          for (const row of storedByPlayer.get(dbPlayer.id) ?? []) {
+            if (row.match_id >= SYNTHETIC_MATCH_ID_FLOOR && row.match_id !== fixtureId) markStale(row);
+          }
 
-          await supabase.from('player_stats').upsert(
-            {
-              player_id: dbPlayer.id,
-              match_id: fixtureId,
-              gameweek,
-              season: fplSeason,
-              stats: { ...rawStats, started: false },
-              fantasy_points: v2.fantasyPoints,
-              match_rating: v2.rating,
-              perf: buildPerformanceGroups(
-                v2.breakdown,
-                dbPlayer.primary_position as GranularPosition,
-                rawStats,
-                featExcessFor(rawStats, dbPlayer.primary_position as GranularPosition),
-              ),
-            },
-            { onConflict: 'player_id,season,match_id' },
-          );
-          saved++;
+          queueRow({
+            player_id: dbPlayer.id,
+            match_id: fixtureId,
+            gameweek,
+            season: fplSeason,
+            stats: { ...rawStats, started: false },
+            fantasy_points: v2.fantasyPoints,
+            match_rating: v2.rating,
+            perf: buildPerformanceGroups(
+              v2.breakdown,
+              dbPlayer.primary_position as GranularPosition,
+              rawStats,
+              featExcessFor(rawStats, dbPlayer.primary_position as GranularPosition),
+            ),
+          });
         }
       }),
     );
   }
+
+  // Deletes first, then upserts, as the per-player calls did. 100 ids keeps
+  // the request URL short; the upsert batch is bounded by payload size.
+  let saved = 0;
+  for (const ids of chunked(staleIds, 100)) {
+    const { error } = await supabase.from('player_stats').delete().in('id', ids);
+    if (error) console.error('player_stats stale-row delete failed:', error.message);
+  }
+  for (const rows of chunked(pendingUpserts, 200)) {
+    const { error } = await supabase
+      .from('player_stats')
+      .upsert(rows, { onConflict: 'player_id,season,match_id' });
+    if (error) console.error('player_stats batch upsert failed:', error.message);
+    else saved += rows.length;
+  }
+  const wroteAnything = pendingUpserts.length + staleIds.length > 0;
 
   // Where each starter stood, from the Premier League's match feed, for this
   // gameweek's matches that have kicked off and aren't stored yet. The Lineup
@@ -444,20 +520,30 @@ async function syncFplLiveRatings(
     console.warn('PL match lineups not synced:', err);
   }
 
-  // Recalculate total_points and form for all players from player_stats
-  await supabase.rpc('update_player_fantasy_scores', { p_season: fplSeason });
-
-  // Recompute pre-computed form_rating (avg match_rating over last 5 appearances)
-  await supabase.rpc('update_player_form_ratings', { p_season: fplSeason });
-
-  // Positional ranks are re-scored per position (migration 085) and so must be
-  // recomputed here, once totals are settled, rather than derived in the view.
+  // Totals, form and ranks are derived from player_stats alone, so when the
+  // tick wrote nothing they would recompute exactly what the previous tick
+  // left behind. An idle tick (between matches, or once a match's stats have
+  // settled) skips them. The post-lockdown pass and an explicit ?gw= re-sync
+  // always refresh, so a refresh that failed heals on the next change or at
+  // the final pass.
+  const refreshDerived = wroteAnything || isFinished || force;
   let positionRanks: RecomputeResult | null = null;
-  try {
-    positionRanks = await recomputePositionRanks(supabase, fplSeason);
-  } catch (err) {
-    // A rank refresh failing must not lose the stats that were just written.
-    console.error('recomputePositionRanks failed:', err);
+
+  if (refreshDerived) {
+    // Recalculate total_points and form for all players from player_stats
+    await supabase.rpc('update_player_fantasy_scores', { p_season: fplSeason });
+
+    // Recompute pre-computed form_rating (avg match_rating over last 5 appearances)
+    await supabase.rpc('update_player_form_ratings', { p_season: fplSeason });
+
+    // Positional ranks are re-scored per position (migration 085) and so must be
+    // recomputed here, once totals are settled, rather than derived in the view.
+    try {
+      positionRanks = await recomputePositionRanks(supabase, fplSeason);
+    } catch (err) {
+      // A rank refresh failing must not lose the stats that were just written.
+      console.error('recomputePositionRanks failed:', err);
+    }
   }
 
   // Eagerly recompute this gameweek's matchup totals so Realtime subscribers
@@ -465,6 +551,10 @@ async function syncFplLiveRatings(
   // schedule instead of waiting for someone to load a page. `finished=false`
   // — this is a live-pass update, not the final lock-in, which stays exactly
   // where it already was: resolveAllStalledGameweeks below.
+  //
+  // Runs every tick, even an idle one: team scores also depend on which clubs
+  // have finished (auto-subs), which changes with the clock rather than with
+  // any player_stats row. It only writes a matchup whose score moved.
   try {
     await processMatchupsForGameweek(gameweek, false);
   } catch (err) {
@@ -487,7 +577,17 @@ async function syncFplLiveRatings(
   // This catches GWs that were left as 'live' once getCurrentGameweekWindow() rolled forward.
   const resolution = await resolveAllStalledGameweeks();
 
-  return NextResponse.json({ ok: true, mode: 'fpl_live', gameweek, saved, resolution, positionRanks });
+  return NextResponse.json({
+    ok: true,
+    mode: 'fpl_live',
+    gameweek,
+    saved,
+    unchanged,
+    deleted: staleIds.length,
+    refreshedDerived: refreshDerived,
+    resolution,
+    positionRanks,
+  });
 }
 
 // tryResolveGameweekIfFinished replaced by resolveAllStalledGameweeks in matchupProcessor.ts

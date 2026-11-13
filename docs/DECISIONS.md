@@ -738,3 +738,95 @@ IconButton for the plain close buttons. How it was built is an agent's
 reading: the account menu keeps Create and Join as two rows rather than the
 prototype's one, because no single page offers both; the lineup error notice
 takes the small IconButton so the notice keeps its height.
+
+---
+
+## 2026-10-25 — Cups: the page and the draw
+
+Chosen during the Cups brainstorm, from mockups built on Matchday
+Militia's real data (`design-2.0/cups/`). Spec:
+`docs/superpowers/specs/2026-10-25-cups-redesign-design.md`.
+
+**Scope: the page and the mechanics behind it.** Picked from three options
+("Page + mechanics").
+
+**The League Cup is drawn round by round**, FA Cup style, rather than given
+a different seeding or a single open draw. Picked from four options. On
+starting it this season:
+> "this season is fine, since no cups have started, now is a good time. just
+> want to have a set and working system before the cups start"
+
+**A 6-club league's Consolation Cup takes both Champions Cup quarter-final
+losers and both semi-final losers**, rather than a single final between
+the semi-final losers. Picked from two options. The 5- and 4-club versions
+in the spec are an agent's extension of the same rule.
+
+**Page composition: the Trophy Shelf** (option A of three), with the draw
+moving sideways:
+> "i think A is probably the best, but maybe instead of it being a vertical
+> scroll for round-by-round, it's horizontal? would require some sort of
+> swipe, not sure."
+
+**The Round Pager over Round Columns, and a seed column on ties.** Of the
+original seeds:
+> "also this "3 v 6" seeding numbering and formatting needs to change, why
+> does it look so ugly."
+
+and then:
+> "i've selected round pager and seed column"
+
+That the League Cup and Consolation Cup show no seeds, because their ties
+are drawn, is an agent's reading.
+
+**Tapping a tie opens a full tie page**, built from the matchups redesign.
+Picked over a bottom sheet and over no detail view.
+
+---
+
+## 2026-11-08 — Cups are drawn after the matchweek before they start
+
+Raised when Dynasty Dragoon's byes went to the first two clubs alphabetically,
+because the cups were drawn on 2026-08-21 with every club on 0 points. Duke
+first held to the rule already published (seed at matchweek 7):
+> "i think it's only fair to stick to the rule that was established first."
+
+Then, given the choice to seed each cup from the finished table the matchweek
+before its first round, with last season's finish as a tiebreaker only:
+> "tie breaker is cool then, makes sense to go more year-by-year. sure let's be
+> more fair this year then, make sure it's changed from now on, and for
+> champions cup too. i would rescind the previous notification you sent. and
+> also make this new rule airtight"
+
+**What that settled:** every cup, in every season, is drawn once from the
+finished league table after the matchweek before its first round (League Cup
+after MW15, Champions Cup after MW31). Last season's final position only
+separates clubs level on the table. It applies this season, to both leagues
+and to the Champions Cup too. The earlier "seeded at matchweek 7" rule is
+replaced. The draw notices already sent were removed from the app.
+
+**Choices an agent made, not Duke:** the Consolation Cup is drawn with the
+Champions Cup; "level on the table" means level on points, goal difference and
+points for; the table counts finished matchweeks only.
+
+---
+
+## 2026-11-11 — Narrated headings are banned, and checked
+
+On walkthrough step titles such as "Where the Fee Goes", "When You Can’t Bid"
+and "Who Signs Him":
+> "isn't this the whole "inanimate verb" thing?"
+
+Then, once they were renamed ("Fee Split", "Bidding Freeze", "Settlement"):
+> "i need a rule for this for the future ASAP because it's such a huge part of
+> claudelish and i don't want any part of that"
+
+and "also audit for this across the app".
+
+This is the 2026-09-04 rule ("name things; don't narrate them"), which until now
+was only a warning with three patterns. How it is enforced is an agent's
+implementation, not Duke's wording: `scripts/check-ui-rules.mjs` now rejects any
+title-case heading with a question word, a relative clause, a pronoun, an
+auxiliary or modal verb, or a question mark, in h1–h6, in any element styled as
+a title or heading, and in a component's `title` or `heading` prop. Sentence-case
+strings (empty states, statuses) are prose and aren't checked. See
+`docs/UI_RULES.md` rule 2.

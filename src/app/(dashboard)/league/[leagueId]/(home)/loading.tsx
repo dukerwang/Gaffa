@@ -10,7 +10,7 @@ import s from '@/components/skeletons/pageSkeleton.module.css';
  */
 export default function Loading() {
   return (
-    <div className={styles.page} aria-busy="true" aria-label="Loading League Home">
+    <div className={styles.page} data-route-skeleton aria-busy="true" aria-label="Loading League Home">
       <header className={styles.mast}>
         <div className={styles.mastRow}>
           <div className={styles.mastId}>

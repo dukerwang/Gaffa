@@ -12,6 +12,9 @@ import RatedPortrait from '@/app/(dashboard)/dashboard/RatedPortrait';
 import { Matchweek } from '@/app/(dashboard)/dashboard/Matchweek';
 import dash from '@/app/(dashboard)/dashboard/dashboard.module.css';
 import DockCta from './DockCta';
+import BarcolaTransfer from './BarcolaTransfer';
+import FirstLook from './FirstLook';
+import { FIGURES } from '@/lib/walkthroughs/chapters';
 import styles from './PublicHome.module.css';
 
 /* eslint-disable @next/next/no-img-element */
@@ -169,8 +172,20 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
         </div>
       </section>
 
+      {/* First Look: each part of the game, before any sign-up */}
+      <section className={`${styles.section} ${topRated ? styles.first : ''}`} aria-labelledby="first-look">
+        <div className={styles.lock}>
+          <span className={styles.iconTile} aria-hidden="true"><Icon name="gaffa" size={30} /></span>
+          <div>
+            <h2 id="first-look" className={styles.lockT}>First Look</h2>
+            <div className={styles.lockSub}>{FIGURES.leagueMin} to {FIGURES.leagueMax} managers per league</div>
+          </div>
+        </div>
+        <FirstLook />
+      </section>
+
       {/* Transfers */}
-      <section className={`${styles.section} ${topRated ? styles.first : ''}`} aria-labelledby="transfer-wire">
+      <section className={styles.section} aria-labelledby="transfer-wire">
         <div className={styles.lock}>
           <span className={styles.iconTile} aria-hidden="true"><SwapIcon /></span>
           <div>
@@ -312,6 +327,12 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
           </div>
         </div>
       </section>
+
+      {arrival && arrival.bidAmounts.length > 1 && (
+        <section className={styles.barcola} aria-label="How a real transfer reaches Gaffa">
+          <BarcolaTransfer arrival={arrival} />
+        </section>
+      )}
 
       {/* Ratings */}
       {comparison && (

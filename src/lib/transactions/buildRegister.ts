@@ -183,6 +183,7 @@ export const LEDGER_ONLY_TYPES = [
   'loan_recall_penalty',
   'loan_slot_buyback',
   'facility_upgrade',
+  'grant',
 ] as const;
 const LEDGER_ONLY = new Set<string>(LEDGER_ONLY_TYPES);
 

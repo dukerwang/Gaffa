@@ -2153,3 +2153,6 @@
     .rowName { flex: 0 1 auto; max-width: 58%; }
 }
 
+/* The squad slider stands above the page, so the open nav menu has to clear it. */
+:global(html[data-nav-open]) .sidebarCol,
+:global(html[data-nav-open]) .squadBackdrop { visibility: hidden; }

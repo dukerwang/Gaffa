@@ -1,10 +1,11 @@
+import { getSessionUser } from '@/lib/supabase/sessionUser';
 import { getBootstrapSlim } from '@/lib/fpl/bootstrapSlim';
 import { effectiveSlots } from '@/lib/facilities/facilities';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { notFound, redirect } from 'next/navigation';
 import TradesClient from './TradesClient';
-import { getCurrentFplSeason, isFplSeasonKickedOff } from '@/lib/season/currentSeason';
+import { getCurrentFplSeason, isFplSeasonKickedOff, previousSeason as seasonBefore } from '@/lib/season/currentSeason';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
 import { buildEffectivePpgMap } from '@/lib/transfers/effectivePpg';
 
@@ -18,7 +19,7 @@ export default async function TradesPage({ params, searchParams }: Props) {
   const { tab: tabParam } = await searchParams;
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
 
   const admin = createAdminClient();
@@ -100,7 +101,7 @@ export default async function TradesPage({ params, searchParams }: Props) {
   if (currentSeason === currentFpl && !kickedOff) {
     currentSeason = league.previous_season || currentSeason;
   }
-  const previousSeason = league.previous_season || '2024-25';
+  const previousSeason = league.previous_season || seasonBefore(currentSeason);
 
   // ── Wave 2 ────────────────────────────────────────────────────────────────
   // Needs an id from wave 1, nothing more.

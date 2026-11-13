@@ -1,3 +1,4 @@
+import { getSessionUser } from '@/lib/supabase/sessionUser';
 import { redirect, notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -13,15 +14,13 @@ export default async function LeagueHelpPage({ params }: Props) {
   const { leagueId } = await params;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
 
   const admin = createAdminClient();
   const { data: league } = await admin
     .from('leagues')
-    .select('id, commissioner_id')
+    .select('id, commissioner_id, is_dynasty')
     .eq('id', leagueId)
     .single();
 
@@ -38,5 +37,5 @@ export default async function LeagueHelpPage({ params }: Props) {
     redirect('/dashboard');
   }
 
-  return <HelpClient leagueId={leagueId} />;
+  return <HelpClient leagueId={leagueId} isDynasty={league.is_dynasty !== false} />;
 }

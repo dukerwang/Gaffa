@@ -7,6 +7,7 @@ function createStubClient() {
   return {
     auth: {
       getUser: async () => ({ data: { user: null }, error: null }),
+      getClaims: async () => ({ data: null, error: null }),
     },
     from: () => ({
       select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }), order: () => ({ ascending: () => ({ data: [], error: null }), data: [], error: null }), limit: () => ({ single: async () => ({ data: null, error: null }), data: [], error: null }), data: [], error: null }), ilike: () => ({ or: () => ({ order: () => ({ limit: () => ({ data: [], error: null }) }) }), order: () => ({ limit: () => ({ data: [], error: null }) }) }), or: () => ({ order: () => ({ limit: () => ({ data: [], error: null }) }) }), not: () => ({ select: () => ({ eq: () => ({ data: [], error: null }) }), data: [], error: null }), order: () => ({ data: [], error: null, ascending: () => ({ data: [], error: null }), limit: () => ({ data: [], error: null }), descending: () => ({ data: [], error: null }) }), data: [], error: null }),

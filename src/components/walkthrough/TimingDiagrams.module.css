@@ -1,0 +1,106 @@
+.rows { display: grid; gap: 7px; }
+.row { display: grid; grid-template-columns: 96px minmax(0, 1fr) 34px; align-items: center; gap: 10px; font-size: var(--t-13); color: var(--color-text-secondary); }
+.rowLabel { white-space: nowrap; }
+.track { display: block; height: 14px; border-radius: 3px; background: var(--color-bg-inset); overflow: hidden; }
+.track i { display: block; height: 100%; background: var(--color-border-strong); }
+.rowValue { text-align: right; font-family: var(--font-serif); font-size: var(--t-15); font-weight: 700; color: var(--color-text-primary); font-variant-numeric: tabular-nums lining-nums; }
+.row[data-on] { color: var(--color-text-primary); font-weight: 600; }
+.row[data-on] .track i { background: var(--color-accent); }
+.note { margin-top: var(--s2); display: flex; align-items: center; gap: var(--s3); font-size: var(--t-13); color: var(--color-text-secondary); }
+.note b { color: var(--color-text-primary); font-weight: 600; }
+
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.step { min-width: 0; text-align: center; }
+.well { height: 104px; display: flex; align-items: flex-end; border-radius: 6px; background: var(--color-bg-inset); overflow: hidden; }
+.bar { width: 100%; min-height: 28px; display: grid; place-items: center; background: var(--color-accent); color: var(--color-on-accent); }
+.bar b { font-family: var(--font-serif); font-size: var(--t-17); font-weight: 700; }
+.stepLabel { display: block; margin-top: 6px; font-size: var(--t-12); color: var(--color-text-secondary); white-space: nowrap; }
+
+.svgLabel { font-family: var(--font-label); font-size: 12px; font-weight: 600; fill: var(--color-text-secondary); }
+.svgStrong { font-family: var(--font-serif); font-size: 15px; font-weight: 700; fill: var(--color-text-primary); }
+.svgAxis { font-family: var(--font-label); font-size: 12px; fill: var(--color-text-muted); }
+
+.key { margin-top: var(--s1); display: flex; gap: var(--s4); font-size: var(--t-12); color: var(--color-text-secondary); white-space: nowrap; }
+.key span { display: inline-flex; align-items: center; gap: 6px; }
+.key i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; }
+
+.dayBar { position: relative; height: 26px; border-radius: 5px; background: var(--color-green-300); overflow: hidden; }
+.dayBar i { position: absolute; top: 0; bottom: 0; background: var(--color-text-secondary); }
+.dayBar b { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--color-bg-card); }
+.dayLabels { position: relative; height: 22px; margin-top: 5px; font-size: var(--t-12); color: var(--color-text-muted); }
+.dayLabels span { position: absolute; top: 0; white-space: nowrap; }
+.dayLabels strong { color: var(--color-text-primary); font-weight: 600; }
+
+.lot { display: grid; grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); padding: var(--s2); border-radius: var(--r-shell); background: var(--color-bg-card-alt); box-shadow: inset 0 0 0 1px var(--color-border-subtle); }
+.lotId { min-width: 0; display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+.lotName { display: inline-flex; align-items: center; gap: var(--s2); font-family: var(--font-serif); font-size: var(--t-15); font-weight: 700; white-space: nowrap; }
+.lotTag { padding: 0 var(--s1); border-radius: var(--r-micro); border: 1px dashed currentColor; color: var(--color-text-muted); font-family: var(--font-label); font-size: var(--t-10); font-weight: 700; letter-spacing: 0.1em; line-height: 15px; text-transform: uppercase; white-space: nowrap; }
+.lotCell { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: var(--s1) var(--s2); border-radius: 6px; }
+.lotCell[data-on] { box-shadow: 0 0 0 2px var(--color-accent); }
+.lotKey { font-family: var(--font-label); font-size: var(--t-10); letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-muted); white-space: nowrap; }
+.lotMoney { font-family: var(--font-mono); font-size: var(--t-15); font-weight: 700; }
+.lotClock { font-family: var(--font-mono); font-size: var(--t-13); font-weight: 700; color: var(--color-text-secondary); white-space: nowrap; }
+.lotBid { padding: var(--s2) var(--s3); border-radius: var(--r-control); background: var(--color-accent); color: var(--color-on-accent); font-family: var(--font-label); font-size: var(--t-11); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.lotBid[data-on] { box-shadow: 0 0 0 2px var(--color-bg-card), 0 0 0 4px var(--color-accent); }
+
+.choiceWho { display: flex; align-items: center; gap: var(--s3); font-size: var(--t-13); color: var(--color-text-secondary); }
+.choiceWho b { color: var(--color-text-primary); font-weight: 600; }
+.choiceGrid { margin-top: var(--s4); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+.option { display: flex; flex-direction: column; gap: 4px; padding: var(--s3); border-radius: var(--r-shell); background: var(--color-bg-card-alt); box-shadow: inset 0 0 0 1px var(--color-border-subtle); }
+.optionName { font-family: var(--font-label); font-size: var(--t-12); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-muted); }
+.optionFig { font-family: var(--font-serif); font-size: var(--t-25); font-weight: 700; letter-spacing: -0.02em; color: var(--color-text-primary); }
+.optionText { font-size: var(--t-13); line-height: 1.4; color: var(--color-text-secondary); }
+
+.cardSample { display: flex; align-items: center; gap: var(--s4); }
+.cardName { font-family: var(--font-serif); font-size: var(--t-20); font-weight: 700; letter-spacing: -0.015em; color: var(--color-text-primary); }
+.cardPositions { margin-top: var(--s2); display: flex; gap: var(--s2); }
+
+.ratings { display: grid; gap: var(--s2); }
+.rating { display: grid; grid-template-columns: auto minmax(0, 7.5em) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); }
+.ratingWho { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ratingName { font-size: var(--t-15); font-weight: 600; color: var(--color-text-primary); white-space: nowrap; }
+.ratingNote { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-12); color: var(--color-text-muted); white-space: nowrap; }
+.ratingTrack { display: block; height: 8px; border-radius: 4px; background: var(--color-bg-inset); overflow: hidden; }
+.ratingTrack i { display: block; height: 100%; background: var(--color-border-strong); }
+.ratingTrack i[data-top] { background: var(--color-accent); }
+.ratingFig { text-align: right; font-family: var(--font-serif); font-size: var(--t-20); font-weight: 700; color: var(--color-text-primary); font-variant-numeric: tabular-nums lining-nums; }
+.ratingFig small { display: block; font-family: var(--font-label); font-size: var(--t-11); font-weight: 600; letter-spacing: 0.04em; color: var(--color-text-muted); }
+
+.revenue { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s2); }
+.revenueCell { display: flex; flex-direction: column; gap: 4px; padding: var(--s3); border-radius: var(--r-shell); background: var(--color-bg-card-alt); box-shadow: inset 0 0 0 1px var(--color-border-subtle); }
+
+.flow { display: flex; align-items: center; gap: var(--s2); }
+.flowStop { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+.flowText { display: flex; flex-direction: column; font-size: var(--t-12); color: var(--color-text-muted); white-space: nowrap; }
+.flowText b { font-family: var(--font-serif); font-size: var(--t-15); color: var(--color-text-primary); }
+.flowArrow { color: var(--color-text-muted); }
+
+.matchupScores { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--s3); }
+.matchupSide { display: flex; align-items: baseline; gap: var(--s2); min-width: 0; }
+.matchupSide[data-away] { justify-content: flex-end; }
+.matchupSide b { font-family: var(--font-serif); font-size: var(--t-25); font-weight: 700; color: var(--color-text-primary); font-variant-numeric: tabular-nums lining-nums; }
+.matchupClub { font-size: var(--t-13); color: var(--color-text-secondary); white-space: nowrap; }
+.matchupResult { padding: 2px var(--s2); border-radius: var(--r-control); background: var(--color-bg-inset); font-family: var(--font-label); font-size: var(--t-12); font-weight: 700; color: var(--color-text-primary); }
+.band { position: relative; margin-top: var(--s3); height: 10px; border-radius: 5px; background: var(--color-bg-inset); }
+.band i { position: absolute; top: 0; bottom: 0; background: color-mix(in oklab, var(--color-accent) 22%, transparent); }
+.band b { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1px; border-radius: 2px; background: var(--color-text-primary); }
+.bandLabels { margin-top: 6px; display: flex; justify-content: space-between; font-size: var(--t-12); color: var(--color-text-muted); white-space: nowrap; }
+
+.trophies { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s2); }
+.trophyCell { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; font-size: var(--t-12); color: var(--color-text-secondary); }
+
+.splitBar { display: flex; gap: 2px; height: 16px; }
+.splitBar i { background: var(--color-bg-inset); border-radius: 4px 0 0 4px; }
+.splitBar b { background: var(--color-green-300); }
+.splitBar b[data-alt] { background: var(--color-accent); border-radius: 0 4px 4px 0; }
+.splitKey { margin-top: var(--s2); display: flex; justify-content: space-between; gap: var(--s3); font-size: var(--t-12); color: var(--color-text-secondary); white-space: nowrap; }
+.splitKey strong { font-family: var(--font-serif); font-size: var(--t-15); font-weight: 700; color: var(--color-text-primary); }
+
+@media (max-width: 640px) {
+  .lot { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .lotId { grid-column: 2 / -1; }
+  .lotCell:nth-of-type(2) { grid-column: 1 / span 2; grid-row: 2; }
+  .lotCell:nth-of-type(3) { grid-column: 3; grid-row: 2; }
+  .lotBid { grid-column: 4; grid-row: 2; }
+  .row { grid-template-columns: 88px minmax(0, 1fr) 34px; }
+}

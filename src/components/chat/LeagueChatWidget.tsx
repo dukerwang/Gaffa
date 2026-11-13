@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Icon } from '@/components/ui/Icon';
 import { Tooltip } from '@/components/ui/Tooltip';
-import { IconButton, Tabs } from '@/components/ui';
+import { IconButton } from '@/components/ui';
 import iconButton from '@/components/ui/IconButton.module.css';
 import FormattedText from '@/components/ui/FormattedText';
 import CrestBadge from '@/components/crest/CrestBadge';
@@ -61,6 +61,7 @@ function LeagueChatWidgetContent({
   isOpen,
   isMinimized,
   activeTab,
+  view: viewMode,
   viewerClub,
   unreadSummary,
   openChat,
@@ -68,6 +69,7 @@ function LeagueChatWidgetContent({
   minimizeChat,
   restoreChat,
   setActiveTab,
+  setView: setViewMode,
   setViewerClub,
   setUnreadSummary,
 }: ReturnType<typeof useLeagueChat> & NonNullable<ReturnType<typeof useLeagueChat>>) {
@@ -81,7 +83,6 @@ function LeagueChatWidgetContent({
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUsername, setCurrentUsername] = useState<string>('Manager');
   const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'chat' | 'channels'>('chat');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
@@ -290,16 +291,9 @@ function LeagueChatWidgetContent({
     }
   }, [messages, activeTab, isOpen, isMinimized, viewMode]);
 
-  // Switch to chat thread view whenever activeTab changes (e.g. from OpponentCard "Message @manager" or DM selection)
+  // Mark the open conversation as read, never a channel only listed.
   useEffect(() => {
-    if (activeTab) {
-      setViewMode('chat');
-    }
-  }, [activeTab]);
-
-  // Mark active tab as read when open
-  useEffect(() => {
-    if (!isOpen || isMinimized) return;
+    if (!isOpen || isMinimized || viewMode !== 'chat') return;
 
     if (activeTab.type === 'dm') {
       setUnreadSummary((prev) => ({
@@ -311,7 +305,7 @@ function LeagueChatWidgetContent({
       setUnreadSummary((prev) => ({ ...prev, lobbyUnread: false }));
       markRead(null);
     }
-  }, [activeTab, isOpen, isMinimized, markRead, setUnreadSummary]);
+  }, [activeTab, isOpen, isMinimized, viewMode, markRead, setUnreadSummary]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -465,46 +459,38 @@ function LeagueChatWidgetContent({
       <aside className={styles.widgetContainer} aria-label="League chat overlay">
         {/* Header */}
         <header className={styles.widgetHeader}>
+          {/* The channel list is home; a conversation names itself and leads back to it. */}
           <div className={styles.headerLeft}>
             {viewMode === 'chat' ? (
-              <button
-                className={styles.headerBackBtn}
-                type="button"
-                onClick={() => setViewMode('channels')}
-                aria-label="View all channels"
-                title="View all channels"
-              >
-                <Icon name="chevron-left" size={16} strokeWidth={2.5} />
-                <span>Chats</span>
-              </button>
+              <>
+                <IconButton
+                  label="All Chats"
+                  icon={<Icon name="chevron-left" size={18} strokeWidth={2.25} />}
+                  onClick={() => setViewMode('channels')}
+                />
+                {activeTab.type === 'dm' && (
+                  <span className={styles.channelItemAvatar}>
+                    <CrestBadge
+                      config={teams.find((t) => t.user_id === activeTab.userId)?.crest_config}
+                      teamName={activeTab.teamName}
+                      teamId={teams.find((t) => t.user_id === activeTab.userId)?.id}
+                      size={22}
+                    />
+                  </span>
+                )}
+                <span className={styles.headerTitle}>
+                  {activeTab.type === 'lobby'
+                    ? 'League Lobby'
+                    : activeTab.type === 'futbolpedia'
+                      ? 'Futbolpedia'
+                      : activeTab.username}
+                </span>
+              </>
             ) : (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                 <Icon name="message-square" size={16} strokeWidth={2} />
                 <span className={styles.headerTitle}>Chats</span>
               </span>
-            )}
-
-            {viewMode === 'chat' && (
-              <div className={styles.headerTitleWrapper}>
-                {activeTab.type === 'lobby' ? (
-                  <span className={styles.headerTitle}>League Lobby</span>
-                ) : activeTab.type === 'futbolpedia' ? (
-                  <span className={styles.headerTitle}>Futbolpedia</span>
-                ) : (
-                  <>
-                    <span className={styles.channelItemAvatar}>
-                      <CrestBadge
-                        config={teams.find((t) => t.user_id === activeTab.userId)?.crest_config}
-                        teamName={activeTab.teamName}
-                        teamId={teams.find((t) => t.user_id === activeTab.userId)?.id}
-                        size={22}
-                      />
-                    </span>
-                    <span className={styles.headerTitle}>{activeTab.username}</span>
-                    <span className={styles.headerSubtitle}>({activeTab.teamName})</span>
-                  </>
-                )}
-              </div>
             )}
           </div>
 
@@ -525,34 +511,6 @@ function LeagueChatWidgetContent({
           </div>
         </header>
 
-        {/* Channel tabs, in a chat. Direct Messages opens the list of managers. */}
-        {viewMode === 'chat' && (
-          <div className={styles.channelTabBar}>
-            <Tabs
-              ariaLabel="Chat channels"
-              idBase="league-chat"
-              className={styles.channelTabs}
-              value={activeTab.type}
-              onChange={(t) => {
-                if (t === 'dm') setViewMode('channels');
-                else setActiveTab({ type: t });
-              }}
-              items={[
-                {
-                  value: 'lobby' as const,
-                  label: 'Lobby',
-                  unread: unreadSummary.lobbyUnread && activeTab.type !== 'lobby',
-                },
-                ...(askClub ? [{ value: 'futbolpedia' as const, label: 'Futbolpedia' }] : []),
-                {
-                  value: 'dm' as const,
-                  label: activeTab.type === 'dm' ? `@${activeTab.username}` : 'Direct Messages',
-                  unread: unreadSummary.dmUnreadPeerIds.length > 0,
-                },
-              ]}
-            />
-          </div>
-        )}
 
         {askClub && (
           <div

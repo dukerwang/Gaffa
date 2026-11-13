@@ -15,10 +15,10 @@ import TransfersSubNav from '@/components/transfers/TransfersSubNav';
 import type { BidMode } from '@/components/transfers/BidDialog';
 import { setServerClock, useTick, formatAuctionClock, isClosing } from '@/components/transfers/useTick';
 import { useLiveTransfers } from '@/components/transfers/useLiveTransfers';
-import AuctionTimingHelp from '@/components/transfers/AuctionTimingHelp';
 import styles from './auctions.module.css';
 import EmptyState from '@/components/ui/EmptyState';
 import { Icon, IconButton } from '@/components/ui';
+import WalkthroughButton from '@/components/walkthrough/WalkthroughButton';
 
 const BidDialog = dynamic(() => import('@/components/transfers/BidDialog'), { ssr: false });
 
@@ -182,11 +182,11 @@ export default function AuctionsClient({
         <div>
           <div className={`g-label ${styles.kicker}`}>Transfer Market → Auctions</div>
           <h1 className={styles.title}>
-            The Auction Room <AuctionTimingHelp />
+            The Auction Room <WalkthroughButton chapter="auctions" />
           </h1>
         </div>
         <div className={styles.stats}>
-          <div className={styles.stat}>
+          <div className={styles.stat} data-tour="auction-balance">
             <div className={`${styles.statValue} ${styles.statAccent}`}>{money(budget)}</div>
             <div className={`g-label-quiet ${styles.statLabel}`}>Club Balance</div>
           </div>
@@ -224,7 +224,7 @@ export default function AuctionsClient({
       <div className={styles.body}>
         {/* One panel, two columns — the list and its rail are one instrument.
             See design-2.0/README.md § "A board is one panel". */}
-        <div className={`${styles.board} g-panel`}>
+        <div className={`${styles.board} g-panel`} data-tour="auction-board">
         <main className={styles.main}>
           {/* Column heads only when there are columns to head. With an empty
               room they rendered as a bare ruled strip above "nothing is under
@@ -247,9 +247,10 @@ export default function AuctionsClient({
                 : 'No lot matches that filter.'}
             </EmptyState>
           ) : (
-            visible.map((a) => (
+            visible.map((a, i) => (
               <Lot
                 key={a.player_id}
+                first={i === 0}
                 auction={a}
                 now={now}
                 me={me}
@@ -339,17 +340,17 @@ export default function AuctionsClient({
 
           <div className={styles.desk}>
             <div className={styles.deskRow}>
-              <span className={styles.deskLabel}>Committed if you win</span>
+              <span className={styles.deskLabel}>Committed</span>
               <span className={styles.deskValue}>{money(committed)}</span>
             </div>
             <div className={styles.deskRow}>
-              <span className={styles.deskLabel}>Free after that</span>
+              <span className={styles.deskLabel}>Uncommitted</span>
               <span className={`${styles.deskValue} ${styles.statAccent}`}>
                 {money(Math.max(0, budget - committed))}
               </span>
             </div>
             <div className={`${styles.deskRow} ${styles.deskLast}`}>
-              <span className={styles.deskLabel}>Your lots selling</span>
+              <span className={styles.deskLabel}>Your lots</span>
               <span className={styles.deskValue}>
                 {biddableAuctions.filter((a) => a.seller_team_id === me).length}
               </span>
@@ -388,6 +389,7 @@ export default function AuctionsClient({
 // ── One lot ───────────────────────────────────────────────
 
 function Lot({
+  first,
   auction: a,
   now,
   me,
@@ -401,6 +403,7 @@ function Lot({
   clause,
   sellerFloor,
 }: {
+  first: boolean;
   auction: TransfersAuction;
   now: number;
   me: string;
@@ -486,7 +489,7 @@ function Lot({
         </div>
 
         <div className={styles.lotMidRow}>
-          <div className={`${styles.lotCol} ${styles.lotBidCol}`}>
+          <div className={`${styles.lotCol} ${styles.lotBidCol}`} data-tour={first ? 'auction-standing' : undefined}>
             <span className={styles.lotMobileLabel}>{a.highest_bid > 0 ? 'Standing Bid' : 'Floor'}</span>
             <div className={`${styles.lotBid} ${a.highest_bid > 0 ? '' : styles.lotBidNone}`}>
               {a.highest_bid > 0 ? money(a.highest_bid) : 'No bids'}
@@ -524,7 +527,7 @@ function Lot({
           {mine ? 'Your lot' : leading ? 'Leading' : outbid ? 'Outbid' : 'Not in'}
         </div>
 
-        <div className={`${styles.lotCol} ${styles.lotClockCol}`}>
+        <div className={`${styles.lotCol} ${styles.lotClockCol}`} data-tour={first ? 'auction-closes' : undefined}>
           <div className={`${styles.lotClock} ${hot && !notOpenYet ? styles.lotClockHot : ''}`}>
             {notOpenYet ? `Opens ${opensLabel}` : a.expires_at ? formatAuctionClock(msLeft, true) : '—'}
           </div>
@@ -537,7 +540,7 @@ function Lot({
           </div>
         </div>
 
-        <div className={styles.lotActions}>
+        <div className={styles.lotActions} data-tour={first ? 'auction-bid' : undefined}>
           {mine ? (
             <span className={`${styles.go} ${styles.goMuted}`} title="You can’t withdraw this lot. The highest bidder signs him.">Will sell</span>
           ) : (

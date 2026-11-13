@@ -165,6 +165,7 @@
 /* ---------- section lockups ---------- */
 .section { margin-top: 64px; }
 .first { margin-top: 196px; }
+.barcola { margin-top: 20px; }
 .lock { display: flex; align-items: center; gap: 14px; }
 .lockT { margin: 0; font-family: var(--font-serif); font-weight: 700; font-size: 30px; line-height: 1; letter-spacing: -0.03em; color: var(--color-text-primary); }
 .lockSub { font-size: var(--t-13); color: var(--color-text-muted); margin-top: 6px; }

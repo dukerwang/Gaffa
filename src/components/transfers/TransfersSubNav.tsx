@@ -35,7 +35,7 @@ export default function TransfersSubNav({ leagueId, counts, listings = true }: P
   ];
 
   return (
-    <nav className={styles.nav} aria-label="Transfer market sections">
+    <nav className={styles.nav} aria-label="Transfer market sections" data-tour="market-nav">
       {items.map((item) => {
         // Exact match for Market, prefix for the rest — otherwise Market, being a
         // prefix of every sibling, would light up on all four pages.
