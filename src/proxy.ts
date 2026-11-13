@@ -48,7 +48,8 @@ export async function proxy(request: NextRequest) {
     pathname === '/guide' ||
     pathname.startsWith('/share') ||
     pathname === '/lineup-builder' ||
-    pathname === '/kit';
+    pathname === '/kit' ||
+    pathname === '/kit/board';
   const isAuthCallback = pathname.startsWith('/auth/callback');
 
   // Redirect unauthenticated users away from protected routes (API routes handle their own auth)

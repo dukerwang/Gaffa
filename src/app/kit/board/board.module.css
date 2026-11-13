@@ -1,0 +1,898 @@
+/* The Board prototype. Tokens only, both themes.
+
+   Composition follows the 2026-09-15 dashboard (DESIGN.md section 3b):
+   one anchor field (the green shelf) with the urgent objects resting on its
+   edge, portraits on position-coloured plinths, a crest wherever a club is
+   named, and a different object in each section: lifted ask cards, a plinth
+   row, ticket rows with a clock along the foot, and a filterable board.
+
+   Meaning is drawn, not captioned. Panel outlines are real borders; cards
+   on the shelf lift with a shadow and no border, as on the dashboard. */
+
+.root {
+  min-height: 100dvh;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  overflow-x: clip;
+}
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 var(--s4) var(--s16);
+}
+.themeSwitch {
+  position: fixed;
+  left: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  bottom: calc(var(--s3) + env(safe-area-inset-bottom));
+  z-index: 40;
+  padding: var(--s1);
+  border-radius: var(--r-shell);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-md);
+}
+
+/* The one Add: always in reach, opens the one composer. */
+.fab {
+  position: fixed;
+  right: var(--s4);
+  bottom: calc(var(--s4) + env(safe-area-inset-bottom));
+  z-index: 40;
+  border-radius: var(--r-control);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ---------- the shelf ---------- */
+.top { position: relative; --overlap: 96px; padding-top: var(--s6); }
+.shelfBg {
+  --a: var(--color-topbar);
+  --b: color-mix(in oklab, var(--color-topbar) 94%, white);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: var(--overlap);
+  border-image: repeating-linear-gradient(90deg, var(--a) 0 36px, var(--b) 36px 72px) fill 0 / 0 / 0 100vmax;
+}
+.shelfIn { position: relative; --ink: var(--color-text-inverse); color: var(--ink); }
+.mast { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); }
+.title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(34px, 9vw, 52px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.balance {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  height: 40px;
+  padding: 0 var(--s4) 0 var(--s2);
+  border-radius: var(--r-pill);
+  background: color-mix(in oklab, var(--ink) 13%, transparent);
+  font-family: var(--font-serif);
+  font-size: var(--t-20);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.balance b { font-weight: 700; }
+
+.askHead { display: flex; align-items: center; gap: var(--s3); margin: var(--s8) 0 var(--s4); }
+.askT {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--t-25);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.askCount {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--color-topbar);
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: var(--t-13);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Phone: a snap row. Desktop: three across. */
+.asks {
+  display: flex;
+  gap: var(--s3);
+  margin: 0 calc(var(--s4) * -1);
+  padding: 0 var(--s4) var(--s6);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--s4);
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.asks::-webkit-scrollbar { display: none; }
+.move {
+  flex: none;
+  width: min(304px, 82vw);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s3);
+  border-radius: 14px;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm), var(--shadow-lg);
+  animation: rise 420ms var(--ease-out-strong) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+  transition: transform var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
+}
+@media (hover: hover) and (pointer: fine) {
+  .move:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm), var(--shadow-xl); }
+}
+
+/* Two faces that meet: whoever asks on the left, whatever answers on the right. */
+.pair { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.side {
+  position: relative;
+  height: 128px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.sideDemand {
+  align-items: center;
+  border-radius: 12px 4px 4px 12px;
+  background: color-mix(in oklab, var(--ground) 70%, black);
+}
+.sideDemand > :first-child { margin-top: -14px; }
+.sideSupply {
+  border-radius: 4px 12px 12px 4px;
+  background: color-mix(in oklab, var(--pos, var(--color-text-muted)) 68%, black);
+}
+.sideWhat {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  height: 26px;
+  border-radius: var(--r-pill);
+  background: color-mix(in oklab, black 62%, transparent);
+  backdrop-filter: blur(6px);
+  color: white;
+}
+.link {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  border-radius: var(--r-round);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-md);
+}
+.stackFace { position: absolute; bottom: 0; width: 70px; display: flex; align-items: flex-end; }
+.stackMore {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  padding: 2px 6px;
+  border-radius: var(--r-pill);
+  background: color-mix(in oklab, black 70%, transparent);
+  color: white;
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: var(--t-12);
+  font-variant-numeric: tabular-nums;
+  z-index: 5;
+}
+.moveName { font-size: var(--t-13); font-weight: 600; min-width: 0; }
+.moveName .clip { font-family: var(--font-serif); font-weight: 700; font-size: var(--t-15); }
+
+/* The price bar: what the buyer can pay (green) against what the player
+   costs (a tick). A tick past the fill is out of reach. */
+.moveBar { display: flex; flex-direction: column; gap: 6px; }
+.bar { position: relative; display: block; height: 10px; border-radius: var(--r-micro); background: var(--color-bg-inset); }
+.barFill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: var(--r-micro); background: var(--color-accent); transform-origin: left; animation: fill 700ms var(--ease-out-strong) both; }
+.barTick { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--color-text-primary); box-shadow: 0 0 0 2px var(--color-bg-card); }
+.barOver { background: var(--color-live); }
+.barNums { display: flex; align-items: center; justify-content: space-between; font-family: var(--font-serif); font-size: var(--t-17); letter-spacing: -0.02em; font-variant-numeric: tabular-nums lining-nums; }
+.barNums b { display: inline-flex; align-items: center; gap: 6px; }
+.numBudget::before { content: ''; width: 10px; height: 10px; border-radius: var(--r-micro); background: var(--color-accent); }
+.numPrice::before { content: ''; width: 3px; height: 14px; border-radius: 2px; background: var(--color-text-primary); }
+.moveActions { display: flex; gap: var(--s2); }
+
+/* ---------- layout below the shelf ---------- */
+.cols { display: flex; flex-direction: column; gap: var(--s10); margin-top: var(--s2); }
+@media (min-width: 900px) {
+  .asks {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-inline: 0;
+    padding-inline: 0;
+    overflow: visible;
+  }
+  .move { width: auto; }
+  .cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-areas: 'targets targets' 'board listings';
+    column-gap: var(--s10);
+    row-gap: var(--s10);
+    align-items: start;
+  }
+  .targets { grid-area: targets; }
+  .board { grid-area: board; }
+  .listings { grid-area: listings; }
+}
+
+/* ---------- section heads: a title and its instrument ---------- */
+.btnIn { display: inline-flex; align-items: center; gap: 6px; }
+.head { display: flex; align-items: center; gap: var(--s3); min-height: 40px; }
+.headT {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 27px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.headEnd { margin-left: auto; display: flex; align-items: center; gap: var(--s3); flex: none; }
+.pips { display: inline-flex; gap: 3px; }
+.pips i { width: 6px; height: 14px; border-radius: 2px; background: var(--color-bg-inset); }
+.pips i.pipOn { background: var(--color-accent); }
+
+/* ---------- Your Targets: the plinth row ---------- */
+.tiles {
+  display: flex;
+  gap: var(--s3);
+  margin: var(--s4) calc(var(--s4) * -1) 0;
+  padding: 0 var(--s4) var(--s1);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--s4);
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.tiles::-webkit-scrollbar { display: none; }
+.tile {
+  flex: none;
+  width: 132px;
+  scroll-snap-align: start;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  animation: rise 420ms var(--ease-out-strong) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+@media (min-width: 900px) {
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    margin-inline: 0;
+    padding-inline: 0;
+    overflow: visible;
+  }
+  .tile { width: auto; }
+}
+.plinth {
+  position: relative;
+  height: 164px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: color-mix(in oklab, var(--pos, var(--color-text-muted)) 68%, black);
+  transition: transform var(--dur-base) var(--ease-standard);
+}
+@media (min-width: 900px) { .plinth { height: 190px; border-radius: 14px; } }
+@media (hover: hover) and (pointer: fine) { .tile:hover .plinth { transform: translateY(-2px); } }
+.tile:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; border-radius: 14px; }
+
+/* A role target has no face yet: the position itself is the picture. */
+.bigPos {
+  align-self: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 58px;
+  letter-spacing: -0.04em;
+  color: color-mix(in oklab, white 88%, transparent);
+}
+
+.chipTL, .chipTR {
+  position: absolute;
+  top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: var(--r-pill);
+  background: color-mix(in oklab, black 62%, transparent);
+  backdrop-filter: blur(6px);
+  color: white;
+  z-index: 3;
+}
+.chipTL { left: 8px; }
+.chipTR { right: 8px; }
+.budget {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 4px 7px 3px;
+  border-radius: 7px;
+  background: color-mix(in oklab, black 78%, transparent);
+  backdrop-filter: blur(6px);
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 21px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: white;
+  z-index: 3;
+}
+
+/* At auction: the foot of the tile becomes a live strip. */
+.liveStrip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: color-mix(in oklab, black 80%, transparent);
+  backdrop-filter: blur(6px);
+  color: white;
+  z-index: 3;
+}
+.liveStrip b {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.liveStrip span { margin-left: auto; font-family: var(--font-mono); font-size: var(--t-11); opacity: 0.85; font-variant-numeric: tabular-nums; }
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-round);
+  background: color-mix(in oklab, var(--color-live) 62%, white);
+  animation: live 1.6s ease-in-out infinite;
+}
+
+/* A match exists: the tile rings and the listed player steps onto it. */
+.tileMatch .plinth { outline: 2px solid var(--color-accent); outline-offset: 2px; animation: ring 2.4s ease-in-out infinite; }
+.matchChip { position: absolute; right: 8px; bottom: 8px; width: 50px; height: 56px; z-index: 4; }
+.matchFace {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-md);
+}
+.matchCrest {
+  position: absolute;
+  left: -8px;
+  bottom: -6px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-round);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.tileName { margin-top: 10px; font-size: var(--t-13); font-weight: 600; color: var(--color-text-primary); }
+.tileName > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cap { display: flex; align-items: center; gap: 5px; margin-top: 4px; font-size: var(--t-11); color: var(--color-text-muted); }
+.clubBadge { object-fit: contain; flex: none; }
+
+/* ---------- small pictures ---------- */
+.stances { display: inline-flex; align-items: center; gap: 5px; }
+.stances > span { display: grid; place-items: center; }
+.level { display: inline-flex; align-items: center; gap: 3px; }
+.level i { width: 7px; height: 7px; border-radius: var(--r-round); background: color-mix(in oklab, currentColor 28%, transparent); }
+.level i.levelOn { background: currentColor; }
+.tileName .level, .nameRow .level, .lName .level { color: var(--color-text-secondary); }
+.money { font-family: var(--font-serif); font-weight: 700; font-size: var(--t-17); letter-spacing: -0.02em; font-variant-numeric: tabular-nums lining-nums; }
+.clip { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nameRow { display: flex; align-items: center; gap: var(--s2); min-width: 0; font-weight: 600; font-size: var(--t-13); }
+.askTerms .stances, .lEnd .stances { color: var(--color-text-muted); }
+
+.crestStack { display: inline-flex; align-items: center; padding-left: 6px; }
+.stackItem {
+  display: grid;
+  place-items: center;
+  margin-left: -6px;
+  border-radius: var(--r-round);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-sm);
+}
+.stackLead { outline: 2px solid var(--color-accent); outline-offset: 0; }
+
+/* ---------- rows: tickets with a clock along the foot ---------- */
+.rows {
+  position: relative;
+  margin-top: var(--s4);
+  border: var(--line-strong);
+  border-radius: var(--r-shell);
+  background: var(--color-bg-card);
+  overflow: hidden;
+}
+.lrow, .wrow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  min-height: 68px;
+  padding: var(--s3) var(--s4);
+  border: 0;
+  border-top: var(--line);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.rows > :first-child { border-top: 0; }
+button.lrow { cursor: pointer; }
+@media (hover: hover) and (pointer: fine) {
+  button.lrow:hover, .lrow:hover { background: var(--color-bg-inset); }
+}
+.lBody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lName { font-size: var(--t-15); font-weight: 600; }
+.lName > .clip { font-family: var(--font-serif); font-weight: 700; }
+.lSub { display: flex; align-items: center; gap: 5px; font-size: var(--t-12); color: var(--color-text-muted); }
+.lEnd { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.clock { font-family: var(--font-mono); font-size: var(--t-12); color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+.clockUrgent { color: var(--color-live); font-weight: 600; }
+.offersOnly {
+  padding: 1px 6px;
+  border-radius: var(--r-control);
+  background: var(--color-bg-inset);
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: var(--t-11);
+  color: var(--color-text-secondary);
+}
+.lActions { display: none; gap: var(--s2); flex: none; }
+.rowHit { position: absolute; inset: 0; border: 0; background: none; cursor: pointer; z-index: 1; }
+.rowHit:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+@media (min-width: 640px) {
+  .board .lActions { display: flex; position: relative; z-index: 2; }
+}
+@media (min-width: 640px) and (max-width: 899px) {
+  .board .lEnd { margin-left: auto; }
+}
+
+.timeBar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: calc(var(--p) * 100%);
+  background: var(--color-accent);
+  transform-origin: left;
+  animation: fill 700ms var(--ease-out-strong) both;
+}
+.timeUrgent { background: var(--color-live); }
+
+.wArrow { flex: none; color: var(--color-text-muted); margin-left: -4px; margin-right: -4px; }
+.posTile {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-control);
+  background: color-mix(in oklab, var(--pos) 68%, black);
+  color: white;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--t-17);
+  letter-spacing: -0.02em;
+}
+
+/* ---------- the position rail ---------- */
+.rail {
+  display: flex;
+  gap: var(--s2);
+  margin: var(--s4) calc(var(--s4) * -1) 0;
+  padding: 0 var(--s4);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar { display: none; }
+.posChip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--r-control);
+  background: color-mix(in oklab, var(--pos) 14%, var(--color-bg-card));
+  color: var(--pos-line, var(--pos));
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: var(--t-13);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
+}
+/* Supply and demand at a position: a solid bar and a hollow one. */
+.depth { display: inline-flex; align-items: flex-end; gap: 3px; height: 22px; }
+.depth i { width: 6px; border-radius: 1px; background: currentColor; }
+.depth i.depthWant { background: none; box-shadow: none; border: 1.5px solid currentColor; }
+.posChip:disabled { opacity: 0.35; cursor: default; }
+.posChipOn { background: var(--pos); color: var(--color-text-inverse); }
+.posChip:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.empty { margin: 0; padding: var(--s8) var(--s4); display: grid; place-items: center; color: var(--color-text-muted); }
+.rail + .rows { margin-top: var(--s3); }
+.form .rail { margin-top: 0; }
+@media (min-width: 900px) {
+  .rail { margin-inline: 0; padding-inline: 0; flex-wrap: wrap; overflow: visible; }
+}
+
+/* ---------- the sheets ---------- */
+.form { display: flex; flex-direction: column; gap: var(--s5); }
+.sheetPos { margin: 0; }
+.plate { display: flex; align-items: stretch; gap: var(--s4); }
+.plateImg {
+  position: relative;
+  flex: none;
+  width: 96px;
+  height: 112px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: color-mix(in oklab, var(--pos, var(--color-text-muted)) 68%, black);
+}
+.plateBody { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: var(--s2); }
+.plateName { font-family: var(--font-serif); font-weight: 700; font-size: var(--t-20); letter-spacing: -0.02em; }
+.plateSub { display: flex; align-items: center; gap: var(--s2); font-size: var(--t-13); color: var(--color-text-secondary); }
+.plateValue { font-size: var(--t-25); }
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 0 var(--s3);
+  border: var(--line-strong);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  color: var(--color-text-muted);
+}
+.search:focus-within { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.search .input { flex: 1; min-height: 44px; border: 0; outline: 0; padding: 0; background: none; }
+.input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--s3);
+  border: var(--line-strong);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 16px;
+}
+.input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.pickList { display: flex; flex-direction: column; max-height: 44dvh; overflow-y: auto; margin: 0 calc(var(--s2) * -1); }
+.pick {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 56px;
+  padding: var(--s1) var(--s2);
+  border: 0;
+  border-radius: var(--r-control);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) { .pick:hover { background: var(--color-bg-inset); } }
+.pickName { flex: 1; min-width: 0; font-size: var(--t-15); font-weight: 600; }
+.pickName .clip { font-family: var(--font-serif); font-weight: 700; }
+.pickEnd { display: flex; align-items: center; gap: var(--s3); flex: none; }
+.pickValue { font-size: var(--t-15); color: var(--color-text-secondary); min-width: 48px; text-align: right; }
+.freeTag {
+  padding: 1px 7px;
+  border-radius: var(--r-control);
+  background: var(--color-accent-dim);
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: var(--t-11);
+  color: var(--color-accent-ink);
+}
+
+.stanceChips { display: flex; gap: var(--s2); flex-wrap: wrap; }
+.stanceChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 var(--s4);
+  border: var(--line-strong);
+  border-radius: var(--r-control);
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: var(--t-13);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+}
+.stanceOn { background: var(--color-accent-dim); border-color: var(--color-accent); color: var(--color-accent-ink); }
+.stanceChip:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+.aud { display: flex; flex-direction: column; gap: var(--s3); }
+.audTiles { display: grid; gap: var(--s2); }
+.audTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 64px;
+  padding: var(--s2);
+  border: var(--line-strong);
+  border-radius: var(--r-shell);
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: var(--t-13);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+}
+.audOn { background: var(--color-accent-dim); border-color: var(--color-accent); color: var(--color-accent-ink); }
+.audTile:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.audSeen { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: 28px; color: var(--color-text-muted); }
+.audIcon { display: grid; place-items: center; height: 24px; }
+
+.levelPick { display: flex; align-items: center; gap: var(--s3); }
+.levelPick > :first-child { flex: 1; }
+.hintBal { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
+.noteField { position: relative; display: block; }
+.count { position: absolute; right: var(--s3); top: 50%; transform: translateY(-50%); font-size: var(--t-11); color: var(--color-warning-text); font-variant-numeric: tabular-nums; }
+.footer { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); width: 100%; }
+.footer > :last-child { margin-left: auto; }
+.listedFoot { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s4); }
+.bigMoney { font-size: var(--t-32); }
+.listedClock { position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 96px; }
+.listedClock .timeBar { position: relative; width: 100%; max-width: 96px; border-radius: 2px; width: calc(var(--p) * 96px); }
+
+/* ---------- motion ---------- */
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes live { 50% { opacity: 0.35; } }
+@keyframes ring { 50% { outline-color: color-mix(in oklab, var(--color-accent) 30%, transparent); } }
+@keyframes fill { from { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .move, .tile, .timeBar, .barFill, .tileNew .plinth { animation: none; }
+  .pendingClock { animation: none; }
+  .liveDot, .tileMatch .plinth { animation: none; }
+  .move, .plinth { transition: none; }
+}
+
+/* ---------- one-tap target ---------- */
+.topQuiet { --overlap: 0px; padding-bottom: var(--s8); }
+
+/* The tile you just added settles in and holds a ring for a moment. */
+.tileNew .plinth { animation: arrive 1.6s var(--ease-out-strong) both; }
+@keyframes arrive {
+  0% { transform: scale(0.94); outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  30% { transform: scale(1); outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  100% { outline: 2px solid transparent; outline-offset: 2px; }
+}
+
+/* A gap read from the squad: the position, who you have there, the empty place. */
+.gapPlinth {
+  position: relative;
+  height: 164px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s3) var(--s2) var(--s3);
+  background: color-mix(in oklab, var(--pos) 13%, var(--color-bg-card));
+  color: var(--pos-line, var(--pos));
+  transition: transform var(--dur-base) var(--ease-standard), background var(--dur-base) var(--ease-standard);
+}
+@media (min-width: 900px) { .gapPlinth { height: 190px; border-radius: 14px; } }
+@media (hover: hover) and (pointer: fine) {
+  .gap:hover .gapPlinth { transform: translateY(-2px); background: color-mix(in oklab, var(--pos) 20%, var(--color-bg-card)); }
+}
+.gapPos {
+  margin-top: var(--s3);
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 52px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  opacity: 0.55;
+}
+.gapDepth { display: flex; align-items: center; justify-content: center; gap: var(--s2); }
+.gapFace { display: block; border-radius: var(--r-control); overflow: hidden; }
+.gapSlot {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-round);
+  background: var(--pos-line, var(--pos));
+  color: var(--color-bg-card);
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.gap:active .gapSlot { transform: scale(0.92); }
+
+/* Target from the board with one tap; the star is the state. */
+.star { position: relative; z-index: 2; flex: none; margin: 0 calc(var(--s2) * -1) 0 calc(var(--s1) * -1); }
+.starOn { color: var(--color-accent-ink); }
+
+/* What a tap on a search row does: add at once, open, or already added. */
+.pickMark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--r-round); color: var(--color-text-muted); }
+.markAdd { background: var(--color-accent-dim); color: var(--color-accent-ink); }
+.markDone { color: var(--color-accent-ink); }
+
+/* ---------- the player as the hub ---------- */
+.hubHead { position: relative; display: flex; align-items: stretch; gap: var(--s4); padding-right: 40px; }
+.hubStar { position: absolute; right: -8px; top: -8px; }
+.hubRow { display: flex; align-items: center; gap: var(--s3); color: var(--color-text-muted); }
+.stake { display: flex; align-items: center; gap: var(--s3); color: var(--color-text-muted); }
+.stakeBar { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; color: var(--color-text-primary); }
+.pending {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-shell);
+  background: var(--color-accent-dim);
+  color: var(--color-accent-ink);
+}
+.pending .money { margin-left: var(--s2); }
+.pendingClock { margin-left: auto; display: grid; place-items: center; animation: live 1.6s ease-in-out infinite; }
+
+/* An offer you have sent stays where you sent it from. */
+.offerPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: var(--r-control);
+  background: var(--color-accent-dim);
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: var(--t-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent-ink);
+}
+.offerStrip { background: color-mix(in oklab, var(--color-accent) 78%, black); }
+.offerStrip b { margin-right: auto; }
+
+.sideOpen { cursor: pointer; }
+.sideOpen:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* ---------- the offer, already filled in ---------- */
+.offerLink { display: inline-flex; align-items: center; gap: var(--s2); color: var(--color-text-muted); }
+.choices { display: flex; gap: var(--s3); }
+.choice {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--s2);
+  border: 2px solid transparent;
+  border-radius: var(--r-shell);
+  background: var(--color-bg-inset);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
+}
+.choiceOn { border-color: var(--color-accent); background: var(--color-accent-dim); color: var(--color-accent-ink); }
+.choice:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.choiceFace {
+  width: 100%;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: color-mix(in oklab, var(--pos) 68%, black);
+}
+.choiceValue { font-family: var(--font-serif); font-size: var(--t-15); letter-spacing: -0.02em; font-variant-numeric: tabular-nums lining-nums; }
+
+/* An offer that is out stays on the card it came from. */
+.moveSent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 0 var(--s3);
+  min-height: 36px;
+  border-radius: var(--r-control);
+  background: var(--color-accent-dim);
+  color: var(--color-accent-ink);
+}
+
+/* ---------- one stream ---------- */
+.kinds { margin-top: var(--s3); }
+.rate {
+  padding: 0 6px;
+  border-radius: var(--r-control);
+  background: var(--color-bg-inset);
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--t-12);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--color-text-secondary);
+}
+.faceStack { display: inline-flex; align-items: center; padding-left: 10px; }
+.faceItem { display: block; margin-left: -10px; border-radius: var(--r-control); box-shadow: 0 0 0 2px var(--color-bg-card); }
+.coin { display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--r-round); background: var(--color-bg-inset); color: var(--color-text-secondary); }
+.deal {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  min-height: 68px;
+  padding: var(--s3) var(--s4);
+  border-top: var(--line);
+}
+.dealAssets { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--s3); color: var(--color-text-muted); }
+.dealActions { display: flex; gap: var(--s2); width: 100%; }
+.dealNeeds { display: grid; place-items: center; color: var(--color-accent-ink); }
+.dealIn { background: var(--color-accent-dim); }
+@media (hover: hover) and (pointer: fine) { .dealIn:hover { background: var(--color-accent-dim); } }
+
+/* The bid history in the hub. */
+.ladder { display: flex; flex-direction: column; gap: var(--s1); }
+.rung { display: flex; align-items: center; gap: var(--s3); padding: var(--s1) var(--s2); border-radius: var(--r-control); color: var(--color-text-secondary); }
+.rung .money { font-size: var(--t-15); }
+.rungTop { background: var(--color-accent-dim); color: var(--color-accent-ink); }
+.cash { display: inline-flex; align-items: center; gap: 4px; }
+.cash svg { color: var(--color-text-muted); }

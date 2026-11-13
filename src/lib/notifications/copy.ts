@@ -294,3 +294,143 @@ export function loanFinalWeekNotice(
     pushBody: `${playerName}'s loan at ${clubAbbr(borrower)} ends after GW${endGw}.`,
   };
 }
+
+
+// ── Targets (179) ─────────────────────────────────────────────
+//
+// The demand side. `listedNotice` above tells the whole league a player is
+// available; these tell the specific clubs who said they wanted him, which is
+// a different reader and deserves a different sentence. All four keep the
+// transfer-news voice and the plural club verb.
+
+/** What made a target's player gettable. Decides the verb: a club lists him, releases him, or he arrives. */
+export type TargetSupplySource = 'listing' | 'release' | 'arrival';
+
+function supplyPhrase(source: TargetSupplySource | undefined, club: string, playerName: string) {
+  switch (source) {
+    case 'release':
+      return { lead: `**${club}** have released **${playerName}**`, status: 'has been released' };
+    case 'arrival':
+      return { lead: `**${playerName}** has arrived and is open to bids`, status: 'has arrived' };
+    default:
+      return { lead: `**${club}** have listed **${playerName}**`, status: 'is listed' };
+  }
+}
+
+/** A player somebody named as a target has become gettable. */
+export function targetAvailableNotice(
+  seller: ClubRef,
+  playerName: string,
+  opts?: { expiresAt?: ExpiresAt; auctionOpen?: boolean; source?: TargetSupplySource },
+): Notice {
+  const name = clubName(seller);
+  const left = opts?.auctionOpen ? timeLeft(opts.expiresAt) : null;
+  const clock = left ? ` Bidding is open, ${left} left.` : '';
+  const { lead, status } = supplyPhrase(opts?.source, name, playerName);
+  return {
+    title: `${playerName} is available`,
+    pushTitle: `${playerName} is available`,
+    content: `${lead}, one of your targets.${clock}`,
+    pushBody: left
+      ? `${playerName} ${status}. ${left} to bid.`
+      : `${playerName}, one of your targets, ${status}.`,
+  };
+}
+
+/**
+ * A player matching a POSITION somebody is looking for has become gettable.
+ * Named separately from the notice above because "a left-back has hit the
+ * market" is a weaker claim than "the player you asked for is available", and
+ * flattening the two would cry wolf on every squad-filler at that position.
+ */
+export function targetProfileMatchNotice(
+  seller: ClubRef,
+  playerName: string,
+  position: string,
+  opts?: { expiresAt?: ExpiresAt; auctionOpen?: boolean; source?: TargetSupplySource },
+): Notice {
+  const name = clubName(seller);
+  const left = opts?.auctionOpen ? timeLeft(opts.expiresAt) : null;
+  const clock = left ? ` Bidding is open, ${left} left.` : '';
+  const { lead, status } = supplyPhrase(opts?.source, name, playerName);
+
+  // "a left-back", not "a LB". The phrase (article included) comes from
+  // roleArticle so this reads identically to the player card and the matchup
+  // breakdown, and so nobody has to remember that "an LB" takes "an".
+  const role = roleArticle(position);
+  const Role = role.charAt(0).toUpperCase() + role.slice(1);
+
+  return {
+    title: `${Role} has hit the market`,
+    pushTitle: `${Role} is available`,
+    content: `${lead}. You're looking for ${role}.${clock}`,
+    pushBody: left
+      ? `${playerName} ${status}. ${left} to bid.`
+      : `${playerName} ${status}. You're looking for ${role}.`,
+  };
+}
+
+/**
+ * Somebody has named YOUR player as a target.
+ *
+ * The demand-side counterpart of `listedNotice`, and the message most likely
+ * to start a deal. Only named targets reach here, and only ones with an
+ * audience: a private target tells nobody, and a positional profile would
+ * spam every club that owns one.
+ *
+ * `direct` says the approach came to you alone (182). Worth stating, because
+ * it changes how the message reads — a public target is a club shopping in
+ * front of the league, and a direct one is a club talking to you. Only the
+ * body carries it; the title is the same news either way.
+ */
+export function targetDeclaredNotice(
+  suitor: ClubRef,
+  playerName: string,
+  stanceLine: string,
+  direct = false,
+): Notice {
+  const name = clubName(suitor);
+  const abbr = clubAbbr(suitor);
+  const stance = stanceLine ? ` ${stanceLine}.` : '';
+  const privacy = direct ? ' Sent to you only — nobody else can see it.' : '';
+  return {
+    title: `${abbr} want ${playerName}`,
+    pushTitle: `${abbr} want ${playerName}`,
+    content: `**${name}** have made **${playerName}** a target.${stance}${privacy}`,
+    pushBody: direct
+      ? `${name} have approached you about ${playerName}.`
+      : `${name} want your player ${playerName}.`,
+  };
+}
+
+/**
+ * Both sides have already said yes to talking: this club listed the player,
+ * that club was targeting him. Worth more than a badge — nobody has to be
+ * talked into the conversation.
+ */
+export function targetTwoSidedNotice(
+  other: ClubRef,
+  playerName: string,
+  stanceLine: string,
+  side: 'seller' | 'suitor',
+): Notice {
+  const name = clubName(other);
+  const abbr = clubAbbr(other);
+  const stance = stanceLine ? ` ${stanceLine}.` : '';
+
+  if (side === 'seller') {
+    return {
+      title: `${abbr} want a player you've listed`,
+      pushTitle: `${abbr} want ${playerName}`,
+      content: `You've listed **${playerName}** and **${name}** are targeting him.${stance}`,
+      pushBody: `${name} are targeting ${playerName}, who you've listed.`,
+    };
+  }
+
+  return {
+    title: `${playerName} is listed — and you want him`,
+    pushTitle: `${playerName} is listed`,
+    content: `**${name}** have listed **${playerName}**, one of your targets.${stance}`,
+    pushBody: `${playerName}, one of your targets, is listed by ${name}.`,
+  };
+}
