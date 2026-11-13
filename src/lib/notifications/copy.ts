@@ -303,22 +303,37 @@ export function loanFinalWeekNotice(
 // a different reader and deserves a different sentence. All four keep the
 // transfer-news voice and the plural club verb.
 
+/** What made a target's player gettable. Decides the verb: a club lists him, releases him, or he arrives. */
+export type TargetSupplySource = 'listing' | 'release' | 'arrival';
+
+function supplyPhrase(source: TargetSupplySource | undefined, club: string, playerName: string) {
+  switch (source) {
+    case 'release':
+      return { lead: `**${club}** have released **${playerName}**`, status: 'has been released' };
+    case 'arrival':
+      return { lead: `**${playerName}** has arrived and is open to bids`, status: 'has arrived' };
+    default:
+      return { lead: `**${club}** have listed **${playerName}**`, status: 'is listed' };
+  }
+}
+
 /** A player somebody named as a target has become gettable. */
 export function targetAvailableNotice(
   seller: ClubRef,
   playerName: string,
-  opts?: { expiresAt?: ExpiresAt; auctionOpen?: boolean },
+  opts?: { expiresAt?: ExpiresAt; auctionOpen?: boolean; source?: TargetSupplySource },
 ): Notice {
   const name = clubName(seller);
   const left = opts?.auctionOpen ? timeLeft(opts.expiresAt) : null;
   const clock = left ? ` Bidding is open, ${left} left.` : '';
+  const { lead, status } = supplyPhrase(opts?.source, name, playerName);
   return {
     title: `${playerName} is available`,
     pushTitle: `${playerName} is available`,
-    content: `**${name}** have listed **${playerName}**, one of your targets.${clock}`,
+    content: `${lead}, one of your targets.${clock}`,
     pushBody: left
-      ? `${playerName} is listed. ${left} to bid.`
-      : `${playerName}, one of your targets, is listed.`,
+      ? `${playerName} ${status}. ${left} to bid.`
+      : `${playerName}, one of your targets, ${status}.`,
   };
 }
 
@@ -332,11 +347,12 @@ export function targetProfileMatchNotice(
   seller: ClubRef,
   playerName: string,
   position: string,
-  opts?: { expiresAt?: ExpiresAt; auctionOpen?: boolean },
+  opts?: { expiresAt?: ExpiresAt; auctionOpen?: boolean; source?: TargetSupplySource },
 ): Notice {
   const name = clubName(seller);
   const left = opts?.auctionOpen ? timeLeft(opts.expiresAt) : null;
   const clock = left ? ` Bidding is open, ${left} left.` : '';
+  const { lead, status } = supplyPhrase(opts?.source, name, playerName);
 
   // "a left-back", not "a LB". The phrase (article included) comes from
   // roleArticle so this reads identically to the player card and the matchup
@@ -347,10 +363,10 @@ export function targetProfileMatchNotice(
   return {
     title: `${Role} has hit the market`,
     pushTitle: `${Role} is available`,
-    content: `**${name}** have listed **${playerName}**. You're looking for ${role}.${clock}`,
+    content: `${lead}. You're looking for ${role}.${clock}`,
     pushBody: left
-      ? `${playerName} is listed. ${left} to bid.`
-      : `${playerName} is listed. You're looking for ${role}.`,
+      ? `${playerName} ${status}. ${left} to bid.`
+      : `${playerName} ${status}. You're looking for ${role}.`,
   };
 }
 

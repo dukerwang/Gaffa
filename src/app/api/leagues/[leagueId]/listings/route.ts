@@ -386,6 +386,7 @@ export async function POST(req: NextRequest, { params }: Props) {
         auctionOpen: hasMinBid,
         expiresAt: hasMinBid ? Date.now() + LISTING_INITIAL_WINDOW_MS : null,
         url: `/league/${leagueId}/transfers/listings`,
+        source: 'listing',
         listingId: listing.id,
       });
 
@@ -395,7 +396,7 @@ export async function POST(req: NextRequest, { params }: Props) {
         sellerUserId: user.id,
         playerName: targetPlayer.name ?? 'your player',
         suitors: namedSuitors,
-        url: `/league/${leagueId}/transfers/targets`,
+        url: `/league/${leagueId}/transfers/listings`,
         listingId: listing.id,
       });
     }

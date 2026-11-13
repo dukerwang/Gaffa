@@ -16,6 +16,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { matchTargets, type MatchablePlayer } from './matchTargets';
 import { targetStance } from './targetStance';
 import type { ClubRef } from '@/lib/notifications/clubRef';
+import type { TargetSupplySource } from '@/lib/notifications/copy';
 
 interface NotifyOptions {
   leagueId: string;
@@ -26,6 +27,12 @@ interface NotifyOptions {
   floor?: number | null;
   auctionOpen?: boolean;
   expiresAt?: string | number | Date | null;
+  /**
+   * What put him in front of the clubs: a listing, a release into the pool or
+   * a system auction for an arrival. The copy and the two-sided notice both
+   * depend on it: only a listing has a seller who chose to sell.
+   */
+  source: TargetSupplySource;
   /** Where the notification should land. */
   url: string;
   /**
@@ -64,7 +71,7 @@ export async function notifyTargetMatches(
 
     const playerName = opts.player.name ?? 'a player';
     const seller: ClubRef = opts.seller ?? { team_name: 'A club', abbreviation: null };
-    const clock = { auctionOpen: opts.auctionOpen, expiresAt: opts.expiresAt };
+    const clock = { auctionOpen: opts.auctionOpen, expiresAt: opts.expiresAt, source: opts.source };
 
     const namedSuitors: TargetNotifyResult['namedSuitors'] = [];
 
@@ -77,7 +84,9 @@ export async function notifyTargetMatches(
           budget: match.target.budget,
         });
 
-        if (match.named) {
+        // A private target is invisible to the league (179), so its author is
+        // told about the player but must never be named to the seller.
+        if (match.named && match.target.visibility !== 'private') {
           namedSuitors.push({
             teamId: match.team.id,
             teamName: match.team.team_name,
@@ -90,7 +99,7 @@ export async function notifyTargetMatches(
         // his POSITION hears the weaker, honest version. Flattening the two
         // would cry wolf on every squad-filler at that position.
         const notice = match.named
-          ? opts.seller
+          ? opts.source === 'listing' && opts.seller
             ? targetTwoSidedNotice(seller, playerName, '', 'suitor')
             : targetAvailableNotice(seller, playerName, clock)
           : targetProfileMatchNotice(seller, playerName, match.target.position ?? '', clock);

@@ -252,6 +252,7 @@ export async function executeDrop(
                 floor: null,
                 auctionOpen: true,
                 expiresAt: auctionExpiry,
+                source: 'release',
                 url: `/league/${team.league_id}/transfers/auctions`,
             });
         } catch (err) {

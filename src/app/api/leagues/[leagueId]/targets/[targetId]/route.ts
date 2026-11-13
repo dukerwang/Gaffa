@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { POSITION_FLEX_MAP } from '@/types';
 import { MAX_PUBLIC_TARGETS, TARGET_NOTE_MAX, TARGET_TTL_MS } from '@/lib/transfers/targetLimits';
 import { isTargetRole } from '@/lib/transfers/targetRole';
+import { isTargetPosition, parseVisibility } from '@/lib/transfers/targetShape';
 
 /**
  * One target: edit it or withdraw it.
@@ -16,8 +16,6 @@ import { isTargetRole } from '@/lib/transfers/targetRole';
 interface Props {
   params: Promise<{ leagueId: string; targetId: string }>;
 }
-
-const VALID_POSITIONS = new Set(Object.keys(POSITION_FLEX_MAP));
 
 async function loadOwnTarget(leagueId: string, targetId: string, userId: string) {
   const admin = createAdminClient();
@@ -81,7 +79,7 @@ export async function PATCH(req: NextRequest, { params }: Props) {
     if (target.target_kind !== 'profile') {
       return NextResponse.json({ error: 'A named target has no position to change' }, { status: 400 });
     }
-    if (!VALID_POSITIONS.has(String(position))) {
+    if (!isTargetPosition(position)) {
       return NextResponse.json({ error: 'Pick one of the 12 tactical positions' }, { status: 400 });
     }
     patch.position = position;
@@ -98,8 +96,10 @@ export async function PATCH(req: NextRequest, { params }: Props) {
   }
 
   if (visibility !== undefined) {
-    const audience: 'public' | 'direct' | 'private' =
-      visibility === 'private' ? 'private' : visibility === 'direct' ? 'direct' : 'public';
+    const audience = parseVisibility(visibility);
+    if (!audience) {
+      return NextResponse.json({ error: 'visibility must be "public", "direct" or "private"' }, { status: 400 });
+    }
 
     // A role profile has no owner, so there is nobody for 'direct' to reach.
     if (audience === 'direct' && target.target_kind !== 'player') {

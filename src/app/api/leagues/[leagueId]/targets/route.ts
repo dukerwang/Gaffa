@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { FULL_PLAYER_SELECT } from '@/lib/constants/queries';
-import { POSITION_FLEX_MAP } from '@/types';
 import { targetStance } from '@/lib/transfers/targetStance';
 import { isTargetRole } from '@/lib/transfers/targetRole';
+import { isTargetPosition, parseVisibility } from '@/lib/transfers/targetShape';
 import {
   MAX_ACTIVE_TARGETS,
   MAX_PUBLIC_TARGETS,
@@ -25,8 +25,6 @@ import {
 interface Props {
   params: Promise<{ leagueId: string }>;
 }
-
-const VALID_POSITIONS = new Set(Object.keys(POSITION_FLEX_MAP));
 
 /** Active and unexpired. Everything reads targets through this pair. */
 function liveTargets(admin: ReturnType<typeof createAdminClient>, leagueId: string) {
@@ -142,7 +140,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: 'A named target needs a player' }, { status: 400 });
   }
 
-  if (targetKind === 'profile' && !VALID_POSITIONS.has(String(position))) {
+  if (targetKind === 'profile' && !isTargetPosition(position)) {
     return NextResponse.json({ error: 'Pick one of the 12 tactical positions' }, { status: 400 });
   }
 
@@ -154,11 +152,13 @@ export async function POST(req: NextRequest, { params }: Props) {
 
   // ── Audience. Three rungs (182), not the two 179 shipped with.
   //
-  // Anything unrecognised falls back to 'public' rather than 400ing, matching
-  // how the boolean stances below treat a missing field: the editor always
-  // sends one, and a body that doesn't is an old client, not an attack.
-  const audience: 'public' | 'direct' | 'private' =
-    visibility === 'private' ? 'private' : visibility === 'direct' ? 'direct' : 'public';
+  // Omitted means public, the documented default. A value that is present but
+  // unrecognised is refused: falling back to public would broadcast a target
+  // its author may have meant to keep private.
+  const audience = parseVisibility(visibility);
+  if (!audience) {
+    return NextResponse.json({ error: 'visibility must be "public", "direct" or "private"' }, { status: 400 });
+  }
 
   // A role profile has no owner, so there is nobody for 'direct' to reach.
   // The kind-shape CHECK enforces this too; catching it here turns a
@@ -269,24 +269,29 @@ export async function POST(req: NextRequest, { params }: Props) {
     try {
       // roster_entries carries league_id itself, so the owner lookup is
       // scoped without leaning on the embed to report which league it is in.
-      const [{ data: playerRow }, { data: holder }] = await Promise.all([
+      // A loaned player has two roster rows (the lender's and the borrower's),
+      // so this reads every holder rather than expecting one.
+      const [{ data: playerRow }, { data: holders }] = await Promise.all([
         admin.from('players').select('name').eq('id', playerId as string).maybeSingle(),
         admin
           .from('roster_entries')
           .select('team_id, team:teams!team_id(id, user_id)')
           .eq('league_id', leagueId)
-          .eq('player_id', playerId as string)
-          .maybeSingle(),
+          .eq('player_id', playerId as string),
       ]);
 
       // PostgREST models every embed as an array, including to-one relations.
-      const embedded = holder?.team as unknown;
-      const ownerTeam = (Array.isArray(embedded) ? embedded[0] : embedded) as
-        | { id: string; user_id: string }
-        | null
-        | undefined;
+      const owners = new Map<string, { id: string; user_id: string | null }>();
+      for (const row of holders ?? []) {
+        const embedded = row.team as unknown;
+        const team = (Array.isArray(embedded) ? embedded[0] : embedded) as
+          | { id: string; user_id: string | null }
+          | null
+          | undefined;
+        if (team && team.id !== myTeam.id) owners.set(team.id, team);
+      }
 
-      if (ownerTeam && ownerTeam.id !== myTeam.id) {
+      if (owners.size > 0) {
         const { createNotification } = await import('@/lib/notifications/createNotification');
         const { targetDeclaredNotice } = await import('@/lib/notifications/copy');
 
@@ -297,19 +302,23 @@ export async function POST(req: NextRequest, { params }: Props) {
           budget: budget ?? null,
         });
 
-        await createNotification(admin, {
-          kind: 'targets',
-          leagueId,
-          userId: ownerTeam.user_id,
-          ...targetDeclaredNotice(
-            myTeam,
-            playerRow?.name ?? 'a player',
-            stance.headline,
-            audience === 'direct',
-          ),
-          url: `/league/${leagueId}/transfers/targets`,
-          tag: `target-declared-${target.id}`,
-        });
+        for (const ownerTeam of owners.values()) {
+          await createNotification(admin, {
+            kind: 'targets',
+            leagueId,
+            userId: ownerTeam.user_id,
+            ...targetDeclaredNotice(
+              myTeam,
+              playerRow?.name ?? 'a player',
+              stance.headline,
+              audience === 'direct',
+            ),
+            // The transfers hub is where a target shows up; there is no
+            // page of its own yet.
+            url: `/league/${leagueId}/transfers`,
+            tag: `target-declared-${target.id}`,
+          });
+        }
       }
     } catch (err) {
       console.error('[targets] Failed to notify the owner of a declared target:', err);

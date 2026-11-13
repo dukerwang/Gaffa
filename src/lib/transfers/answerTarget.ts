@@ -18,10 +18,9 @@
  * a left-back profile is hoping to shake loose.
  */
 
-import { POSITION_FLEX_MAP } from '@/types';
+import { isTargetPosition } from './targetShape';
 
 /** The 12 tactical positions, derived from the flex map so the two can't drift. */
-const VALID_POSITIONS = new Set(Object.keys(POSITION_FLEX_MAP));
 
 /** The little this needs to know about one of my players. */
 export interface AnswerablePlayer {
@@ -65,7 +64,7 @@ export function playersAnswering<T extends AnswerablePlayer>(
   }
 
   const wanted = target.position;
-  if (!wanted || !VALID_POSITIONS.has(wanted)) return [];
+  if (!isTargetPosition(wanted)) return [];
 
   return available.filter((p) => {
     if (p.primary_position === wanted) return true;

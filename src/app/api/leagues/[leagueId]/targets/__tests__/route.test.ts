@@ -288,6 +288,22 @@ describe('the caps', () => {
   });
 });
 
+describe('audience', () => {
+  it('refuses a visibility it does not recognise rather than going public', async () => {
+    const tables = setup();
+    const res = await post(target({ visibility: 'priavte' }));
+    expect(res.status).toBe(400);
+    expect(tables.player_targets).toHaveLength(0);
+    expect(state.notify).not.toHaveBeenCalled();
+  });
+
+  it('treats an omitted visibility as public', async () => {
+    const tables = setup();
+    expect((await post(target())).status).toBe(201);
+    expect(tables.player_targets[0].visibility).toBe('public');
+  });
+});
+
 describe('duplicates', () => {
   it('refuses a second target for the same player', async () => {
     setup((t) => {
@@ -321,6 +337,21 @@ describe('telling the owner', () => {
       leagueId: LEAGUE_ID,
       userId: OTHER_USER_ID,
     });
+  });
+
+  it('tells both clubs when the player is on loan and has two roster rows', async () => {
+    setup((t) => {
+      t.teams.push({ id: 'third-team', league_id: LEAGUE_ID, user_id: 'third-user', team_name: 'Third FC', abbreviation: 'THR', faab_budget: 100 });
+      t.roster_entries.push({ id: 'loan-entry', league_id: LEAGUE_ID, team_id: 'third-team', player_id: WANTED, status: 'active' });
+    });
+    expect((await post(target())).status).toBe(201);
+    const users = state.notify.mock.calls.map((c: any[]) => c[1].userId).sort();
+    expect(users).toEqual([OTHER_USER_ID, 'third-user'].sort());
+  });
+
+  it('points the notice at a page that exists', async () => {
+    await post(target());
+    expect(state.notify.mock.calls[0][1].url).toBe(`/league/${LEAGUE_ID}/transfers`);
   });
 
   it('tells nobody about a private target', async () => {

@@ -253,6 +253,19 @@ describe('target notices', () => {
         expect(n.pushBody).toBe('Saliba, one of your targets, is listed.');
     });
 
+    it('words a release and an arrival as what they are, not as a listing', () => {
+        const released = targetAvailableNotice(chelsea, 'Saliba', { source: 'release' });
+        expect(released.content).toContain('have released');
+        expect(released.pushBody).toBe('Saliba, one of your targets, has been released.');
+
+        const arrived = targetAvailableNotice({ team_name: 'A club', abbreviation: null }, 'Saliba', { source: 'arrival' });
+        expect(arrived.content).toContain('has arrived and is open to bids');
+        expect(arrived.content).not.toContain('have listed');
+
+        const profile = targetProfileMatchNotice(chelsea, 'Kerkez', 'LB', { source: 'release' });
+        expect(profile.content).toContain('have released');
+    });
+
     it('leads with the position, not the player, on a profile match', () => {
         // The weaker claim needs the weaker headline: this is "somebody who
         // plays there", not "the man you asked for".

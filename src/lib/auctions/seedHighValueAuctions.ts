@@ -240,6 +240,7 @@ async function notifyTargetsOfArrivals(
         floor: null,
         auctionOpen: true,
         expiresAt,
+        source: 'arrival',
         url: `/league/${leagueId}/transfers/auctions`,
       });
     }

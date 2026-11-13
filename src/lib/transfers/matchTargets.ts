@@ -17,10 +17,8 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { POSITION_FLEX_MAP, type GranularPosition, type PlayerTarget } from '@/types';
-
-/** The 12 tactical positions, derived from the flex map so the two can't drift. */
-const VALID_POSITIONS = new Set(Object.keys(POSITION_FLEX_MAP));
+import type { GranularPosition, PlayerTarget } from '@/types';
+import { isTargetPosition } from './targetShape';
 
 /** The little a match needs to know about the player who became available. */
 export interface MatchablePlayer {
@@ -82,7 +80,7 @@ export async function matchTargets(
   // 12-position taxonomy, and ignoring it would make profiles feel broken on
   // exactly the players who matter most.
   const positions = [player.primary_position, ...(player.secondary_positions ?? [])]
-    .filter((p): p is string => typeof p === 'string' && VALID_POSITIONS.has(p));
+    .filter(isTargetPosition);
 
   const orClauses = [`player_id.eq.${player.id}`];
   if (positions.length > 0) orClauses.push(`position.in.(${positions.join(',')})`);
