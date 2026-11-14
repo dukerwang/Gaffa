@@ -14,6 +14,7 @@ import LoanOfferCard, { type LoanSummary } from '@/components/chat/LoanOfferCard
 import dynamic from 'next/dynamic';
 import { useLeagueChat } from './LeagueChatContext';
 import { FUTBOLPEDIA_ASSISTANT_CAPTION } from '@/lib/chat/isClubChatContext';
+import { FutbolpediaMark } from '@/components/integrations/futbolpediaBrand';
 import styles from './LeagueChatWidget.module.css';
 
 const FutbolpediaChatPanel = dynamic(
@@ -553,8 +554,8 @@ function LeagueChatWidgetContent({
                     setViewMode('chat');
                   }}
                 >
-                  <div className={`${styles.channelItemAvatar} ${styles.channelItemAvatarAssistant}`}>
-                    <Icon name="soccer" size={16} strokeWidth={2} />
+                  <div className={styles.channelItemAvatar}>
+                    <FutbolpediaMark size={26} />
                   </div>
                   <div className={styles.channelItemInfo}>
                     <span className={styles.channelItemName}>Futbolpedia</span>

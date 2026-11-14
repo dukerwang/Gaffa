@@ -1,6 +1,7 @@
 import Portrait from '@/components/players/Portrait';
 import PositionBadge from '@/components/players/PositionBadge';
 import NavigationLink from '@/components/ui/NavigationLink';
+import FutbolpediaPlayerLink from '@/components/integrations/FutbolpediaPlayerLink';
 import { getPlayerDisplayName } from '@/lib/players/displayName';
 import type { GranularPosition } from '@/types';
 import { STYLE_LABEL } from '@futbolpedia/engine';
@@ -180,6 +181,9 @@ export default function PlayerHub({
               ) : (
                 <p className={styles.empty}>Not yet scouted.</p>
               )}
+              <div className={styles.readFurther}>
+                <FutbolpediaPlayerLink names={[displayName, player.web_name ?? '']} />
+              </div>
             </div>
           </section>
 

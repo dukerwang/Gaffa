@@ -234,3 +234,8 @@
 }
 
 .skeleton .skelChips { height: 60px; }
+
+/* Read further on Futbolpedia, under the scouting report. */
+.readFurther {
+  margin-top: var(--s3);
+}

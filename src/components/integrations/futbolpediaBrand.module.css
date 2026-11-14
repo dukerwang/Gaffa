@@ -1,0 +1,14 @@
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-fp-ink);
+  background: var(--color-fp-surface);
+  color: var(--color-fp-ink);
+  font-family: var(--font-fp-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1;
+}

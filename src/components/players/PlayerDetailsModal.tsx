@@ -372,7 +372,7 @@ function PlayerCardShell({
           card nobody turned to. */}
       {tab === 'scout' && (
         <div className={styles.view} role="tabpanel" id="player-card-panel-scout" aria-labelledby="player-card-tab-scout">
-          <PlayerCardScouting playerId={player.id} leagueId={leagueId} season={selected} isCurrent={isCurrent} />
+          <PlayerCardScouting playerId={player.id} playerNames={[getPlayerDisplayName(player, 'full'), player.web_name ?? '']} leagueId={leagueId} season={selected} isCurrent={isCurrent} />
         </div>
       )}
     </>
