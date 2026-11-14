@@ -94,7 +94,18 @@ export default function TopBar() {
   const router = useRouter();
   const [teams, setTeams] = useState<UserTeam[]>([]);
   const [username, setUsername] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  // Two independent signals, because either alone can be wrong. The browser
+  // client's getUser() reports "no user" whenever its own network call or token
+  // refresh fails, even with a valid session cookie the server accepts; the
+  // teams fetch is answered by the server's own check. Signed in if either says so.
+  const [clientAuth, setClientAuth] = useState<boolean | null>(null);
+  const [serverAuth, setServerAuth] = useState<boolean | null>(null);
+  const isAuthenticated =
+    clientAuth === true || serverAuth === true
+      ? true
+      : clientAuth === false && serverAuth === false
+        ? false
+        : null;
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -169,8 +180,10 @@ export default function TopBar() {
   // function invocations) whenever a trade, bid, or budget update commits to Postgres.
   const fetchTeams = useCallback(() => {
     fetch('/api/user/leagues')
-      .then((r) => r.json())
-      .then(({ teams: data }) => {
+      .then(async (r) => {
+        if (r.status === 401) setServerAuth(false);
+        else if (r.ok) setServerAuth(true);
+        const { teams: data } = await r.json();
         if (data) setTeams(data);
       })
       .catch(console.error);
@@ -231,10 +244,10 @@ export default function TopBar() {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) {
-        setIsAuthenticated(false);
+        setClientAuth(false);
         return;
       }
-      setIsAuthenticated(true);
+      setClientAuth(true);
       supabase
         .from('users')
         .select('username')
