@@ -8,7 +8,8 @@ import {
   lookUpFutbolpediaCards,
   type FutbolpediaCard,
 } from '@/lib/integrations/futbolpediaLinks';
-import { FutbolpediaMark, fpFontVars } from './futbolpediaBrand';
+import { FutbolpediaMark } from './futbolpediaBrand';
+import { fpFontVars } from './futbolpediaFonts';
 import styles from './FutbolpediaPlayerLink.module.css';
 
 /**
@@ -26,8 +27,10 @@ export default function FutbolpediaPlayerLink({ names }: { names: string[] }) {
     if (wanted.length === 0) return;
     void lookUpFutbolpediaCards(wanted).then((cards) => {
       if (!active) return;
-      const card = wanted.map((n) => cards[n]).find(Boolean) ?? null;
-      setFound({ key, card });
+      const answers = wanted.map((n) => cards[n]);
+      // Unknown (the lookup failed): show nothing rather than claim there's no dossier.
+      if (answers.every((a) => a === undefined)) return;
+      setFound({ key, card: answers.find(Boolean) ?? null });
     });
     return () => {
       active = false;

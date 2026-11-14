@@ -9,7 +9,8 @@ import {
   type FutbolpediaCard,
 } from '@/lib/integrations/futbolpediaLinks';
 import { readFutbolpediaReply, type FutbolpediaScorecard } from '@/lib/integrations/futbolpediaStream';
-import { FutbolpediaMark, fpFontVars } from './futbolpediaBrand';
+import { FutbolpediaMark } from './futbolpediaBrand';
+import { fpFontVars } from './futbolpediaFonts';
 import FutbolpediaProse from './FutbolpediaProse';
 import styles from './FutbolpediaChatPanel.module.css';
 
@@ -136,14 +137,14 @@ export default function FutbolpediaChatPanel({
           setError(event.message);
         }
       });
-      if (!answered) setError((e) => e ?? 'Futbolpedia returned an empty reply');
+      if (!answered) setError((e) => e ?? 'Futbolpedia stopped before finishing. Try again.');
     } catch {
       setError('Could not reach Futbolpedia');
     } finally {
-      // A question that got no answer leaves the thread (so it isn't sent back as history) and
-      // goes back in the box to try again.
+      // A question that got no full answer leaves the thread with any partial reply (neither is
+      // sent back as history) and goes back in the box to try again.
       if (!answered) {
-        setTurns((prev) => prev.filter((t) => t.id !== questionId && (t.id !== replyId || t.content.trim())));
+        setTurns((prev) => prev.filter((t) => t.id !== questionId && t.id !== replyId));
         setDraft((d) => d || message);
       }
       updateTurn(replyId, { streaming: false });
@@ -209,8 +210,8 @@ export default function FutbolpediaChatPanel({
           <div className={styles.empty}>
             <p className={styles.emptyLead}>Ask about {clubName}: your XI, a trade or the market.</p>
             <p className={styles.emptyNote}>
-              Futbolpedia is a separate app. Its answers draw on live Premier League data and its own scouting
-              cards, and you can carry any conversation over to{' '}
+              Futbolpedia is a separate app, built on live Premier League data and its own scouting cards.
+              You can carry any conversation over to{' '}
               <a href={futbolpediaPublicOrigin()} target="_blank" rel="noopener noreferrer">
                 futbolpedia.ai.studio
               </a>
@@ -256,7 +257,7 @@ export default function FutbolpediaChatPanel({
               )}
               {t.continueSuggested && !t.streaming && (
                 <button type="button" className={styles.inlineContinue} onClick={continueInFutbolpedia} disabled={continuing}>
-                  Rate players and read full cards in Futbolpedia
+                  Rate Players in Futbolpedia
                   <Icon name="external-link" size={12} strokeWidth={2} />
                 </button>
               )}

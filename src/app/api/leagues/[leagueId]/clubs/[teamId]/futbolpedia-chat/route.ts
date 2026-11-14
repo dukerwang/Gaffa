@@ -28,6 +28,10 @@ export async function POST(req: NextRequest, { params }: Props) {
   const message = typeof body.message === 'string' ? body.message : '';
   if (!message.trim()) return NextResponse.json({ error: 'Missing message' }, { status: 400 });
 
+  // The timeout covers only the wait for Futbolpedia to start answering; once it streams, the
+  // reply runs to its end (within maxDuration) instead of being cut mid-answer.
+  const started = new AbortController();
+  const startTimer = setTimeout(() => started.abort(), 30_000);
   try {
     const upstream = await fetch(`${auth.origin}/api/gaffa/chat`, {
       method: 'POST',
@@ -41,12 +45,17 @@ export async function POST(req: NextRequest, { params }: Props) {
         conversationId: panelConversationId(body.conversationId),
         stream: true,
       }),
-      signal: AbortSignal.timeout(115_000),
+      signal: started.signal,
     });
+    clearTimeout(startTimer);
     if (!upstream.ok || !upstream.body) {
       const data = await upstream.json().catch(() => ({}));
       return NextResponse.json(
-        { error: data?.error || `Futbolpedia error (${upstream.status})` },
+        {
+          error: data?.error || `Futbolpedia error (${upstream.status})`,
+          // A refused turn says how many are left (0 at the daily limit), so the panel can hand over.
+          ...(typeof data?.turnsLeft === 'number' ? { turnsLeft: data.turnsLeft } : {}),
+        },
         { status: upstream.status >= 400 ? upstream.status : 502 },
       );
     }
@@ -59,6 +68,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       },
     });
   } catch (err) {
+    clearTimeout(startTimer);
     console.error('[futbolpedia-chat]', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Could not reach Futbolpedia' }, { status: 502 });
   }

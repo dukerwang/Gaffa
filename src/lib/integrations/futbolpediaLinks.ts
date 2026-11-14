@@ -31,29 +31,40 @@ export interface FutbolpediaCard {
   slug: string;
 }
 
-const cache = new Map<string, Promise<FutbolpediaCard | null>>();
+/** A name's card, null when Futbolpedia has none, undefined when the lookup failed. */
+type Lookup = FutbolpediaCard | null | undefined;
+
+const cache = new Map<string, Promise<Lookup>>();
 
 /**
- * Futbolpedia's shared card for each name, or null when it has none. Asked of Futbolpedia's
- * public lookup straight from the browser (no Gaffa function call), once per name per page load.
+ * Futbolpedia's shared card for each name: the card, null when it has none, or undefined when
+ * the lookup failed. Asked of Futbolpedia's public lookup straight from the browser (no Gaffa
+ * function call), once per name per page load. A failed lookup isn't kept, so the next one asks
+ * again rather than repeating a wrong "no dossier".
  */
-export async function lookUpFutbolpediaCards(names: string[]): Promise<Record<string, FutbolpediaCard | null>> {
+export async function lookUpFutbolpediaCards(names: string[]): Promise<Record<string, Lookup>> {
   const wanted = [...new Set(names.map((n) => n.trim()).filter(Boolean))];
   const missing = wanted.filter((n) => !cache.has(n));
   if (missing.length > 0) {
-    const request = fetch(
+    const request: Promise<Record<string, FutbolpediaCard | null> | null> = fetch(
       `${futbolpediaPublicOrigin()}/api/cards/lookup?${new URLSearchParams({ names: missing.slice(0, 25).join(',') })}`,
     )
-      .then((r) => (r.ok ? r.json() : { cards: {} }))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((d) => (d?.cards ?? {}) as Record<string, FutbolpediaCard | null>)
-      .catch(() => ({}) as Record<string, FutbolpediaCard | null>);
+      .catch(() => null);
     for (const name of missing) {
       cache.set(
         name,
-        request.then((cards) => cards[name] ?? null),
+        request.then((cards) => {
+          if (!cards) {
+            cache.delete(name);
+            return undefined;
+          }
+          return cards[name] ?? null;
+        }),
       );
     }
   }
-  const entries = await Promise.all(wanted.map(async (n) => [n, await cache.get(n)!] as const));
+  const entries = await Promise.all(wanted.map(async (n) => [n, await cache.get(n)] as const));
   return Object.fromEntries(entries);
 }

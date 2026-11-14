@@ -1,29 +1,33 @@
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { parseBlocks } from '../FutbolpediaProse';
+import FutbolpediaProse from '../FutbolpediaProse';
 
-describe('parseBlocks', () => {
-  it('reads Futbolpedia replies as paragraphs, bullet and numbered lists, headings and tables', () => {
-    const text = [
-      '### Recommended XI',
-      '* **RB: Timber** (Arsenal) — no OOP penalty.',
-      '- **DM: Caicedo** (Chelsea)',
-      '',
-      '1. DEF: Muharemović',
-      '2. MID: Wharton',
-      '',
-      '| Slot | Player |',
-      '| --- | --- |',
-      '| RW | Saka |',
-      '',
-      '*(Note: keep him on the reserves.)*',
-      'A second line.',
-    ].join('\n');
-    expect(parseBlocks(text)).toEqual([
-      { kind: 'h', text: 'Recommended XI' },
-      { kind: 'ul', items: ['**RB: Timber** (Arsenal) — no OOP penalty.', '**DM: Caicedo** (Chelsea)'] },
-      { kind: 'ol', items: ['DEF: Muharemović', 'MID: Wharton'] },
-      { kind: 'table', rows: [['Slot', 'Player'], ['RW', 'Saka']] },
-      { kind: 'p', lines: ['*(Note: keep him on the reserves.)*', 'A second line.'] },
-    ]);
+describe('FutbolpediaProse', () => {
+  it('renders Futbolpedia’s lists, bold, italics and tables, and skips raw HTML', () => {
+    const html = renderToStaticMarkup(
+      createElement(FutbolpediaProse, {
+        text: [
+          '* **RB: Timber** (Arsenal)',
+          '',
+          '1. DEF: Muharemović',
+          '',
+          '*(Note: keep him on the reserves.)*',
+          '',
+          '| Slot | Player |',
+          '| --- | --- |',
+          '| RW | Saka |',
+          '',
+          '<script>alert(1)</script>',
+        ].join('\n'),
+      }),
+    );
+    expect(html).toContain('<ul>');
+    expect(html).toContain('<strong>RB: Timber</strong>');
+    expect(html).toContain('<ol>');
+    expect(html).toContain('<em>(Note: keep him on the reserves.)</em>');
+    expect(html).toContain('<td>Saka</td>');
+    expect(html).not.toContain('<script');
+    expect(html).not.toContain('*');
   });
 });
