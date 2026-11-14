@@ -9,11 +9,14 @@ import LoginForm from '@/components/auth/LoginForm';
 import AuthShowcase from '@/components/auth/AuthShowcase';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import { Icon } from '@/components/ui/Icon';
+import { rememberNextForOAuth, safeNextPath } from '@/lib/auth/nextPath';
+import AuthSwitchLink from '@/components/auth/AuthSwitchLink';
 
 function LoginCard() {
   const supabase = createClient();
   const searchParams = useSearchParams();
   const errorParam = searchParams.get('error');
+  const next = safeNextPath(searchParams.get('next'));
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
@@ -25,6 +28,7 @@ function LoginCard() {
 
   const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
     if (isEnvMissing) return;
+    rememberNextForOAuth(next);
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -47,7 +51,7 @@ function LoginCard() {
         </div>
       )}
 
-      <LoginForm />
+      <LoginForm next={next} />
 
       <div className={styles.divider}>
         <span>or continue with</span>
@@ -103,9 +107,9 @@ export default function LoginPage() {
         {/* Header link */}
         <div className={styles.topNav}>
           <span>New here?</span>
-          <Link href="/signup" className={styles.topNavLink}>
+          <AuthSwitchLink to="/signup" className={styles.topNavLink}>
             Create an account
-          </Link>
+          </AuthSwitchLink>
         </div>
 
         {/* Brand stamp for mobile only */}

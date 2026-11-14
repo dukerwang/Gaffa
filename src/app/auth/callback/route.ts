@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { NEXT_PATH_COOKIE, nextPathFromCookie } from '@/lib/auth/nextPath';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -15,7 +16,9 @@ export async function GET(request: NextRequest) {
   }
 
   // Create the redirect response object first so we can bind cookies to it directly
-  const response = NextResponse.redirect(requestUrl.origin);
+  const next = nextPathFromCookie(request.cookies.get(NEXT_PATH_COOKIE)?.value);
+  const response = NextResponse.redirect(`${requestUrl.origin}${next ?? ''}`);
+  if (next) response.cookies.set(NEXT_PATH_COOKIE, '', { path: '/', maxAge: 0 });
 
   if (code) {
     const supabase = createServerClient(supabaseUrl, supabaseKey, {
@@ -41,9 +44,10 @@ export async function GET(request: NextRequest) {
       if (error) {
         return NextResponse.redirect(`${requestUrl.origin}/login?error=${encodeURIComponent(error.message)}`);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error exchanging OAuth code for session:', error);
-      return NextResponse.redirect(`${requestUrl.origin}/login?error=${encodeURIComponent(error?.message || 'Unknown code exchange error')}`);
+      const message = error instanceof Error && error.message ? error.message : 'Unknown code exchange error';
+      return NextResponse.redirect(`${requestUrl.origin}/login?error=${encodeURIComponent(message)}`);
     }
   } else {
     // If no code is received, we redirect to login with error

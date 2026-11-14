@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { safeNextPath } from '@/lib/auth/nextPath';
 import styles from './AuthForm.module.css';
 
-export default function LoginForm() {
+export default function LoginForm({ next }: { next?: string | null }) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +27,7 @@ export default function LoginForm() {
       return;
     }
 
-    router.push('/');
+    router.push(safeNextPath(next) ?? '/');
     router.refresh();
   }
 

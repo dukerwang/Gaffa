@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/Switch';
 import NotificationsToggle from '@/components/layout/NotificationsToggle';
 import LeaveLeagueButton from '@/components/settings/LeaveLeagueButton';
 import PlatformAdminSection from '@/components/settings/PlatformAdminSection';
+import ConnectedApps from '@/components/settings/ConnectedApps';
 import CommissionerTools, { type CommissionerClub } from '@/components/settings/CommissionerTools';
 import { COMMISSIONER_LEAVE_BLOCKED_MESSAGE } from '@/lib/leagues/leaveGuard';
 import {
@@ -168,6 +169,12 @@ export default function SettingsClient({
             );
           })}
         </div>
+      </section>
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Connected Apps</h2>
+        <p className={styles.sectionHint}>Read-only access you&apos;ve given to other apps.</p>
+        <ConnectedApps />
       </section>
 
       {leagueId && (
