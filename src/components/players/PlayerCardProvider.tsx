@@ -358,6 +358,17 @@ export function usePlayerCard(): PlayerCardContextValue {
   return ctx;
 }
 
+const noPrefetch: PlayerCardContextValue['prefetchPlayer'] = () => {};
+
+/**
+ * Hover prefetch for a component that also renders outside the dashboard, where there is no
+ * PlayerCardProvider: the sign-in page's showcase draws a real TradeCard. Outside the provider
+ * there is no card to warm, so hovering does nothing instead of throwing.
+ */
+export function usePlayerCardPrefetch(): PlayerCardContextValue['prefetchPlayer'] {
+  return useContext(PlayerCardContext)?.prefetchPlayer ?? noPrefetch;
+}
+
 /** True while `openPlayerById` is resolving a cold player. */
 export function usePlayerCardResolving(): boolean {
   return useContext(PlayerCardStatusContext);
