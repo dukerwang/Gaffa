@@ -15,7 +15,9 @@ export const CODE_TTL_MS = 5 * 60 * 1000;
 const TOUCH_INTERVAL_MS = 60 * 60 * 1000;
 const TOKEN_PREFIX = 'fpg_';
 
-const DEFAULT_ALLOWED_ORIGINS = ['https://futbolpedia.ai.studio', 'http://localhost:3000'];
+/** The live Futbolpedia; a local build is added through FUTBOLPEDIA_ALLOWED_ORIGINS, or by default outside production. */
+const LIVE_ORIGIN = 'https://futbolpedia.ai.studio';
+const DEV_ORIGIN = 'http://localhost:3000';
 
 export class GrantError extends Error {
   constructor(
@@ -27,13 +29,21 @@ export class GrantError extends Error {
   }
 }
 
-/** Origins a code may be returned to: FUTBOLPEDIA_ALLOWED_ORIGINS (comma-separated) or the defaults. */
-export function allowedFutbolpediaOrigins(raw = process.env.FUTBOLPEDIA_ALLOWED_ORIGINS): string[] {
+/**
+ * Origins a code may be returned to: FUTBOLPEDIA_ALLOWED_ORIGINS (comma-separated), else the live
+ * Futbolpedia, plus a local build on :3000 only outside production, so gaffa.live never issues a
+ * grant to whatever runs on a manager's own machine.
+ */
+export function allowedFutbolpediaOrigins(
+  raw = process.env.FUTBOLPEDIA_ALLOWED_ORIGINS,
+  production = process.env.NODE_ENV === 'production',
+): string[] {
   const list = (raw ?? '')
     .split(',')
     .map((s) => s.trim().replace(/\/$/, ''))
     .filter(Boolean);
-  return list.length > 0 ? list : DEFAULT_ALLOWED_ORIGINS;
+  if (list.length > 0) return list;
+  return production ? [LIVE_ORIGIN] : [LIVE_ORIGIN, DEV_ORIGIN];
 }
 
 /** An exact origin (scheme, host, port; no path) on the allowlist. */

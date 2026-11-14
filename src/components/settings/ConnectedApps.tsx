@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { toast } from '@/components/ui/toast';
+import { originHost } from '@/lib/integrations/futbolpediaConnectUrl';
 import styles from './settings.module.css';
 
 interface Grant {
@@ -10,14 +11,6 @@ interface Grant {
   return_origin: string;
   created_at: string;
   last_used_at: string | null;
-}
-
-function hostOf(origin: string): string {
-  try {
-    return new URL(origin).host;
-  } catch {
-    return origin;
-  }
 }
 
 function day(iso: string): string {
@@ -76,7 +69,7 @@ export default function ConnectedApps() {
       {grants.map((g) => (
         <div key={g.id} className={styles.row}>
           <div className={styles.rowMain}>
-            <span className={styles.rowLabel}>Futbolpedia · {hostOf(g.return_origin)}</span>
+            <span className={styles.rowLabel}>Futbolpedia · {originHost(g.return_origin)}</span>
             <span className={styles.rowMeta}>
               Connected {day(g.created_at)}
               {g.last_used_at ? ` · last used ${day(g.last_used_at)}` : ''}

@@ -81,6 +81,8 @@ describe('return origins', () => {
 
   it('falls back to the defaults when the variable is empty', () => {
     expect(allowedFutbolpediaOrigins('')).toContain('https://futbolpedia.ai.studio');
+    // Production never returns a code to a local build unless the variable says so.
+    expect(allowedFutbolpediaOrigins('', true)).toEqual(['https://futbolpedia.ai.studio']);
   });
 });
 
@@ -210,7 +212,8 @@ describe('safeNextPath', () => {
     expect(safeNextPath('https://evil.com')).toBeNull();
     expect(safeNextPath('/ok\n')).toBeNull();
     expect(safeNextPath(null)).toBeNull();
-    expect(nextPathFromCookie(encodeURIComponent('/settings'))).toBe('/settings');
+    expect(nextPathFromCookie('/settings?q=Rice %26 Saka')).toBe('/settings?q=Rice %26 Saka');
     expect(nextPathFromCookie('%E0%A4%A')).toBeNull();
+    expect(nextPathFromCookie(undefined)).toBeNull();
   });
 });

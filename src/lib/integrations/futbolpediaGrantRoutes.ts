@@ -33,25 +33,16 @@ export interface GrantClub {
 
 /** Every club the manager runs, newest first, with its league. */
 export async function listGrantClubs(userId: string): Promise<GrantClub[]> {
-  const admin = createAdminClient();
-  const { data: teams, error } = await admin
+  const { data: teams, error } = await createAdminClient()
     .from('teams')
-    .select('id, league_id, team_name, abbreviation, faab_budget, created_at')
+    .select('id, league_id, team_name, abbreviation, faab_budget, created_at, league:leagues(name, season, current_season, status)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw new GrantError('Could not load clubs', 500);
-  const rows = teams ?? [];
-  const leagueIds = [...new Set(rows.map((t) => t.league_id).filter(Boolean))];
-  const leagues = new Map<string, { name: string | null; season: string | null; current_season: string | null; status: string | null }>();
-  if (leagueIds.length > 0) {
-    const { data } = await admin
-      .from('leagues')
-      .select('id, name, season, current_season, status')
-      .in('id', leagueIds);
-    for (const lg of data ?? []) leagues.set(String(lg.id), lg);
-  }
-  return rows.map((t) => {
-    const lg = leagues.get(String(t.league_id));
+  type LeagueRow = { name: string | null; season: string | null; current_season: string | null; status: string | null };
+  return (teams ?? []).map((t) => {
+    const embedded = (t as { league?: LeagueRow | LeagueRow[] | null }).league;
+    const lg = Array.isArray(embedded) ? embedded[0] : embedded;
     return {
       club_id: String(t.id),
       club_name: String(t.team_name || 'Club'),

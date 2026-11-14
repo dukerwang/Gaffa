@@ -9,7 +9,8 @@ import LoginForm from '@/components/auth/LoginForm';
 import AuthShowcase from '@/components/auth/AuthShowcase';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import { Icon } from '@/components/ui/Icon';
-import { NEXT_PATH_COOKIE, safeNextPath } from '@/lib/auth/nextPath';
+import { rememberNextForOAuth, safeNextPath } from '@/lib/auth/nextPath';
+import AuthSwitchLink from '@/components/auth/AuthSwitchLink';
 
 function LoginCard() {
   const supabase = createClient();
@@ -27,11 +28,7 @@ function LoginCard() {
 
   const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
     if (isEnvMissing) return;
-    // The OAuth round trip drops query strings unless Supabase allowlists them,
-    // so the return path rides in a short-lived cookie that /auth/callback reads.
-    document.cookie = next
-      ? `${NEXT_PATH_COOKIE}=${encodeURIComponent(next)}; Path=/; Max-Age=600; SameSite=Lax; Secure`
-      : `${NEXT_PATH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; Secure`;
+    rememberNextForOAuth(next);
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -110,9 +107,9 @@ export default function LoginPage() {
         {/* Header link */}
         <div className={styles.topNav}>
           <span>New here?</span>
-          <Link href="/signup" className={styles.topNavLink}>
+          <AuthSwitchLink to="/signup" className={styles.topNavLink}>
             Create an account
-          </Link>
+          </AuthSwitchLink>
         </div>
 
         {/* Brand stamp for mobile only */}

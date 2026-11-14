@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { currentNextPath } from '@/lib/auth/nextPath';
 import styles from './AuthForm.module.css';
 
 export default function SignupForm() {
@@ -41,7 +42,7 @@ export default function SignupForm() {
       return;
     }
 
-    router.push('/');
+    router.push(currentNextPath() ?? '/');
     router.refresh();
   }
 

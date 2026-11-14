@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { futbolpediaConnectReturnUrl } from '@/lib/integrations/futbolpediaConnectUrl';
+import { futbolpediaConnectReturnUrl, originHost } from '@/lib/integrations/futbolpediaConnectUrl';
 import styles from './connect.module.css';
 
 interface Props {
@@ -14,14 +14,8 @@ interface Props {
 
 type Answer = { code: string } | { error: 'access_denied' };
 
-/** The host Futbolpedia runs on, shown so a manager can tell a local build from the live one. */
-function hostOf(origin: string): string {
-  try {
-    return new URL(origin).host;
-  } catch {
-    return origin;
-  }
-}
+/** How long Futbolpedia gets to close this window after the answer is posted. */
+const OPENER_GRACE_MS = 2000;
 
 export default function ConnectClient({ state, codeChallenge, returnOrigin, email }: Props) {
   const [pending, setPending] = useState(false);
@@ -29,19 +23,24 @@ export default function ConnectClient({ state, codeChallenge, returnOrigin, emai
   const [done, setDone] = useState<'allowed' | 'cancelled' | null>(null);
 
   /**
-   * Hand the answer back: to the window that opened this one when there is one,
-   * otherwise by sending this tab to Futbolpedia's return route. postMessage is
-   * pinned to returnOrigin, which the server checked against the allowlist.
+   * Hand the answer back to the Futbolpedia window that opened this one. postMessage is pinned
+   * to returnOrigin (checked against the allowlist), and Futbolpedia closes this window once it
+   * has the answer. If the window is still open shortly after, the opener wasn't Futbolpedia on
+   * that origin (a link opened from another tab), so this tab goes to Futbolpedia's return route
+   * instead. The code is still unused then, since only Futbolpedia can exchange it.
    */
   function deliver(answer: Answer) {
+    const toReturnRoute = () => window.location.assign(futbolpediaConnectReturnUrl(returnOrigin, { state, ...answer }));
     const opener = window.opener as Window | null;
-    if (opener && !opener.closed) {
-      opener.postMessage({ type: 'gaffa-connect', state, ...answer }, returnOrigin);
-      setDone('code' in answer ? 'allowed' : 'cancelled');
-      window.close();
+    if (!opener || opener.closed) {
+      toReturnRoute();
       return;
     }
-    window.location.assign(futbolpediaConnectReturnUrl(returnOrigin, { state, ...answer }));
+    opener.postMessage({ type: 'gaffa-connect', state, ...answer }, returnOrigin);
+    setDone('code' in answer ? 'allowed' : 'cancelled');
+    window.setTimeout(() => {
+      if (!window.closed) toReturnRoute();
+    }, OPENER_GRACE_MS);
   }
 
   async function allow() {
@@ -79,8 +78,8 @@ export default function ConnectClient({ state, codeChallenge, returnOrigin, emai
         Futbolpedia Access
       </h1>
       <p className={styles.lead}>
-        Give Futbolpedia read-only access to the clubs you run, so its analysis can take your squad
-        and league into account.
+        Give Futbolpedia read-only access to the clubs you run, so you can ask it about your squad
+        and league.
       </p>
 
       <ul className={styles.scopes}>
@@ -96,7 +95,7 @@ export default function ConnectClient({ state, codeChallenge, returnOrigin, emai
       <dl className={styles.meta}>
         <div>
           <dt>Requested From</dt>
-          <dd>{hostOf(returnOrigin)}</dd>
+          <dd>{originHost(returnOrigin)}</dd>
         </div>
         {email && (
           <div>

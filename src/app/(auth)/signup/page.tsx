@@ -7,11 +7,14 @@ import SignupForm from '@/components/auth/SignupForm';
 import AuthShowcase from '@/components/auth/AuthShowcase';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import { Icon } from '@/components/ui/Icon';
+import AuthSwitchLink from '@/components/auth/AuthSwitchLink';
+import { currentNextPath, rememberNextForOAuth } from '@/lib/auth/nextPath';
 
 export default function SignupPage() {
   const supabase = createClient();
 
   const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
+    rememberNextForOAuth(currentNextPath());
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -32,9 +35,9 @@ export default function SignupPage() {
         {/* Header link */}
         <div className={styles.topNav}>
           <span>Already have an account?</span>
-          <Link href="/login" className={styles.topNavLink}>
+          <AuthSwitchLink to="/login" className={styles.topNavLink}>
             Sign in
-          </Link>
+          </AuthSwitchLink>
         </div>
 
         {/* Brand stamp for mobile only */}

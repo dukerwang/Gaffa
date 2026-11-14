@@ -36,16 +36,10 @@ export default async function ConnectFutbolpediaPage({ searchParams }: Props) {
   const codeChallenge = one(params.code_challenge);
   const returnOrigin = one(params.return_origin);
 
+  // The proxy has already sent a signed-out visitor to /login with this page as `next`.
   const supabase = await createClient();
   const user = await getSessionUser(supabase);
-  if (!user) {
-    const qs = new URLSearchParams();
-    for (const [k, v] of Object.entries(params)) {
-      const value = one(v);
-      if (value) qs.set(k, value);
-    }
-    redirect(`/login?next=${encodeURIComponent(`/connect/futbolpedia?${qs.toString()}`)}`);
-  }
+  if (!user) redirect('/login');
 
   const valid =
     isValidState(state) && isValidCodeChallenge(codeChallenge) && isAllowedReturnOrigin(returnOrigin);

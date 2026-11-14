@@ -27,3 +27,12 @@ export function futbolpediaConnectReturnUrl(
   qs.set('state', params.state);
   return `${returnOrigin}/#/gaffa/connected?${qs.toString()}`;
 }
+
+/** The host an origin names ("futbolpedia.ai.studio", "localhost:3000"), shown so a manager can tell them apart. */
+export function originHost(origin: string): string {
+  try {
+    return new URL(origin).host;
+  } catch {
+    return origin;
+  }
+}
