@@ -1,0 +1,46 @@
+/* Futbolpedia's Markdown replies inside its panel (palette from --color-fp-*). */
+.prose {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.paragraph,
+.heading {
+  margin: 0;
+}
+
+.heading {
+  font-family: var(--font-fp-serif), Georgia, serif;
+  font-weight: 700;
+}
+
+.list {
+  margin: 0;
+  padding-left: var(--s5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  border-collapse: collapse;
+  font-size: var(--t-12);
+}
+
+.table th,
+.table td {
+  padding: var(--s1) var(--s2);
+  border-bottom: 1px solid var(--color-fp-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  font-weight: 600;
+  color: var(--color-fp-ink-muted);
+}

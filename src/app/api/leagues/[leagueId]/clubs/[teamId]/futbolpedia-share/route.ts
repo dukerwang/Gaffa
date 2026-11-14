@@ -38,7 +38,9 @@ export async function POST(req: NextRequest, { params }: Props) {
         { status: upstream.status >= 400 ? upstream.status : 502 },
       );
     }
-    return NextResponse.json({ url: `${auth.origin}${data.path}` });
+    // The path only: the panel puts Futbolpedia's public origin in front of it. `auth.origin` is the
+    // address this server reaches Futbolpedia on, which a browser may not.
+    return NextResponse.json({ path: data.path });
   } catch (err) {
     console.error('[futbolpedia-share]', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Could not reach Futbolpedia' }, { status: 502 });

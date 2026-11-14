@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import FormattedText from '@/components/ui/FormattedText';
 import { Icon } from '@/components/ui/Icon';
 import {
   futbolpediaCardUrl,
@@ -11,6 +10,7 @@ import {
 } from '@/lib/integrations/futbolpediaLinks';
 import { readFutbolpediaReply, type FutbolpediaScorecard } from '@/lib/integrations/futbolpediaStream';
 import { FutbolpediaMark, fpFontVars } from './futbolpediaBrand';
+import FutbolpediaProse from './FutbolpediaProse';
 import styles from './FutbolpediaChatPanel.module.css';
 
 type Role = 'user' | 'ai';
@@ -103,9 +103,10 @@ export default function FutbolpediaChatPanel({
     setStage(null);
     const prior = turns.filter((t) => t.content.trim()).map((t) => ({ sender: t.sender, content: t.content }));
     const replyId = newId();
+    const questionId = newId();
     setTurns((prev) => [
       ...prev,
-      { id: newId(), sender: 'user', content: message },
+      { id: questionId, sender: 'user', content: message },
       { id: replyId, sender: 'ai', content: '', streaming: true },
     ]);
     setSending(true);
@@ -139,7 +140,12 @@ export default function FutbolpediaChatPanel({
     } catch {
       setError('Could not reach Futbolpedia');
     } finally {
-      if (!answered) setTurns((prev) => prev.filter((t) => t.id !== replyId || t.content.trim()));
+      // A question that got no answer leaves the thread (so it isn't sent back as history) and
+      // goes back in the box to try again.
+      if (!answered) {
+        setTurns((prev) => prev.filter((t) => t.id !== questionId && (t.id !== replyId || t.content.trim())));
+        setDraft((d) => d || message);
+      }
       updateTurn(replyId, { streaming: false });
       setSending(false);
       setStage(null);
@@ -166,12 +172,15 @@ export default function FutbolpediaChatPanel({
         body: JSON.stringify({ history }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || typeof data?.url !== 'string') throw new Error(data?.error || 'Could not open Futbolpedia');
+      if (!res.ok || typeof data?.path !== 'string' || !data.path.startsWith('/#/c/')) {
+        throw new Error(data?.error || 'Could not open Futbolpedia');
+      }
+      const url = `${futbolpediaPublicOrigin()}${data.path}`;
       if (win) {
         win.opener = null;
-        win.location.href = data.url;
+        win.location.href = url;
       } else {
-        window.location.href = data.url;
+        window.location.href = url;
       }
     } catch (err) {
       win?.close();
@@ -223,7 +232,7 @@ export default function FutbolpediaChatPanel({
               {t.scorecard ? <LockLine card={t.scorecard} /> : null}
               {t.content ? (
                 <div className={styles.aiText}>
-                  <FormattedText text={t.content} />
+                  <FutbolpediaProse text={t.content} />
                 </div>
               ) : (
                 <p className={styles.pending}>{stage ?? 'Reading your club…'}</p>
