@@ -129,6 +129,10 @@ Two query conventions that are easy to break:
 ### Auth
 Supabase SSR via `@supabase/ssr`. Browser client in `src/lib/supabase/client.ts`, server client in `src/lib/supabase/server.ts`. Route groups `(auth)` and `(dashboard)` split public/protected pages; `src/proxy.ts` is where session refresh / route protection happens (the Next.js 16 equivalent of middleware).
 
+A signed-out visit to a protected page goes to `/login?next=<path>` and comes back after sign-in; Google sign-in carries the path in the `gaffa_next` cookie, since the OAuth round trip drops query strings. `safeNextPath` (`src/lib/auth/nextPath.ts`) accepts only same-site paths.
+
+**Connect with Gaffa** (migration 190, `src/lib/integrations/futbolpediaGrant.ts`): Futbolpedia reads a manager's clubs with a grant the manager approves at `/connect/futbolpedia`, an authorization code flow with PKCE. Allow issues a five-minute, single-use code bound to the manager, the code challenge and a return origin on `FUTBOLPEDIA_ALLOWED_ORIGINS`; Futbolpedia's server exchanges it at `/api/integrations/futbolpedia/token` for an `fpg_` bearer token. Only hashes are stored, in `futbolpedia_auth_codes` and `futbolpedia_grants` (service role only). The token reads `/clubs` and `/context` (only for a club the manager runs) and revokes itself at `DELETE /grant`; managers revoke from Settings › Connected Apps. `/context` still accepts `x-futbolpedia-secret` for Gaffa's own chat proxy, which checks the session and the club's owner first.
+
 ### Styling & UI Design
 Strict CSS Modules, no utility CSS frameworks. Design tokens (colors, including a distinct color per tactical position) are defined as CSS custom properties in `src/app/globals.css`; reuse existing `--color-*` tokens instead of hardcoding hex values. Two themes: Cream Editorial (light, serif headings via Newsreader + Hanken Grotesk body) and Premium Dark — every color change must be checked in both.
 

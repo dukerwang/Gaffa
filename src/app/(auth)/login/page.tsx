@@ -9,11 +9,13 @@ import LoginForm from '@/components/auth/LoginForm';
 import AuthShowcase from '@/components/auth/AuthShowcase';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import { Icon } from '@/components/ui/Icon';
+import { NEXT_PATH_COOKIE, safeNextPath } from '@/lib/auth/nextPath';
 
 function LoginCard() {
   const supabase = createClient();
   const searchParams = useSearchParams();
   const errorParam = searchParams.get('error');
+  const next = safeNextPath(searchParams.get('next'));
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
@@ -25,6 +27,11 @@ function LoginCard() {
 
   const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
     if (isEnvMissing) return;
+    // The OAuth round trip drops query strings unless Supabase allowlists them,
+    // so the return path rides in a short-lived cookie that /auth/callback reads.
+    document.cookie = next
+      ? `${NEXT_PATH_COOKIE}=${encodeURIComponent(next)}; Path=/; Max-Age=600; SameSite=Lax; Secure`
+      : `${NEXT_PATH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; Secure`;
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -47,7 +54,7 @@ function LoginCard() {
         </div>
       )}
 
-      <LoginForm />
+      <LoginForm next={next} />
 
       <div className={styles.divider}>
         <span>or continue with</span>

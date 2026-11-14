@@ -11,3 +11,19 @@ export function futbolpediaConnectHref(leagueId: string, clubId: string): string
   if (!UUID.test(leagueId) || !UUID.test(clubId)) return null;
   return `${base}/#/gaffa/${leagueId}/${clubId}`;
 }
+
+/**
+ * Where /connect/futbolpedia sends its answer when it has no opener to post
+ * to (a blocked popup, or a mobile browser that opened a tab): Futbolpedia's
+ * `#/gaffa/connected` route, on an origin already checked against the allowlist.
+ */
+export function futbolpediaConnectReturnUrl(
+  returnOrigin: string,
+  params: { code?: string; error?: string; state: string },
+): string {
+  const qs = new URLSearchParams();
+  if (params.code) qs.set('code', params.code);
+  if (params.error) qs.set('error', params.error);
+  qs.set('state', params.state);
+  return `${returnOrigin}/#/gaffa/connected?${qs.toString()}`;
+}

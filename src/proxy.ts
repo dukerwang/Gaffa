@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSessionUser } from '@/lib/supabase/sessionUser';
+import { safeNextPath } from '@/lib/auth/nextPath';
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -56,12 +57,17 @@ export async function proxy(request: NextRequest) {
   if (!user && !isAuthRoute && !isApiRoute && pathname !== '/' && !isGoogleVerification && !isPublicRoute && !isAuthCallback) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/login';
+    // Come back here after signing in (the Connect with Gaffa page depends on it).
+    redirectUrl.search = '';
+    redirectUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(redirectUrl);
   }
 
   // Redirect authenticated users away from auth pages
   if (user && isAuthRoute) {
     const redirectUrl = request.nextUrl.clone();
+    const next = safeNextPath(request.nextUrl.searchParams.get('next'));
+    if (next) return NextResponse.redirect(new URL(next, request.nextUrl.origin));
     redirectUrl.pathname = '/dashboard';
     return NextResponse.redirect(redirectUrl);
   }
