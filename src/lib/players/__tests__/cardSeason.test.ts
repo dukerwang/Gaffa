@@ -6,6 +6,7 @@ import {
   seasonFigures,
   seasonOptions,
   seasonSummary,
+  yetToKickOff,
 } from '../cardSeason';
 
 function played(
@@ -93,5 +94,19 @@ describe('seasonOptions', () => {
         ],
       }),
     ).toEqual(['2026-27', '2025-26', '2024-25']);
+  });
+});
+
+describe('yetToKickOff', () => {
+  const now = Date.parse('2026-10-31T15:00:00Z');
+
+  it('is false once the match has kicked off, whatever FPL says about finished', () => {
+    expect(yetToKickOff('2026-10-31T12:30:00Z', now)).toBe(false);
+  });
+
+  it('is true for a later kickoff and for one not yet scheduled', () => {
+    expect(yetToKickOff('2026-11-07T15:00:00Z', now)).toBe(true);
+    expect(yetToKickOff(null, now)).toBe(true);
+    expect(yetToKickOff(undefined, now)).toBe(true);
   });
 });
