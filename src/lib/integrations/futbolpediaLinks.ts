@@ -1,11 +1,11 @@
 /**
- * Links from Gaffa into Futbolpedia, a separate product (futbolpedia.ai.studio). Client-safe.
+ * Links from Gaffa into Futbolpedia, a separate product (futbolpedia.org). Client-safe.
  * Futbolpedia's routes: `#/p/<slug>` opens a dossier card, `#/scout?name=` opens Scout with a
  * name filled in (nothing is rated until the reader presses Rate), and
  * `#/gaffa/<leagueId>/<clubId>?q=` opens a conversation with the manager's club attached.
  */
 
-export const FUTBOLPEDIA_DEFAULT_ORIGIN = 'https://futbolpedia.ai.studio';
+export const FUTBOLPEDIA_DEFAULT_ORIGIN = 'https://futbolpedia.org';
 
 export function futbolpediaPublicOrigin(): string {
   return (process.env.NEXT_PUBLIC_FUTBOLPEDIA_URL || FUTBOLPEDIA_DEFAULT_ORIGIN).replace(/\/$/, '');
