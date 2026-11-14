@@ -3,6 +3,7 @@ import Script from 'next/script';
 import { Hanken_Grotesk, JetBrains_Mono, Newsreader, Sofia_Sans_Semi_Condensed } from 'next/font/google';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { Toaster } from '@/components/ui/Toaster';
+import { SITE } from '@/lib/seo/site';
 import './globals.css';
 
 /**
@@ -46,23 +47,24 @@ const sofiaSansSemiCondensed = Sofia_Sans_Semi_Condensed({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://gaffa.live'),
+  metadataBase: new URL(SITE.url),
   title: {
     template: '%s · Gaffa',
-    default: 'Gaffa — Dynasty Fantasy Football',
+    default: SITE.title,
   },
-  description: 'Dynasty fantasy football for the Premier League, with granular tactical positions, a live transfer market, and a scoring engine that judges every player against the role they actually played.',
+  description: SITE.description,
   openGraph: {
-    title: 'Gaffa — Dynasty Fantasy Football',
-    description: 'Dynasty fantasy football for the Premier League, with granular tactical positions, a live transfer market, and a scoring engine that judges every player against the role they actually played.',
-    url: 'https://gaffa.live',
+    title: SITE.title,
+    description: SITE.description,
+    url: SITE.url,
+    siteName: SITE.name,
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Gaffa — Dynasty Fantasy Football',
-    description: 'Dynasty fantasy football for the Premier League, with granular tactical positions, a live transfer market, and a scoring engine that judges every player against the role they actually played.',
+    title: SITE.title,
+    description: SITE.description,
   },
   icons: {
     icon: [

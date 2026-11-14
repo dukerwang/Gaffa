@@ -2,7 +2,8 @@ import Link from 'next/link';
 import styles from '../terms/terms.module.css'; // Reuse terms styling for consistent layout
 
 export const metadata = {
-  title: 'Privacy Policy · Gaffa',
+  title: 'Privacy Policy',
+  alternates: { canonical: '/privacy' },
   description: 'Privacy Policy outlining the collection, use, and security of user data in Gaffa.',
 };
 

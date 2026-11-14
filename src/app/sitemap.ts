@@ -1,33 +1,14 @@
 import type { MetadataRoute } from 'next';
+import { PUBLIC_PATHS, SITE } from '@/lib/seo/site';
 
+/**
+ * No lastModified: nothing here records when a page last changed, and stamping
+ * "now" on every request tells crawlers everything changes constantly, so they
+ * learn to ignore the field. changeFrequency and priority are left out for the
+ * same reason; Google ignores both.
+ */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://gaffa.live';
-  const now = new Date();
-
-  return [
-    {
-      url: baseUrl,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 1.0,
-    },
-    {
-      url: `${baseUrl}/guide`,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.3,
-    },
-  ];
+  return PUBLIC_PATHS.map((path) => ({
+    url: path === '/' ? SITE.url : `${SITE.url}${path}`,
+  }));
 }

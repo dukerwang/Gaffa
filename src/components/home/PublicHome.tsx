@@ -119,10 +119,9 @@ export default function PublicHome({ showcase, fixtures, gameweek, nextDeadline,
               <Icon name="gaffa" size="1em" className={styles.markCrest} aria-hidden="true" />
               <span>Gaffa</span>
             </h1>
-            <p className={styles.heroLine}>Fantasy football, played like the real thing.</p>
+            <p className={styles.heroLine}>Fantasy football that scores what you watched.</p>
             <p className={styles.heroP}>
-              Players score the way their match went. Win players at open auction in a transfer market tied to the real
-              Premier League, and play for four trophies every season.
+              Draft your squad. Bid for real-life Premier League transfers. Compete for four trophies a season.
             </p>
             <div className={styles.heroActions} id="hero-actions">
               <Link href={createHref} className={`${styles.btn} ${styles.btnPrimary}`}>Create a League</Link>

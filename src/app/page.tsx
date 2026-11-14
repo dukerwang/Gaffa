@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
 import { getFplStatus } from '@/lib/fpl/api';
 import { getGameweekFixtures } from '@/lib/fpl/fixtures';
 import { getCurrentFplSeason } from '@/lib/season/currentSeason';
@@ -8,27 +6,26 @@ import { buildFixturesModel } from '@/lib/dashboard/buildDashboardModel';
 import { loadShowcase } from '@/lib/publicHome/loadShowcase';
 import PublicTopBar from '@/components/home/PublicTopBar';
 import PublicHome from '@/components/home/PublicHome';
+import JsonLd from '@/components/seo/JsonLd';
+import { siteJsonLd } from '@/lib/seo/jsonLd';
 import shell from './(dashboard)/layout.module.css';
 
-export const dynamic = 'force-dynamic';
+/**
+ * The signed-out front page is the same for every visitor, so it is built once
+ * and rebuilt at most about once a minute (the fixtures fetch revalidates every
+ * 60 seconds and sets the floor) instead of on every request. Crawlers and
+ * link previewers no longer cost a function run each. Managers never reach
+ * this render: src/proxy.ts redirects a signed-in visitor from "/" to the
+ * dashboard before the cached page is served.
+ */
+export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: 'Gaffa · Fantasy Football, Played Like the Real Thing',
-  description:
-    'Dynasty fantasy football for the Premier League. Players score the way their match went, transfers follow the real Premier League, and every season has four trophies.',
+  alternates: { canonical: '/' },
 };
 
-/**
- * The front door. Managers go straight to their dashboard; everyone else gets
- * the public home rather than a login form.
- */
+/** The front door. Everyone who gets here is signed out (see the note on `revalidate`). */
 export default async function RootPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) redirect('/dashboard');
-
   const [fpl, season] = await Promise.all([getFplStatus(), getCurrentFplSeason()]);
   const [fixtures, showcase] = await Promise.all([
     fpl.displayGw ? getGameweekFixtures(fpl.displayGw) : Promise.resolve([]),
@@ -37,6 +34,7 @@ export default async function RootPage() {
 
   return (
     <>
+      <JsonLd data={siteJsonLd()} />
       <PublicTopBar heroBrand />
       <div className={shell.ground}>
         <main className={shell.main}>
