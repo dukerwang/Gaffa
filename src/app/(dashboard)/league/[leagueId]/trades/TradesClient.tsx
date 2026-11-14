@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import NavigationLink from '@/components/ui/NavigationLink';
 import PositionBadge from '@/components/players/PositionBadge';
-import { playerHoverProps, usePlayerCard } from '@/components/players/PlayerCardProvider';
+import { playerHoverProps, usePlayerCard, usePlayerCardPrefetch } from '@/components/players/PlayerCardProvider';
 import { Icon } from '@/components/ui/Icon';
 import ListPlayerModal from './ListPlayerModal';
 import ProposeLoanModal from './ProposeLoanModal';
@@ -1262,7 +1262,8 @@ export interface TradeCardProps {
 }
 
 export function TradeCard({ trade, myTeamId, playerMap, onAction, onCounter, onViewPlayer, error, loading }: TradeCardProps) {
-  const { prefetchPlayer } = usePlayerCard();
+  // Also drawn on the sign-in page's showcase, outside the dashboard's PlayerCardProvider.
+  const prefetchPlayer = usePlayerCardPrefetch();
   const isProposer = trade.team_a_id === myTeamId;
   const teamAName = (trade.team_a as any)?.team_name ?? 'Team A';
   const teamBName = (trade.team_b as any)?.team_name ?? 'Team B';
