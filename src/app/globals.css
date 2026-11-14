@@ -160,6 +160,17 @@
   --color-tint-danger:   #F4E6E4;
   --color-tint-warning:  #F0E9DE;
 
+  /* Futbolpedia's own palette, for its panel and links inside Gaffa: it is a
+     separate product and is meant to look like one (cream, charcoal, emerald). */
+  --color-fp-ground:     #F5F2E9;
+  --color-fp-surface:    #FFFEFA;
+  --color-fp-sand:       #EBE8DE;
+  --color-fp-ink:        #1A1F2E;
+  --color-fp-ink-muted:  #5F6370;
+  --color-fp-line:       #D6D3CA;
+  --color-fp-accent:     #047857;
+  --color-fp-on-ink:     #FAF9F6;
+
   /* --- The pitch ---
      Same green hue as the brand (155), lightness set so white touchlines
      clear 4.5:1. One value in both themes — the grass is a depicted object. */
@@ -396,6 +407,15 @@
   --color-tint-accent:   #26382C;
   --color-tint-danger:   #422D2A;
   --color-tint-warning:  #3D3120;
+
+  --color-fp-ground:     #1A1F2E;
+  --color-fp-surface:    #252B3D;
+  --color-fp-sand:       #2C3344;
+  --color-fp-ink:        #FAF9F6;
+  --color-fp-ink-muted:  #A9ADBA;
+  --color-fp-line:       #3E4559;
+  --color-fp-accent:     #34D399;
+  --color-fp-on-ink:     #1A1F2E;
 
   /* Spine fills stay on :root. Dark only lifts the keyline. */
   --color-pos-gk-on: #FFFFFF;  --color-pos-gk-line: #B18331;

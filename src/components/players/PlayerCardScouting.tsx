@@ -6,6 +6,7 @@ import type { OutlookStyle } from '@futbolpedia/engine';
 import type { HubRealWorldForm, HubScoutingReport } from '@/lib/players/hubData';
 import { QUALITY_LABEL, humanise } from '@/lib/outlook/labels';
 import { seasonLabel } from '@/lib/players/cardSeason';
+import FutbolpediaPlayerLink from '@/components/integrations/FutbolpediaPlayerLink';
 import styles from './PlayerCardScouting.module.css';
 
 interface Profile {
@@ -44,12 +45,14 @@ function loadProfile(playerId: string, leagueId: string | undefined, season: str
 
 interface Props {
   playerId: string;
+  /** His names, for the Futbolpedia link: full name first, then the name he's known by. */
+  playerNames?: string[];
   leagueId?: string;
   season: string | null;
   isCurrent: boolean;
 }
 
-export default function PlayerCardScouting({ playerId, leagueId, season, isCurrent }: Props) {
+export default function PlayerCardScouting({ playerId, playerNames = [], leagueId, season, isCurrent }: Props) {
   const key = `${playerId}|${leagueId ?? ''}|${season ?? ''}`;
   const [loaded, setLoaded] = useState<{ key: string; profile: Profile | null } | null>(() => {
     const cached = profileCache.get(key);
@@ -124,6 +127,11 @@ export default function PlayerCardScouting({ playerId, leagueId, season, isCurre
           </>
         ) : (
           <p className={styles.empty}>Not yet scouted.</p>
+        )}
+        {playerNames.length > 0 && (
+          <div className={styles.readFurther}>
+            <FutbolpediaPlayerLink names={playerNames} />
+          </div>
         )}
       </section>
 

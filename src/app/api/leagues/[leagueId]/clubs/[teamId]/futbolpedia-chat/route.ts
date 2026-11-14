@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
-import { futbolpediaOrigin } from '@/lib/integrations/futbolpediaChat';
+import { authorizeFutbolpediaClub, panelConversationId } from '@/lib/integrations/futbolpediaProxy';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
@@ -10,89 +8,67 @@ interface Props {
   params: Promise<{ leagueId: string; teamId: string }>;
 }
 
-const UUID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 /**
- * Session-authenticated proxy to Futbolpedia Gaffa-mode chat.
- * Uses the logged-in owner's club — callers do not paste league/club IDs.
- * Read-only: no lineup, bid, or trade writes.
+ * Session-authenticated proxy to Futbolpedia's chat for the signed-in manager's own club. Futbolpedia
+ * runs its full chat with the club attached and streams newline-delimited JSON events
+ * (stage, text, scorecard, done, error), which pass straight through. The manager's id goes along
+ * for Futbolpedia's daily turn limit. Read-only: no lineup, bid, or trade writes.
  */
 export async function POST(req: NextRequest, { params }: Props) {
   const { leagueId, teamId } = await params;
-  if (!UUID.test(leagueId) || !UUID.test(teamId)) {
-    return NextResponse.json({ error: 'Invalid league or club' }, { status: 400 });
-  }
+  const auth = await authorizeFutbolpediaClub(leagueId, teamId);
+  if ('response' in auth) return auth.response;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const admin = createAdminClient();
-  const { data: team } = await admin
-    .from('teams')
-    .select('id, user_id, league_id')
-    .eq('id', teamId)
-    .eq('league_id', leagueId)
-    .maybeSingle();
-  if (!team) return NextResponse.json({ error: 'Club not found' }, { status: 404 });
-  if (team.user_id !== user.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  const origin = futbolpediaOrigin();
-  const secret = process.env.FUTBOLPEDIA_READ_SECRET;
-  if (!origin || !secret) {
-    return NextResponse.json(
-      { error: 'Futbolpedia chat is not configured (FUTBOLPEDIA_URL / FUTBOLPEDIA_READ_SECRET)' },
-      { status: 503 },
-    );
-  }
-
-  let body: {
-    message?: unknown;
-    history?: unknown;
-    speed?: unknown;
-  };
+  let body: { message?: unknown; history?: unknown; conversationId?: unknown };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
-
   const message = typeof body.message === 'string' ? body.message : '';
-  if (!message.trim()) {
-    return NextResponse.json({ error: 'Missing message' }, { status: 400 });
-  }
+  if (!message.trim()) return NextResponse.json({ error: 'Missing message' }, { status: 400 });
 
+  // The timeout covers only the wait for Futbolpedia to start answering; once it streams, the
+  // reply runs to its end (within maxDuration) instead of being cut mid-answer.
+  const started = new AbortController();
+  const startTimer = setTimeout(() => started.abort(), 30_000);
   try {
-    const upstream = await fetch(`${origin}/api/gaffa/chat`, {
+    const upstream = await fetch(`${auth.origin}/api/gaffa/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-futbolpedia-secret': secret,
-      },
+      headers: { 'Content-Type': 'application/json', 'x-futbolpedia-secret': auth.secret },
       body: JSON.stringify({
         message,
         history: Array.isArray(body.history) ? body.history : [],
         leagueId,
         clubId: teamId,
-        speed: body.speed === 'fast' ? 'fast' : 'default',
+        userId: auth.userId,
+        conversationId: panelConversationId(body.conversationId),
+        stream: true,
       }),
-      signal: AbortSignal.timeout(110_000),
+      signal: started.signal,
     });
-
-    const data = await upstream.json().catch(() => ({}));
-    if (!upstream.ok) {
+    clearTimeout(startTimer);
+    if (!upstream.ok || !upstream.body) {
+      const data = await upstream.json().catch(() => ({}));
       return NextResponse.json(
-        { error: data?.error || `Futbolpedia error (${upstream.status})` },
+        {
+          error: data?.error || `Futbolpedia error (${upstream.status})`,
+          // A refused turn says how many are left (0 at the daily limit), so the panel can hand over.
+          ...(typeof data?.turnsLeft === 'number' ? { turnsLeft: data.turnsLeft } : {}),
+        },
         { status: upstream.status >= 400 ? upstream.status : 502 },
       );
     }
-    return NextResponse.json(data);
+    // A Futbolpedia that doesn't stream yet answers with one JSON reply; the panel reads either.
+    return new Response(upstream.body, {
+      status: 200,
+      headers: {
+        'Content-Type': upstream.headers.get('content-type') ?? 'application/x-ndjson; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+      },
+    });
   } catch (err) {
+    clearTimeout(startTimer);
     console.error('[futbolpedia-chat]', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Could not reach Futbolpedia' }, { status: 502 });
   }

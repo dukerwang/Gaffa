@@ -336,7 +336,7 @@ Players is deliberately league-wide rather than limited to free agents: scouting
 
 ### Scouting reports
 
-Every regular carries a written outlook from **Futbolpedia**: how he's used, how secure his place is, what to expect week to week, and where he is in his career.
+Every regular carries a written outlook from **Futbolpedia**: how he's used, how secure his place is, what to expect week to week, and where he is in his career. Futbolpedia is a separate app: under the report, **Read on Futbolpedia** opens his full Futbolpedia dossier, or **Scout on Futbolpedia** when it hasn't rated him yet. The Futbolpedia channel in league chat answers questions about your club, ten a day; **Continue in Futbolpedia** carries the conversation over to the app.
 
 It's a football judgment, drawn from match data, minutes, set-piece duty and transfer news. **It never reads your league's scoring**, and it never tells you whether to bid. A report is dated, because it describes the player now — view an older season and the figures change but the report doesn't.
 

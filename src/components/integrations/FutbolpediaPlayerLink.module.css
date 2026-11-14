@@ -1,0 +1,33 @@
+/* A link into Futbolpedia, in Futbolpedia's own palette and type (it's a separate app). */
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 36px;
+  padding: var(--s1) var(--s3) var(--s1) var(--s2);
+  border: 1px solid var(--color-fp-line);
+  border-radius: var(--r-control);
+  background: var(--color-fp-surface);
+  color: var(--color-fp-ink);
+  text-decoration: none;
+  font-family: var(--font-fp-sans), var(--font-sans);
+}
+
+.link:hover { border-color: var(--color-fp-accent); }
+
+.text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.action {
+  font-family: var(--font-fp-serif), Georgia, serif;
+  font-size: var(--t-13);
+  font-weight: 600;
+}
+
+.meta {
+  font-size: var(--t-11);
+  color: var(--color-fp-ink-muted);
+}

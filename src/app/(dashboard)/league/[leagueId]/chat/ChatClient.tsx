@@ -8,6 +8,7 @@ import CrestBadge from '@/components/crest/CrestBadge';
 import TradeOfferCard, { type TradeSummary } from '@/components/chat/TradeOfferCard';
 import LoanOfferCard, { type LoanSummary } from '@/components/chat/LoanOfferCard';
 import FutbolpediaChatPanel from '@/components/integrations/FutbolpediaChatPanel';
+import { FutbolpediaMark } from '@/components/integrations/futbolpediaBrand';
 import { FUTBOLPEDIA_ASSISTANT_CAPTION } from '@/lib/chat/isClubChatContext';
 import styles from './Chat.module.css';
 
@@ -401,7 +402,7 @@ export default function ChatClient({
                 }}
               >
                 <span className={styles.assistantAvatar}>
-                  <Icon name="soccer" className={styles.icon} size={16} />
+                  <FutbolpediaMark size={22} />
                 </span>
                 <span className={styles.managerInfo}>
                   <span className={styles.managerName}>Futbolpedia</span>
@@ -503,7 +504,7 @@ export default function ChatClient({
               </>
             ) : activeTab.type === 'futbolpedia' ? (
               <>
-                <Icon name="soccer" size={18} strokeWidth={2} />
+                <FutbolpediaMark size={20} />
                 <span>Futbolpedia</span>
                 <span className={styles.panelSubtitle}>
                   {askClub ? `Ask about ${askClub.name}` : 'Ask about your club'}
