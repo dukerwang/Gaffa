@@ -1346,16 +1346,16 @@ export async function buildHomeModel(
     } else if (inBand) {
       outcome = 'drawn';
       verdict = settled
-        ? `Drawn · ${mag.toFixed(2)} apart, inside the ten-point band`
+        ? `Drawn · ${mag.toFixed(2)} apart, inside the ten-point draw band`
         : margin >= 0
           ? `Drawn · ${(DRAW_BAND - mag).toFixed(2)} more and you win`
           : `Drawn · ${(DRAW_BAND - mag).toFixed(2)} from a defeat`;
     } else if (margin > 0) {
       outcome = 'ahead';
-      verdict = `${settled ? 'Won by' : 'You lead by'} ${mag.toFixed(2)} · ${(mag - DRAW_BAND).toFixed(2)} clear of the band`;
+      verdict = `${settled ? 'Won by' : 'You lead by'} ${mag.toFixed(2)} · ${(mag - DRAW_BAND).toFixed(2)} past the draw band`;
     } else {
       outcome = 'behind';
-      verdict = `${settled ? 'Lost by' : 'Behind by'} ${mag.toFixed(2)} · ${(mag - DRAW_BAND).toFixed(2)} outside the band`;
+      verdict = `${settled ? 'Lost by' : 'Behind by'} ${mag.toFixed(2)} · ${(mag - DRAW_BAND).toFixed(2)} past the draw band`;
     }
 
     const oppStanding = standings.find((s) => s.team_id === oppId);
@@ -1636,16 +1636,16 @@ export async function buildHomeModel(
     } else if (inBand) {
       outcome = 'drawn';
       verdict = settledSecondary
-        ? `Drawn · ${mag.toFixed(2)} apart, inside the ten-point band`
+        ? `Drawn · ${mag.toFixed(2)} apart, inside the ten-point draw band`
         : margin >= 0
           ? `Drawn · ${(DRAW_BAND - mag).toFixed(2)} more and you win`
           : `Drawn · ${(DRAW_BAND - mag).toFixed(2)} from a defeat`;
     } else if (margin > 0) {
       outcome = 'ahead';
-      verdict = `${settledSecondary ? 'Won by' : 'You lead by'} ${mag.toFixed(2)} · ${(mag - DRAW_BAND).toFixed(2)} clear of the band`;
+      verdict = `${settledSecondary ? 'Won by' : 'You lead by'} ${mag.toFixed(2)} · ${(mag - DRAW_BAND).toFixed(2)} past the draw band`;
     } else {
       outcome = 'behind';
-      verdict = `${settledSecondary ? 'Lost by' : 'Behind by'} ${mag.toFixed(2)} · ${(mag - DRAW_BAND).toFixed(2)} outside the band`;
+      verdict = `${settledSecondary ? 'Lost by' : 'Behind by'} ${mag.toFixed(2)} · ${(mag - DRAW_BAND).toFixed(2)} past the draw band`;
     }
 
     const oppStanding = standings.find((s) => s.team_id === oppId);
