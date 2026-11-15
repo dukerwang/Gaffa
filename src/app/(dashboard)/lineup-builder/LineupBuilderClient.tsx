@@ -404,8 +404,56 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
     await copyLink('Link copied. Paste it anywhere to share the XI.');
   }, [copyLink, warmPreview]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Save Image hands over the card itself. Where the device can share files (phones),
+  // the share sheet offers "Save Image" and the apps the picture can go to; elsewhere
+  // the browser downloads the PNG. The card can take a few seconds to render cold.
+  const [savingImage, setSavingImage] = useState(false);
+  const handleSaveImage = useCallback(async () => {
+    if (savingImage) return;
+    setSavingImage(true);
+    setFeedbackNotice('Preparing image…');
+    try {
+      const res = await fetch(imageUrl());
+      if (!res.ok) throw new Error(`Image request failed: ${res.status}`);
+      const blob = await res.blob();
+      const slug = (fixture ? `${fixture.homeName} v ${fixture.awayName}` : title.trim() || 'lineup')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      const file = new File([blob], `${slug || 'lineup'}.png`, { type: 'image/png' });
+
+      const touch = window.matchMedia('(pointer: coarse)').matches;
+      if (touch && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+          setFeedbackNotice(null);
+          return;
+        } catch (err) {
+          if (err instanceof Error && err.name === 'AbortError') {
+            setFeedbackNotice(null);
+            return;
+          }
+        }
+      }
+
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = href;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(href), 1000);
+      setFeedbackNotice('Image saved');
+    } catch {
+      setFeedbackNotice("Couldn't save the image");
+    } finally {
+      setSavingImage(false);
+    }
+  }, [savingImage, fixture, title]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const slotPositions = FORMATION_SLOTS[formation] as GranularPosition[];
-  const caption = feedbackNotice ?? `${filledCount} of 11 picked`;
+  const caption =feedbackNotice ?? `${filledCount} of 11 picked`;
   const lastLabel = source?.kind === 'last'
     ? `Last XI · vs. ${source.from.opponentName} (${source.from.atHome ? 'H' : 'A'}) · ${kickoffDay(source.from.kickoff)}`
     : null;
@@ -480,6 +528,18 @@ export default function LineupBuilderClient({ allPlayers, initialState, fixtures
                 data-tip={copied ? 'Copied' : 'Copy Link'}
               >
                 <Icon name={copied ? 'check' : 'copy'} size={18} strokeWidth={1.75} />
+              </button>
+              <button
+                type="button"
+                className={styles.iconBtn}
+                onClick={handleSaveImage}
+                onPointerEnter={warmPreview}
+                onFocus={warmPreview}
+                disabled={savingImage}
+                aria-label="Save Image"
+                data-tip="Save Image"
+              >
+                <Icon name="download" size={18} strokeWidth={1.75} />
               </button>
               <button
                 type="button"
