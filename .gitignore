@@ -69,3 +69,7 @@ tmp-chrome-profile/
 .codex/
 packages/*/node_modules
 scratch/hub-design/gaffa-player-hub.html
+
+# Browser pane preview: which worktree gaffa-preview serves (scripts/preview.sh)
+.claude/preview-target
+.claude/preview-serving
