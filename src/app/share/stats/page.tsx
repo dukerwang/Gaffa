@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { createAdminClient } from '@/lib/supabase/admin';
 import GlobalStatsTable from '@/app/(dashboard)/league/[leagueId]/stats/GlobalStatsTable';
 import type { Player } from '@/types';
@@ -23,20 +24,38 @@ function parseSeason(raw: string | undefined): string | null {
   return /^\d{4}-\d{2}$/.test(raw) ? raw : null;
 }
 
+async function resolveSeason(requested: string | null): Promise<string> {
+  if (requested) return requested;
+  const currentFpl = await getCurrentFplSeason();
+  return (await isFplSeasonKickedOff()) ? currentFpl : previousSeason(currentFpl);
+}
+
+/**
+ * This page had no tags of its own, so it showed the site-wide title and
+ * description, and nothing linked to it. A page title that names the season
+ * and a canonical that keeps `?season=` are what let the 2025-26 archive be
+ * found as its own page.
+ */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ season?: string }>;
+}): Promise<Metadata> {
+  const requested = parseSeason((await searchParams).season);
+  const season = await resolveSeason(requested);
+  return {
+    title: `Premier League Player Ratings, ${season}`,
+    description: `Every Premier League player's Gaffa rating, points and stats for the ${season} season.`,
+    alternates: { canonical: requested ? `/share/stats?season=${requested}` : '/share/stats' },
+  };
+}
+
 export default async function GlobalPublicStatsPage({
   searchParams,
 }: {
   searchParams: Promise<{ season?: string }>;
 }) {
-  const requested = parseSeason((await searchParams).season);
-  const currentFpl = await getCurrentFplSeason();
-  const kickedOff = await isFplSeasonKickedOff();
-
-  let season = currentFpl;
-  if (!kickedOff) {
-    season = previousSeason(season);
-  }
-  if (requested) season = requested;
+  const season = await resolveSeason(parseSeason((await searchParams).season));
 
   // Instant response for completed 2025-26 archived season
   if (season === '2025-26') {

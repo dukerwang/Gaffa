@@ -61,7 +61,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const proto = h.get('x-forwarded-proto') ?? (host?.startsWith('localhost') ? 'http' : 'https');
   return {
     metadataBase: host ? new URL(`${proto}://${host}`) : undefined,
-    title: `${heading} · Gaffa`,
+    title: heading,
     description: line,
     openGraph: { title: heading, description: line, images: [image], type: 'website', siteName: 'Gaffa' },
     twitter: { card: 'summary_large_image', title: heading, description: line, images: [image.url] },

@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: "The Gaffa Player's Guide",
+  alternates: { canonical: '/guide' },
   description: 'Official rules, scoring mechanics, transfer regulations, and tactics guide for Gaffa.',
 };
 

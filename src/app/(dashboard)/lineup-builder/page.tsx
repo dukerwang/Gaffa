@@ -9,7 +9,8 @@ import { resolveClub } from '@/lib/clubs/registry';
 import LineupBuilderClient from './LineupBuilderClient';
 
 export const metadata: Metadata = {
-  title: 'Lineup Builder · Gaffa',
+  title: 'Lineup Builder',
+  alternates: { canonical: '/lineup-builder' },
   description: 'Build a starting XI from any Premier League players, or start from a real match\'s lineups, and share it as an image or a link.',
 };
 
