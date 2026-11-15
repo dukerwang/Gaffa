@@ -9,6 +9,7 @@ import {
   type FutbolpediaCard,
 } from '@/lib/integrations/futbolpediaLinks';
 import { readFutbolpediaReply, type FutbolpediaScorecard } from '@/lib/integrations/futbolpediaStream';
+import { originHost } from '@/lib/integrations/futbolpediaConnectUrl';
 import { FutbolpediaMark } from './futbolpediaBrand';
 import { fpFontVars } from './futbolpediaFonts';
 import FutbolpediaProse from './FutbolpediaProse';
@@ -213,7 +214,7 @@ export default function FutbolpediaChatPanel({
               Futbolpedia is a separate app, built on live Premier League data and its own scouting cards.
               You can carry any conversation over to{' '}
               <a href={futbolpediaPublicOrigin()} target="_blank" rel="noopener noreferrer">
-                futbolpedia.ai.studio
+                {originHost(futbolpediaPublicOrigin())}
               </a>
               .
             </p>

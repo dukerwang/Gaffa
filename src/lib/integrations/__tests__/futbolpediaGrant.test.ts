@@ -17,7 +17,7 @@ import {
 import { futbolpediaConnectReturnUrl } from '../futbolpediaConnectUrl';
 import { nextPathFromCookie, safeNextPath } from '../../auth/nextPath';
 
-const ORIGIN = 'https://futbolpedia.ai.studio';
+const ORIGIN = 'https://futbolpedia.org';
 const NOW = new Date('2026-11-13T12:00:00Z');
 
 /** An in-memory GrantStore with the same contract as the Supabase one. */
@@ -80,9 +80,10 @@ describe('return origins', () => {
   });
 
   it('falls back to the defaults when the variable is empty', () => {
-    expect(allowedFutbolpediaOrigins('')).toContain('https://futbolpedia.ai.studio');
-    // Production never returns a code to a local build unless the variable says so.
-    expect(allowedFutbolpediaOrigins('', true)).toEqual(['https://futbolpedia.ai.studio']);
+    expect(allowedFutbolpediaOrigins('')).toContain('https://futbolpedia.org');
+    // Production never returns a code to a local build unless the variable says so. The AI Studio
+    // domain still serves Futbolpedia, so a manager connecting from it isn't turned away.
+    expect(allowedFutbolpediaOrigins('', true)).toEqual(['https://futbolpedia.org', 'https://futbolpedia.ai.studio']);
   });
 });
 

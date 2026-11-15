@@ -15,8 +15,12 @@ export const CODE_TTL_MS = 5 * 60 * 1000;
 const TOUCH_INTERVAL_MS = 60 * 60 * 1000;
 const TOKEN_PREFIX = 'fpg_';
 
-/** The live Futbolpedia; a local build is added through FUTBOLPEDIA_ALLOWED_ORIGINS, or by default outside production. */
-const LIVE_ORIGIN = 'https://futbolpedia.ai.studio';
+/**
+ * The live Futbolpedia: futbolpedia.org, plus the AI Studio domain it was served from first, which
+ * still serves the same app. A local build is added through FUTBOLPEDIA_ALLOWED_ORIGINS, or by
+ * default outside production.
+ */
+const LIVE_ORIGINS = ['https://futbolpedia.org', 'https://futbolpedia.ai.studio'];
 const DEV_ORIGIN = 'http://localhost:3000';
 
 export class GrantError extends Error {
@@ -43,7 +47,7 @@ export function allowedFutbolpediaOrigins(
     .map((s) => s.trim().replace(/\/$/, ''))
     .filter(Boolean);
   if (list.length > 0) return list;
-  return production ? [LIVE_ORIGIN] : [LIVE_ORIGIN, DEV_ORIGIN];
+  return production ? [...LIVE_ORIGINS] : [...LIVE_ORIGINS, DEV_ORIGIN];
 }
 
 /** An exact origin (scheme, host, port; no path) on the allowlist. */
